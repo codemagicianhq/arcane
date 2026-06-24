@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Questions & Discussions
+    url: https://github.com/codemagicianhq/arcane/discussions
+    about: Ask questions, share ideas, and discuss Arcane with the community.
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/codemagicianhq/arcane/security/advisories/new
+    about: Please report security issues privately, not as public issues.

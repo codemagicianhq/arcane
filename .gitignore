@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.obsidian/
+*.tsbuildinfo
+.arcane.json
+~/.arcane/
+*.log
+
+# macOS
+.DS_Store
+**/.DS_Store
