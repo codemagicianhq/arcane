@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 350" fill="none">
+  <defs>
+    <style>
+      .node { rx: 24; ry: 24; }
+      .node-optional { rx: 24; ry: 24; stroke-dasharray: 5 3; }
+      .label { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+      .label-sm { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 12px; font-weight: 600; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+      .agent { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 10px; fill: #cbd5e1; text-anchor: middle; }
+      .arrow { stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .loop-label { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 11px; text-anchor: middle; font-style: italic; }
+      .phase-title { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 11px; font-weight: 700; text-anchor: start; text-transform: uppercase; letter-spacing: 1.5px; dominant-baseline: central; }
+      .phase-num { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; font-weight: 800; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+      .orchestrator { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 10px; fill: #fbbf24; text-anchor: middle; }
+      .opt-label { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 9px; fill: #a78bfa; text-anchor: middle; font-style: italic; }
+      .diagram-title { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 20px; font-weight: 800; fill: #e2e8f0; text-anchor: middle; letter-spacing: 3px; }
+    </style>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#10b981"/>
+    </marker>
+    <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#f87171"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1260" height="350" fill="#0f172a" rx="12"/>
+
+  <!-- Diagram title -->
+  <text x="630" y="30" class="diagram-title">THE SPELL LOOP</text>
+
+  <!-- Phase 1: Define (plan + elevate) -->
+  <rect x="22" y="52" width="316" height="220" rx="10" fill="#7c3aed" fill-opacity="0.08" stroke="#7c3aed" stroke-opacity="0.3" stroke-width="1"/>
+  <circle cx="52" cy="80" r="16" fill="#7c3aed"/>
+  <text x="52" y="80" class="phase-num">1</text>
+  <text x="76" y="80" class="phase-title" fill="#a78bfa">Define</text>
+
+  <!-- Phase 2: Build · Verify · Iterate (architect → implement → test → review) -->
+  <rect x="356" y="52" width="630" height="220" rx="10" fill="#f59e0b" fill-opacity="0.05" stroke="#f59e0b" stroke-opacity="0.2" stroke-width="1"/>
+  <circle cx="390" cy="80" r="16" fill="#f59e0b"/>
+  <text x="390" y="80" class="phase-num">2</text>
+  <text x="414" y="80" class="phase-title" fill="#fbbf24">Build · Verify · Iterate</text>
+
+  <!-- Phase 3: Deliver (ship) -->
+  <rect x="1004" y="52" width="234" height="220" rx="10" fill="#3b82f6" fill-opacity="0.08" stroke="#3b82f6" stroke-opacity="0.3" stroke-width="1"/>
+  <circle cx="1038" cy="80" r="16" fill="#3b82f6"/>
+  <text x="1038" y="80" class="phase-num">3</text>
+  <text x="1062" y="80" class="phase-title" fill="#93c5fd">Deliver</text>
+
+  <!-- Orchestrator bar -->
+  <text x="630" y="332" class="orchestrator">@orchestrator oversees the full lifecycle</text>
+  <line x1="80" y1="327" x2="420" y2="327" stroke="#fbbf24" stroke-opacity="0.3" stroke-width="1"/>
+  <line x1="840" y1="327" x2="1180" y2="327" stroke="#fbbf24" stroke-opacity="0.3" stroke-width="1"/>
+
+  <!-- === NODES (center y=170) === -->
+
+  <!-- Plan -->
+  <rect x="44" y="146" width="120" height="48" class="node" fill="#7c3aed"/>
+  <text x="104" y="170" class="label">plan</text>
+  <text x="104" y="212" class="agent">@analyst</text>
+
+  <!-- Elevate (optional — dashed outline) -->
+  <rect x="204" y="146" width="108" height="48" class="node-optional" fill="#7c3aed" fill-opacity="0.4" stroke="#a78bfa"/>
+  <text x="258" y="163" class="label-sm">elevate</text>
+  <text x="258" y="181" class="opt-label">(optional)</text>
+  <text x="258" y="212" class="agent">@researcher</text>
+
+  <!-- Architect (fully inside Phase 2) -->
+  <rect x="380" y="146" width="120" height="48" class="node" fill="#6366f1"/>
+  <text x="440" y="170" class="label">architect</text>
+  <text x="440" y="212" class="agent">@architect</text>
+
+  <!-- Implement -->
+  <rect x="538" y="146" width="130" height="48" class="node" fill="#f59e0b"/>
+  <text x="603" y="170" class="label">implement</text>
+  <text x="603" y="212" class="agent">@developer</text>
+
+  <!-- Test -->
+  <rect x="706" y="146" width="110" height="48" class="node" fill="#10b981"/>
+  <text x="761" y="170" class="label">test</text>
+  <text x="761" y="212" class="agent">@qa-lead</text>
+
+  <!-- Review -->
+  <rect x="854" y="146" width="110" height="48" class="node" fill="#06b6d4"/>
+  <text x="909" y="170" class="label">review</text>
+  <text x="909" y="212" class="agent">human + @architect</text>
+
+  <!-- Ship -->
+  <rect x="1038" y="146" width="130" height="48" class="node" fill="#1e40af"/>
+  <text x="1103" y="170" class="label">ship 🚀</text>
+  <text x="1103" y="212" class="agent">@orchestrator</text>
+
+  <!-- === ARROWS === -->
+
+  <!-- plan → elevate (40px gap) -->
+  <path d="M164 170 L201 170" class="arrow" stroke="#94a3b8" marker-end="url(#arrowhead)"/>
+
+  <!-- elevate → architect (crosses phase boundary, 68px gap) -->
+  <path d="M312 170 L377 170" class="arrow" stroke="#94a3b8" marker-end="url(#arrowhead)"/>
+
+  <!-- architect → implement (38px gap) -->
+  <path d="M500 170 L535 170" class="arrow" stroke="#94a3b8" marker-end="url(#arrowhead)"/>
+
+  <!-- implement → test (38px gap) -->
+  <path d="M668 170 L703 170" class="arrow" stroke="#94a3b8" marker-end="url(#arrowhead)"/>
+
+  <!-- test → review (38px gap) -->
+  <path d="M816 170 L851 170" class="arrow" stroke="#94a3b8" marker-end="url(#arrowhead)"/>
+
+  <!-- review → ship (pass — label above arrow) -->
+  <path d="M964 170 L1035 170" class="arrow" stroke="#10b981" marker-end="url(#arrowhead-green)"/>
+  <text x="999" y="160" class="loop-label" fill="#10b981">pass ✓</text>
+
+  <!-- Loop back: review → implement (issues) — above nodes, clear of phase title -->
+  <path d="M909 146 L909 114 L603 114 L603 146" class="arrow" stroke="#f87171" stroke-dasharray="5 3" marker-end="url(#arrowhead-red)"/>
+  <text x="756" y="106" class="loop-label" fill="#f87171">⟳ issues — @developer fixes</text>
+</svg>
