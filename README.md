@@ -44,6 +44,43 @@ npm install -g arcane-cli   #  then:  spell init
 
 ---
 
+### See it in action
+
+<details>
+<summary><strong>⚡ Get started</strong> — one command, full methodology installed</summary>
+
+<br>
+
+<div align="center">
+<img src="./assets/demo/spell-init.gif" alt="spell init — installs the full spell library and governance" width="800">
+</div>
+
+</details>
+
+<details>
+<summary><strong>🧙 Code Magician agents</strong> — assign the built-in persona roster</summary>
+
+<br>
+
+<div align="center">
+<img src="./assets/demo/spell-agents-codemagician.gif" alt="spell agents init — Code Magician naming strategy" width="800">
+</div>
+
+</details>
+
+<details>
+<summary><strong>🎭 Custom agent names</strong> — name your team after any universe you love</summary>
+
+<br>
+
+<div align="center">
+<img src="./assets/demo/spell-agents-custom.gif" alt="spell agents init — custom Lord of the Rings naming" width="800">
+</div>
+
+</details>
+
+---
+
 ## The problem
 
 AI coding agents are great at *generating code*. They're terrible at *shipping software*.
@@ -58,22 +95,9 @@ Ask one to "build a feature" and you get a pile of plausible code with no plan, 
 
 One opinionated lifecycle. Each phase is a spell you cast — and the build→test→review core loops until the work actually passes.
 
-```mermaid
-flowchart LR
-    P([plan]):::plan --> AR([architect]):::plan
-    AR --> IM([implement]):::build
-    IM --> TE([test]):::test
-    TE --> RV([review]):::review
-    RV -->|issues| IM
-    RV -->|clean| SH([ship]):::ship
-    SH --> D((🚀)):::ship
-
-    classDef plan fill:#7c3aed,color:#fff,stroke:none
-    classDef build fill:#e67e22,color:#fff,stroke:none
-    classDef test fill:#27ae60,color:#fff,stroke:none
-    classDef review fill:#06b6d4,color:#fff,stroke:none
-    classDef ship fill:#2c3e50,color:#fff,stroke:none
-```
+<div align="center">
+<img src="./assets/spell-loop.svg" alt="The Spell Loop — plan → architect → implement → test → review → ship" width="800">
+</div>
 
 ```
 spell plan → spell architect → [ spell implement → spell test → spell review ]* → spell ship
