@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "arcane-website",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "../arcane-website"],
+      "port": 3000
+    },
+    {
+      "name": "arcane-ui-ladle",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "ladle", "--prefix", "../arcane-ui"],
+      "port": 61000
+    }
+  ]
+}

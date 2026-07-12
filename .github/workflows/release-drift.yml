@@ -1,0 +1,109 @@
+name: Release drift
+
+# Guardrail for npm publish drift.
+#
+# publish.yml only fires on `release: published`, so a merge that bumps
+# package.json without a matching GitHub Release leaves npm behind silently.
+# This workflow watches package.json on main and, when the local version is
+# ahead of what's on npm, auto-creates a GitHub Release tagged v<version>,
+# which in turn triggers publish.yml (OIDC trusted publish, no token).
+#
+# Safe by construction:
+#   - Only runs on codemagicianhq/arcane (skipped on forks).
+#   - Only creates a release when tag v<version> does not already exist.
+#   - Never modifies package.json; never publishes directly to npm.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift-check:
+    name: Detect version drift and cut Release
+    if: github.repository == 'codemagicianhq/arcane'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create the GitHub Release + tag
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Compare package.json version to npm
+        id: compare
+        run: |
+          set -euo pipefail
+
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          echo "package.json version: $PKG_VERSION"
+
+          # Never let a transient npm lookup fail the whole job — default to 0.0.0
+          # so a missing/blocked registry read looks like "npm is behind" and we
+          # still hit the tag-existence guard before touching anything.
+          NPM_VERSION="$(npm view arcane-cli version 2>/dev/null || echo 0.0.0)"
+          echo "npm latest version:   $NPM_VERSION"
+
+          echo "pkg_version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "npm_version=$NPM_VERSION" >> "$GITHUB_OUTPUT"
+
+          # Semver comparison -- arcane-cli uses simple X.Y.Z versions with no
+          # prerelease tags, so `sort -V` (natural version sort) is safe.
+          # NEEDS_RELEASE is "yes" iff PKG_VERSION strictly exceeds NPM_VERSION.
+          if [ "$PKG_VERSION" = "$NPM_VERSION" ]; then
+            NEEDS_RELEASE="no"
+          else
+            HIGHEST="$(printf '%s\n%s\n' "$PKG_VERSION" "$NPM_VERSION" | sort -V | tail -n1)"
+            if [ "$HIGHEST" = "$PKG_VERSION" ]; then
+              NEEDS_RELEASE="yes"
+            else
+              NEEDS_RELEASE="no"
+            fi
+          fi
+          echo "needs_release=$NEEDS_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "needs_release: $NEEDS_RELEASE"
+
+      - name: Report in-sync (no action)
+        if: steps.compare.outputs.needs_release == 'no'
+        run: |
+          echo "✅ package.json (${{ steps.compare.outputs.pkg_version }}) is not ahead of npm (${{ steps.compare.outputs.npm_version }}). Nothing to do."
+
+      - name: Check whether tag already exists
+        if: steps.compare.outputs.needs_release == 'yes'
+        id: tagcheck
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ steps.compare.outputs.pkg_version }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${{ github.repository }}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Tag ${TAG} already exists -- assuming a Release is in flight. Skipping auto-release."
+          else
+            echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+            echo "Tag ${TAG} does not exist yet."
+          fi
+
+      - name: Create GitHub Release (fires publish.yml)
+        if: steps.compare.outputs.needs_release == 'yes' && steps.tagcheck.outputs.tag_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
+          TAG: v${{ steps.compare.outputs.pkg_version }}
+        run: |
+          set -euo pipefail
+          echo "Creating Release ${TAG} -- this will trigger publish.yml via 'release: published'."
+          gh release create "${TAG}" \
+            --title "${TAG}" \
+            --generate-notes \
+            --target "${GITHUB_SHA}"
