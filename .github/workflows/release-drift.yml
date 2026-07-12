@@ -102,6 +102,10 @@ jobs:
           TAG: v${{ steps.compare.outputs.pkg_version }}
         run: |
           set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::error::GH_RELEASE_PAT secret is empty or missing — create a fine-grained PAT (Contents: read/write) as repo secret GH_RELEASE_PAT so 'gh release create' can authenticate. (An empty secret makes gh fail with a cryptic 'set the GH_TOKEN environment variable' / exit 4.)"
+            exit 1
+          fi
           echo "Creating Release ${TAG} -- this will trigger publish.yml via 'release: published'."
           gh release create "${TAG}" \
             --title "${TAG}" \
