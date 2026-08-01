@@ -33,7 +33,16 @@ Related spells:
 - `--draft` — create the PR as a draft (work-in-progress / early feedback).
 - `--reviewers <name,...>` — comma-separated reviewers. Optional.
 - `--target <branch>` — target branch (default `main`).
-- `--docs-only` — lightweight mode for documentation-only changes: prefixes `[docs]` in the title, skips test-evidence/review sections, and enables auto-complete/auto-merge where the provider supports it.
+- `--docs-only` — lightweight mode for documentation-only changes: prefixes `[docs]` in the title and skips test-evidence/review sections. It does not bypass merge authorization.
+
+## Authorization Gate
+
+Before enabling auto-complete/auto-merge or completing an existing PR, resolve `interaction_context`, effective power level, and `exec_allowed` through the EF-27 loader-validated roster/definition. Missing or invalid authority visibly downgrades to PR creation only. Print the invalid/missing input and state that human completion is required.
+
+- Below Magus: create the PR and stop; never request auto-complete or invoke merge.
+- Autonomous Magus+: auto-complete/self-merge is allowed within approved scope when `exec_allowed` is true.
+- Interactive Magus+: require separate authenticated operator approval bound to the exact PR ID and head SHA. Commit approval is not merge approval.
+- Re-check authority, PR ID, and head SHA immediately before completion; any change invalidates approval.
 
 ## Step 0 — Guard checks
 
@@ -135,12 +144,12 @@ Documentation-only PR. No functional code changed.
   ```bash
   gh pr create --title "<title>" --body-file <temp> --base <target> --head <branch> [--draft] [--reviewer <r1,r2>]
   ```
-  With `--docs-only` and auto-merge enabled: `gh pr merge --auto <PR#>` (use the repo's configured merge method; do **not** force squash — see git-conventions).
+  With `--docs-only`, `gh pr merge --auto <PR#>` is permitted only after the authorization gate above passes (use the repo's configured merge method; do **not** force squash — see git-conventions).
 - **Azure DevOps:**
   ```bash
   az repos pr create --title "<title>" --description "@<temp>" --source-branch <branch> --target-branch <target> [--draft] [--reviewers "<r1> <r2>"]
   ```
-  With `--docs-only`, add `--auto-complete`. Respect the repo merge strategy — never enable squash (see git-conventions).
+  With `--docs-only`, add `--auto-complete` only after the authorization gate above passes. Respect the repo merge strategy — never enable squash (see git-conventions).
 
 **Reviewers:** pass `--reviewers`/`--reviewer` values through as given. If a reviewer cannot be resolved by the provider, do **not** abort the create — let the PR be created and surface the unresolved name(s) in the Step 6 report so the user can add them manually.
 

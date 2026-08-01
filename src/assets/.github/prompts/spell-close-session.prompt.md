@@ -110,14 +110,18 @@ Rules:
 
    Never commit directly to `main` — the branch policy rejects direct pushes. If a session branch already exists (created by `spell-open-session`), stay on it.
 
-   b. **Stage and commit immediately** — no approval wait (consistent with `spell-commit-work`):
+   b. **Stage and apply the interactive commit gate from `spell-commit-work`:**
    - Run `git add -A && git diff --stat --cached` to show what changed.
    - Auto-generate a conventional commit message summarizing the session closure (e.g., `docs(journal): close session — <topic>`).
-   - Run `git commit` immediately once the message is determined. Do not pause for confirmation.
+   - Treat session close as `interaction_context: interactive` unless independently dispatched with validated autonomous authority.
+   - Bind structured operator approval to the exact staged diff and proposed message fingerprint. Recompute before commit; any change invalidates approval.
+   - Timeout, cancellation, fallback, or delegated response is not approval. Print the visible authorization downgrade and halt without committing.
 
-   c. **Push and open a PR** — follow the full ADO PR lifecycle from `spell-commit-work` step 9:
-   `az repos pr create` → `Invoke-RestMethod` approval → `az repos pr update --status completed` → branch delete.
-   See [governance/git-conventions.md](../../governance/git-conventions.md) ADO PR Lifecycle section.
+   c. **Push and open a PR through `spell-commit-work` step 9, including its separate merge gate:**
+   - Commit approval is not merge approval.
+   - Never invoke merge, auto-complete, or `--status completed` below loader-validated Magus authority.
+   - Missing/invalid authority visibly downgrades to PR creation only and requires human completion.
+   - Interactive Magus+ completion still requires separate authenticated approval tied to the exact PR ID and head SHA.
 
 10. **Return to main after the PR merges:**
     - Run `git checkout main && git pull origin main`. Do not end the session on a topic branch.

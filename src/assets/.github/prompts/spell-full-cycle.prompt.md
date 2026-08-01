@@ -161,9 +161,10 @@ Execute the `spell-ship` workflow:
 4. Create the PR:
    - `external/ado` mode: `az repos pr create --repository {repo} --source-branch {branch} --target-branch main --title "{feature}" --work-items {adoWorkItemId}`
    - `internal` mode (or provider TODO mode): create PR without `--work-items`.
-5. **HUMAN GATE:** Present the ship report and PR link. Wait for explicit human approval before merging.
-6. After approval: merge via `az repos pr update --id {prId} --status completed`.
-7. Pull merge to local, delete the topic branch.
+5. **HUMAN GATE:** Present the ship report and PR link. Wait for explicit human approval bound to the exact PR ID and head SHA. This is separate from every earlier commit approval.
+6. **AUTHORITY GATE:** Resolve loader-validated effective power and `exec_allowed`. Below Magus or missing/invalid authority must visibly downgrade to human completion; do not invoke merge/auto-complete. Interactive Magus+ requires the separate approval from step 5; autonomous Magus+ may self-merge within approved scope.
+7. Only after both applicable gates pass: merge via the detected provider using the approved PR ID/head SHA and allowed merge strategy.
+8. Pull merge to local, delete the topic branch.
 
 ---
 
