@@ -37,6 +37,11 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) | Public Repository Model: Fresh-Start Build-in-Public with an Org-Leak Gate | 2026-06-24 | Accepted |
 | [ARC-017](#arc-017--enforce-pre-pr-rebase-for-agent-initiated-pull-requests) | Enforce Pre-PR Rebase for Agent-Initiated Pull Requests | 2026-07-05 | Accepted |
 | [ARC-018](#arc-018--track-claude-code-preview-launch-config-in-source-control) | Track Claude Code Preview Launch Config in Source Control | 2026-07-11 | Accepted |
+| [ARC-019](#arc-019--repository-document-ownership-and-path-model) | Repository Document Ownership and Path Model | 2026-07-31 | Proposed |
+| [ARC-020](#arc-020--canonical-repository-configuration-schema) | Canonical Repository Configuration Schema | 2026-07-31 | Proposed |
+| [ARC-021](#arc-021--vendored-framework-content-attribution) | Vendored Framework Content Attribution | 2026-07-31 | Proposed |
+| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy) | Fail-Safe CI Path-Filter Policy | 2026-07-31 | Proposed |
+| [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) | Normative Controls Require Inline Enforcement Contracts | 2026-07-31 | Accepted |
 
 ---
 
@@ -750,3 +755,148 @@ Track `.claude/launch.json` in source control rather than leaving it untracked o
 **Rejected alternatives:**
 
 - **Leave it untracked / add to `.gitignore`** — treats it like personal IDE state when it's actually shared project config with no secrets in it. Forces every session to rebuild it from memory.
+
+---
+
+## ARC-019 — Repository Document Ownership and Path Model
+
+**Date:** 2026-07-31
+**Status:** Proposed
+**Intake:** [EF-02](docs/intake/batch-001/EF-02.md)
+
+**Context:**
+
+Arcane installs governance under `.arcane/governance/`, while many canonical spells read root-level `governance/`, `agents/`, `security/`, and `playbooks/` paths. Other spells use the installed dotted paths. Consumers therefore cannot tell whether `.arcane/` is the editable project instance or a vendored template for a second operator-owned layer.
+
+**Proposed decision:**
+
+Choose and document one ownership model before fixing individual references:
+
+1. **Single layer:** `.arcane/governance/` is the managed project instance and every spell references it; or
+2. **Two layers:** `.arcane/governance/` is vendored source material and init scaffolds explicit operator-owned instances at documented paths.
+
+Whichever model is selected must define update ownership, customization boundaries, and a discoverable "Where documents live" section. EF-01 remains deferred until this choice is accepted.
+
+**Reasoning:**
+
+Repointing individual links before deciding ownership can make the wrong layer canonical and deepen update/customization conflicts. One model must control installation, spell lookup, and user edits.
+
+**Rejected alternatives:**
+
+- **Continue mixed dotted and un-dotted references with fallbacks** — rejected because graceful fallback masks missing canonical inputs and makes behavior differ by spell.
+
+---
+
+## ARC-020 — Canonical Repository Configuration Schema
+
+**Date:** 2026-07-31
+**Status:** Proposed
+**Intake:** [EF-14](docs/intake/batch-001/EF-14.md)
+
+**Context:**
+
+Spells read operator identity, subject/business roots, tracking mode/provider, provider coordinates, and repository lists from `.arcane.json`, but the manifest schema contains none of those fields. EF-14 deliberately merges three submissions because independent field patches would create incompatible configuration shapes.
+
+**Proposed decision:**
+
+Define one versioned, published repository-configuration schema covering operator identity references, subject/business roots, tracking configuration, provider coordinates, and configured repositories. Init writes it once; update backfills schema changes without overwriting user values; unconfigured required values produce visible drift rather than silent inference.
+
+The final decision must settle whether user-owned configuration remains inside `.arcane.json` or moves to a separate file with an independent update lifecycle. Secrets are prohibited from either location.
+
+**Reasoning:**
+
+Persistent framework inputs need one upgrade-safe source of truth. Repeated prompts and ambient ADO inference are not persistence mechanisms.
+
+**Rejected alternatives:**
+
+- **Add `operatorDomain`, `businessRoot`, and tracker fields independently** — rejected because three local fixes would encode three ownership and migration models.
+
+---
+
+## ARC-021 — Vendored Framework Content Attribution
+
+**Date:** 2026-07-31
+**Status:** Proposed
+**Intake:** [EF-15](docs/intake/batch-001/EF-15.md)
+
+**Context:**
+
+The attribution model distinguishes human and agent-produced content but does not classify files copied from the Arcane package. Every initial scaffold and managed update therefore requires an undocumented authorship judgment.
+
+**Proposed decision:**
+
+Define vendored framework content as a third provenance class. Select whether it uses an Arcane author identity, the human committer plus explicit vendor/version trailers, or another package-provenance representation. Mixed vendor/operator changes must be partitioned according to EF-16 before commit.
+
+**Reasoning:**
+
+Attributing copied framework files to the operator overstates authorship; attributing them to the agent that ran the command confuses execution with creation. Package and version provenance must remain queryable.
+
+**Rejected alternatives:**
+
+- **Keep human-as-author as an undocumented default** — rejected because every deployment rediscovers the same evidentiary choice.
+
+---
+
+## ARC-022 — Fail-Safe CI Path-Filter Policy
+
+**Date:** 2026-07-31
+**Status:** Proposed
+**Intake:** [EF-22](docs/intake/batch-001/EF-22.md)
+
+**Context:**
+
+The Node.js pipeline template has no path filter, while .NET and Terraform templates use include-only filters that can silently omit new code locations. Arcane also produces routine docs-only commits, so the current guidance wastes constrained CI capacity while leaving a fail-open expansion hazard.
+
+**Proposed decision:**
+
+Base CI skipping only on changed paths, never commit message, author, or branch-name metadata. Prefer narrow exclusions for known inert documentation locations so new code paths fail safe by running CI. Pipeline definitions, manifests, lockfiles, scripts, migrations, containers, and infrastructure remain triggering inputs. Provider branch-policy filters must be documented and tested alongside YAML triggers.
+
+Acceptance requires fixtures for docs-only, code-only, mixed, new-directory, and pipeline-definition changes.
+
+**Reasoning:**
+
+Wasteful-but-safe is preferable to silently shipping a new code directory without validation. Commit messages are attacker-controlled metadata and cannot be a trust signal.
+
+**Rejected alternatives:**
+
+- **Use `[skip ci]` or a `docs(...)` commit prefix** — rejected as a security bypass primitive.
+- **Maintain include lists of known code directories** — rejected because new code locations fail open.
+
+---
+
+## ARC-023 — Normative Controls Require Inline Enforcement Contracts
+
+**Date:** 2026-07-31
+**Status:** Accepted
+**Intake:** [EF-24](docs/intake/batch-001/EF-24.md)
+
+**Context:**
+
+External intake batch 001 found repeated cases where Arcane states configurability, preservation, validation, consent, or authorization requirements without a working mechanism. The audit itself reproduced the problem when a structured consent question received a synthetic host response while the operator was available, and the workflow initially treated tool completion as authoritative.
+
+**Decision:**
+
+Every normative rule in shipped governance, prompts, and instructions declares one primary enforcement mode at the rule itself:
+
+1. **Executable check** — code or tests deterministically enforce the invariant.
+2. **Structured spell gate** — the workflow requires an observable state or authenticated operator response before proceeding.
+3. **Verified external platform policy** — another system enforces the rule and Arcane verifies that policy exists and matches declared configuration.
+4. **Explicitly advisory prose** — guidance intentionally depends on judgment, says that it is advisory, and does not claim mechanical enforcement.
+
+Enforcement declarations are inline or immediately adjacent. A separate registry is prohibited because it can drift from the rules it describes.
+
+Implementation includes a retroactive pass over every existing normative statement. Each rule must be classified in place; non-advisory mechanisms must be verified; honest advisory downgrades are required where no gate is intended; and discrepancies are filed independently. EF-25 through EF-29 remain separate concrete bugs.
+
+EF-24 is complete only when no shipped normative statement remains unclassified, every non-advisory rule has a verified owner/mechanism, every advisory rule is visibly labeled, and the retroactive inventory records a zero-unclassified result.
+
+Structured consent gates fail closed. A timeout, cancellation, absence signal, delegated response, or host-generated fallback is not operator consent and must not be interpreted as approval or disposition.
+
+**Reasoning:**
+
+Colocating mode and rule prevents a second source of truth. The advisory mode preserves valuable guidance without pretending it is a gate. Retroactive classification turns the decision into bounded implementation work and exposes existing control drift rather than binding only future prose.
+
+**Rejected alternatives:**
+
+- **Central enforcement registry** — rejected because it can drift independently from the controls it classifies.
+- **Require every rule to be executable** — rejected because sound advisory guidance would be deleted or mechanized beyond what the framework can safely enforce.
+- **Apply the rule only to future governance** — rejected because current unclassified controls are the demonstrated risk and would leave this ADR unwired.

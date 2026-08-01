@@ -35,3 +35,4 @@
 - **Next concrete action:** Orphan-push the release tree, then publish `arcane-cli` 0.14.0 to npm.
 - **Branch:** `main`.
 - **Blockers:** None.
+> ✓ Consumed: 2026-07-29
