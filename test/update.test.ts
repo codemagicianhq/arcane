@@ -18,9 +18,11 @@ const { inspectGitRepositoryMock } = vi.hoisted(() => ({
 
 vi.mock("../src/modules/git.js", () => ({
   inspectGitRepository: inspectGitRepositoryMock,
+  countUncommittedChanges: vi.fn().mockResolvedValue(0),
 }));
 
 const { runUpdate } = await import("../src/commands/update.js");
+const { runInit } = await import("../src/commands/init.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
 const BIN = join(process.cwd(), "dist/index.js");
@@ -318,6 +320,44 @@ describe("spell update — handler", () => {
     expect(extra).toBe("keep me");
     // And no .bak was created for it
     await expect(fs.stat(`${extraFile}.bak`)).rejects.toThrow();
+  });
+
+  it("preserves edited continuity files byte-for-byte while updating managed files", async () => {
+    await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    const operatorContent = new Map([
+      ["TODO.md", "# Operator TODO\r\n\r\n- [ ] preserve exact bytes\r\n"],
+      ["DECISIONS.md", "# Operator Decisions\n\nKeep this decision.\n"],
+      [
+        "ai-context/system-prompt-context.md",
+        "# Operator Context\n\nNext action: preserve continuity.\n",
+      ],
+    ]);
+    for (const [file, content] of operatorContent) {
+      await fs.writeFile(join(tmpDir, file), content, "utf8");
+    }
+
+    const managedFile = ".arcane/governance/testing-standards.md";
+    await fs.writeFile(join(tmpDir, managedFile), "old managed content", "utf8");
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, "0.2.0");
+
+    for (const [file, content] of operatorContent) {
+      await expect(fs.readFile(join(tmpDir, file), "utf8")).resolves.toBe(content);
+    }
+    await expect(fs.readFile(join(tmpDir, managedFile), "utf8")).resolves.not.toBe(
+      "old managed content",
+    );
+    await expect(readManifestFile(tmpDir)).resolves.toMatchObject({ version: "0.2.0" });
+  });
+
+  it("backfills a missing continuity file during update", async () => {
+    await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await fs.rm(join(tmpDir, "TODO.md"));
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, "0.2.0");
+
+    await expect(fs.readFile(join(tmpDir, "TODO.md"), "utf8")).resolves.toContain("# TODO");
   });
 
   // ─── Dry-run ───────────────────────────────────────────────────────────────
