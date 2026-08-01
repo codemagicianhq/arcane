@@ -34,3 +34,5 @@
 - **Branch:** `main`.
 - **Blockers:** None.
 - **Notes:** No screenshots were provided this session. `spell-close-session.prompt.md` still describes an Azure DevOps-only merge path while this repository executes a GitHub PR lifecycle.
+
+> ✓ Consumed: 2026-08-01
