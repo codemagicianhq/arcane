@@ -10,6 +10,13 @@ import { readFile, readdir, access } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "yaml";
 import type { AgentDefinition, AgentRoster } from "../types.js";
+import {
+  AgentConfigValidationError,
+  validateAgentDefinition,
+  validateAgentRoster,
+} from "./agent-schema.js";
+
+export { AgentConfigValidationError } from "./agent-schema.js";
 
 // ─── Error types ──────────────────────────────────────────────────────────────
 
@@ -33,6 +40,15 @@ export class AgentRosterNotFoundError extends Error {
   }
 }
 
+function parseYaml(content: string, source: string): unknown {
+  try {
+    return parse(content);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "unknown YAML parse error";
+    throw new AgentConfigValidationError(source, [`malformed YAML: ${detail}`]);
+  }
+}
+
 // ─── Definition loaders ───────────────────────────────────────────────────────
 
 /**
@@ -50,7 +66,7 @@ export async function loadAgentDefinition(
   } catch {
     throw new AgentDefinitionNotFoundError(id, agentsDir);
   }
-  return parse(content) as AgentDefinition;
+  return validateAgentDefinition(parseYaml(content, filePath), filePath);
 }
 
 /**
@@ -70,8 +86,9 @@ export async function loadAllAgentDefinitions(
   const definitions: AgentDefinition[] = [];
   for (const file of entries) {
     if (!file.endsWith(".yaml") || file === "agents.yaml") continue;
-    const content = await readFile(join(agentsDir, file), "utf8");
-    definitions.push(parse(content) as AgentDefinition);
+    const filePath = join(agentsDir, file);
+    const content = await readFile(filePath, "utf8");
+    definitions.push(validateAgentDefinition(parseYaml(content, filePath), filePath));
   }
   return definitions;
 }
@@ -90,7 +107,7 @@ export async function loadRoster(targetDir: string): Promise<AgentRoster> {
   } catch {
     throw new AgentRosterNotFoundError();
   }
-  return parse(content) as AgentRoster;
+  return validateAgentRoster(parseYaml(content, rosterPath), rosterPath);
 }
 
 /**
