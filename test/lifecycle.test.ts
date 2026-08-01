@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { promises as fs } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
@@ -39,6 +40,13 @@ const PACKAGE_VERSION = "0.1.0";
 // A component not in the lite profile, used to exercise `spell add`
 const EXTRA_COMPONENT = "decision-documentation-standard";
 const EXTRA_FILE = ".arcane/governance/decision-documentation-standard.md";
+
+function runGit(dir: string, args: string[]) {
+  const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || `git ${args.join(" ")} failed`);
+  }
+}
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 describe("lifecycle — full spell loop (init → add → status → update → uninstall)", () => {
@@ -144,6 +152,12 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       // Overwrite a tracked file so update has something to overwrite
       const trackedFile = join(tmpDir, ".arcane/governance/git-conventions.md");
       await fs.writeFile(trackedFile, "# modified by lifecycle test\n");
+
+      runGit(tmpDir, ["init"]);
+      runGit(tmpDir, ["config", "user.name", "Arcane Tests"]);
+      runGit(tmpDir, ["config", "user.email", "arcane-tests@example.invalid"]);
+      runGit(tmpDir, ["add", "-A"]);
+      runGit(tmpDir, ["commit", "-m", "test: seed lifecycle update baseline"]);
 
       // Pass a higher package version so update doesn't short-circuit with
       // "Already up to date" (which triggers when manifest.version === packageVersion)

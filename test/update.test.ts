@@ -12,6 +12,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 
+const { inspectGitRepositoryMock } = vi.hoisted(() => ({
+  inspectGitRepositoryMock: vi.fn(),
+}));
+
+vi.mock("../src/modules/git.js", () => ({
+  inspectGitRepository: inspectGitRepositoryMock,
+}));
+
 const { runUpdate } = await import("../src/commands/update.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
@@ -50,6 +58,21 @@ async function seedComponentFile(dir: string, relativePath: string, content = "o
   await fs.writeFile(dest, content);
 }
 
+function runGit(dir: string, args: string[]) {
+  const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || `git ${args.join(" ")} failed`);
+  }
+}
+
+function commitBaseline(dir: string) {
+  runGit(dir, ["init"]);
+  runGit(dir, ["config", "user.name", "Arcane Tests"]);
+  runGit(dir, ["config", "user.email", "arcane-tests@example.invalid"]);
+  runGit(dir, ["add", "-A"]);
+  runGit(dir, ["commit", "-m", "test: seed update baseline"]);
+}
+
 // ─── Unit tests ───────────────────────────────────────────────────────────────
 
 describe("spell update — handler", () => {
@@ -57,6 +80,10 @@ describe("spell update — handler", () => {
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "update-test-"));
+    inspectGitRepositoryMock.mockResolvedValue({
+      status: "ready",
+      uncommittedChanges: 0,
+    });
   });
 
   afterEach(async () => {
@@ -68,7 +95,7 @@ describe("spell update — handler", () => {
 
   it("prints helpful error and exits 1 when no .arcane.json", async () => {
     const consoleSpy = vi.spyOn(console, "error");
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
 
     await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
@@ -81,6 +108,61 @@ describe("spell update — handler", () => {
     await fs.writeFile(join(tmpDir, ".arcane.json"), "{ not valid json");
 
     await expect(runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION)).rejects.toThrow();
+  });
+
+  // ─── Emergency safety guard ────────────────────────────────────────────────
+
+  it("refuses update outside a Git repository", async () => {
+    await writeManifest(tmpDir);
+    inspectGitRepositoryMock.mockResolvedValue({ status: "not-repository" });
+    const consoleSpy = vi.spyOn(console, "error");
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("not a Git repository"));
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("refuses update when the repository has no commits", async () => {
+    await writeManifest(tmpDir);
+    inspectGitRepositoryMock.mockResolvedValue({ status: "no-commits" });
+    const consoleSpy = vi.spyOn(console, "error");
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("no commits"));
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("refuses update when the working tree is dirty", async () => {
+    await writeManifest(tmpDir);
+    inspectGitRepositoryMock.mockResolvedValue({
+      status: "ready",
+      uncommittedChanges: 2,
+    });
+    const consoleSpy = vi.spyOn(console, "error");
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("2 uncommitted changes"));
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it("warns operators to commit before updating", async () => {
+    await writeManifest(tmpDir, { components: [] });
+    const consoleSpy = vi.spyOn(console, "warn");
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining(`Arcane v${PACKAGE_VERSION} update safety notice`),
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("clean committed baseline"),
+    );
   });
 
   // ─── Already up to date ────────────────────────────────────────────────────
@@ -373,6 +455,46 @@ describe("spell update — built CLI integration", () => {
     expect(result.stderr).toContain("spell init");
   });
 
+  it("refuses a manifest-backed update outside a Git repository", async () => {
+    await writeManifest(tmpDir);
+
+    const result = spawnSync("node", [BIN, "update"], {
+      cwd: tmpDir,
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("not a Git repository");
+  });
+
+  it("refuses a manifest-backed update when Git has no commits", async () => {
+    await writeManifest(tmpDir);
+    runGit(tmpDir, ["init"]);
+
+    const result = spawnSync("node", [BIN, "update"], {
+      cwd: tmpDir,
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("no commits");
+  });
+
+  it("refuses a manifest-backed update when the working tree is dirty", async () => {
+    await writeManifest(tmpDir);
+    await fs.writeFile(join(tmpDir, "tracked.txt"), "baseline");
+    commitBaseline(tmpDir);
+    await fs.writeFile(join(tmpDir, "tracked.txt"), "changed");
+
+    const result = spawnSync("node", [BIN, "update"], {
+      cwd: tmpDir,
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("1 uncommitted change");
+  });
+
   it("prints 'Already up to date.' when version matches", async () => {
     await fs.writeFile(
       join(tmpDir, ".arcane.json"),
@@ -389,6 +511,7 @@ describe("spell update — built CLI integration", () => {
         ],
       }),
     );
+    commitBaseline(tmpDir);
 
     const result = spawnSync("node", [BIN, "update"], {
       cwd: tmpDir,
@@ -417,6 +540,7 @@ describe("spell update — built CLI integration", () => {
         ],
       }),
     );
+    commitBaseline(tmpDir);
 
     const result = spawnSync(
       "node",
