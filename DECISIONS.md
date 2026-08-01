@@ -907,7 +907,7 @@ Colocating mode and rule prevents a second source of truth. The advisory mode pr
 ## ARC-024 — Confirmed Severity Must Have Operational Consequences
 
 **Date:** 2026-07-31
-**Status:** Proposed
+**Status:** Accepted — 2026-08-01
 **Intake:** [EF-30](docs/intake/batch-001/EF-30.md)
 
 **Context:**
@@ -918,14 +918,16 @@ The TODO audit found nine open source-confirmed, accepted-but-unimplemented, or 
 
 Recording severity therefore has no defined consequence. "DATA LOSS" is an emphatic phrase in an ordinary checkbox, not a state transition, release constraint, ownership assignment, response deadline, or explicit risk decision.
 
-**Proposed decision:**
+**Decision:**
 
-Adopt a machine-readable incident-severity lifecycle for confirmed defects. Select one or a layered combination of:
+Adopt a machine-readable incident-severity lifecycle for confirmed defects using these two enforcement mechanisms:
 
 1. A release gate for unresolved Critical/High data-integrity or security defects.
-2. A severity-ordered incident queue with explicit owner and response deadline.
-3. A `doctor`/build check that verifies the queue and enforces the selected gate.
-4. Dated, explicit maintainer risk acceptance for any deferral, including scope, exposure, mitigation, review date, and release effect.
+2. A `doctor`/build check that verifies the queue and enforces that release gate.
+
+A maintainer may explicitly defer an otherwise blocking defect with exactly one dated line:
+
+`Deferred <date> — known open, accepting the risk.`
 
 Missing severity on a confirmed data-integrity/security defect fails closed. Research uncertainty remains distinguishable from source-confirmed behavior.
 
@@ -940,3 +942,5 @@ Detection succeeded twice; prioritization failed. A severity label that does not
 - **Rely on emphatic wording in TODO items** — rejected because "confirmed — DATA LOSS" remained an ordinary peer for 17 days.
 - **Treat every open bug as release-blocking** — rejected because unverified research and low-impact defects need different handling.
 - **Bind only future defects** — rejected because the existing confirmed backlog is the demonstrated exposure and must be classified retroactively.
+- **Severity-ordered queue with explicit owner and response deadline** — rejected for this single-maintainer project. Assigning every incident back to the sole maintainer adds ceremony that will be skipped; a skipped control is worse than no control. A future maintainer with a team may revisit ownership and deadlines when they produce real routing value.
+- **Multi-field risk-acceptance record** — rejected because requiring scope, exposure, mitigation, review date, and release effect makes routine deferral too expensive. The control's value is the deliberate, dated act of accepting known risk; by the third deferral, a longer form would be skipped and recreate the unwired-policy failure ARC-023 prohibits.
