@@ -17,6 +17,9 @@ import {
   resolveOrgTokens,
   scanPromptDirectory,
 } from "./org-token-lint.js";
+import { INCIDENT_QUEUE } from "../src/config/incidents.js";
+import type { IncidentRecord } from "../src/config/incidents.js";
+import { evaluateIncidentGate } from "../src/modules/incident-gate.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SRC_ASSETS = process.env["ARCANE_SRC_ASSETS_DIR"]
@@ -122,6 +125,19 @@ async function copyDir(
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  const incidentQueuePath = process.env["ARCANE_INCIDENT_QUEUE_PATH"];
+  const incidentQueue = incidentQueuePath
+    ? JSON.parse(await readFile(incidentQueuePath, "utf8")) as IncidentRecord[]
+    : INCIDENT_QUEUE;
+  const incidentGate = evaluateIncidentGate(incidentQueue);
+  if (incidentGate.blocked) {
+    console.error("\n✗ ARC-024 incident release gate FAILED — build blocked.\n");
+    for (const blocker of incidentGate.blockers) {
+      console.error(`  ${blocker}`);
+    }
+    process.exit(1);
+  }
+
   await mkdir(DIST_ASSETS, { recursive: true });
 
   const violations: ScanViolation[] = [];

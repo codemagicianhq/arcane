@@ -2,6 +2,8 @@ import { access, readFile, mkdir, copyFile as fsCopyFile } from "node:fs/promise
 import { join, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { INCIDENT_QUEUE } from "../config/incidents.js";
+import { evaluateIncidentGate } from "../modules/incident-gate.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -109,6 +111,25 @@ async function checkArcaneManifest(targetDir: string): Promise<CheckResult> {
   }
 }
 
+export function checkIncidentReleaseGate(): CheckResult {
+  const result = evaluateIncidentGate(INCIDENT_QUEUE);
+  if (result.blocked) {
+    return {
+      name: "Incident release gate (ARC-024)",
+      passed: false,
+      message: result.blockers.join("; "),
+    };
+  }
+  const accepted = result.acceptedRisks.length > 0
+    ? `; ${result.acceptedRisks.length} explicitly deferred`
+    : "";
+  return {
+    name: "Incident release gate (ARC-024)",
+    passed: true,
+    message: `${result.checked} incidents classified${accepted}`,
+  };
+}
+
 // ─── Session continuity checks ────────────────────────────────────────────────
 
 /** Files required for spell-close-session / spell-open-session to function. */
@@ -174,6 +195,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkNodeVersion(),
     checkVSCodeExtension("GitHub.copilot-chat", "GitHub Copilot (Chat)"),
     checkArcaneManifest(targetDir),
+    Promise.resolve(checkIncidentReleaseGate()),
   ]);
 
   // Add session continuity checks
