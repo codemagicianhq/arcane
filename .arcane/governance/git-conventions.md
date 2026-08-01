@@ -757,3 +757,26 @@ See [.gitignore](../.gitignore) for full list.
 Both commands should return successfully.
 
 **Prevention:** Prefer explicit git path in scripted close-session and commit workflows when shell behavior is inconsistent.
+
+### GitHub CLI merge appears to hang in scripted terminal runs
+
+**Symptom:** A `gh pr merge` step appears stuck, and the terminal shows no progress while the script waits.
+
+**Cause:** The command entered an interactive confirmation path (or waiting state) during an otherwise scripted sequence.
+
+**Fix:** Stop the running `gh` process and rerun merge steps with non-interactive flags in a single deterministic sequence, for example:
+
+```powershell
+Stop-Process -Name gh -Force -ErrorAction SilentlyContinue
+gh pr merge <PR_NUMBER> --rebase --delete-branch --auto
+```
+
+**Verify:** Confirm PR state is merged and branch cleanup occurred:
+
+```powershell
+gh pr view <PR_NUMBER> --json state,url
+git fetch --prune origin
+git branch --show-current
+```
+
+**Prevention:** Prefer explicit non-interactive `gh` flags in session automation and avoid mixed interactive/non-interactive command chains.
