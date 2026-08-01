@@ -42,6 +42,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-021](#arc-021--vendored-framework-content-attribution) | Vendored Framework Content Attribution | 2026-07-31 | Proposed |
 | [ARC-022](#arc-022--fail-safe-ci-path-filter-policy) | Fail-Safe CI Path-Filter Policy | 2026-07-31 | Proposed |
 | [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) | Normative Controls Require Inline Enforcement Contracts | 2026-07-31 | Accepted |
+| [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences) | Confirmed Severity Must Have Operational Consequences | 2026-07-31 | Proposed |
 
 ---
 
@@ -900,3 +901,42 @@ Colocating mode and rule prevents a second source of truth. The advisory mode pr
 - **Central enforcement registry** — rejected because it can drift independently from the controls it classifies.
 - **Require every rule to be executable** — rejected because sound advisory guidance would be deleted or mechanized beyond what the framework can safely enforce.
 - **Apply the rule only to future governance** — rejected because current unclassified controls are the demonstrated risk and would leave this ADR unwired.
+
+---
+
+## ARC-024 — Confirmed Severity Must Have Operational Consequences
+
+**Date:** 2026-07-31
+**Status:** Proposed
+**Intake:** [EF-30](docs/intake/batch-001/EF-30.md)
+
+**Context:**
+
+Commit `5bc1b72` filed a field-confirmed data-loss bug on 2026-07-14 with complete root cause, affected files, ownership semantics, and a regression test. A second unrelated deployment independently rediscovered the identical defect 17 days later and added no technical information. The bug remained unfixed while routine backlog work continued.
+
+The TODO audit found nine open source-confirmed, accepted-but-unimplemented, or directly observed defects including the data-loss item. Eight others were already open; the oldest defect filing was 21 days old, and ARC-012's underlying accepted guard was 41 days old. None of the pre-batch entries had operational severity metadata. At least three other items are now independently classified High.
+
+Recording severity therefore has no defined consequence. "DATA LOSS" is an emphatic phrase in an ordinary checkbox, not a state transition, release constraint, ownership assignment, response deadline, or explicit risk decision.
+
+**Proposed decision:**
+
+Adopt a machine-readable incident-severity lifecycle for confirmed defects. Select one or a layered combination of:
+
+1. A release gate for unresolved Critical/High data-integrity or security defects.
+2. A severity-ordered incident queue with explicit owner and response deadline.
+3. A `doctor`/build check that verifies the queue and enforces the selected gate.
+4. Dated, explicit maintainer risk acceptance for any deferral, including scope, exposure, mitigation, review date, and release effect.
+
+Missing severity on a confirmed data-integrity/security defect fails closed. Research uncertainty remains distinguishable from source-confirmed behavior.
+
+Implementation includes retroactive classification and disposition of the current defect inventory. Acceptance evidence must show that the chosen mechanism would have escalated EF-25 when it was first filed on 2026-07-14. A future-only policy is insufficient.
+
+**Reasoning:**
+
+Detection succeeded twice; prioritization failed. A severity label that does not alter workflow is another declared control without wiring. Machine-readable state and an explicit release/risk consequence turn detection into action while preserving a deliberate escape hatch for a solo maintainer.
+
+**Rejected alternatives:**
+
+- **Rely on emphatic wording in TODO items** — rejected because "confirmed — DATA LOSS" remained an ordinary peer for 17 days.
+- **Treat every open bug as release-blocking** — rejected because unverified research and low-impact defects need different handling.
+- **Bind only future defects** — rejected because the existing confirmed backlog is the demonstrated exposure and must be classified retroactively.
