@@ -28,6 +28,7 @@ import { applyNamingStrategy } from "./naming.js";
 import {
   loadRoster,
   rosterExists,
+  AgentConfigValidationError,
   AgentRosterNotFoundError,
 } from "./agent-loader.js";
 import { syncAgents } from "./agent-generator.js";
@@ -234,9 +235,13 @@ export async function runAgentsSync(
   try {
     roster = await loadRoster(targetDir);
   } catch (err) {
-    if (err instanceof AgentRosterNotFoundError) {
+    if (
+      err instanceof AgentRosterNotFoundError
+      || err instanceof AgentConfigValidationError
+    ) {
       console.error(err.message);
       process.exit(1);
+      return;
     }
     throw err;
   }
@@ -280,9 +285,13 @@ export async function runAgentsList(targetDir: string): Promise<void> {
   try {
     roster = await loadRoster(targetDir);
   } catch (err) {
-    if (err instanceof AgentRosterNotFoundError) {
+    if (
+      err instanceof AgentRosterNotFoundError
+      || err instanceof AgentConfigValidationError
+    ) {
       console.error(err.message);
       process.exit(1);
+      return;
     }
     throw err;
   }

@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mkdtemp, writeFile, mkdir, rm } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { stringify } from "yaml";
@@ -12,6 +13,7 @@ import {
   AgentDefinitionNotFoundError,
   AgentRosterNotFoundError,
 } from "../src/modules/agent-loader.js";
+import { runAgentsList } from "../src/modules/agents.js";
 import type { AgentDefinition, AgentRoster } from "../src/types.js";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -47,6 +49,8 @@ const SAMPLE_ROSTER: AgentRoster = {
   ],
 };
 
+const BIN = join(process.cwd(), "dist", "index.js");
+
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
 let tmpDir: string;
@@ -60,6 +64,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(tmpDir, { recursive: true, force: true });
+  vi.restoreAllMocks();
 });
 
 // ─── loadAgentDefinition ─────────────────────────────────────────────────────
@@ -90,6 +95,39 @@ describe("loadAgentDefinition", () => {
     await expect(
       loadAgentDefinition(agentsDir, "missing-role"),
     ).rejects.toThrow("missing-role");
+  });
+
+  it("rejects malformed definition YAML", async () => {
+    await writeFile(join(agentsDir, "broken.yaml"), "id: [", "utf8");
+
+    await expect(loadAgentDefinition(agentsDir, "broken")).rejects.toThrow(
+      /malformed YAML/,
+    );
+  });
+
+  it("rejects a definition with missing required fields", async () => {
+    const missingTools = { ...SAMPLE_DEFINITION, tools: undefined };
+    await writeFile(join(agentsDir, "missing.yaml"), stringify(missingTools), "utf8");
+
+    await expect(loadAgentDefinition(agentsDir, "missing")).rejects.toThrow(
+      /tools must be an object/,
+    );
+  });
+
+  it.each([
+    ["invalid power level", { autonomy: { default_power_level: "Emperor", exec_allowed: true } }, "autonomy.default_power_level"],
+    ["invalid exec permission", { autonomy: { default_power_level: "Wizard", exec_allowed: "yes" } }, "autonomy.exec_allowed"],
+    ["invalid allowed tools", { tools: { allowed: "shell", denied: [] } }, "tools.allowed"],
+    ["invalid denied tools", { tools: { allowed: [], denied: [false] } }, "tools.denied"],
+    ["invalid spawn permission", { spawn: { can_spawn: "yes", spawnable_by: [] } }, "spawn.can_spawn"],
+    ["invalid spawn allowlist", { spawn: { can_spawn: false, spawnable_by: "orchestrator" } }, "spawn.spawnable_by"],
+  ])("rejects %s", async (_name, override, expectedPath) => {
+    const definition = { ...SAMPLE_DEFINITION, ...override };
+    await writeFile(join(agentsDir, "invalid.yaml"), stringify(definition), "utf8");
+
+    await expect(loadAgentDefinition(agentsDir, "invalid")).rejects.toThrow(
+      expectedPath,
+    );
   });
 });
 
@@ -161,14 +199,14 @@ describe("loadAllAgentDefinitions", () => {
 // ─── loadRoster ──────────────────────────────────────────────────────────────
 
 describe("loadRoster", () => {
-  it("loads a valid roster from .arcane/agents.yaml", async () => {
+  async function writeRoster(roster: unknown) {
     const arcaneDir = join(tmpDir, ".arcane");
     await mkdir(arcaneDir, { recursive: true });
-    await writeFile(
-      join(arcaneDir, "agents.yaml"),
-      stringify(SAMPLE_ROSTER),
-      "utf8",
-    );
+    await writeFile(join(arcaneDir, "agents.yaml"), stringify(roster), "utf8");
+  }
+
+  it("loads a valid roster from .arcane/agents.yaml", async () => {
+    await writeRoster(SAMPLE_ROSTER);
 
     const roster = await loadRoster(tmpDir);
     expect(roster.schema_version).toBe(2);
@@ -179,6 +217,68 @@ describe("loadRoster", () => {
 
   it("throws AgentRosterNotFoundError when .arcane/agents.yaml is missing", async () => {
     await expect(loadRoster(tmpDir)).rejects.toThrow(AgentRosterNotFoundError);
+  });
+
+  it("rejects malformed roster YAML", async () => {
+    const arcaneDir = join(tmpDir, ".arcane");
+    await mkdir(arcaneDir, { recursive: true });
+    await writeFile(join(arcaneDir, "agents.yaml"), "schema_version: [", "utf8");
+
+    await expect(loadRoster(tmpDir)).rejects.toThrow(/malformed YAML/);
+  });
+
+  it("rejects a missing schema version", async () => {
+    const missingVersion = { ...SAMPLE_ROSTER, schema_version: undefined };
+    await writeRoster(missingVersion);
+
+    await expect(loadRoster(tmpDir)).rejects.toThrow(/schema_version must be an integer/);
+  });
+
+  it("migrates a valid schema v1 roster to v2", async () => {
+    await writeRoster({ ...SAMPLE_ROSTER, schema_version: 1 });
+
+    await expect(loadRoster(tmpDir)).resolves.toMatchObject({ schema_version: 2 });
+  });
+
+  it("rejects an unsupported future schema version", async () => {
+    await writeRoster({ ...SAMPLE_ROSTER, schema_version: 3 });
+
+    await expect(loadRoster(tmpDir)).rejects.toThrow(/newer than supported version 2/);
+  });
+
+  it("rejects malformed roster entries", async () => {
+    await writeRoster({
+      ...SAMPLE_ROSTER,
+      roster: [{ definition: "orchestrator", name: "Kellar" }],
+    });
+
+    await expect(loadRoster(tmpDir)).rejects.toThrow(/roster\[0\]\.id/);
+  });
+
+  it("emits no listed output after roster validation fails", async () => {
+    await writeRoster({ ...SAMPLE_ROSTER, schema_version: 3 });
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+    await runAgentsList(tmpDir);
+
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("newer than supported"));
+    expect(logSpy).not.toHaveBeenCalled();
+  });
+
+  it("built CLI refuses a future roster without emitting list output", async () => {
+    await writeRoster({ ...SAMPLE_ROSTER, schema_version: 3 });
+
+    const result = spawnSync(process.execPath, [BIN, "agents", "list"], {
+      cwd: tmpDir,
+      encoding: "utf8",
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("newer than supported version 2");
   });
 });
 
