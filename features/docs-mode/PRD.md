@@ -164,16 +164,16 @@ Acceptance criteria:
 
 ## Requirement Traceability
 
-| Intake item | Requirement |
-| --- | --- |
-| EF-03 | MH-04 |
-| EF-04 | MH-01, MH-08 |
-| EF-07 | MH-02 |
-| EF-10 | MH-03 |
-| EF-11 | MH-05 |
-| EF-12 | MH-06 |
-| EF-17 | MH-03 |
-| EF-19 | MH-07 |
+| Intake item | Requirement  |
+| ----------- | ------------ |
+| EF-03       | MH-04        |
+| EF-04       | MH-01, MH-08 |
+| EF-07       | MH-02        |
+| EF-10       | MH-03        |
+| EF-11       | MH-05        |
+| EF-12       | MH-06        |
+| EF-17       | MH-03        |
+| EF-19       | MH-07        |
 
 ## Open Questions
 
