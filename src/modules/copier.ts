@@ -34,7 +34,7 @@ export async function ensureDir(dirPath: string): Promise<void> {
   await mkdir(dirPath, { recursive: true });
 }
 
-async function fileExists(filePath: string): Promise<boolean> {
+export async function fileExists(filePath: string): Promise<boolean> {
   try {
     await access(filePath);
     return true;

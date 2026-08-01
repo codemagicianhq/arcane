@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { copyFile, copyDirectory } from "../modules/copier.js";
+import { copyFile, copyDirectory, fileExists } from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
@@ -13,9 +13,10 @@ import type { InstalledComponent, SpellUpdateOptions } from "../types.js";
  * Runs the `spell update` command.
  *
  * For each installed component, looks up the current registry definition and
- * re-copies files from the current package assets, creating .bak siblings for
- * every overwritten file.  The manifest is updated with the new file paths so
- * future updates remain correct even when source paths change between versions.
+ * re-copies files from the current package assets. User-owned files in a
+ * skipExisting component are preserved when present and backfilled when absent.
+ * The manifest is updated with the new file paths so future updates remain
+ * correct even when source paths change between versions.
  *
  * @param options  CLI flags (dryRun)
  * @param targetDir  Directory containing the Arcane installation
@@ -106,13 +107,18 @@ export async function runUpdate(
     const updatedFiles: string[] = [];
     for (const file of component.files) {
       const srcPath = join(assetsDir, file);
-      if (options.dryRun) {
+      const preserveExisting = component.skipExisting
+        && await fileExists(join(targetDir, file));
+      if (preserveExisting) {
+        console.log(`  ${options.dryRun ? "[dry-run] Would preserve" : "Preserved"}: ${file}`);
+      } else if (options.dryRun) {
         console.log(`  [dry-run] Would update: ${file}`);
+        fileCount++;
       } else {
         await copyFile(srcPath, targetDir, file, { force: true });
+        fileCount++;
       }
       updatedFiles.push(file);
-      fileCount++;
     }
     // Also copy directories
     for (const dir of component.directories ?? []) {
