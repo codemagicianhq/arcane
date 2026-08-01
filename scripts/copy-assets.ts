@@ -12,10 +12,17 @@
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  createOrgTokenRules,
+  resolveOrgTokens,
+  scanPromptDirectory,
+} from "./org-token-lint.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SRC_ASSETS = join(__dirname, "../src/assets");
-const DIST_ASSETS = join(__dirname, "../dist/assets");
+const SRC_ASSETS = process.env["ARCANE_SRC_ASSETS_DIR"]
+  ?? join(__dirname, "../src/assets");
+const DIST_ASSETS = process.env["ARCANE_DIST_ASSETS_DIR"]
+  ?? join(__dirname, "../dist/assets");
 
 // ─── Secrets scan exclusions ─────────────────────────────────────────────────
 // Add path prefixes here to exclude directories from secrets scanning.
@@ -71,41 +78,6 @@ function scanForSecrets(filePath: string, content: string): ScanViolation[] {
 // Documented {UPPER_SNAKE} placeholders are fine and are not matched here.
 // Staged rollout: started "warn"; flipped to "fail" once the library was de-coupled (ARC-014).
 const ORG_TOKEN_MODE: "warn" | "fail" = "fail";
-
-// Configure your own organization's tokens here (org names, ventures, machines,
-// internal hosts) to fail the build if any leak into distributable spell prompts.
-// A config-driven version of this denylist is on the roadmap as the org-leak gate.
-const ORG_TOKEN_PATTERNS: RegExp[] = [];
-
-async function scanPromptsForOrgTokens(): Promise<ScanViolation[]> {
-  const promptsDir = join(SRC_ASSETS, ".github/prompts");
-  const findings: ScanViolation[] = [];
-  let names: string[] = [];
-  try {
-    names = (await readdir(promptsDir)).filter((f) => f.endsWith(".prompt.md"));
-  } catch {
-    return findings; // no prompts dir — nothing to lint
-  }
-  for (const name of names) {
-    const content = await readFile(join(promptsDir, name), "utf8");
-    const lines = content.split("\n");
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]!;
-      for (const pattern of ORG_TOKEN_PATTERNS) {
-        if (pattern.test(line)) {
-          findings.push({
-            file: `.github/prompts/${name}`,
-            line: i + 1,
-            content: line.trim().slice(0, 120),
-            pattern: pattern.toString(),
-          });
-          break;
-        }
-      }
-    }
-  }
-  return findings;
-}
 
 // ─── Recursive copy ───────────────────────────────────────────────────────────
 
@@ -167,7 +139,14 @@ async function main() {
   console.log(`Assets copied: ${count} files`);
 
   // Org-token lint over spell prompts (D2). Warn or fail per ORG_TOKEN_MODE.
-  const orgFindings = await scanPromptsForOrgTokens();
+  const packageIdentity = JSON.parse(
+    await readFile(join(__dirname, "../package.json"), "utf8"),
+  );
+  const orgRules = createOrgTokenRules(resolveOrgTokens(packageIdentity));
+  const orgFindings = await scanPromptDirectory(
+    join(SRC_ASSETS, ".github/prompts"),
+    orgRules,
+  );
   if (orgFindings.length > 0) {
     const fail = ORG_TOKEN_MODE === "fail";
     const log = fail ? console.error : console.warn;
@@ -177,7 +156,7 @@ async function main() {
         : `\n⚠ Org-token lint (warn): ${orgFindings.length} org-specific literal(s) in spells — generalize to {UPPER_SNAKE} placeholders.\n`,
     );
     for (const v of orgFindings) {
-      log(`  ${v.file}:${v.line}  [${v.pattern}]  → ${v.content}`);
+      log(`  ${v.file}:${v.line}  [${v.rule}]`);
     }
     if (fail) process.exit(1);
   }
