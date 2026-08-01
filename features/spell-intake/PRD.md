@@ -76,15 +76,15 @@ Record when verification is source-only, runtime-unverified, blocked by unavaila
 
 ## Batch-001 Evidence
 
-| Observation | Design implication to retest in batch 002 |
-| --- | --- |
-| 29 reports were produced; one was deleted on Drop | Temporary per-item artifacts plus trace-free discard |
-| EF-14 merged three submissions | Preserve intentional item boundaries |
-| EF-21's broad premise was contradicted but a narrower defect survived | Explicit re-scope with renewed consent |
-| EF-06 did not reproduce and was deleted | Non-reproduction is a successful outcome |
-| EF-24 audit surfaced EF-25 through EF-29 | Intake may trigger cross-cutting analysis without absorbing concrete bugs |
-| AskUserQuestion returned a synthetic absence response | Consent needs response provenance and fail-closed alternate-channel handling |
-| EF-17 changed route after direct repository evidence | Routing remains revisable until final reconciliation |
+| Observation                                                           | Design implication to retest in batch 002                                    |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| 29 reports were produced; one was deleted on Drop                     | Temporary per-item artifacts plus trace-free discard                         |
+| EF-14 merged three submissions                                        | Preserve intentional item boundaries                                         |
+| EF-21's broad premise was contradicted but a narrower defect survived | Explicit re-scope with renewed consent                                       |
+| EF-06 did not reproduce and was deleted                               | Non-reproduction is a successful outcome                                     |
+| EF-24 audit surfaced EF-25 through EF-29                              | Intake may trigger cross-cutting analysis without absorbing concrete bugs    |
+| AskUserQuestion returned a synthetic absence response                 | Consent needs response provenance and fail-closed alternate-channel handling |
+| EF-17 changed route after direct repository evidence                  | Routing remains revisable until final reconciliation                         |
 
 ## Acceptance Criteria for PRD Maturity
 

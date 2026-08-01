@@ -17,32 +17,32 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 
 ## Table of Contents
 
-| ARC                                                                                       | Title                                                                   | Date       | Status   |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------- | -------- |
-| [ARC-001](#arc-001--arcane-ops-separation-dual-prefix-adr-strategy-and-content-ownership) | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership | 2026-05-04 | Accepted |
-| [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                   | Distribute VS Code Agent Mode Files via spell init                      | 2026-05-14 | Accepted |
-| [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)     | Agent Persona Schema v2 and Operations-Comms Persona Replacement        | 2026-05-18 | Accepted |
-| [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                   | Image-Prompt Asset Ownership Model                                      | 2026-05-19 | Accepted |
-| [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context)                | Session Handoff Prompt: Automatic Continuation Context                  | 2026-05-25 | Accepted |
-| [ARC-006](#arc-006--arcane-self-installs-via-spell-init-dogfooding)                       | Arcane Self-Installs via spell init (Dogfooding)                        | 2026-05-26 | Accepted |
-| [ARC-007](#arc-007--rename-spell-assess-to-spell-scope-and-add-spell-brainstorm)          | Rename spell-assess to spell-scope and add spell-brainstorm             | 2026-06-06 | Accepted |
-| [ARC-008](#arc-008--clean-break-for-spell-assess-removal-no-compatibility-alias)          | Clean Break for spell-assess Removal: No Compatibility Alias            | 2026-06-06 | Accepted |
-| [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy)                    | Session Naming and PR Lifecycle Reliability Policy                       | 2026-06-07 | Accepted |
-| [ARC-010](#arc-010--terminal-safe-cli-banner-animation-strategy)                            | Terminal-Safe CLI Banner Animation Strategy                              | 2026-06-07 | Accepted |
-| [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping) | Optional External Tracking Mode with Process-Template-Aware ADO Mapping  | 2026-06-08 | Accepted |
-| [ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard)                | Generated Distributable Artifacts Require a Parity Guard                 | 2026-06-20 | Accepted |
+| ARC                                                                                                | Title                                                                          | Date       | Status   |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------- | -------- |
+| [ARC-001](#arc-001--arcane-ops-separation-dual-prefix-adr-strategy-and-content-ownership)          | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership        | 2026-05-04 | Accepted |
+| [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                            | Distribute VS Code Agent Mode Files via spell init                             | 2026-05-14 | Accepted |
+| [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)              | Agent Persona Schema v2 and Operations-Comms Persona Replacement               | 2026-05-18 | Accepted |
+| [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                            | Image-Prompt Asset Ownership Model                                             | 2026-05-19 | Accepted |
+| [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context)                         | Session Handoff Prompt: Automatic Continuation Context                         | 2026-05-25 | Accepted |
+| [ARC-006](#arc-006--arcane-self-installs-via-spell-init-dogfooding)                                | Arcane Self-Installs via spell init (Dogfooding)                               | 2026-05-26 | Accepted |
+| [ARC-007](#arc-007--rename-spell-assess-to-spell-scope-and-add-spell-brainstorm)                   | Rename spell-assess to spell-scope and add spell-brainstorm                    | 2026-06-06 | Accepted |
+| [ARC-008](#arc-008--clean-break-for-spell-assess-removal-no-compatibility-alias)                   | Clean Break for spell-assess Removal: No Compatibility Alias                   | 2026-06-06 | Accepted |
+| [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy)                            | Session Naming and PR Lifecycle Reliability Policy                             | 2026-06-07 | Accepted |
+| [ARC-010](#arc-010--terminal-safe-cli-banner-animation-strategy)                                   | Terminal-Safe CLI Banner Animation Strategy                                    | 2026-06-07 | Accepted |
+| [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping)       | Optional External Tracking Mode with Process-Template-Aware ADO Mapping        | 2026-06-08 | Accepted |
+| [ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard)                      | Generated Distributable Artifacts Require a Parity Guard                       | 2026-06-20 | Accepted |
 | [ARC-013](#arc-013--review-and-drift-quality-gate-philosophy-coverage-mandate-over-finding-quotas) | Review and Drift Quality-Gate Philosophy: Coverage Mandate over Finding Quotas | 2026-06-22 | Accepted |
-| [ARC-014](#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts) | Spell Authoring Standards: A Quality Rubric for Spell Prompts | 2026-06-22 | Accepted |
-| [ARC-015](#arc-015--public-naming-architecture-brand-package-and-binary-with-arcane-alias) | Public Naming Architecture: Brand, Package, and Binary (with `arcane` alias) | 2026-06-23 | Accepted |
-| [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) | Public Repository Model: Fresh-Start Build-in-Public with an Org-Leak Gate | 2026-06-24 | Accepted |
-| [ARC-017](#arc-017--enforce-pre-pr-rebase-for-agent-initiated-pull-requests) | Enforce Pre-PR Rebase for Agent-Initiated Pull Requests | 2026-07-05 | Accepted |
-| [ARC-018](#arc-018--track-claude-code-preview-launch-config-in-source-control) | Track Claude Code Preview Launch Config in Source Control | 2026-07-11 | Accepted |
-| [ARC-019](#arc-019--repository-document-ownership-and-path-model) | Repository Document Ownership and Path Model | 2026-07-31 | Proposed |
-| [ARC-020](#arc-020--canonical-repository-configuration-schema) | Canonical Repository Configuration Schema | 2026-07-31 | Proposed |
-| [ARC-021](#arc-021--vendored-framework-content-attribution) | Vendored Framework Content Attribution | 2026-07-31 | Proposed |
-| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy) | Fail-Safe CI Path-Filter Policy | 2026-07-31 | Proposed |
-| [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) | Normative Controls Require Inline Enforcement Contracts | 2026-07-31 | Accepted |
-| [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences) | Confirmed Severity Must Have Operational Consequences | 2026-07-31 | Proposed |
+| [ARC-014](#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts)                  | Spell Authoring Standards: A Quality Rubric for Spell Prompts                  | 2026-06-22 | Accepted |
+| [ARC-015](#arc-015--public-naming-architecture-brand-package-and-binary-with-arcane-alias)         | Public Naming Architecture: Brand, Package, and Binary (with `arcane` alias)   | 2026-06-23 | Accepted |
+| [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate)     | Public Repository Model: Fresh-Start Build-in-Public with an Org-Leak Gate     | 2026-06-24 | Accepted |
+| [ARC-017](#arc-017--enforce-pre-pr-rebase-for-agent-initiated-pull-requests)                       | Enforce Pre-PR Rebase for Agent-Initiated Pull Requests                        | 2026-07-05 | Accepted |
+| [ARC-018](#arc-018--track-claude-code-preview-launch-config-in-source-control)                     | Track Claude Code Preview Launch Config in Source Control                      | 2026-07-11 | Accepted |
+| [ARC-019](#arc-019--repository-document-ownership-and-path-model)                                  | Repository Document Ownership and Path Model                                   | 2026-07-31 | Proposed |
+| [ARC-020](#arc-020--canonical-repository-configuration-schema)                                     | Canonical Repository Configuration Schema                                      | 2026-07-31 | Proposed |
+| [ARC-021](#arc-021--vendored-framework-content-attribution)                                        | Vendored Framework Content Attribution                                         | 2026-07-31 | Proposed |
+| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Proposed |
+| [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)                       | Normative Controls Require Inline Enforcement Contracts                        | 2026-07-31 | Accepted |
+| [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Proposed |
 
 ---
 
@@ -99,7 +99,7 @@ These ADRs were recorded before the ARC-NNN sequence existed. They document fram
 | ADR-023 | Mermaid for All Diagrams and Flow Charts in Documentation                                   | Docs standard                                  |
 | ADR-028 | Agent Git Attribution Model: Per-Agent Author Identity with Commit Trailers                 | Agent convention                               |
 | ADR-029 | Canonical Commit Metadata Schema for Agent Analytics                                        | Agent convention                               |
-| ADR-030 | Canonical Agent Git Identity Domain                                                          | Agent identity                                 |
+| ADR-030 | Canonical Agent Git Identity Domain                                                         | Agent identity                                 |
 | ADR-031 | Agent Roster Overhaul: Role Consolidation and Thematic Naming                               | Agent roster                                   |
 | ADR-032 | Agent Autonomy Redesign: Gamified Power Levels with Context-Dependent Assignment            | Autonomy model                                 |
 | ADR-038 | Separation-Ready Framework: Keep Reusable Components In-Repo Until External Consumer Exists | Extraction boundary — **fulfilled by ARC-001** |
@@ -223,7 +223,7 @@ A replacement prompt set had already been created, but those prompts used a diff
 
 **Context:**
 
-The `spell close session` → `spell open session` loop is designed to preserve continuity across chat resets. Close-session captures *state* (journal, TODO, decisions, system-prompt-context) but not the **precise continuation point** — the exact task in progress, last concrete step, and next action. Open-session reconstructs context from scratch by reading all docs and inferring priorities, producing correct-but-broad output rather than a surgical "resume here" kickstart. Users have been bridging this gap by manually writing a handoff note at the end of each close-session.
+The `spell close session` → `spell open session` loop is designed to preserve continuity across chat resets. Close-session captures _state_ (journal, TODO, decisions, system-prompt-context) but not the **precise continuation point** — the exact task in progress, last concrete step, and next action. Open-session reconstructs context from scratch by reading all docs and inferring priorities, producing correct-but-broad output rather than a surgical "resume here" kickstart. Users have been bridging this gap by manually writing a handoff note at the end of each close-session.
 
 **Decision:**
 
@@ -470,7 +470,7 @@ This caused inconsistency between process templates, hierarchy drift in external
 
 The agent instruction files at `src/assets/.github/agents/*.agent.md` are rendered from YAML personas (`src/assets/agents/*.yaml`) by `src/modules/agent-generator.ts`, then committed into the distributable. When [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement) (Persona Schema v2) landed on 2026-05-18 (commit `c7586d2`), the generator and YAMLs were updated to emit `## Mottos`/`## Personality`/`## Voice`, but the committed distributable copies were last regenerated 2026-05-14 and were never refreshed. Every consumer installing any release since then received agent files missing their persona sections.
 
-The dogfood root copies (`.github/agents/`) *were* regenerated on 2026-05-26, so local dogfooding looked correct and masked the drift. The full test suite (337 tests) passed throughout because no test asserts that the committed distributable matches generator output. The bug surfaced ~5 weeks later only because a session manually diffed the two trees.
+The dogfood root copies (`.github/agents/`) _were_ regenerated on 2026-05-26, so local dogfooding looked correct and masked the drift. The full test suite (337 tests) passed throughout because no test asserts that the committed distributable matches generator output. The bug surfaced ~5 weeks later only because a session manually diffed the two trees.
 
 **Decision:**
 
@@ -516,7 +516,7 @@ mutating the workspace as a side effect of running it is surprising and can enta
 
 **Reasoning:**
 
-- Mandating *coverage of effort* (every lens considered) instead of a *count of findings* keeps reviews
+- Mandating _coverage of effort_ (every lens considered) instead of a _count of findings_ keeps reviews
   high-signal and removes the incentive to fabricate. It guards against both lazy reviews (a lens
   skipped) and noisy ones (findings invented to hit a quota).
 - A diagnostic should not silently change state. Making the fix opt-in keeps the default safe and
@@ -538,7 +538,7 @@ mutating the workspace as a side effect of running it is surprising and can enta
 **Context:**
 
 The spell library grew to 33 prompts over many dogfooding iterations with no defined quality bar for a
-*spell prompt* itself. `product-excellence-standards.md` and `spell-enchant` grade PRDs/products, not
+_spell prompt_ itself. `product-excellence-standards.md` and `spell-enchant` grade PRDs/products, not
 prompts. An audit of the older spells found recurring weaknesses: org-specific hardcoding (OSS-blocking),
 context-file assumptions with no fallback, missing edge/failure cases, weak cross-references,
 underspecified outputs, and ADO tracking logic copy-pasted across several spells. Without a rubric, an
@@ -552,7 +552,7 @@ underspecified outputs, and ADO tracking logic copy-pasted across several spells
    Bronze/Silver/Gold with **overall = weakest dimension**.
 2. **Distributability (D2)** and **Safety (D7)** are **hard gates** (must be ≥ Silver). A Bronze on D2
    is OSS-blocking.
-3. Authoring target is **Silver overall, Gold on D2** — Gold-everywhere is explicitly *not* required,
+3. Authoring target is **Silver overall, Gold on D2** — Gold-everywhere is explicitly _not_ required,
    to prevent bloat of mature spells.
 4. Record the rubric as a governance doc `spell-authoring-standards.md` (`audience: contributor`),
    wired into the `methodology`, `governance-only`, and `full` profiles. It is an authoring-time
@@ -584,13 +584,13 @@ underspecified outputs, and ADO tracking logic copy-pasted across several spells
 **Status:** Accepted — **amended 2026-06-24** (public npm package name)
 **Related:** [[DECISIONS#ARC-001|ARC-001]], [[DECISIONS#ARC-016|ARC-016]]
 
-> **Note (2026-06-24): the public npm package name is `arcane-cli` (unscoped).** An initial reading assumed the `@codemagician` scope was claimable on public npm; it is not — both the bare `arcane` name (owned by another project, v2.0.6) and the `@codemagician` scope are taken. With "just `arcane`" impossible, the realistic options were the scoped `@codemagicianhq/arcane` (keeps the literal name `arcane` but buries it behind an unfamiliar scope) or an unscoped `arcane-*`. We briefly chose `arcane-framework`, then reconsidered: the `-framework` suffix reads like the product's *actual name* ("is it Arcane or Arcane Framework?") and caused real confusion in review. **`arcane-cli` avoids that** — `-cli` is a universally understood "command-line tool" marker (cf. `firebase-tools` → `firebase`, `@angular/cli` → `ng`), the most-adopted CLIs are short and unscoped, and no npm org is required. The product remains **Arcane**, the GitHub repo is `codemagicianhq/arcane`, and the binary is `spell` (+ `arcane` alias): install with `npm i -g arcane-cli`, then run `arcane init`. Nothing was lost — the package had not been published to public npm.
+> **Note (2026-06-24): the public npm package name is `arcane-cli` (unscoped).** An initial reading assumed the `@codemagician` scope was claimable on public npm; it is not — both the bare `arcane` name (owned by another project, v2.0.6) and the `@codemagician` scope are taken. With "just `arcane`" impossible, the realistic options were the scoped `@codemagicianhq/arcane` (keeps the literal name `arcane` but buries it behind an unfamiliar scope) or an unscoped `arcane-*`. We briefly chose `arcane-framework`, then reconsidered: the `-framework` suffix reads like the product's _actual name_ ("is it Arcane or Arcane Framework?") and caused real confusion in review. **`arcane-cli` avoids that** — `-cli` is a universally understood "command-line tool" marker (cf. `firebase-tools` → `firebase`, `@angular/cli` → `ng`), the most-adopted CLIs are short and unscoped, and no npm org is required. The product remains **Arcane**, the GitHub repo is `codemagicianhq/arcane`, and the binary is `spell` (+ `arcane` alias): install with `npm i -g arcane-cli`, then run `arcane init`. Nothing was lost — the package had not been published to public npm.
 
 **Context:**
 
 The public open-source launch (Commercialization Plan, Phase 1) forces a final lock on Arcane's
 public name surfaces before the GitHub repo and public npm package exist. Three surfaces were in play
-and their relationship was a live question: the **brand** is *Arcane*, the **CLI
+and their relationship was a live question: the **brand** is _Arcane_, the **CLI
 binary** is `spell`, and the **npm package** name was not yet locked. The open question was whether the
 brand≠binary split is correct, and whether the binary should be renamed to `arcane` before going public.
 
@@ -636,7 +636,7 @@ unavailable; `arcane-cli`, `arcane-framework`, and `@arcane/cli` are free; `spel
   library; an identity rewrite the week before launch. Rejected.
 - **Scoped `@codemagicianhq/arcane`** — keeps the literal name `arcane` but buries it behind an
   unfamiliar scope and needs an npm org. Rejected in favor of the unscoped `arcane-cli`.
-- **Unscoped `arcane-framework`** — the `-framework` suffix reads like the product's *actual name*
+- **Unscoped `arcane-framework`** — the `-framework` suffix reads like the product's _actual name_
   ("is it Arcane or Arcane Framework?") and caused confusion in review. Rejected.
 - **GitHub org `arcane-framework` or `arcane-dev`** — makes the org synonymous with one product, which
   becomes awkward when `dark-matter-complex` and future products ship publicly. Rejected in favor of the
@@ -678,7 +678,7 @@ being committed (only a build-time secrets scan in `copy-assets.ts`).
 3. **Ship an org-leak gate as the enabling guard (and inaugural public feature).** A configurable
    org-token denylist (org names, ventures, machines, usernames, ADO URLs) in `.arcane.json`, surfaced as
    a `spell check-leaks` command + a pre-commit hook + a CI gate. It both fixes the recurrence root cause
-   and becomes a selling point: *Arcane won't let you accidentally publish your org's private data.*
+   and becomes a selling point: _Arcane won't let you accidentally publish your org's private data._
    Detailed design is deferred to its own ARC when built; tracked in TODO.
 4. **MIT licensing and the brand boundary.** The code ships MIT (liability disclaimer + attribution; ARC
    reaffirms ADR-061). The MIT grant covers the code, **not** the "Arcane" name — brand/trademark is a
@@ -688,7 +688,7 @@ being committed (only a build-time secrets scan in `copy-assets.ts`).
 
 - A fresh start is cheaper, lower-risk, and cleaner than scrubbing ~10 historical journals by hand, and a
   single clean initial commit means the public git log never contains the pre-cleanup instance data.
-- Build-in-public is on-brand for a methodology framework and is *safe specifically for Arcane* because
+- Build-in-public is on-brand for a methodology framework and is _safe specifically for Arcane_ because
   its journals are framework-dev, not business strategy.
 - The leak gate converts "build in public" from a risky one-time manual scrub into a repeatable,
   automated discipline — and is itself a compelling product feature.
@@ -715,7 +715,7 @@ being committed (only a build-time secrets scan in `copy-assets.ts`).
 
 **Context:**
 
-Git conventions have long required a "sync with main before opening a PR" rebase, and `spell-create-pull-request` encodes that check as Step 0.6. However, the rule was framed as a *spell* responsibility rather than an *agent* responsibility, so agents that shell out to `az repos pr create` or `gh pr create` directly (bypassing the spell) skipped the rebase entirely. This just caused a real merge conflict on `arcane-website` PR #499, wasting reviewer time and eroding trust that agent-created PRs are safe to merge.
+Git conventions have long required a "sync with main before opening a PR" rebase, and `spell-create-pull-request` encodes that check as Step 0.6. However, the rule was framed as a _spell_ responsibility rather than an _agent_ responsibility, so agents that shell out to `az repos pr create` or `gh pr create` directly (bypassing the spell) skipped the rebase entirely. This just caused a real merge conflict on `arcane-website` PR #499, wasting reviewer time and eroding trust that agent-created PRs are safe to merge.
 
 **Decision:**
 
@@ -723,7 +723,7 @@ The pre-PR rebase is now an **explicit, agent-level, mandatory guard**, independ
 
 1. `src/assets/.arcane/governance/git-conventions.md` — new `### 🛑 Agent-mandatory pre-PR guard` subsection at the top of "PR Standards", with the exact required sequence (`git fetch origin && git rebase origin/<target-branch>`) and explicit language that raw `az repos pr create` / `gh pr create` / MCP tools are **not** an escape hatch. The existing "Pre-PR sync" table row and Agent Workflow step 3 now reference the callout.
 2. `src/assets/.github/prompts/spell-create-pull-request.prompt.md` — Step 0 opens with a boxed **🛑 AGENT-MANDATORY PRE-PR CHECKLIST**; Step 0.6 was rewritten to require `git rebase` (previously used `git merge`) and to state that the guard applies to any PR-creation path.
-3. `src/assets/.github/prompts/spell-commit-work.prompt.md` — the PR-creation step (9) now begins with a mandatory rebase substep (9b) that runs *before* either the GitHub or Azure DevOps flow, with subsequent substeps renumbered.
+3. `src/assets/.github/prompts/spell-commit-work.prompt.md` — the PR-creation step (9) now begins with a mandatory rebase substep (9b) that runs _before_ either the GitHub or Azure DevOps flow, with subsequent substeps renumbered.
 
 **Consequences:**
 
