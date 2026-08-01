@@ -5,6 +5,7 @@ import {
   writeManifest,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
+import { inspectGitRepository } from "../modules/git.js";
 import { getComponent, ComponentNotFoundError } from "../modules/registry.js";
 import type { InstalledComponent, SpellUpdateOptions } from "../types.js";
 
@@ -40,6 +41,36 @@ export async function runUpdate(
       return; // guard: process.exit is mocked in tests
     }
     throw err;
+  }
+
+  console.warn(
+    `WARNING: Arcane v${packageVersion} update safety notice: commit your work before updating.`,
+  );
+  console.warn(
+    "Updates can replace managed files. A clean committed baseline is required for recovery.",
+  );
+
+  const gitState = await inspectGitRepository(targetDir);
+  if (gitState.status === "not-repository") {
+    console.error(
+      "Update refused: this directory is not a Git repository or Git is unavailable.",
+    );
+    process.exit(1);
+    return;
+  }
+  if (gitState.status === "no-commits") {
+    console.error(
+      "Update refused: this repository has no commits. Commit the current baseline before updating.",
+    );
+    process.exit(1);
+    return;
+  }
+  if (gitState.uncommittedChanges > 0) {
+    console.error(
+      `Update refused: this repository has ${gitState.uncommittedChanges} uncommitted change${gitState.uncommittedChanges === 1 ? "" : "s"}. Commit or otherwise clean the working tree before updating.`,
+    );
+    process.exit(1);
+    return;
   }
 
   // Already up to date
