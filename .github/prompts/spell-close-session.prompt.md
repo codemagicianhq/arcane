@@ -101,7 +101,13 @@ Rules:
 
 9. **Stage and commit session-close docs.**
 
+   **Remote-capability check:** classify the state created by `spell-open-session` before branching, staging, push, or PR operations.
+   - **Usable supported remote/merge path:** keep the current compliant session/PR/worktree branch and use the remote PR path below.
+   - **No usable remote/merge path:** remain on the current trunk. Do not create a dead session branch, push, pull, or open a PR. Apply the EF-28 interactive commit approval gate, commit locally on trunk after approval, report `Local-only close: committed on <trunk>; no remote PR/pull performed`, and skip steps 9a, 9c, and 10's remote operations.
+   - **Read-only session:** if no repository mutation occurred, do not create a branch or commit.
+
    a. **Branch check — create a topic branch before any staging:**
+   This remote branch path applies only when the remote-capability check found a usable merge path.
    Run `git branch --show-current`. If you are on `main`, create a topic branch **now** before any `git add`:
 
    ```powershell
@@ -110,14 +116,18 @@ Rules:
 
    Never commit directly to `main` — the branch policy rejects direct pushes. If a session branch already exists (created by `spell-open-session`), stay on it.
 
-   b. **Stage and commit immediately** — no approval wait (consistent with `spell-commit-work`):
+   b. **Stage and apply the interactive commit gate from `spell-commit-work`:**
    - Run `git add -A && git diff --stat --cached` to show what changed.
    - Auto-generate a conventional commit message summarizing the session closure (e.g., `docs(journal): close session — <topic>`).
-   - Run `git commit` immediately once the message is determined. Do not pause for confirmation.
+   - Treat session close as `interaction_context: interactive` unless independently dispatched with validated autonomous authority.
+   - Bind structured operator approval to the exact staged diff and proposed message fingerprint. Recompute before commit; any change invalidates approval.
+   - Timeout, cancellation, fallback, or delegated response is not approval. Print the visible authorization downgrade and halt without committing.
 
-   c. **Push and open a PR** — follow the full ADO PR lifecycle from `spell-commit-work` step 9:
-   `az repos pr create` → `Invoke-RestMethod` approval → `az repos pr update --status completed` → branch delete.
-   See [governance/git-conventions.md](../../governance/git-conventions.md) ADO PR Lifecycle section.
+   c. **Push and open a PR through `spell-commit-work` step 9, including its separate merge gate:**
+   - Commit approval is not merge approval.
+   - Never invoke merge, auto-complete, or `--status completed` below loader-validated Magus authority.
+   - Missing/invalid authority visibly downgrades to PR creation only and requires human completion.
+   - Interactive Magus+ completion still requires separate authenticated approval tied to the exact PR ID and head SHA.
 
 10. **Return to main after the PR merges:**
     - Run `git checkout main && git pull origin main`. Do not end the session on a topic branch.
@@ -160,6 +170,8 @@ Enumerate the current end state and the prescribed next action. Use this table t
 
 | End state | Next action |
 | --- | --- |
+| Local-only trunk, changes committed | Session is integrated locally; no branch or PR cleanup required. |
+| Read-only session, no changes | No branch or commit required. |
 | Open PR exists | Docs/changes reach `main` when it merges — show the PR URL. |
 | No PR + docs-only on a branch | Run `spell-create-pull-request --docs-only`. |
 | No PR + mixed code+docs on a branch | Run `spell-create-pull-request` once the feature is complete. |

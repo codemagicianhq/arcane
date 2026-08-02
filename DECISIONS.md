@@ -24,7 +24,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)              | Agent Persona Schema v2 and Operations-Comms Persona Replacement               | 2026-05-18 | Accepted |
 | [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                            | Image-Prompt Asset Ownership Model                                             | 2026-05-19 | Accepted |
 | [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context)                         | Session Handoff Prompt: Automatic Continuation Context                         | 2026-05-25 | Accepted |
-| [ARC-006](#arc-006--arcane-self-installs-via-spell-init-dogfooding)                                | Arcane Self-Installs via spell init (Dogfooding)                               | 2026-05-26 | Accepted |
+| [ARC-006](#arc-006--arcane-self-installs-via-spell-init-dogfooding)                                | Arcane Self-Installs via spell init (Dogfooding)                               | 2026-05-26 | Superseded |
 | [ARC-007](#arc-007--rename-spell-assess-to-spell-scope-and-add-spell-brainstorm)                   | Rename spell-assess to spell-scope and add spell-brainstorm                    | 2026-06-06 | Accepted |
 | [ARC-008](#arc-008--clean-break-for-spell-assess-removal-no-compatibility-alias)                   | Clean Break for spell-assess Removal: No Compatibility Alias                   | 2026-06-06 | Accepted |
 | [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy)                            | Session Naming and PR Lifecycle Reliability Policy                             | 2026-06-07 | Accepted |
@@ -45,6 +45,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Proposed |
 | [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted |
 | [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted |
+| [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted |
 
 ---
 
@@ -252,7 +253,9 @@ The `spell close session` → `spell open session` loop is designed to preserve 
 ## ARC-006 — Arcane Self-Installs via spell init (Dogfooding)
 
 **Date:** 2026-05-26
-**Status:** Accepted
+**Status:** Superseded by [ARC-027](#arc-027--registry-driven-self-host-parity-guard)
+
+> This decision remains visible as historical context. ARC-027 replaces its non-executable claim that `spell update` refreshes the root dogfood copies after each release. Its rejected alternatives, especially the symlink analysis, remain applicable.
 
 **Context:**
 
@@ -999,3 +1002,43 @@ An explicit marker makes the narrow self-hosting exemption auditable and keeps s
 - **Treat every source manifest as self-hosted** — rejected because an unmarked or externally tracked source tree should not receive an implicit exemption.
 - **Fall back after any root-manifest error** — rejected because malformed root JSON must remain visible and actionable.
 - **Commit the generated root manifest** — rejected because it conflates installed-target state with framework source truth and changes the existing ignore contract.
+
+---
+
+## ARC-027 — Registry-Driven Self-Host Parity Guard
+
+**Date:** 2026-08-02
+**Status:** Accepted
+**Supersedes:** [ARC-006](#arc-006--arcane-self-installs-via-spell-init-dogfooding)
+
+**Context:**
+
+ARC-006 assumed the Arcane source repository could refresh its installed dogfood copies by running `spell update` after each release. That path cannot execute: the generated root `.arcane.json` is deliberately ignored, while `update.ts` requires that root manifest and iterates only `manifest.components`. Six root files consequently accumulated real content drift after the `0.15.0` and `0.15.1` merges, including a PR spell that instructed merge where canonical governance required rebase.
+
+Raw byte comparison also obscured the defect. It initially reported 38 differing files although only 6 had substantive content changes; the rest were line-ending-only differences. A permanently red parity check would be ignored just like a permanently failing health check.
+
+**Decision:**
+
+1. Treat registered files under root `.github/`, `.arcane/`, and `.claude/` as **generated dogfood output**. `src/assets/` is canonical. Contributors edit canonical sources only; `npm run fix:self-host-parity` is the sole supported writer for generated root copies.
+2. Derive parity scope from `src/modules/registry.ts`. Do not maintain a second file list. Exclude `skipExisting` components because they are explicitly user-owned.
+3. Compare canonical and generated content after normalizing `CRLF` and lone `CR` to `LF`. Line-ending-only differences are clean and must not fail the gate.
+4. Provide a dedicated `--check` mode that never writes and exits nonzero for missing or substantively drifted generated files. CI runs this check as a required step; it is a failure gate, not a warning.
+5. Provide a dedicated `--fix` mode that copies canonical content to missing or substantively drifted generated paths. Do not add self-host behavior to the consumer update command.
+6. Require negative regression coverage: create real root drift and assert the exact CI command fails. A clean-state-only test is insufficient evidence; this is the fourth observed recurrence of EF-26's inert-control lesson.
+7. Keep active tracking provenance accurate: internal tracking is operator-selected and session-scoped because no root `.arcane.json` or active PRD persists it. ARC-026's `src/assets/.arcane.json` is a self-hosted doctor marker, not active repository configuration; persistent tracking remains EF-14's unresolved scope.
+
+**Reasoning:**
+
+- Registry-derived scope makes the existing installation contract the single source of truth.
+- A dedicated command separates source-repository generation from consumer update semantics.
+- EOL normalization preserves signal on Windows and Linux without weakening substantive comparison.
+- A negative fixture proves the gate detects the failure it exists to prevent.
+- Declaring root copies generated removes ambiguous ownership and prevents well-intentioned direct edits.
+
+**Rejected alternatives:**
+
+- **Commit a special root self-host manifest and reuse `spell update`** — rejected because it creates a second manifest model and conflicts with the deliberate root-manifest ignore contract preserved by ARC-026.
+- **Add a self-host branch to `update.ts`** — rejected because `update.ts` is the consumer command that only days earlier shipped the EF-25 data-loss bug. Adding repository-specific behavior to that highest-risk write path immediately after remediation expands its blast radius without need.
+- **Maintain a separate parity file list** — rejected because it would drift independently from the registry, recreating the same defect at a new layer.
+- **Fail on raw byte differences** — rejected because checkout-dependent line endings make the gate permanently red and train maintainers to ignore it.
+- **Use symlinks instead of generated copies** — remains rejected for the Windows and copier-path reasons preserved in ARC-006.

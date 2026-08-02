@@ -60,6 +60,9 @@ jobs:
       - name: Verify distributable version bump
         run: npm run check:version-bump
 
+      - name: Verify generated self-host copies
+        run: npm run check:self-host-parity
+
       - name: Lint
         run: npm run lint
 

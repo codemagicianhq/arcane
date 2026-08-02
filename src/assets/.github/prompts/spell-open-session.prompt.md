@@ -76,7 +76,7 @@ Before anything else, check:
   - If current branch is non-compliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
 - **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted.
-- **Tracker configuration check (early):** resolve active tracking settings before planning. Read `.arcane.json` first (if present), then the current feature PRD frontmatter if available:
+- **Tracker configuration check (early):** resolve active tracking settings before planning. Read root `.arcane.json` first (if present), then the current feature PRD frontmatter if available. A self-host marker under `src/assets/` is doctor metadata, not active repository configuration; never use it as tracking provenance. If neither active source sets tracking, ask the operator and treat the answer as session-scoped until EF-14 defines persistent configuration:
   - `tracking_mode: internal | external`
   - `external_provider: ado | jira | other`
   - If missing, ask the operator to choose now. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
