@@ -80,8 +80,8 @@ This follow-up session closed the work from the prior Arcane enforcement and rel
 
 ### Decisions Made
 
-| ADR | Decision | Rationale |
-| --- | --- | --- |
+| ADR                                                                                                 | Decision                                                                                                                                     | Rationale                                                                                                                              |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | [ARC-026](../DECISIONS.md#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation) | Use an explicit committed source manifest for self-hosting, with root-first doctor validation and fallback only for an absent root manifest. | The source tree needs a narrow auditable exemption without allowing a valid source file to hide a broken generated root configuration. |
 
 ### Lessons Learned
