@@ -21,14 +21,13 @@ If the user provided a focus area in the prompt argument, prioritize that area. 
 Use these files first:
 
 - [README.md](../../README.md)
-- [project.md](../../project.md)
 - [TODO.md](../../TODO.md)
 - [DECISIONS.md](../../DECISIONS.md)
-- [naming-conventions.md](../../naming-conventions.md)
+- [naming-conventions.md](../../.arcane/governance/naming-conventions.md)
 - [ai-context/system-prompt-context.md](../../ai-context/system-prompt-context.md)
-- [agents/agent-policies.md](../../agents/agent-policies.md)
+- [agent-policies.md](../../.arcane/governance/agent-policies.md)
 - Most recent journal file(s) in [journal/](../../journal/)
-- Relevant business overview(s) under [ventures/](../../ventures/)
+- Relevant business overview(s) under the configured business root, when one exists
 
 **Handoff Detection (run before anything else):**
 
@@ -61,13 +60,13 @@ Before anything else, check:
   - If current branch is non-compliant and no active PR depends on it, rename branch to a compliant name. If it was already pushed, migrate remote tracking (`git push -u origin <new-name>` then `git push origin --delete <old-name>`), then continue.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
 - **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted.
-- **Tracker configuration check (early):** resolve active tracking settings before planning. Read `.arcane.json` first (if present), then the current feature PRD frontmatter if available:
-  - `tracking_mode: internal | external`
-  - `external_provider: ado | jira | other`
-  - If missing, ask the operator to choose now. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
+- **Work-item tracking configuration check (early):** resolve where work items live before planning. This setting is independent of the Git remote and pull-request review provider; GitHub is review-only in this repository and is not an `external_provider`. Read `.arcane.json` first (if present), then the current feature PRD frontmatter if available:
+  - `tracking_mode: internal | external` means work items live in this repository or in an external tracker.
+  - `external_provider: ado | jira | other` is meaningful only when `tracking_mode: external`.
+  - If missing, ask the operator to choose now. Default to `internal` for docs/journal repositories; otherwise default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
 - **Open PRs (external/ado mode only):** if tracking mode is `external` with provider `ado` and ADO MCP is available, list all open PRs across all repos in the configured repo list (resolve from `.arcane.json`; if unset, ask the operator which repos to scan). Flag PRs older than 3 days as stale, older than 7 days as overdue. Format each as a clickable markdown link: `[PR #{id} — {title}](https://dev.azure.com/{ADO_ORG}/{ADO_PROJECT}/_git/{repo}/pullrequest/{id})` — resolve `{ADO_ORG}` and `{ADO_PROJECT}` from `.arcane.json` / PRD frontmatter; ask if unset. Never list a bare `PR #NNN`.
 - **Uncommitted changes:** Run `git status` and report any uncommitted files.
-- **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI *and* whether the installed CLI is behind the latest published version of `arcane-cli`:
+- **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI _and_ whether the installed CLI is behind the latest published version of `arcane-cli`:
   - Read the installed version from `.arcane.json` (field: `arcaneVersion` or `version`).
   - Determine the version of the installed `arcane-cli` CLI (for example, `npx arcane-cli --version`, or the locally installed package version).
   - Run `npm view arcane-cli version` to get the latest published version.

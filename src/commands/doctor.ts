@@ -82,11 +82,38 @@ async function checkVSCodeExtension(
   };
 }
 
-async function checkArcaneManifest(targetDir: string): Promise<CheckResult> {
+export async function checkArcaneManifest(targetDir: string): Promise<CheckResult> {
   const name = "Arcane manifest (.arcane.json)";
   const manifestPath = join(targetDir, ".arcane.json");
   try {
     await access(manifestPath);
+  } catch {
+    const selfHostedManifestPath = join(targetDir, "src", "assets", ".arcane.json");
+    try {
+      const raw = await readFile(selfHostedManifestPath, "utf8");
+      const manifest = JSON.parse(raw) as {
+        selfHosted?: boolean;
+        tracking_mode?: string;
+      };
+      if (manifest.selfHosted === true && manifest.tracking_mode === "internal") {
+        return {
+          name,
+          passed: true,
+          message: "self-hosted source tree — committed source manifest is authoritative",
+        };
+      }
+    } catch {
+      // No valid self-hosting marker — report the normal missing-manifest warning.
+    }
+    return {
+      name,
+      passed: false,
+      message: "No .arcane.json found. Run `spell init` to initialize Arcane in this project.",
+      blocking: false,
+    };
+  }
+
+  try {
     const raw = await readFile(manifestPath, "utf8");
     const manifest = JSON.parse(raw) as { version?: string; components?: unknown[] };
     if (!manifest.version || !Array.isArray(manifest.components)) {
@@ -105,8 +132,7 @@ async function checkArcaneManifest(targetDir: string): Promise<CheckResult> {
     return {
       name,
       passed: false,
-      message: "No .arcane.json found. Run `spell init` to initialize Arcane in this project.",
-      blocking: false,
+      message: ".arcane.json is present but contains invalid JSON. Re-run `spell init`.",
     };
   }
 }
