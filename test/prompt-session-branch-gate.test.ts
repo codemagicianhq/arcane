@@ -6,11 +6,13 @@ const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
 
 let openSession: string;
 let closeSession: string;
+let commitWork: string;
 
 beforeAll(async () => {
-  [openSession, closeSession] = await Promise.all([
+  [openSession, closeSession, commitWork] = await Promise.all([
     readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
   ]);
 });
 
@@ -63,5 +65,20 @@ describe("session branch mutation guard", () => {
     expect(openSession).toContain("dev.azure.com");
     expect(openSession).toContain("authenticated provider tooling");
     expect(openSession).toContain("A remote URL alone is insufficient");
+  });
+
+  it("keeps commit-work checkpoints on trunk when no merge path is usable", () => {
+    expect(commitWork).toContain("Classify the Git/remote state before enforcing the protected-branch guard");
+    expect(commitWork).toContain("A remote URL alone is insufficient");
+    expect(commitWork).toContain("No remote, unsupported remote, or provider authentication unavailable");
+    expect(commitWork).toContain("remain on the current trunk");
+    expect(commitWork).toContain("skip Steps 9 and 10 entirely");
+    expect(commitWork).toContain("Local-only checkpoint: committed on <trunk>; no remote push/PR performed");
+  });
+
+  it("keeps the protected-branch guard when a merge path is usable", () => {
+    expect(commitWork).toContain("Supported, authenticated GitHub/ADO remote + `main` or `master` checked out");
+    expect(commitWork).toContain("Create and switch the current worktree to a compliant topic branch");
+    expect(commitWork).toContain("Never strand a local-only commit on a topic branch with no usable merge path");
   });
 });

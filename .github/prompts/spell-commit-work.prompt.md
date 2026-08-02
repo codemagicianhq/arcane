@@ -25,7 +25,12 @@ Use these files first:
 Workflow:
 
 1. **Check git status and guard the branch** — run `git status` to see what changed, and confirm the current branch.
-   - **Protected-branch guard:** if the current branch is `main` or `master`, **STOP — do not stage or commit directly.** Tell the user that committing straight to the integration branch is not allowed, and instruct them to create a topic branch first (e.g., `sessions/YYYY-MM-DD-<slug>` per the session model). Once on a valid topic branch, continue the workflow normally (commit immediately as usual).
+   - Classify the Git/remote state before enforcing the protected-branch guard. A usable merge path requires a configured remote on a supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`) and authenticated provider tooling. A remote URL alone is insufficient.
+   - Apply exactly one path:
+     - **Supported, authenticated GitHub/ADO remote + `main` or `master` checked out:** **STOP — do not stage or commit directly.** Create and switch the current worktree to a compliant topic branch (for example, `sessions/YYYY-MM-DD-<slug>`), then continue.
+     - **Supported, authenticated GitHub/ADO remote + valid topic/PR branch checked out:** stay on that branch and continue.
+     - **No remote, unsupported remote, or provider authentication unavailable:** remain on the current trunk. Print `Local-only checkpoint: no usable remote merge path; commit remains on <trunk> and no remote push/PR will run.` Continue through the local commit gate, then skip Steps 9 and 10 entirely.
+   - If the current worktree, branch, provider, or authentication state cannot be determined, fail closed before staging and ask the operator. Never strand a local-only commit on a topic branch with no usable merge path.
 
 2. **Run tests and verify coverage** _(skip only if zero source files changed — e.g., pure docs/config commit)_:
    - Detect the project stack from the root of the changed repo:
@@ -45,19 +50,21 @@ Workflow:
      - Run the detected formatter, then `git add` the resulting changes so they are part of this commit.
      - **If no formatter is configured, skip this step gracefully** — do not install one and do not block the commit.
 
-3. **Analyze changes** — categorize the work:
-   - What was the intent? (new feature, bug fix, docs, refactor, etc.)
-   - What scope/area was affected? (prompts, agents, security, infrastructure, journal, etc.)
-   - Is this part of a larger initiative or a standalone change?
-   - **Commit-splitting heuristic:** if the staged changes span clearly unrelated concerns (e.g., a feature change + an unrelated refactor + a dependency bump), recommend splitting them into multiple focused commits, each with its own message, rather than a single mixed commit. A single commit is fine when the changes serve one purpose. When splitting, stage and commit each concern separately.
-   - **Wiki-link check:** For any new `.md` files being committed, verify each has at least one outbound `[[...]]` wiki-link connecting it to the knowledge graph. Orphaned docs (no outbound links) break Obsidian's graph view. If missing, add a `Related:` or `See also:` line before committing. See the CLAUDE.md wiki-link conventions for the correct format.
-
-4. **Determine authorship** — who produced this content? See [governance/git-conventions.md](../../governance/git-conventions.md) Agent Attribution Model section and ADR-028.
+3. **Determine authorship and partition the batch** — who produced each changed file or inseparable change set? See [governance/git-conventions.md](../../governance/git-conventions.md) Agent Attribution Model section and ADR-028.
+   - **Invariant: one commit has exactly one author.** Changes spanning authors must be split into separate commits.
+   - Partition changed files by author first. Step 4 then groups by concern within each author partition; concern grouping must never recombine authors.
    - **Human wrote it:** no `--author` override needed (uses global Git config)
    - **AI agent/tool produced it:** use `--author` with the agent's registered identity:
      - Roster agent: `--author="{AGENT_NAME} <{AGENT_EMAIL}>"` — resolve `{AGENT_NAME}` / `{AGENT_EMAIL}` from the active agent config (see [[agent-policies]] / [[naming-conventions]]); ask if unset.
      - Generic CLI/IDE tool: `--author="{TOOL_NAME} <{TOOL_NAME_LOWER}@{OPERATOR_DOMAIN}>"` — resolve `{TOOL_NAME}` from the channel in use and `{OPERATOR_DOMAIN}` from `.arcane.json`; ask if unset.
-   - When in doubt, ask the user who produced the content.
+   - When authorship is unknown or disputed, stop and ask. Never select one identity for a mixed-author batch.
+
+4. **Analyze and group changes within each author partition** — categorize the work:
+   - What was the intent? (new feature, bug fix, docs, refactor, etc.)
+   - What scope/area was affected? (prompts, agents, security, infrastructure, journal, etc.)
+   - Is this part of a larger initiative or a standalone change?
+   - **Commit-splitting heuristic:** within one author partition, if the changes span clearly unrelated concerns (e.g., a feature change + an unrelated refactor + a dependency bump), recommend splitting them into multiple focused commits, each with its own message, rather than a single mixed commit. A single commit is fine when one author's changes serve one purpose. When splitting, stage and commit each concern separately.
+   - **Wiki-link check:** For any new `.md` files being committed, verify each has at least one outbound `[[...]]` wiki-link connecting it to the knowledge graph. Orphaned docs (no outbound links) break Obsidian's graph view. If missing, add a `Related:` or `See also:` line before committing. See the CLAUDE.md wiki-link conventions for the correct format.
 
 4.5. **Resolve execution authority before any commit or merge command:**
    - Declare `interaction_context: interactive | autonomous`. VS Code chat, editor chat, Claude Code, and any live operator session are `interactive`; never infer `autonomous` from tool access.
@@ -130,6 +137,8 @@ Workflow:
    - Run `git commit --author="..." --trailer="..." -m "message"` only after the applicable gate passes, then confirm the commit hash.
 
 9. **Push branch and run platform-specific PR flow:**
+
+   **Local-only exit:** if Step 1 classified the repository as having no usable remote merge path, skip this entire step and Step 10. Print `Local-only checkpoint: committed on <trunk>; no remote push/PR performed.` The local commit is the completed checkpoint.
 
    **Separate merge authorization gate:** commit approval never authorizes merge. Bind any interactive merge approval to the exact PR ID and current head SHA, and re-check both immediately before completion. Missing/changed approval invalidates the gate. Never invoke merge, auto-merge, auto-complete, or `--status completed` below loader-validated Magus authority; create/update the PR, print the visible downgrade, and leave completion to a human.
 

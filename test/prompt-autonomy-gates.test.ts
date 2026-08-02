@@ -19,6 +19,18 @@ beforeAll(async () => {
 });
 
 describe("commit and merge autonomy gates", () => {
+  it("partitions by author before grouping by concern", () => {
+    const authorshipStep = commitWork.indexOf("3. **Determine authorship and partition the batch**");
+    const groupingStep = commitWork.indexOf("4. **Analyze and group changes within each author partition**");
+
+    expect(authorshipStep).toBeGreaterThan(-1);
+    expect(groupingStep).toBeGreaterThan(authorshipStep);
+    expect(commitWork).toContain("**Invariant: one commit has exactly one author.**");
+    expect(commitWork).toContain("Changes spanning authors must be split into separate commits");
+    expect(commitWork).toContain("Partition changed files by author first");
+    expect(commitWork).toContain("concern grouping must never recombine authors");
+  });
+
   it("requires authenticated approval tied to the exact interactive commit", () => {
     expect(commitWork).toContain("interaction_context: interactive | autonomous");
     expect(commitWork).toContain("exact staged diff plus proposed commit message");
