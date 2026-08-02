@@ -32,8 +32,8 @@
 - **Last completed step:** Verified npm publication with `npm view arcane-cli version`, `latest: 0.15.0`, provenance metadata, and successful publish run `30730879822`.
 - **Next concrete action:** At next session start, inspect [EF-20](../docs/intake/batch-001/EF-20.md) and the Git execution helpers before making any code change.
 - **Active files:** `TODO.md`, `DECISIONS.md`, `journal/2026-08-01-intake-batch-001-closure.md`, `ai-context/system-prompt-context.md`.
-- **Branch:** `main`.
-- **Blockers:** None known for the published `0.15.0` release. The close-session prompt still describes an Azure DevOps-only merge path and needs a provider-agnostic documentation fix.
+- **Branch:** `docs/session-close-2026-08-01`, closeout [PR #25](https://github.com/codemagicianhq/arcane/pull/25) open against `main`.
+- **Blockers:** Release `0.15.0` has no known blockers; closeout PR #25 is awaiting queued CI checks and authorized merge. The close-session prompt still describes an Azure DevOps-only merge path and needs a provider-agnostic documentation fix.
 - **Notes:** No screenshots were provided. Preserve the untracked user-owned files `assets/brand/arcane-lockup.png`, `assets/brand/arcane-mark-light.png`, and `file.png`; do not stage, modify, or delete them.
 
 > ✓ Consumed: 2026-08-01

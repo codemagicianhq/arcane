@@ -3,7 +3,7 @@
 ---
 date: 2026-08-01
 topic: External intake remediation, enforcement chain, and 0.15.0 release
-status: merged to main
+status: closeout PR open
 ---
 
 # 2026-08-01 — Intake Batch 001, Enforcement Chain, and 0.15.0 Release
