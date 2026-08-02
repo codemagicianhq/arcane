@@ -18,9 +18,9 @@
 
 ## Current Priorities
 
-1. **Plan the open-PR synchronization workflow.** The self-host parity blocker is fixed; run `spell-plan` then `spell-architect` for `spell-sync-pull-request`. Do not implement it directly from the TODO.
-2. **Complete EF-17's cross-platform regression coverage.** The drift and parity checks now normalize line endings, but the accepted Windows/Linux text-and-binary baseline tests remain open.
-3. **Continue the accepted intake backlog deliberately.** EF-20 remains the next research priority after the pinned PR-workflow item. The package is at `0.15.2`.
+1. **Fix EF-19's provider-specific close-session path.** Make close-session provider-neutral and preserve the explicit local-only path; this is the standing NO-GO and the next PR after commit-work guards.
+2. **Resolve Phase 1 decisions one at a time.** Ask EF-02 first with evidence and a recommendation, wait for the operator's answer, then ask EF-15 the same way.
+3. **Continue only the ordered batch-001 fixes in scope.** After EF-19 and the two decisions, implement EF-01, EF-14, EF-17, and EF-23 in order. EF-20 and batch-002 work remain out of scope. The package is at `0.15.3`.
 
 ---
 
