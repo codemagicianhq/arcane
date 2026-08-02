@@ -30,8 +30,8 @@
 
 - **Active task:** Review and merge the pending self-hosting manifest, doctor validation, tracker-schema, journal, and deduplication documentation changes.
 - **Last completed step:** Pushed commits `6df0179` and `a1d1693` to `origin/docs/session-close-2026-08-01` after passing lint, build, full tests, and coverage.
-- **Next concrete action:** Create a GitHub pull request from `docs/session-close-2026-08-01` to `main` for the four commits currently ahead of `origin/main`.
+- **Next concrete action:** Review and merge [PR #26 — docs: close self-hosting and continuity session](https://github.com/codemagicianhq/arcane/pull/26), then return to `main` only after it merges.
 - **Active files:** `DECISIONS.md`, `IDEAS.md`, `TODO.md`, `ai-context/system-prompt-context.md`, `docs/intake/batch-001/EF-14.md`, `journal/2026-08-01-intake-batch-001-closure.md`, `src/assets/.arcane.json`, `src/commands/doctor.ts`, `src/types.ts`, `test/session-continuity.test.ts`.
 - **Branch:** `docs/session-close-2026-08-01`.
-- **Blockers:** No code or test blockers. A new review PR is required because the earlier PR #25 is merged while the current branch still contains four commits ahead of `origin/main`.
+- **Blockers:** No code or test blockers. PR #26 is open; the earlier PR #25 is merged and does not contain the later self-hosting and continuity commits.
 - **Notes:** No screenshots were provided. Preserve the user-owned files `assets/brand/arcane-lockup.png`, `assets/brand/arcane-mark-light.png`, and `file.png`; do not stage, modify, or delete them. Do not run `spell-close-session` recursively before the pending review PR is created.
