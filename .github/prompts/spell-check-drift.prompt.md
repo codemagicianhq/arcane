@@ -44,6 +44,10 @@ Concrete detectors to run (in addition to general contradiction/stale-date check
 - **Journal chronology** — journal entries and their dates must be in sane order. Flag out-of-order entries, duplicate session numbers, and any future or otherwise contradictory dates.
 - **Done vs. carry-forward consistency** — items marked done must not still appear as open or carry-forward items, and items listed as open/carry-forward must not also be marked done elsewhere.
 - **Decision-ID existence** — decision IDs referenced in TODO, journal, or other docs must exist in `DECISIONS.md`, and the IDs in the decisions log must be sequential and unique (no gaps that imply a missing entry, no duplicates).
+- **Canonical vs. installed-copy parity** — for every managed root file that has a canonical counterpart under `src/assets/`, compare bytes first. If bytes differ, normalize `CRLF` and lone `CR` to `LF` in both files and compare again:
+  - If normalized content differs, report **real content drift** with normal severity grading.
+  - If normalized content matches, report **line-ending-only drift** separately. Do not count these paths as real content findings and do not include them in severity totals or the Go / No-Go decision.
+  - Report exact path counts for both classes. Never summarize all byte-different files as content drift.
 
 For each drift finding include:
 
@@ -68,11 +72,17 @@ Output format:
 
 - **Scope:** the `--scope` value (`all`/`journal`/`todos`/`decisions`/`git`), any free-text hint, and mode (`report-only` or `--fix`).
 - **Date:** ISO date of this run.
-- **Findings:** total count, broken down per severity.
+- **Real content findings:** total count, broken down per severity.
+- **Line-ending-only drift:** path count, reported separately and excluded from severity totals.
 
-## Drift Findings
+## Real Content Drift Findings
 
 - One line per finding with `file:line` references (or nearest locator) and its severity rationale.
+
+## Line-Ending-Only Drift
+
+- List byte-different paths whose contents match after line-ending normalization, or `None`.
+- Keep this list separate from real content findings even when it is long; a count plus path list is sufficient.
 
 ## Fixes Applied
 
@@ -94,4 +104,6 @@ Rules:
 
 - Prefer ADR decisions and latest journal facts when conflicts exist.
 - Do not rewrite historical journal content.
+- Treat `src/assets/` as canonical when comparing a managed root dogfood copy with its distributable source counterpart.
+- A line-ending-only difference is review noise, not evidence of contradictory content; never let it create a Critical/High finding or a `NO-GO` verdict by itself.
 - Keep changes minimal and traceable.

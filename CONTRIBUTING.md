@@ -28,8 +28,19 @@ Useful scripts:
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run build` | Bundle the CLI and copy assets |
+| `npm run check:self-host-parity` | Fail when generated dogfood copies have real content drift |
+| `npm run fix:self-host-parity` | Regenerate dogfood copies from canonical assets |
 
 > Asset source lives in `src/assets/` and is copied to `dist/assets/` at build time. Edit the **source** in `src/assets/`, never `dist/`.
+
+### Generated self-host copies
+
+Files registered by `src/modules/registry.ts` under root `.github/`, `.arcane/`, and `.claude/` are **generated dogfood output**. Their canonical sources live under `src/assets/`.
+
+- Never hand-edit a generated root copy. Edit its `src/assets/` source, then run `npm run fix:self-host-parity`.
+- `fix:self-host-parity` is the only supported writer for these root copies.
+- CI runs `check:self-host-parity` and fails on missing or substantive content drift.
+- Line-ending-only differences are normalized during comparison and do not fail the gate.
 
 ## Pull request guidelines
 

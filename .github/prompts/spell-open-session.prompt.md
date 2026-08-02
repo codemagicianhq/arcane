@@ -21,21 +21,39 @@ If the user provided a focus area in the prompt argument, prioritize that area. 
 Use these files first:
 
 - [README.md](../../README.md)
+- [project.md](../../project.md)
 - [TODO.md](../../TODO.md)
 - [DECISIONS.md](../../DECISIONS.md)
-- [naming-conventions.md](../../.arcane/governance/naming-conventions.md)
+- [naming-conventions.md](../../naming-conventions.md)
 - [ai-context/system-prompt-context.md](../../ai-context/system-prompt-context.md)
-- [agent-policies.md](../../.arcane/governance/agent-policies.md)
+- [agents/agent-policies.md](../../agents/agent-policies.md)
 - Most recent journal file(s) in [journal/](../../journal/)
-- Relevant business overview(s) under the configured business root, when one exists
+- Relevant business overview(s) under [ventures/](../../ventures/)
 
 **Handoff Detection (run before anything else):**
 
 Check `ai-context/system-prompt-context.md` for a `## Next Session Handoff` section.
 
 - If present and **not yet marked consumed** (no `> ✓ Consumed:` line): surface it immediately as `## Picking Up From Last Session` at the very top of your output, before all other sections. Use the `Next concrete action` field as the first item in `## Next Session Plan`. Use the `Active task`, `Active files`, and `Branch` fields to pre-populate the State Snapshot.
-- After surfacing it, mark it consumed by appending `> ✓ Consumed: YYYY-MM-DD` (today's date) on a new line inside the block, then save the file.
+- After surfacing it, apply the Mutation Guard below before appending `> ✓ Consumed: YYYY-MM-DD` (today's date). The marker write is a repository mutation.
 - If the section is absent or already marked consumed: skip this step and proceed with the normal workspace scan.
+
+## Mutation Guard (run lazily before the first repository write)
+
+Do not create a branch during a read-only session. Immediately before the first file edit, generated file, staging action, or other repository mutation, classify the current Git/remote state and apply exactly one path:
+
+| Observed state | Required action before mutation |
+| --- | --- |
+| Supported, authenticated GitHub/ADO remote + trunk checked out | Create and switch the **current worktree only** to `sessions/YYYY-MM-DD-<topic-slug>`, derived deterministically from the focus, handoff active task, or top next action. |
+| Already on a compliant `sessions/YYYY-MM-DD-<topic-slug>` branch | Stay on it; do not create or switch branches. |
+| Noncompliant unpushed branch with no active PR | Rename it to the deterministic session name before mutation. |
+| Branch has an active PR | Stay on the PR branch and report it; never rename a branch backing an active PR. |
+| Current path is a linked worktree | Mutate/switch only the current worktree. Never switch or delete a branch attached to another worktree. |
+| No remote, unsupported remote, or provider authentication unavailable | Stay on the repository trunk. Print `Local-only session: no usable remote merge path; mutations remain on <trunk> and close-session must use its local-only path.` |
+
+A usable merge path requires a configured remote on a supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`) and authenticated provider tooling. A remote URL alone is insufficient. Re-evaluate immediately before the first mutation so a remote added or removed during the read-only portion is handled from observed state.
+
+If branch creation/rename is required, complete it before writing the handoff consumed marker or any other file. If the guard cannot determine the current worktree, active-PR state, or merge capability, fail closed without mutation and ask for operator direction.
 
 **Drift Check (run before deep context gathering):**
 
@@ -51,22 +69,20 @@ Then produce output in this exact structure:
 
 Before anything else, check:
 
-- **Current branch:** Run `git branch --show-current` in the arcane repo. If not on `main`, run `git worktree list`:
-  - If this is a worktree-backed session, staying on the topic branch is expected (do not require switching to `main`).
-  - If not worktree-backed, warn the user and suggest switching back to `main`.
+- **Current branch:** Run `git branch --show-current` and `git worktree list`. Report the current state; do not switch during this read-only check. Branch creation/switching is owned by the lazy Mutation Guard.
 - **Session branch naming compliance:** Branch names must be human-readable and policy-compliant:
   - Interactive session default: `sessions/YYYY-MM-DD-<topic-slug>` (kebab-case topic from current task/session objective).
   - Disallow random adjective-noun generator names (example: `ideal-disco`) as session defaults.
-  - If current branch is non-compliant and no active PR depends on it, rename branch to a compliant name. If it was already pushed, migrate remote tracking (`git push -u origin <new-name>` then `git push origin --delete <old-name>`), then continue.
+  - If current branch is non-compliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
 - **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted.
-- **Work-item tracking configuration check (early):** resolve where work items live before planning. This setting is independent of the Git remote and pull-request review provider; GitHub is review-only in this repository and is not an `external_provider`. Read `.arcane.json` first (if present), then the current feature PRD frontmatter if available:
-  - `tracking_mode: internal | external` means work items live in this repository or in an external tracker.
-  - `external_provider: ado | jira | other` is meaningful only when `tracking_mode: external`.
-  - If missing, ask the operator to choose now. Default to `internal` for docs/journal repositories; otherwise default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
+- **Tracker configuration check (early):** resolve active tracking settings before planning. Read root `.arcane.json` first (if present), then the current feature PRD frontmatter if available. A self-host marker under `src/assets/` is doctor metadata, not active repository configuration; never use it as tracking provenance. If neither active source sets tracking, ask the operator and treat the answer as session-scoped until EF-14 defines persistent configuration:
+  - `tracking_mode: internal | external`
+  - `external_provider: ado | jira | other`
+  - If missing, ask the operator to choose now. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
 - **Open PRs (external/ado mode only):** if tracking mode is `external` with provider `ado` and ADO MCP is available, list all open PRs across all repos in the configured repo list (resolve from `.arcane.json`; if unset, ask the operator which repos to scan). Flag PRs older than 3 days as stale, older than 7 days as overdue. Format each as a clickable markdown link: `[PR #{id} — {title}](https://dev.azure.com/{ADO_ORG}/{ADO_PROJECT}/_git/{repo}/pullrequest/{id})` — resolve `{ADO_ORG}` and `{ADO_PROJECT}` from `.arcane.json` / PRD frontmatter; ask if unset. Never list a bare `PR #NNN`.
 - **Uncommitted changes:** Run `git status` and report any uncommitted files.
-- **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI _and_ whether the installed CLI is behind the latest published version of `arcane-cli`:
+- **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI *and* whether the installed CLI is behind the latest published version of `arcane-cli`:
   - Read the installed version from `.arcane.json` (field: `arcaneVersion` or `version`).
   - Determine the version of the installed `arcane-cli` CLI (for example, `npx arcane-cli --version`, or the locally installed package version).
   - Run `npm view arcane-cli version` to get the latest published version.

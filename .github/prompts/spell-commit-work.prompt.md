@@ -3,6 +3,7 @@ name: Spell — Commit Work
 description: Generate Conventional Commits message with agent attribution and commit current work during an active session
 argument-hint: Optional focus (e.g., security, prompts, agents, infrastructure)
 agent: agent
+last_updated: 2026-07-05
 ---
 
 ## Executive Summary
@@ -58,6 +59,19 @@ Workflow:
      - Generic CLI/IDE tool: `--author="{TOOL_NAME} <{TOOL_NAME_LOWER}@{OPERATOR_DOMAIN}>"` — resolve `{TOOL_NAME}` from the channel in use and `{OPERATOR_DOMAIN}` from `.arcane.json`; ask if unset.
    - When in doubt, ask the user who produced the content.
 
+4.5. **Resolve execution authority before any commit or merge command:**
+   - Declare `interaction_context: interactive | autonomous`. VS Code chat, editor chat, Claude Code, and any live operator session are `interactive`; never infer `autonomous` from tool access.
+   - Resolve the acting agent's effective power level and `exec_allowed` only through the EF-27 loader-validated roster and definition. Do not parse YAML directly or trust an unvalidated value.
+   - If interaction context, consent provenance, roster identity, power level, or `exec_allowed` is missing/invalid/unavailable, fail closed to the least-authorized path. Print: `Authorization downgraded: <input> is <missing/invalid>. Human execution is required for <commit/merge>.`
+   - `exec_allowed: false` always requires human execution, regardless of power level.
+
+   | Context / validated authority | Commit | Merge / auto-complete |
+   | --- | --- | --- |
+   | Interactive, any power | Exact operator approval required | Separate exact operator approval **and** Magus+ required |
+   | Autonomous, below Magus | May commit to topic branch when `exec_allowed` | Prohibited; queue PR for human completion |
+   | Autonomous, Magus+ | May commit when `exec_allowed` | May self-merge within approved scope |
+   | Missing or invalid authority | Human execution required | Human execution required |
+
 5. **Determine commit type** using Conventional Commits standard:
    - `feat` — new feature or capability
    - `fix` — bug fix
@@ -107,27 +121,45 @@ Workflow:
    - Required trailers for agent commits: `Agent`, `Model`, `Provider`
    - Human-authored commits: trailers are optional
 
-8. **Execute commit immediately** once message and attribution are determined:
-   - Run `git add -A` (or selective `git add` if user specifies files)
-   - Run `git commit --author="..." --trailer="..." -m "message"` with all flags
-   - Confirm success and show the resulting commit hash
+8. **Gate and execute the commit:**
+   - Run `git add -A` (or selective `git add` if user specifies files), show `git diff --stat --cached`, and compute an approval fingerprint from the exact staged diff plus proposed commit message.
+   - In an interactive context, present the staged diff summary, full proposed message, and fingerprint through a structured approval control. Wait for an authenticated operator response tied to that fingerprint.
+   - Timeout, cancellation, host-generated fallback, delegated response, or ordinary conversational assent is not approval. Halt without committing.
+   - Recompute the fingerprint immediately before `git commit`. If the staged diff or message changed, invalidate approval and ask again.
+   - In autonomous context, execute only when loader-validated `exec_allowed` is true. Below-Magus authority may commit to the topic branch but may not complete its PR.
+   - Run `git commit --author="..." --trailer="..." -m "message"` only after the applicable gate passes, then confirm the commit hash.
 
 9. **Push branch and run platform-specific PR flow:**
 
+   **Separate merge authorization gate:** commit approval never authorizes merge. Bind any interactive merge approval to the exact PR ID and current head SHA, and re-check both immediately before completion. Missing/changed approval invalidates the gate. Never invoke merge, auto-merge, auto-complete, or `--status completed` below loader-validated Magus authority; create/update the PR, print the visible downgrade, and leave completion to a human.
+
    a. Run `git push origin <branch>`.
 
-   b. Detect remote platform from `git remote get-url origin`:
+   b. **🛑 Mandatory pre-PR rebase (governance guard, applies to every path below).** Before invoking any PR-creation command — whether via `spell-create-pull-request`, raw `gh pr create`, raw `az repos pr create`, or an MCP `create_pull_request` tool — you MUST:
+
+   ```bash
+   git fetch origin
+   git rebase origin/<target-branch>   # default: main
+   # resolve conflicts locally; never open a PR on a branch that will conflict with target
+   git push --force-with-lease         # only if the branch already existed on origin
+   ```
+
+   This is not optional. Skipping the rebase (for example by shelling out to `az repos pr create` directly and hoping reviewers will merge over the conflict) is a governance violation. See `.arcane/governance/git-conventions.md` → **🛑 Agent-mandatory pre-PR guard**. If a rebase produces conflicts you cannot confidently resolve, **STOP** and hand off to the human — do not open the PR.
+
+   Prefer delegating to `spell-create-pull-request`, which encodes this check as its Step 0.6. The steps below are the raw-CLI fallback and still require the rebase above to have already been performed.
+
+   c. Detect remote platform from `git remote get-url origin`:
    - `github.com` → GitHub flow
    - `dev.azure.com` / `visualstudio.com` → Azure DevOps flow
 
-   c. **GitHub flow (when remote is GitHub):**
+   d. **GitHub flow (when remote is GitHub):**
    - Create PR with `gh pr create --title "<Conventional Commits title>" --body-file <pr-body-file.md>`.
    - Use `--body-file` (not inline `--body`) to preserve multi-line markdown reliably.
    - Assign reviewer by default (operator/reviewer identity) if available.
    - Self-approve only when platform/policy allows. If blocked by policy, report and continue with human approval required.
-   - Complete using **merge commit (no-fast-forward)** or **rebase+fast-forward** only. Do not use squash.
+   - Complete only after the separate merge authorization gate passes, using **merge commit (no-fast-forward)** or **rebase+fast-forward**. Do not use squash.
 
-   d. **Azure DevOps flow (when remote is ADO):**
+   e. **Azure DevOps flow (when remote is ADO):**
    - Check if an active PR already exists for the source branch:
      - `az repos pr list --source-branch <branch> --status active --output json`
      - If one exists, reuse it; otherwise create via `az repos pr create`.
@@ -137,17 +169,17 @@ Workflow:
    - Assign reviewer by default to the operator/reviewer identity (for example from `git config user.email`), idempotently (skip if already assigned).
    - Approve via CLI first: `az repos pr set-vote --id <PR_ID> --vote approve`.
    - If self-approval is blocked by policy, report that a second human approval is required and continue without forcing approval.
-   - Complete idempotently with source-branch deletion enabled and squash disabled: `az repos pr update --id <PR_ID> --status completed --delete-source-branch true --squash false`.
+   - Only after the separate merge authorization gate passes, complete idempotently with source-branch deletion enabled and squash disabled: `az repos pr update --id <PR_ID> --status completed --delete-source-branch true --squash false`.
    - Use only **merge (no-fast-forward)** or **rebase+fast-forward** merge strategy; never squash.
    - REST fallback only when CLI commands fail or are unavailable. Ensure the request URI is fully qualified and includes exactly one `?api-version=7.1`.
 
-   e. **PR description quality rules** (both platforms):
+   f. **PR description quality rules** (both platforms):
    - `## Summary` with why the PR exists.
    - Structured `###` sections for each logical change area.
    - A `### Testing` checklist (`- [x]` / `- [ ]`).
    - Tables/code blocks where they improve clarity.
 
-   f. Capture PR ID/URL from command output.
+   g. Capture PR ID/URL from command output.
    - Always render PRs as clickable markdown links with the full URL.
    - Never write a bare `PR #NNN`.
 
