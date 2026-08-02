@@ -43,6 +43,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Proposed |
 | [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)                       | Normative Controls Require Inline Enforcement Contracts                        | 2026-07-31 | Accepted |
 | [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Proposed |
+| [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted |
 
 ---
 
@@ -944,3 +945,28 @@ Detection succeeded twice; prioritization failed. A severity label that does not
 - **Bind only future defects** — rejected because the existing confirmed backlog is the demonstrated exposure and must be classified retroactively.
 - **Severity-ordered queue with explicit owner and response deadline** — rejected for this single-maintainer project. Assigning every incident back to the sole maintainer adds ceremony that will be skipped; a skipped control is worse than no control. A future maintainer with a team may revisit ownership and deadlines when they produce real routing value.
 - **Multi-field risk-acceptance record** — rejected because requiring scope, exposure, mitigation, review date, and release effect makes routine deferral too expensive. The control's value is the deliberate, dated act of accepting known risk; by the third deferral, a longer form would be skipped and recreate the unwired-policy failure ARC-023 prohibits.
+
+---
+
+## ARC-025 — Pin Publish Tooling to the Supported Node Runtime
+
+**Date:** 2026-08-01
+**Status:** Accepted
+
+**Context:**
+
+The publish workflow ran on Node 20 but installed `npm@latest`. When npm 12 became the latest release, the workflow failed before publication because npm 12 requires a newer Node runtime. Trusted publishing itself was healthy; the failure was caused by an unbounded tool-version dependency.
+
+**Decision:**
+
+Pin the publish workflow to npm 11 while CI and publish jobs use Node 20, and retain a manual workflow-dispatch path for recovery after a release has already been created. Validate the workflow with a regression test covering both invariants.
+
+**Reasoning:**
+
+The publish tool must remain compatible with the declared runtime and should not change major versions implicitly during a release. Manual dispatch provides a bounded recovery path without recreating tags or changing package contents. The fix was verified by a successful OIDC publication of `arcane-cli@0.15.0`.
+
+**Rejected alternatives:**
+
+- **Install `npm@latest`** — rejected because an external major-version change broke the Node 20 release path.
+- **Upgrade the workflow runtime immediately** — rejected because it expands release risk and is unrelated to the package publication contract.
+- **Republish by creating another release tag** — rejected because the existing release was valid; only the workflow toolchain needed correction.
