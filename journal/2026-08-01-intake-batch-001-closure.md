@@ -62,3 +62,41 @@ The batch surfaced cases where confirmed high severity had no mandatory escalati
 - Consider running `spell-document` for a consolidated implementation design if the enforcement cluster needs a durable public explanation.
 - Correct the provider-specific close-session lifecycle wording: the prompt still describes an Azure DevOps-only merge path while this repository uses GitHub PRs.
 - No screenshots were provided; the three untracked PNGs remain user-owned and were not staged.
+
+## Session: Self-hosted manifest, doctor guard, and deduplication safety
+
+### Prompt Context
+
+This follow-up session closed the work from the prior Arcane enforcement and release session. The concrete request was to commit and publish the staged self-hosting fix, restore and preserve the unique journal material lost during an earlier duplicate-section cleanup, save the deduplication lesson, and leave the repository in a clean handoff state. The session also verified the final coverage run and discovered that the earlier closeout PR had already merged before the latest two commits were pushed.
+
+### What Got Done
+
+1. Added and committed the explicit self-hosting manifest at [src/assets/.arcane.json](../src/assets/.arcane.json), with the root `.arcane.json` remaining generated and ignored.
+2. Corrected `doctor` fallback behavior in [src/commands/doctor.ts](../src/commands/doctor.ts): the source manifest is used only when the root manifest is absent, while malformed root JSON remains an error.
+3. Added typed tracker and self-hosting fields in [src/types.ts](../src/types.ts), including nullable `external_provider`, and added focused coverage in [test/session-continuity.test.ts](../test/session-continuity.test.ts).
+4. Clarified tracker destination versus GitHub review-surface semantics in [EF-14](../docs/intake/batch-001/EF-14.md) and the open-session prompt, and restored the unique ARC-024 severity lesson and closeout material in this journal.
+5. Saved the deduplication safety lesson in [IDEAS.md](../IDEAS.md): diff suspected duplicates before deleting either copy, then merge drifted unique content.
+6. Committed the implementation and idea separately as `6df0179` and `a1d1693`, pushed both to `origin/docs/session-close-2026-08-01`, and verified 22 test files with 401 passing tests, 1 skipped test, 83.26% statement coverage, and 88.97% branch coverage.
+
+### Decisions Made
+
+| ADR | Decision | Rationale |
+| --- | --- | --- |
+| [ARC-026](../DECISIONS.md#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation) | Use an explicit committed source manifest for self-hosting, with root-first doctor validation and fallback only for an absent root manifest. | The source tree needs a narrow auditable exemption without allowing a valid source file to hide a broken generated root configuration. |
+
+### Lessons Learned
+
+#### Duplicate sections must be compared before deletion
+
+The journal cleanup treated a duplicated section as identical and removed one copy wholesale. The discarded copy contained unique ARC-024 severity content and an entire closeout section. Housekeeping tools and spells must compare blocks, merge any unique material into the retained copy, and delete only after proving that no content was lost.
+
+#### A merged review surface does not prove the current branch is merged
+
+The known PR #25 was already merged, but the branch still contained the later self-hosting and idea commits and remained ahead of `origin/main`. Closeout must compare the current branch with the current remote base, not rely only on an older PR number or local history.
+
+### Open Items Carried Forward
+
+- Create a new GitHub pull request for the four commits currently ahead of `origin/main`; reuse is impossible because PR #25 is already merged.
+- Continue with [EF-20](../docs/intake/batch-001/EF-20.md), the next technical priority for a non-interactive Git execution contract.
+- Keep [EF-17](../docs/intake/batch-001/EF-17.md), [EF-16](../docs/intake/batch-001/EF-16.md), and the remaining accepted intake items open until independently verified.
+- The close-session prompt still contains an Azure DevOps-specific lifecycle instruction and should receive a provider-agnostic documentation fix in a future session.

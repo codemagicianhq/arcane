@@ -44,6 +44,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)                       | Normative Controls Require Inline Enforcement Contracts                        | 2026-07-31 | Accepted |
 | [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Proposed |
 | [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted |
+| [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted |
 
 ---
 
@@ -970,3 +971,31 @@ The publish tool must remain compatible with the declared runtime and should not
 - **Install `npm@latest`** — rejected because an external major-version change broke the Node 20 release path.
 - **Upgrade the workflow runtime immediately** — rejected because it expands release risk and is unrelated to the package publication contract.
 - **Republish by creating another release tag** — rejected because the existing release was valid; only the workflow toolchain needed correction.
+
+---
+
+## ARC-026 — Explicit Self-Hosted Manifest and Authoritative Root Validation
+
+**Date:** 2026-08-02
+**Status:** Accepted
+
+**Context:**
+
+The Arcane source repository dogfoods its own installed governance files, but the generated root `.arcane.json` is intentionally gitignored because it represents installed-target state. Without a committed source-tree marker, `doctor` reported the framework repository as uninitialized. A broad fallback would also risk hiding a malformed generated root manifest behind a valid source manifest.
+
+**Decision:**
+
+1. Commit `src/assets/.arcane.json` as the source repository's explicit self-hosting manifest with `selfHosted: true`, `tracking_mode: "internal"`, and `external_provider: null`.
+2. Keep the generated root `.arcane.json` ignored; add only a negation rule for the committed source manifest.
+3. Make `doctor` prefer the root manifest and use the source manifest only when the root manifest is absent. Invalid root JSON remains a failure and must never be masked by fallback.
+4. Type tracker settings as manifest fields, including a nullable external provider for internal tracking.
+
+**Reasoning:**
+
+An explicit marker makes the narrow self-hosting exemption auditable and keeps source truth separate from generated consumer state. Root-first resolution preserves the installed repository contract, while refusing fallback on parse errors prevents a broken generated configuration from appearing healthy.
+
+**Rejected alternatives:**
+
+- **Treat every source manifest as self-hosted** — rejected because an unmarked or externally tracked source tree should not receive an implicit exemption.
+- **Fall back after any root-manifest error** — rejected because malformed root JSON must remain visible and actionable.
+- **Commit the generated root manifest** — rejected because it conflates installed-target state with framework source truth and changes the existing ignore contract.
