@@ -4,6 +4,7 @@ coverage/
 .obsidian/
 *.tsbuildinfo
 .arcane.json
+!src/assets/.arcane.json
 ~/.arcane/
 *.log
 

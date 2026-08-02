@@ -18,7 +18,7 @@ vi.mock("../src/modules/git.js", () => ({
 }));
 
 const { runInit } = await import("../src/commands/init.js");
-const { checkSessionContinuity, fixSessionContinuity } = await import("../src/commands/doctor.js");
+const { checkArcaneManifest, checkSessionContinuity, fixSessionContinuity } = await import("../src/commands/doctor.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
 const PACKAGE_VERSION = "0.1.0";
@@ -29,6 +29,58 @@ const SESSION_FILES = [
   "ai-context/system-prompt-context.md",
   "journal/.gitkeep",
 ];
+
+describe("doctor — self-hosted source manifest", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(join(tmpdir(), "doctor-manifest-test-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("accepts only the explicit self-hosted source manifest", async () => {
+    await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
+    await fs.writeFile(
+      join(tmpDir, "src/assets/.arcane.json"),
+      JSON.stringify({ selfHosted: true, tracking_mode: "internal" }),
+    );
+
+    const result = await checkArcaneManifest(tmpDir);
+
+    expect(result.passed).toBe(true);
+    expect(result.message).toContain("self-hosted source tree");
+  });
+
+  it("does not exempt an unmarked or externally tracked source manifest", async () => {
+    await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
+    await fs.writeFile(
+      join(tmpDir, "src/assets/.arcane.json"),
+      JSON.stringify({ selfHosted: true, tracking_mode: "external" }),
+    );
+
+    const result = await checkArcaneManifest(tmpDir);
+
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+  });
+
+  it("does not hide a corrupt installed manifest behind the source marker", async () => {
+    await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
+    await fs.writeFile(
+      join(tmpDir, "src/assets/.arcane.json"),
+      JSON.stringify({ selfHosted: true, tracking_mode: "internal" }),
+    );
+    await fs.writeFile(join(tmpDir, ".arcane.json"), "{ invalid json");
+
+    const result = await checkArcaneManifest(tmpDir);
+
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("invalid JSON");
+  });
+});
 
 describe("session-continuity — init scaffolding", () => {
   let tmpDir: string;

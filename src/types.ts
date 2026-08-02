@@ -14,7 +14,13 @@ export interface ArcaneManifest {
   profile: Profile;
   installedAt: string;
   components: InstalledComponent[];
+  selfHosted?: boolean;
+  tracking_mode?: TrackingMode;
+  external_provider?: ExternalProvider | null;
 }
+
+export type TrackingMode = "internal" | "external";
+export type ExternalProvider = "azure-devops" | "github" | "gitlab" | "jira";
 
 export interface RegistryComponent {
   name: string;
