@@ -102,19 +102,19 @@ Rules:
 9. **Stage and commit session-close docs.**
 
    **Remote-capability check:** classify the state created by `spell-open-session` before branching, staging, push, or PR operations.
-   - **Usable supported remote/merge path:** keep the current compliant session/PR/worktree branch and use the remote PR path below.
+   - **Usable supported remote/merge path:** requires an authenticated supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`). Keep the current compliant session/PR/worktree branch, resolve the actual remote name and integration branch, and use the provider-neutral PR path below.
    - **No usable remote/merge path:** remain on the current trunk. Do not create a dead session branch, push, pull, or open a PR. Apply the EF-28 interactive commit approval gate, commit locally on trunk after approval, report `Local-only close: committed on <trunk>; no remote PR/pull performed`, and skip steps 9a, 9c, and 10's remote operations.
    - **Read-only session:** if no repository mutation occurred, do not create a branch or commit.
 
    a. **Branch check — create a topic branch before any staging:**
    This remote branch path applies only when the remote-capability check found a usable merge path.
-   Run `git branch --show-current`. If you are on `main`, create a topic branch **now** before any `git add`:
+   Run `git branch --show-current`. If you are on the resolved integration branch `<trunk>`, create a topic branch **now** before any `git add`:
 
    ```powershell
    git checkout -b docs/session-close-YYYY-MM-DD
    ```
 
-   Never commit directly to `main` — the branch policy rejects direct pushes. If a session branch already exists (created by `spell-open-session`), stay on it.
+   Never commit directly to a remotely protected integration branch — the branch policy rejects direct pushes. If a session branch already exists (created by `spell-open-session`), stay on it.
 
    b. **Stage and apply the interactive commit gate from `spell-commit-work`:**
    - Run `git add -A && git diff --stat --cached` to show what changed.
@@ -129,10 +129,13 @@ Rules:
    - Missing/invalid authority visibly downgrades to PR creation only and requires human completion.
    - Interactive Magus+ completion still requires separate authenticated approval tied to the exact PR ID and head SHA.
 
-10. **Return to main after the PR merges:**
-    - Run `git checkout main && git pull origin main`. Do not end the session on a topic branch.
+10. **Synchronize the configured integration branch after the PR merges (remote path only):**
+   - Skip this entire step for local-only and read-only sessions.
+   - Resolve `<remote>` and `<trunk>` from observed Git/provider state: use the usable authenticated remote selected in step 9 and the merged PR's target branch (falling back to that remote's default branch). Never assume `origin` or `main`.
+   - Verify through the detected provider that the PR is merged before changing branches.
+   - Run `git switch <trunk>` followed by `git pull --ff-only <remote> <trunk>`. Do not end a remote-backed session on a topic branch.
     - Delete the local topic branch: `git branch -d <branch>`.
-    - Verify `git log --oneline -3` shows the merge commit at HEAD.
+   - Verify `git log --oneline -3` shows the merged change at HEAD.
     - If stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
     - See [governance/git-conventions.md](../../governance/git-conventions.md) Post-Merge Cleanup section.
 
@@ -166,7 +169,7 @@ Output format:
 
 ## PR Readiness
 
-Enumerate the current end state and the prescribed next action. Use this table to classify where the session landed (added clarity on top of the ADO PR lifecycle steps above — not a replacement for them):
+Enumerate the current end state and the prescribed next action. Use this table to classify where the session landed within the provider-neutral lifecycle above:
 
 | End state | Next action |
 | --- | --- |
@@ -175,8 +178,8 @@ Enumerate the current end state and the prescribed next action. Use this table t
 | Open PR exists | Docs/changes reach `main` when it merges — show the PR URL. |
 | No PR + docs-only on a branch | Run `spell-create-pull-request --docs-only`. |
 | No PR + mixed code+docs on a branch | Run `spell-create-pull-request` once the feature is complete. |
-| Docs-only commit on `main` | Create a `chore/docs` branch, then run `spell-create-pull-request --docs-only`. |
-| Nothing ahead of `origin/main` | Branch is fully merged — clean up local/remote branches. |
+| Docs-only commit on remote-backed `<trunk>` | Create a `chore/docs` branch, then run `spell-create-pull-request --docs-only`. |
+| Nothing ahead of `<remote>/<trunk>` | Branch is fully merged — clean up local/remote branches. |
 
 ## Carry Forward
 
@@ -186,7 +189,7 @@ Enumerate the current end state and the prescribed next action. Use this table t
 
 Route the user to the right next spell based on the end state:
 
-- **Docs-only commit on `main`** — create a docs branch, then run `spell-create-pull-request --docs-only`.
+- **Docs-only commit on remote-backed `<trunk>`** — create a docs branch, then run `spell-create-pull-request --docs-only`.
 - **On a feature branch, ready for review** — run `spell-create-pull-request`.
 - **On a feature branch, still in progress** — next session, run `spell-open-session` to resume.
 - **PR already open** — run `spell-address-review` after reviewers comment.
