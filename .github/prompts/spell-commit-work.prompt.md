@@ -71,17 +71,18 @@ Workflow:
    - **Wiki-link check:** For any new `.md` files being committed, verify each has at least one outbound `[[...]]` wiki-link connecting it to the knowledge graph. Orphaned docs (no outbound links) break Obsidian's graph view. If missing, add a `Related:` or `See also:` line before committing. See the CLAUDE.md wiki-link conventions for the correct format.
 
 4.5. **Resolve execution authority before any commit or merge command:**
-   - Declare `interaction_context: interactive | autonomous`. VS Code chat, editor chat, Claude Code, and any live operator session are `interactive`; never infer `autonomous` from tool access.
-   - Resolve the acting agent's effective power level and `exec_allowed` only through the EF-27 loader-validated roster and definition. Do not parse YAML directly or trust an unvalidated value.
-   - If interaction context, consent provenance, roster identity, power level, or `exec_allowed` is missing/invalid/unavailable, fail closed to the least-authorized path. Print: `Authorization downgraded: <input> is <missing/invalid>. Human execution is required for <commit/merge>.`
-   - `exec_allowed: false` always requires human execution, regardless of power level.
 
-   | Context / validated authority | Commit | Merge / auto-complete |
-   | --- | --- | --- |
-   | Interactive, any power | Exact operator approval required | Separate exact operator approval **and** Magus+ required |
-   | Autonomous, below Magus | May commit to topic branch when `exec_allowed` | Prohibited; queue PR for human completion |
-   | Autonomous, Magus+ | May commit when `exec_allowed` | May self-merge within approved scope |
-   | Missing or invalid authority | Human execution required | Human execution required |
+- Declare `interaction_context: interactive | autonomous`. VS Code chat, editor chat, Claude Code, and any live operator session are `interactive`; never infer `autonomous` from tool access.
+- Resolve the acting agent's effective power level and `exec_allowed` only through the EF-27 loader-validated roster and definition. Do not parse YAML directly or trust an unvalidated value.
+- If interaction context, consent provenance, roster identity, power level, or `exec_allowed` is missing/invalid/unavailable, fail closed to the least-authorized path. Print: `Authorization downgraded: <input> is <missing/invalid>. Human execution is required for <commit/merge>.`
+- `exec_allowed: false` always requires human execution, regardless of power level.
+
+| Context / validated authority | Commit                                         | Merge / auto-complete                                    |
+| ----------------------------- | ---------------------------------------------- | -------------------------------------------------------- |
+| Interactive, any power        | Exact operator approval required               | Separate exact operator approval **and** Magus+ required |
+| Autonomous, below Magus       | May commit to topic branch when `exec_allowed` | Prohibited; queue PR for human completion                |
+| Autonomous, Magus+            | May commit when `exec_allowed`                 | May self-merge within approved scope                     |
+| Missing or invalid authority  | Human execution required                       | Human execution required                                 |
 
 5. **Determine commit type** using Conventional Commits standard:
    - `feat` — new feature or capability

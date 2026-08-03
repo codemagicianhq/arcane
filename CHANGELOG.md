@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.8] - 2026-08-03
+
+### Changed
+
+- Refine `spell-commit-work`'s execution-authority resolution table and related guidance.
+
 ## [0.15.7] - 2026-08-02
 
 ### Added
@@ -56,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public release.
 
+[0.15.8]: https://github.com/codemagicianhq/arcane/compare/v0.15.7...v0.15.8
 [0.15.7]: https://github.com/codemagicianhq/arcane/compare/v0.15.6...v0.15.7
 [0.15.6]: https://github.com/codemagicianhq/arcane/compare/v0.15.5...v0.15.6
 [0.15.5]: https://github.com/codemagicianhq/arcane/compare/v0.15.4...v0.15.5

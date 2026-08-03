@@ -42,14 +42,14 @@ Check `ai-context/system-prompt-context.md` for a `## Next Session Handoff` sect
 
 Do not create a branch during a read-only session. Immediately before the first file edit, generated file, staging action, or other repository mutation, classify the current Git/remote state and apply exactly one path:
 
-| Observed state | Required action before mutation |
-| --- | --- |
-| Supported, authenticated GitHub/ADO remote + trunk checked out | Create and switch the **current worktree only** to `sessions/YYYY-MM-DD-<topic-slug>`, derived deterministically from the focus, handoff active task, or top next action. |
-| Already on a compliant `sessions/YYYY-MM-DD-<topic-slug>` branch | Stay on it; do not create or switch branches. |
-| Noncompliant unpushed branch with no active PR | Rename it to the deterministic session name before mutation. |
-| Branch has an active PR | Stay on the PR branch and report it; never rename a branch backing an active PR. |
-| Current path is a linked worktree | Mutate/switch only the current worktree. Never switch or delete a branch attached to another worktree. |
-| No remote, unsupported remote, or provider authentication unavailable | Stay on the repository trunk. Print `Local-only session: no usable remote merge path; mutations remain on <trunk> and close-session must use its local-only path.` |
+| Observed state                                                        | Required action before mutation                                                                                                                                           |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Supported, authenticated GitHub/ADO remote + trunk checked out        | Create and switch the **current worktree only** to `sessions/YYYY-MM-DD-<topic-slug>`, derived deterministically from the focus, handoff active task, or top next action. |
+| Already on a compliant `sessions/YYYY-MM-DD-<topic-slug>` branch      | Stay on it; do not create or switch branches.                                                                                                                             |
+| Noncompliant unpushed branch with no active PR                        | Rename it to the deterministic session name before mutation.                                                                                                              |
+| Branch has an active PR                                               | Stay on the PR branch and report it; never rename a branch backing an active PR.                                                                                          |
+| Current path is a linked worktree                                     | Mutate/switch only the current worktree. Never switch or delete a branch attached to another worktree.                                                                    |
+| No remote, unsupported remote, or provider authentication unavailable | Stay on the repository trunk. Print `Local-only session: no usable remote merge path; mutations remain on <trunk> and close-session must use its local-only path.`        |
 
 A usable merge path requires a configured remote on a supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`) and authenticated provider tooling. A remote URL alone is insufficient. Re-evaluate immediately before the first mutation so a remote added or removed during the read-only portion is handled from observed state.
 
@@ -82,7 +82,7 @@ Before anything else, check:
   - If missing, ask the operator to choose now. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
 - **Open PRs (external/ado mode only):** if tracking mode is `external` with provider `ado` and ADO MCP is available, list all open PRs across all repos in the configured repo list (resolve from `.arcane.json`; if unset, ask the operator which repos to scan). Flag PRs older than 3 days as stale, older than 7 days as overdue. Format each as a clickable markdown link: `[PR #{id} — {title}](https://dev.azure.com/{ADO_ORG}/{ADO_PROJECT}/_git/{repo}/pullrequest/{id})` — resolve `{ADO_ORG}` and `{ADO_PROJECT}` from `.arcane.json` / PRD frontmatter; ask if unset. Never list a bare `PR #NNN`.
 - **Uncommitted changes:** Run `git status` and report any uncommitted files.
-- **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI *and* whether the installed CLI is behind the latest published version of `arcane-cli`:
+- **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI _and_ whether the installed CLI is behind the latest published version of `arcane-cli`:
   - Read the installed version from `.arcane.json` (field: `arcaneVersion` or `version`).
   - Determine the version of the installed `arcane-cli` CLI (for example, `npx arcane-cli --version`, or the locally installed package version).
   - Run `npm view arcane-cli version` to get the latest published version.
