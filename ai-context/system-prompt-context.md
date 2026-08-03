@@ -6,12 +6,12 @@
 
 ## Project Identity
 
-| Field       | Value                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------- |
-| Name        | Arcane (`arcane-cli`)                                                                 |
-| Description | Arcane framework CLI — scaffold and manage governance files in consuming repositories |
-| Repo        | github.com/codemagicianhq/arcane                                                      |
-| Branch      | main                                                                                  |
+| Field       | Value                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| Name        | Arcane (`arcane-cli`)                                                                                 |
+| Description | Arcane framework CLI — scaffold and manage governance files in consuming repositories                 |
+| Repo        | github.com/codemagicianhq/arcane                                                                      |
+| Branch      | main                                                                                                  |
 | Tracking    | Internal — operator-selected for this session; not persisted. Persistent configuration remains EF-14. |
 
 ---

@@ -21,15 +21,15 @@ npm run build   # produces dist/index.js + dist/assets/
 
 Useful scripts:
 
-| Script | What it does |
-| --- | --- |
-| `npm test` | Run the Vitest suite |
-| `npm run test:coverage` | Tests with coverage |
-| `npm run lint` | ESLint |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run build` | Bundle the CLI and copy assets |
+| Script                           | What it does                                               |
+| -------------------------------- | ---------------------------------------------------------- |
+| `npm test`                       | Run the Vitest suite                                       |
+| `npm run test:coverage`          | Tests with coverage                                        |
+| `npm run lint`                   | ESLint                                                     |
+| `npm run typecheck`              | `tsc --noEmit`                                             |
+| `npm run build`                  | Bundle the CLI and copy assets                             |
 | `npm run check:self-host-parity` | Fail when generated dogfood copies have real content drift |
-| `npm run fix:self-host-parity` | Regenerate dogfood copies from canonical assets |
+| `npm run fix:self-host-parity`   | Regenerate dogfood copies from canonical assets            |
 
 > Asset source lives in `src/assets/` and is copied to `dist/assets/` at build time. Edit the **source** in `src/assets/`, never `dist/`.
 
