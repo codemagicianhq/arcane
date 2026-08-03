@@ -10,7 +10,7 @@ agent: agent
 - This prompt captures feature suggestions discovered during smoke testing or regular use.
 - It creates a structured user story, assesses impact, and files a tracker item using whatever provider the repo is configured for (respects `tracking_mode`; ADO is one option, not an assumption).
 - Output is a tracked backlog item ready for future `spell-plan` invocation (or `spell-scope` for large, multi-feature suggestions).
-- See [[governance/development-methodology|Development Methodology]] for the full Spell Loop reference and tracker-provider specifics.
+- See [[.arcane/governance/development-methodology|Development Methodology]] for the full Spell Loop reference and tracker-provider specifics.
 
 ---
 
@@ -18,7 +18,7 @@ Capture and document the described feature suggestion.
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology
 - [project.md](../../project.md) — Project goals and priorities
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to check for overlap
 - [TODO.md](../../TODO.md) — Current backlog items
@@ -72,7 +72,7 @@ Workflow:
      Extract the work item ID from the response.
    - If `tracking_mode=internal`, skip external item creation and track in `TODO.md` only.
    - If `external_provider=jira` or `other`, add a TODO note for provider-specific automation and continue with `TODO.md` tracking.
-   - The ADO command above is illustrative; for the authoritative per-provider creation steps and field mappings, see [[governance/development-methodology|Development Methodology]].
+   - The ADO command above is illustrative; for the authoritative per-provider creation steps and field mappings, see [[.arcane/governance/development-methodology|Development Methodology]].
 
 6. **Update backlog** — add a line to `TODO.md`:
    ```markdown
@@ -107,4 +107,4 @@ This spell sits at the front of the Spell Loop — it captures and tracks; it do
 - **Feeds into [[spell-scope|spell-scope]]** for large or multi-feature suggestions — if the impact assessment lands on **L** effort (or the idea spans several features), route it to `spell-scope` first to break it down before planning.
 - **Consumes from usage/testing** — there is no upstream spell; suggestions originate from smoke testing or regular use (e.g. while running `spell-test`).
 
-See [[governance/development-methodology|Development Methodology]] for the canonical Spell Loop hand-off flow.
+See [[.arcane/governance/development-methodology|Development Methodology]] for the canonical Spell Loop hand-off flow.

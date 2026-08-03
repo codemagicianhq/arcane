@@ -19,7 +19,7 @@ Commit the current work in progress using Conventional Commits format.
 
 Use these files first:
 
-- [governance/git-conventions.md](../../governance/git-conventions.md) — Conventional Commits reference and agent attribution model
+- [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) — Conventional Commits reference and agent attribution model
 - [DECISIONS.md](../../DECISIONS.md) — for ADR context if relevant
 
 Workflow:
@@ -50,7 +50,7 @@ Workflow:
      - Run the detected formatter, then `git add` the resulting changes so they are part of this commit.
      - **If no formatter is configured, skip this step gracefully** — do not install one and do not block the commit.
 
-3. **Determine authorship and partition the batch** — who produced each changed file or inseparable change set? See [governance/git-conventions.md](../../governance/git-conventions.md) Agent Attribution Model section and ADR-028.
+3. **Determine authorship and partition the batch** — who produced each changed file or inseparable change set? See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Agent Attribution Model section and ADR-028.
    - **Invariant: one commit has exactly one author.** Changes spanning authors must be split into separate commits.
    - Partition changed files by author first. Step 4 then groups by concern within each author partition; concern grouping must never recombine authors.
    - **Human wrote it:** no `--author` override needed (uses global Git config)
@@ -208,7 +208,7 @@ Workflow:
 - If branch is not attached to any active worktree, run `git branch -d <branch>`.
 - Return to `main` only when appropriate for the active session/worktree context.
 - If other stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
-- See [governance/git-conventions.md](../../governance/git-conventions.md) Post-Merge Cleanup section.
+- See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Post-Merge Cleanup section.
 
 ## Troubleshooting
 

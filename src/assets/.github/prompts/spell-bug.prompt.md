@@ -11,7 +11,7 @@ agent: agent
 - It records the bug in your configured tracker (external provider) or `TODO.md` (internal mode) and links the fix commit to it.
 - Output is a working fix with tests, committed using Conventional Commits format.
 - **When to use:** you have a concrete defect — wrong/broken behavior versus expected. If the report is actually a request for *new* behavior, route to `spell-suggest-feature` instead. For small non-blocking cleanups discovered along the way, capture them with `spell-todo`.
-- See [[governance/development-methodology|Development Methodology]] for full Spell Loop reference.
+- See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference.
 
 ---
 
@@ -19,9 +19,9 @@ Document, diagnose, and fix the described bug.
 
 Use these files for context (each is optional — if a file is missing, proceed and note the assumption you fell back on):
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology **and tracker-provider specifics** (which tracker, work-item types, commit-link syntax). If missing, default to `tracking_mode: internal` and track in `TODO.md`.
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology **and tracker-provider specifics** (which tracker, work-item types, commit-link syntax). If missing, default to `tracking_mode: internal` and track in `TODO.md`.
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to respect. If missing, proceed without ADR constraints.
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Coverage thresholds. If missing, match the test conventions already present in the repo.
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Coverage thresholds. If missing, match the test conventions already present in the repo.
 
 Workflow:
 
@@ -40,7 +40,7 @@ Workflow:
 2. **Record the bug** — file it in whatever tracker this repo uses. Resolve `tracking_mode` from `.arcane.json` (or the repo's feature/PRD frontmatter); if unset, **ask** rather than assuming.
 
    - **`tracking_mode: internal`** (or no tracker configured) — append the bug to `TODO.md` (create it if absent) using the captured fields from Step 1. Use the `TODO.md` entry's identifier as `{WORK_ITEM_ID}`. No external tooling required.
-   - **`tracking_mode: external`** — file a work item in the configured provider. Read [governance/development-methodology.md](../../governance/development-methodology.md) for the provider, work-item type, and required fields; do **not** assume Azure DevOps. Extract the returned id as `{WORK_ITEM_ID}`.
+   - **`tracking_mode: external`** — file a work item in the configured provider. Read [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) for the provider, work-item type, and required fields; do **not** assume Azure DevOps. Extract the returned id as `{WORK_ITEM_ID}`.
 
      *Azure DevOps is one such provider — if and only if `.arcane.json` / methodology names it (and the `az` CLI is available), file it like so. Resolve `{ADO_ORG}` and `{ADO_PROJECT}` from `.arcane.json`; ask if unset:*
      ```bash
@@ -86,7 +86,7 @@ Workflow:
 
    {WORK_ITEM_LINK}
    ```
-   Follow Conventional Commits format. For `{WORK_ITEM_LINK}`, use the commit-link convention your tracker expects (per [governance/development-methodology.md](../../governance/development-methodology.md)) — e.g. `Fixes AB#{WORK_ITEM_ID}` for Azure DevOps, `Fixes #{WORK_ITEM_ID}` for GitHub Issues, or a plain `Refs TODO.md` for internal mode. Wait for user approval before executing `git commit`.
+   Follow Conventional Commits format. For `{WORK_ITEM_LINK}`, use the commit-link convention your tracker expects (per [governance/development-methodology.md](../../.arcane/governance/development-methodology.md)) — e.g. `Fixes AB#{WORK_ITEM_ID}` for Azure DevOps, `Fixes #{WORK_ITEM_ID}` for GitHub Issues, or a plain `Refs TODO.md` for internal mode. Wait for user approval before executing `git commit`.
 
 8. **Close out the tracker** — update the work item's state to reflect the fix:
    - **`internal`** — mark the `TODO.md` entry as resolved (check it off / move to a Done section).
@@ -98,7 +98,7 @@ Workflow:
        --org https://dev.azure.com/{ADO_ORG} \
        --output json
      ```
-     For other providers, follow [governance/development-methodology.md](../../governance/development-methodology.md).
+     For other providers, follow [governance/development-methodology.md](../../.arcane/governance/development-methodology.md).
 
 Rules:
 - Fix only the reported bug. Do not bundle unrelated improvements.

@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.7] - 2026-08-02
+
+### Added
+
+- Install-once `README.md` and `project.md` orientation stubs for new repositories.
+
+### Fixed
+
+- Resolve spell governance links through the single installed `.arcane/governance/` layer.
+
 ## [0.15.6] - 2026-08-02
 
 ### Added
@@ -46,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial public release.
 
+[0.15.7]: https://github.com/codemagicianhq/arcane/compare/v0.15.6...v0.15.7
 [0.15.6]: https://github.com/codemagicianhq/arcane/compare/v0.15.5...v0.15.6
 [0.15.5]: https://github.com/codemagicianhq/arcane/compare/v0.15.4...v0.15.5
 [0.15.4]: https://github.com/codemagicianhq/arcane/compare/v0.15.3...v0.15.4

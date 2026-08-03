@@ -10,7 +10,7 @@ agent: agent
 - This prompt chains all Spell Loop phases into a single autonomous pipeline.
 - Includes optional PRD enchantment (spell-enchant) between Plan and Architect for quality enhancement.
 - Only one human touchpoint: approving the PR at ship time.
-- Delegates each phase to the appropriate specialized agent role (research, architecture, build, QA, marketing review). Resolve concrete personas from [agent-policies](../../governance/agent-policies.md) / [naming-conventions](../../governance/naming-conventions.md); if neither is present, proceed with role names directly.
+- Delegates each phase to the appropriate specialized agent role (research, architecture, build, QA, marketing review). Resolve concrete personas from [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); if neither is present, proceed with role names directly.
 - If any phase fails, the pipeline halts and reports the blocker — no silent failures.
 
 ---
@@ -19,13 +19,13 @@ Run the complete Spell Loop end-to-end for the described feature.
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology and stories.json format
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Testing frameworks and coverage requirements
-- [governance/cicd-standards.md](../../governance/cicd-standards.md) — CI/CD pipeline and deployment gates
-- [governance/git-conventions.md](../../governance/git-conventions.md) — Branch discipline and commit format
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology and stories.json format
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Testing frameworks and coverage requirements
+- [governance/cicd-standards.md](../../.arcane/governance/cicd-standards.md) — CI/CD pipeline and deployment gates
+- [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) — Branch discipline and commit format
 - [project.md](../../project.md) — Project goals and priorities
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to respect
-- [governance/product-excellence-standards.md](../../governance/product-excellence-standards.md) — PRD Quality Scorecard for enchantment
+- [governance/product-excellence-standards.md](../../.arcane/governance/product-excellence-standards.md) — PRD Quality Scorecard for enchantment
 
 ---
 

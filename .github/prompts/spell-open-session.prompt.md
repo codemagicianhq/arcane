@@ -24,9 +24,9 @@ Use these files first:
 - [project.md](../../project.md)
 - [TODO.md](../../TODO.md)
 - [DECISIONS.md](../../DECISIONS.md)
-- [naming-conventions.md](../../naming-conventions.md)
+- [naming-conventions.md](../../.arcane/governance/naming-conventions.md)
 - [ai-context/system-prompt-context.md](../../ai-context/system-prompt-context.md)
-- [agents/agent-policies.md](../../agents/agent-policies.md)
+- [agents/agent-policies.md](../../.arcane/governance/agent-policies.md)
 - Most recent journal file(s) in [journal/](../../journal/)
 - Relevant business overview(s) under [ventures/](../../ventures/)
 

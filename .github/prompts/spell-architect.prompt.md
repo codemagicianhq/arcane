@@ -10,7 +10,7 @@ agent: agent
 - This prompt takes a PRD and produces architecture decisions plus an implementable story breakdown.
 - It follows a structured solutioning pattern — progressive context chain from requirements to implementation plan.
 - Outputs `architecture.md` and `stories.json` that feed into `spell-implement`.
-- See [[governance/development-methodology|Development Methodology]] for full Spell Loop reference.
+- See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference.
 
 ---
 
@@ -18,8 +18,8 @@ Generate architecture decisions and story breakdown from the provided PRD.
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology and stories.json format
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Testing frameworks and coverage requirements
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology and stories.json format
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Testing frameworks and coverage requirements
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to respect and extend
 
 Workflow:

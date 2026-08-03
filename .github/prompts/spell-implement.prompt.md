@@ -10,7 +10,7 @@ agent: agent
 - This is the core autonomous loop of the Spell Loop methodology.
 - Each iteration: pick a story → implement → run tests → commit if passing → update stories.json → loop.
 - Uses fresh context per iteration — only stories.json, progress.txt, and git history carry forward.
-- See [[governance/development-methodology|Development Methodology]] for full Spell Loop reference.
+- See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference.
 
 ---
 
@@ -18,8 +18,8 @@ Run the autonomous implementation loop for the current feature.
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Testing frameworks and coverage requirements
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Testing frameworks and coverage requirements
 - The feature's `architecture.md` — for tech decisions and patterns
 - The feature's `stories.json` — for the work breakdown
 - The feature's `progress.txt` (in `features/{slug}/`, if present) — accumulated learnings from prior iterations; read it before each iteration and append new learnings as the loop proceeds

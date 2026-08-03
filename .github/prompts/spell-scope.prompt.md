@@ -18,15 +18,15 @@ Analyze the provided PRD and produce a scoped execution plan.
 
 Use these files for context. Each is optional — if a file is missing, proceed with the stated fallback and note the gap in the output's Open Questions:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology, story sizing rules, and the canonical **ADO Hierarchy Rules**. *Fallback: if missing, use the default sizing of 4–8 right-sized stories per cycle described below and skip external-tracker hierarchy mapping.*
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Testing frameworks per stack. *Fallback: if missing, flag test strategy as an open question.*
-- [governance/cicd-standards.md](../../governance/cicd-standards.md) — Pipeline requirements. *Fallback: if missing, omit pipeline considerations.*
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology, story sizing rules, and the canonical **ADO Hierarchy Rules**. *Fallback: if missing, use the default sizing of 4–8 right-sized stories per cycle described below and skip external-tracker hierarchy mapping.*
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Testing frameworks per stack. *Fallback: if missing, flag test strategy as an open question.*
+- [governance/cicd-standards.md](../../.arcane/governance/cicd-standards.md) — Pipeline requirements. *Fallback: if missing, omit pipeline considerations.*
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to check against. *Fallback: if missing, treat all architecture decisions as new candidates.*
 - [security/threat-model.md](../../security/threat-model.md) — Active threat model. *Fallback: if missing, apply OWASP Top 10 as the baseline.*
-- [agents/agent-policies.md](../../agents/agent-policies.md) — Agent roster, power levels, capabilities. *Fallback: if missing, assign work by role label (architecture, backend, frontend, mobile, QA, DevOps, research) instead of named personas.*
-- [naming-conventions.md](../../naming-conventions.md) — Agent roster and role-to-persona mapping. *Fallback: if missing, refer to roles by their generic label.*
+- [agents/agent-policies.md](../../.arcane/governance/agent-policies.md) — Agent roster, power levels, capabilities. *Fallback: if missing, assign work by role label (architecture, backend, frontend, mobile, QA, DevOps, research) instead of named personas.*
+- [naming-conventions.md](../../.arcane/governance/naming-conventions.md) — Agent roster and role-to-persona mapping. *Fallback: if missing, refer to roles by their generic label.*
 - [project.md](../../project.md) — Project goals and business context. *Fallback: if missing, derive context from the PRD itself.*
-- [governance/product-excellence-standards.md](../../governance/product-excellence-standards.md) — PRD Quality Scorecard and scoring rubric. *Fallback: if missing, skip the Quality Quick-Check (section 1.5) and note that it was skipped.*
+- [governance/product-excellence-standards.md](../../.arcane/governance/product-excellence-standards.md) — PRD Quality Scorecard and scoring rubric. *Fallback: if missing, skip the Quality Quick-Check (section 1.5) and note that it was skipped.*
 
 > **Roster by reference.** This spell maps work to **roles** (architecture, backend, frontend, mobile, QA, DevOps, research, marketing). Resolve each role to a concrete agent persona via `agents/agent-policies.md` / `naming-conventions.md` at run time — do not assume a fixed set of persona names.
 
@@ -118,7 +118,7 @@ For each epic, define:
 
 Only applies when `tracking_mode=external`. Skip entirely for internal mode.
 
-Do **not** inline the work-item-type fallback order or the parent/child linkage rules here — they are the single source of truth in [governance/development-methodology.md](../../governance/development-methodology.md) → **Process-Template-Aware ADO Hierarchy Rules**. Detect the provider from `external_provider`, then apply those rules. *Fallback: if that doc is missing, record the tracker mapping as an Open Question and proceed without item-type assignment.*
+Do **not** inline the work-item-type fallback order or the parent/child linkage rules here — they are the single source of truth in [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) → **Process-Template-Aware ADO Hierarchy Rules**. Detect the provider from `external_provider`, then apply those rules. *Fallback: if that doc is missing, record the tracker mapping as an Open Question and proceed without item-type assignment.*
 
 Scope-specific delta (the only thing this spell adds on top of those rules): each split **epic** maps to the **Epic-level** logical level — use the `Epic` work item type whenever the resolved provider/template offers it, and record the selected type per epic in `execution-plan.md`. All lower-level and linkage decisions defer to the governance rules above.
 

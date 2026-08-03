@@ -25,7 +25,7 @@ Use these files for context:
 
 - [project.md](../../project.md) — Business goals and priorities
 - The relevant business docs under `{BUSINESS_ROOT}/` — KPIs, metrics, and product strategy. **If `{BUSINESS_ROOT}` or these docs are missing, proceed with what `project.md` provides and flag the gap; if even `project.md` is absent, report "insufficient context to review" and list what is missing rather than inventing goals.**
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop context
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop context
 
 Workflow:
 

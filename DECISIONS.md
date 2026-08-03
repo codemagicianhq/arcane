@@ -37,7 +37,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate)     | Public Repository Model: Fresh-Start Build-in-Public with an Org-Leak Gate     | 2026-06-24 | Accepted   |
 | [ARC-017](#arc-017--enforce-pre-pr-rebase-for-agent-initiated-pull-requests)                       | Enforce Pre-PR Rebase for Agent-Initiated Pull Requests                        | 2026-07-05 | Accepted   |
 | [ARC-018](#arc-018--track-claude-code-preview-launch-config-in-source-control)                     | Track Claude Code Preview Launch Config in Source Control                      | 2026-07-11 | Accepted   |
-| [ARC-019](#arc-019--repository-document-ownership-and-path-model)                                  | Repository Document Ownership and Path Model                                   | 2026-07-31 | Proposed   |
+| [ARC-019](#arc-019--repository-document-ownership-and-path-model)                                  | Repository Document Ownership and Path Model                                   | 2026-07-31 | Accepted   |
 | [ARC-020](#arc-020--canonical-repository-configuration-schema)                                     | Canonical Repository Configuration Schema                                      | 2026-07-31 | Proposed   |
 | [ARC-021](#arc-021--vendored-framework-content-attribution)                                        | Vendored Framework Content Attribution                                         | 2026-07-31 | Accepted   |
 | [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Proposed   |
@@ -778,22 +778,25 @@ Track `.claude/launch.json` in source control rather than leaving it untracked o
 
 Arcane installs governance under `.arcane/governance/`, while many canonical spells read root-level `governance/`, `agents/`, `security/`, and `playbooks/` paths. Other spells use the installed dotted paths. Consumers therefore cannot tell whether `.arcane/` is the editable project instance or a vendored template for a second operator-owned layer.
 
-**Proposed decision:**
+**Decision:**
 
-Choose and document one ownership model before fixing individual references:
-
-1. **Single layer:** `.arcane/governance/` is the managed project instance and every spell references it; or
-2. **Two layers:** `.arcane/governance/` is vendored source material and init scaffolds explicit operator-owned instances at documented paths.
-
-Whichever model is selected must define update ownership, customization boundaries, and a discoverable "Where documents live" section. EF-01 remains deferred until this choice is accepted.
+1. Use one framework-governance layer at `.arcane/governance/`. Every spell references that installed path; Arcane does not scaffold a duplicate root `governance/` tree.
+2. Keep project-owned orientation and continuity at the repository root (`README.md`, `project.md`, `TODO.md`, `DECISIONS.md`) and in `ai-context/` / `journal/`. These files are install-once and preserved when present.
+3. Put additive operator/domain documents at explicit paths such as `docs/`, `security/`, `infrastructure/`, or a configured business root. Template statements that a filled-in instance belongs in an ops repo refer to operator data, not a second copy of every framework standard.
+4. Publish a discoverable "Where Documents Live" section in portable bootstrap and mechanically reject spell links to the nonexistent un-dotted governance layer.
 
 **Reasoning:**
 
-Repointing individual links before deciding ownership can make the wrong layer canonical and deepen update/customization conflicts. One model must control installation, spell lookup, and user edits.
+One model must control installation and spell lookup. A second complete governance tree would recreate the same two-copy drift failure that ARC-027 now prevents inside the source repository.
+
+**Open follow-up — managed-standard overrides:**
+
+The single-layer model does not yet let an operator override a shipped standard safely. Editing `.arcane/governance/git-conventions.md` can be overwritten by `arcane update`; this is the EF-25 failure class applied to managed governance content. Additive project documents are unaffected. The override/customization model remains open in the [vendor-neutral customization backlog](TODO.md) filed 2026-07-14 and must define precedence and update-safe ownership before Arcane claims managed standards are customizable.
 
 **Rejected alternatives:**
 
 - **Continue mixed dotted and un-dotted references with fallbacks** — rejected because graceful fallback masks missing canonical inputs and makes behavior differ by spell.
+- **Scaffold two complete governance layers** — rejected because duplicated standards create independent update paths and repeat the drift class addressed by ARC-027.
 
 ---
 

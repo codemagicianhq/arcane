@@ -10,7 +10,7 @@ agent: agent
 - This prompt generates a PRD.md from a feature description or TODO item.
 - It follows a structured analysis pattern — requirements, acceptance criteria, and constraints.
 - Output feeds directly into `spell-architect` as the next phase of the Spell Loop.
-- See [[governance/development-methodology|Development Methodology]] for full Spell Loop reference.
+- See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference.
 
 ---
 
@@ -18,7 +18,7 @@ Generate a Product Requirements Document for the described feature or initiative
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology
 - [project.md](../../project.md) — Project goals and priorities
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to respect
 

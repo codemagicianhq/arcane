@@ -18,10 +18,10 @@ Explore the given problem space and generate solution options.
 
 Use these files for context. Each is **optional** — if a file is missing, proceed without it and note the gap in your output so the user knows what wasn't consulted:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology. _If missing:_ proceed with general SDLC reasoning.
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology. _If missing:_ proceed with general SDLC reasoning.
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs (to avoid contradicting decided patterns). _If missing:_ assume no decided patterns and state that ADR conflicts could not be checked.
 - [project.md](../../project.md) — Project goals and business context. _If missing:_ infer context from the problem statement and ask a clarifying question if goals are unclear.
-- [naming-conventions.md](../../naming-conventions.md) — Agent roster and roles. _If missing:_ proceed without role references.
+- [naming-conventions.md](../../.arcane/governance/naming-conventions.md) — Agent roster and roles. _If missing:_ proceed without role references.
 - [TODO.md](../../../TODO.md) — In-progress work (referenced in step 4). _If missing:_ skip the in-progress-work cross-check and note it.
 
 ---

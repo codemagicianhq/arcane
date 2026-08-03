@@ -5,7 +5,7 @@ argument-hint: '[summary|deck] + optional audience/size — e.g., "for investors
 agent: agent
 ---
 
-See [[governance/development-methodology|Development Methodology]] for full Spell Loop reference. Project context: [[project|Project Overview]].
+See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference. Project context: [[project|Project Overview]].
 
 ## Mode Selection
 
@@ -39,10 +39,10 @@ Read these files before generating the presentation. They are the ground truth *
 | [project.md](../../project.md) | Mission, vision, core principles, entities, goals | `README.md`, then ask the operator for the mission |
 | [ai-context/system-prompt-context.md](../../ai-context/system-prompt-context.md) | Environment, agent stack, current state | Infer environment from repo; omit slide detail if unknown |
 | [DECISIONS.md](../../DECISIONS.md) | Key ADRs — decisions that shaped the architecture | Skip ADR callouts; note that decision records are absent |
-| [agents/agent-capability-matrix.md](../../agents/agent-capability-matrix.md) | Agent lineup and capability tiers | `.github/agents/*.agent.md`; else present the system generically |
-| [agents/agent-policies.md](../../agents/agent-policies.md) | Power levels, autonomy model | [[governance/naming-conventions]]; else describe roles generically |
+| `.github/agents/*.agent.md` | Agent lineup and capability tiers | Present the system generically if no generated agent files exist |
+| [agents/agent-policies.md](../../.arcane/governance/agent-policies.md) | Power levels, autonomy model | [[.arcane/governance/naming-conventions]]; else describe roles generically |
 | `{BUSINESS_ROOT}/<business>/overview.md` | Per-business status (repeat for each business found) | Enumerate `{BUSINESS_ROOT}/*`; if none, present Arcane without a ventures act |
-| [governance/development-methodology.md](../../governance/development-methodology.md) | The Spell Loop — development workflow | Describe the Spell Loop from the spell library filenames |
+| [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) | The Spell Loop — development workflow | Describe the Spell Loop from the spell library filenames |
 | `{INFRA_DOC}` — hardware/infra inventory (e.g. `infrastructure/hardware-inventory.md`) | Hardware context for demo credibility | Detect any infra/hardware doc; else omit the infrastructure slide |
 | [README.md](../../README.md) | Repo structure overview | List top-level directories directly |
 
@@ -87,7 +87,7 @@ Read these files before generating the presentation. They are the ground truth *
 
 5. **Arcane — the operating system for AI-run businesses** — What the repo is, what it contains, how it's structured
 6. **Security model** — full-disk encryption, least privilege, no root, SecretRef, private network mesh — why security is non-negotiable for a production system
-7. **The AI agent stack** — the gateway plus the agent lineup, power levels, and tool profiles. Populate the roster from the agent-capability-matrix / `.github/agents/*.agent.md` (see [[governance/agent-policies]] / [[governance/naming-conventions]]); name each `{AGENT_NAME}` with its role rather than assuming a fixed cast. If no roster files exist, describe agent *roles* (e.g. research, marketing, ops, dev) generically.
+7. **The AI agent stack** — the gateway plus the agent lineup, power levels, and tool profiles. Populate the roster from the agent-capability-matrix / `.github/agents/*.agent.md` (see [[.arcane/governance/agent-policies]] / [[.arcane/governance/naming-conventions]]); name each `{AGENT_NAME}` with its role rather than assuming a fixed cast. If no roster files exist, describe agent *roles* (e.g. research, marketing, ops, dev) generically.
 8. **The Spell Loop** — Arcane's development methodology: spell-plan → spell-architect → spell-implement → spell-ship
 9. **Multi-client AI governance** — Same rules enforced across every AI client the operator uses. Cite the relevant governance ADR if a decision record exists (resolve the ADR id from `DECISIONS.md`); otherwise state the principle without an id.
 10. **Ventures overview** — one line per business found under `{BUSINESS_ROOT}` (e.g. `{BUSINESS_NAME}` — launch-ready, `{BUSINESS_NAME}` — active dev), plus the idea pipeline. If none exist, replace with a roadmap slide.

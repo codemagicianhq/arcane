@@ -38,14 +38,21 @@ Paste this entire file into any AI client (Claude web, ChatGPT, etc.) to give it
 
 ## Key Files
 
-| Need               | File                                  |
-| ------------------ | ------------------------------------- |
-| Full rules         | `governance/universal-agent-rules.md` |
-| Project overview   | `project.md`                          |
-| Decisions log      | `DECISIONS.md`                        |
-| Agent policies     | `agents/agent-policies.md`            |
-| Git conventions    | `governance/git-conventions.md`       |
-| AI context summary | `ai-context/system-prompt-context.md` |
+| Need               | File                                          |
+| ------------------ | --------------------------------------------- |
+| Full rules         | `.arcane/governance/universal-agent-rules.md` |
+| Project overview   | `project.md`                                  |
+| Decisions log      | `DECISIONS.md`                                |
+| Agent policies     | `.arcane/governance/agent-policies.md`        |
+| Git conventions    | `.arcane/governance/git-conventions.md`       |
+| AI context summary | `ai-context/system-prompt-context.md`         |
+
+## Where Documents Live
+
+- **Framework-managed standards:** `.arcane/governance/`. Spells reference this single installed layer; do not create a duplicate root `governance/` tree.
+- **Project-owned orientation and continuity:** `README.md`, `project.md`, `TODO.md`, `DECISIONS.md`, `ai-context/`, and `journal/`. Arcane creates missing files once and preserves existing content.
+- **Project/domain documents:** use explicit descriptive paths such as `docs/`, `security/`, `infrastructure/`, or a configured business root. These add project context alongside framework standards.
+- **Overrides are not yet supported:** editing a managed `.arcane/governance/` standard can be replaced by `arcane update`. Additive project documents are safe; overriding a shipped standard requires the open customization/override model.
 
 ## Documentation Format
 
@@ -53,11 +60,11 @@ Every doc uses YAML frontmatter: `title`, `audience` (human/ai/both), `last_upda
 
 ## Naming Tiers
 
-| Tier      | Style           | Examples                                  |
-| --------- | --------------- | ----------------------------------------- |
-| Machines  | Iconic names    | Atlas, Voyager                       |
+| Tier      | Style           | Examples                                 |
+| --------- | --------------- | ---------------------------------------- |
+| Machines  | Iconic names    | Atlas, Voyager                           |
 | AI Agents | Persona + role  | Merlin — CTO, {AGENT_NAME} — Product Ops |
-| Systems   | Functional slug | `inventory-api`, `orders-worker`          |
+| Systems   | Functional slug | `inventory-api`, `orders-worker`         |
 
 ## Version Control Host
 
@@ -98,4 +105,4 @@ Development follows the **Spell Loop** — structured planning phases feeding an
 - `spell-explain-concept` — Break down complex architecture concepts
 - `spell-generate-bot-icons` — Create agent personas and icons
 
-Full reference: See `governance/development-methodology.md` in the repo.
+Full reference: See `.arcane/governance/development-methodology.md` in the repo.
