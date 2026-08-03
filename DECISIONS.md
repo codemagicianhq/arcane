@@ -17,35 +17,35 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 
 ## Table of Contents
 
-| ARC                                                                                                | Title                                                                          | Date       | Status   |
-| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------- | -------- |
-| [ARC-001](#arc-001--arcane-ops-separation-dual-prefix-adr-strategy-and-content-ownership)          | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership        | 2026-05-04 | Accepted |
-| [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                            | Distribute VS Code Agent Mode Files via spell init                             | 2026-05-14 | Accepted |
-| [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)              | Agent Persona Schema v2 and Operations-Comms Persona Replacement               | 2026-05-18 | Accepted |
-| [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                            | Image-Prompt Asset Ownership Model                                             | 2026-05-19 | Accepted |
-| [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context)                         | Session Handoff Prompt: Automatic Continuation Context                         | 2026-05-25 | Accepted |
+| ARC                                                                                                | Title                                                                          | Date       | Status     |
+| -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------- | ---------- |
+| [ARC-001](#arc-001--arcane-ops-separation-dual-prefix-adr-strategy-and-content-ownership)          | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership        | 2026-05-04 | Accepted   |
+| [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                            | Distribute VS Code Agent Mode Files via spell init                             | 2026-05-14 | Accepted   |
+| [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)              | Agent Persona Schema v2 and Operations-Comms Persona Replacement               | 2026-05-18 | Accepted   |
+| [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                            | Image-Prompt Asset Ownership Model                                             | 2026-05-19 | Accepted   |
+| [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context)                         | Session Handoff Prompt: Automatic Continuation Context                         | 2026-05-25 | Accepted   |
 | [ARC-006](#arc-006--arcane-self-installs-via-spell-init-dogfooding)                                | Arcane Self-Installs via spell init (Dogfooding)                               | 2026-05-26 | Superseded |
-| [ARC-007](#arc-007--rename-spell-assess-to-spell-scope-and-add-spell-brainstorm)                   | Rename spell-assess to spell-scope and add spell-brainstorm                    | 2026-06-06 | Accepted |
-| [ARC-008](#arc-008--clean-break-for-spell-assess-removal-no-compatibility-alias)                   | Clean Break for spell-assess Removal: No Compatibility Alias                   | 2026-06-06 | Accepted |
-| [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy)                            | Session Naming and PR Lifecycle Reliability Policy                             | 2026-06-07 | Accepted |
-| [ARC-010](#arc-010--terminal-safe-cli-banner-animation-strategy)                                   | Terminal-Safe CLI Banner Animation Strategy                                    | 2026-06-07 | Accepted |
-| [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping)       | Optional External Tracking Mode with Process-Template-Aware ADO Mapping        | 2026-06-08 | Accepted |
-| [ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard)                      | Generated Distributable Artifacts Require a Parity Guard                       | 2026-06-20 | Accepted |
-| [ARC-013](#arc-013--review-and-drift-quality-gate-philosophy-coverage-mandate-over-finding-quotas) | Review and Drift Quality-Gate Philosophy: Coverage Mandate over Finding Quotas | 2026-06-22 | Accepted |
-| [ARC-014](#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts)                  | Spell Authoring Standards: A Quality Rubric for Spell Prompts                  | 2026-06-22 | Accepted |
-| [ARC-015](#arc-015--public-naming-architecture-brand-package-and-binary-with-arcane-alias)         | Public Naming Architecture: Brand, Package, and Binary (with `arcane` alias)   | 2026-06-23 | Accepted |
-| [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate)     | Public Repository Model: Fresh-Start Build-in-Public with an Org-Leak Gate     | 2026-06-24 | Accepted |
-| [ARC-017](#arc-017--enforce-pre-pr-rebase-for-agent-initiated-pull-requests)                       | Enforce Pre-PR Rebase for Agent-Initiated Pull Requests                        | 2026-07-05 | Accepted |
-| [ARC-018](#arc-018--track-claude-code-preview-launch-config-in-source-control)                     | Track Claude Code Preview Launch Config in Source Control                      | 2026-07-11 | Accepted |
-| [ARC-019](#arc-019--repository-document-ownership-and-path-model)                                  | Repository Document Ownership and Path Model                                   | 2026-07-31 | Proposed |
-| [ARC-020](#arc-020--canonical-repository-configuration-schema)                                     | Canonical Repository Configuration Schema                                      | 2026-07-31 | Proposed |
-| [ARC-021](#arc-021--vendored-framework-content-attribution)                                        | Vendored Framework Content Attribution                                         | 2026-07-31 | Proposed |
-| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Proposed |
-| [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)                       | Normative Controls Require Inline Enforcement Contracts                        | 2026-07-31 | Accepted |
-| [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Proposed |
-| [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted |
-| [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted |
-| [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted |
+| [ARC-007](#arc-007--rename-spell-assess-to-spell-scope-and-add-spell-brainstorm)                   | Rename spell-assess to spell-scope and add spell-brainstorm                    | 2026-06-06 | Accepted   |
+| [ARC-008](#arc-008--clean-break-for-spell-assess-removal-no-compatibility-alias)                   | Clean Break for spell-assess Removal: No Compatibility Alias                   | 2026-06-06 | Accepted   |
+| [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy)                            | Session Naming and PR Lifecycle Reliability Policy                             | 2026-06-07 | Accepted   |
+| [ARC-010](#arc-010--terminal-safe-cli-banner-animation-strategy)                                   | Terminal-Safe CLI Banner Animation Strategy                                    | 2026-06-07 | Accepted   |
+| [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping)       | Optional External Tracking Mode with Process-Template-Aware ADO Mapping        | 2026-06-08 | Accepted   |
+| [ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard)                      | Generated Distributable Artifacts Require a Parity Guard                       | 2026-06-20 | Accepted   |
+| [ARC-013](#arc-013--review-and-drift-quality-gate-philosophy-coverage-mandate-over-finding-quotas) | Review and Drift Quality-Gate Philosophy: Coverage Mandate over Finding Quotas | 2026-06-22 | Accepted   |
+| [ARC-014](#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts)                  | Spell Authoring Standards: A Quality Rubric for Spell Prompts                  | 2026-06-22 | Accepted   |
+| [ARC-015](#arc-015--public-naming-architecture-brand-package-and-binary-with-arcane-alias)         | Public Naming Architecture: Brand, Package, and Binary (with `arcane` alias)   | 2026-06-23 | Accepted   |
+| [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate)     | Public Repository Model: Fresh-Start Build-in-Public with an Org-Leak Gate     | 2026-06-24 | Accepted   |
+| [ARC-017](#arc-017--enforce-pre-pr-rebase-for-agent-initiated-pull-requests)                       | Enforce Pre-PR Rebase for Agent-Initiated Pull Requests                        | 2026-07-05 | Accepted   |
+| [ARC-018](#arc-018--track-claude-code-preview-launch-config-in-source-control)                     | Track Claude Code Preview Launch Config in Source Control                      | 2026-07-11 | Accepted   |
+| [ARC-019](#arc-019--repository-document-ownership-and-path-model)                                  | Repository Document Ownership and Path Model                                   | 2026-07-31 | Proposed   |
+| [ARC-020](#arc-020--canonical-repository-configuration-schema)                                     | Canonical Repository Configuration Schema                                      | 2026-07-31 | Proposed   |
+| [ARC-021](#arc-021--vendored-framework-content-attribution)                                        | Vendored Framework Content Attribution                                         | 2026-07-31 | Accepted   |
+| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Proposed   |
+| [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)                       | Normative Controls Require Inline Enforcement Contracts                        | 2026-07-31 | Accepted   |
+| [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Proposed   |
+| [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted   |
+| [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted   |
+| [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted   |
 
 ---
 
@@ -767,7 +767,7 @@ Track `.claude/launch.json` in source control rather than leaving it untracked o
 ## ARC-019 — Repository Document Ownership and Path Model
 
 **Date:** 2026-07-31
-**Status:** Proposed
+**Status:** Accepted 2026-08-02
 **Intake:** [EF-02](docs/intake/batch-001/EF-02.md)
 
 **Context:**
@@ -829,17 +829,22 @@ Persistent framework inputs need one upgrade-safe source of truth. Repeated prom
 
 The attribution model distinguishes human and agent-produced content but does not classify files copied from the Arcane package. Every initial scaffold and managed update therefore requires an undocumented authorship judgment.
 
-**Proposed decision:**
+**Decision:**
 
-Define vendored framework content as a third provenance class. Select whether it uses an Arcane author identity, the human committer plus explicit vendor/version trailers, or another package-provenance representation. Mixed vendor/operator changes must be partitioned according to EF-16 before commit.
+1. Define Arcane-vendored scaffold and managed-update content as a third provenance class.
+2. Do not invent an Arcane email identity. A vendor-only repository action uses the operator's normal Git author/committer identity with required `Vendor: arcane-cli` provenance.
+3. Include `Vendor-Version` only when it is derived programmatically at commit time from the installed CLI. `arcane --version` / `spell --version` reads that installed package's `package.json`; never type, remember, or infer the value. If resolution fails, omit the trailer and report incomplete provenance.
+4. Partition mixed vendored, human, and agent work under EF-16 before concern grouping so one commit never attributes operator customizations to the package or vendored content to an agent.
 
 **Reasoning:**
 
-Attributing copied framework files to the operator overstates authorship; attributing them to the agent that ran the command confuses execution with creation. Package and version provenance must remain queryable.
+Git's author field records who performed the repository action; the vendor trailers record who produced the copied content. This preserves queryable package provenance without fabricating an identity. Programmatic version derivation applies the same evidence standard as model-source metadata.
 
 **Rejected alternatives:**
 
 - **Keep human-as-author as an undocumented default** — rejected because every deployment rediscovers the same evidentiary choice.
+- **Create an Arcane vendor email identity** — rejected because copied package provenance is not a person/tool mailbox and would fabricate identity metadata.
+- **Type `Vendor-Version` manually** — rejected because a plausible hand-entered version becomes unverifiable and stale within one release.
 
 ---
 

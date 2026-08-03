@@ -36,18 +36,18 @@ type(scope): short description
 
 ### Commit Types
 
-| Type       | When to Use                                     | Example                                                        |
-| ---------- | ----------------------------------------------- | -------------------------------------------------------------- |
-| `feat`     | New feature or capability                       | `feat(prompts): add spell-commit-work for checkpointing`       |
-| `fix`      | Bug fix                                         | `fix(auth): restore token validation after refactor`           |
-| `docs`     | Documentation only                              | `docs(decisions): add table of contents to DECISIONS.md`       |
-| `refactor` | Code/structure change, no behavior change       | `refactor(playbooks): reorganize setup steps`                  |
-| `chore`    | Maintenance, deps, tooling, cleanup             | `chore(deps): bump <dependency> to <version>`                  |
-| `test`     | Adding or fixing tests                          | `test(security): add token-expiry test`                        |
-| `perf`     | Performance improvements                        | `perf(api): reduce cold-start latency`                         |
-| `ci`       | CI/CD pipeline changes                          | `ci(azure): add DevOps pipeline for repo sync`                 |
-| `style`    | Code formatting, whitespace (rare in this repo) | `style(markdown): fix inconsistent heading levels`             |
-| `revert`   | Revert a previous commit                        | `revert: undo feat(prompts): add spell-commit-work`            |
+| Type       | When to Use                                     | Example                                                  |
+| ---------- | ----------------------------------------------- | -------------------------------------------------------- |
+| `feat`     | New feature or capability                       | `feat(prompts): add spell-commit-work for checkpointing` |
+| `fix`      | Bug fix                                         | `fix(auth): restore token validation after refactor`     |
+| `docs`     | Documentation only                              | `docs(decisions): add table of contents to DECISIONS.md` |
+| `refactor` | Code/structure change, no behavior change       | `refactor(playbooks): reorganize setup steps`            |
+| `chore`    | Maintenance, deps, tooling, cleanup             | `chore(deps): bump <dependency> to <version>`            |
+| `test`     | Adding or fixing tests                          | `test(security): add token-expiry test`                  |
+| `perf`     | Performance improvements                        | `perf(api): reduce cold-start latency`                   |
+| `ci`       | CI/CD pipeline changes                          | `ci(azure): add DevOps pipeline for repo sync`           |
+| `style`    | Code formatting, whitespace (rare in this repo) | `style(markdown): fix inconsistent heading levels`       |
+| `revert`   | Revert a previous commit                        | `revert: undo feat(prompts): add spell-commit-work`      |
 
 ### Scopes
 
@@ -303,10 +303,10 @@ When working across machines, topic branches are the coordination mechanism:
 
 ### Merge Strategy by Repo Risk
 
-| Repo Type      | Examples                                    | Merge Method | PR Required? |
-| -------------- | ------------------------------------------- | ------------ | ------------ |
-| **Docs repos** | docs hub, prototypes                        | PR           | Yes          |
-| **Code repos** | application, API, storefront repos          | PR           | Yes          |
+| Repo Type      | Examples                           | Merge Method | PR Required? |
+| -------------- | ---------------------------------- | ------------ | ------------ |
+| **Docs repos** | docs hub, prototypes               | PR           | Yes          |
+| **Code repos** | application, API, storefront repos | PR           | Yes          |
 
 - **All repos have main branch protection.** Direct pushes to main are rejected. All changes must go through a PR.
 
@@ -319,22 +319,22 @@ When completing a PR in Azure DevOps, allow only these merge strategies by defau
 
 Do **not** use Squash commit.
 
-| Merge Type                  | Use?    | Why                                                                                                                                                                                                                                                                          |
-| --------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Rebase and fast-forward** | **Yes** | Preserves linear history while keeping individual commits and attribution trailers intact.                                                                                                                                                                                    |
-| **Merge (no fast forward)** | **Yes** | Preserves full branch context and review traceability where explicit merge commits are preferred.                                                                                                                                                                              |
-| Squash commit               | **No**  | Collapses commit history and breaks per-commit attribution/analytics and granular rollback.                                                                                                                                                                                   |
-| Semi-linear merge           | No      | Adds unnecessary merge commits on top of rebased commits; avoid by default.                                                                                                                                                                                                   |
+| Merge Type                  | Use?    | Why                                                                                               |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| **Rebase and fast-forward** | **Yes** | Preserves linear history while keeping individual commits and attribution trailers intact.        |
+| **Merge (no fast forward)** | **Yes** | Preserves full branch context and review traceability where explicit merge commits are preferred. |
+| Squash commit               | **No**  | Collapses commit history and breaks per-commit attribution/analytics and granular rollback.       |
+| Semi-linear merge           | No      | Adds unnecessary merge commits on top of rebased commits; avoid by default.                       |
 
 ### Commit Governance
 
 Commit execution rights depend on the interaction context:
 
-| Context                                                           | Commit Behavior                                                                                                   | Rationale                                                       |
-| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Interactive session** (Copilot, Claude in VS Code, Claude Code) | **Must ask human** before committing. Stage changes, present proposed message, wait for approval.                 | Human is actively collaborating; commits are a shared decision. |
-| **Autonomous agent** at Magus+ power level                     | May self-commit and self-merge within approved scope (per your power-level policy). Must use proper author/trailers. | Agent is operating independently with delegated authority.    |
-| **Autonomous agent** below Magus                               | Must commit to topic branch and queue merge for human review.                                                     | Insufficient autonomy level for unsupervised merges to main.   |
+| Context                                                           | Commit Behavior                                                                                                      | Rationale                                                       |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Interactive session** (Copilot, Claude in VS Code, Claude Code) | **Must ask human** before committing. Stage changes, present proposed message, wait for approval.                    | Human is actively collaborating; commits are a shared decision. |
+| **Autonomous agent** at Magus+ power level                        | May self-commit and self-merge within approved scope (per your power-level policy). Must use proper author/trailers. | Agent is operating independently with delegated authority.      |
+| **Autonomous agent** below Magus                                  | Must commit to topic branch and queue merge for human review.                                                        | Insufficient autonomy level for unsupervised merges to main.    |
 
 **Interactive session rule applies to ALL interactive tools, regardless of agent identity.** Even a high-power-level agent cannot auto-commit when operating through an interactive editor session — the human is present and must approve.
 
@@ -403,19 +403,19 @@ git push origin --delete <branch>         # delete remote branch (safety net —
 
 **Known issues:**
 
-| Issue                                                           | Symptom                             | Fix                                        |
-| --------------------------------------------------------------- | ----------------------------------- | ------------------------------------------ |
-| Reviewer already assigned                                        | `reviewer add` returns already exists | Treat as idempotent success and continue |
-| `az repos pr set-vote` succeeds but approval still blocked       | Policy requires additional approver | Confirm vote state, then request second human approval |
-| MCP `vote_pull_request` returns "Success" but vote stays 0       | `reviewer list` shows `vote: 0`     | Use `Invoke-RestMethod` step 5 above       |
-| `az rest --body '{"vote":10}'` fails                             | Shell parsing error on Windows      | Use `Invoke-RestMethod`                    |
-| `az repos pr update --status completed` fails with policy error | "Needs 1 approval"                  | Verify `vote: 10` first, then retry        |
-| MCP `create_pull_request` returns no data                       | No PR ID/URL in response            | Fall back to `az repos pr create`          |
-| `gh pr create` not found                                        | `gh` CLI not installed              | Use `az repos pr create`                   |
-| `creatorVoteCounts` is false on branch policy                   | Vote registers but PR still blocked | A second human must approve via ADO web UI |
-| `az repos pr update --status completed` returns `status: active` without error | PR silently not merged | Add `--squash false` to the command; the flag triggers the merge path correctly |
-| `git branch -d <branch>` fails after merge                      | Branch is attached to a worktree    | Skip local delete; run remote delete + prune |
-| `git push origin --delete <branch>` fails with missing ref      | Branch already deleted remotely     | Treat as non-fatal and continue |
+| Issue                                                                          | Symptom                               | Fix                                                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------- |
+| Reviewer already assigned                                                      | `reviewer add` returns already exists | Treat as idempotent success and continue                                        |
+| `az repos pr set-vote` succeeds but approval still blocked                     | Policy requires additional approver   | Confirm vote state, then request second human approval                          |
+| MCP `vote_pull_request` returns "Success" but vote stays 0                     | `reviewer list` shows `vote: 0`       | Use `Invoke-RestMethod` step 5 above                                            |
+| `az rest --body '{"vote":10}'` fails                                           | Shell parsing error on Windows        | Use `Invoke-RestMethod`                                                         |
+| `az repos pr update --status completed` fails with policy error                | "Needs 1 approval"                    | Verify `vote: 10` first, then retry                                             |
+| MCP `create_pull_request` returns no data                                      | No PR ID/URL in response              | Fall back to `az repos pr create`                                               |
+| `gh pr create` not found                                                       | `gh` CLI not installed                | Use `az repos pr create`                                                        |
+| `creatorVoteCounts` is false on branch policy                                  | Vote registers but PR still blocked   | A second human must approve via ADO web UI                                      |
+| `az repos pr update --status completed` returns `status: active` without error | PR silently not merged                | Add `--squash false` to the command; the flag triggers the merge path correctly |
+| `git branch -d <branch>` fails after merge                                     | Branch is attached to a worktree      | Skip local delete; run remote delete + prune                                    |
+| `git push origin --delete <branch>` fails with missing ref                     | Branch already deleted remotely       | Treat as non-fatal and continue                                                 |
 
 ### Branch Lifecycle
 
@@ -482,14 +482,14 @@ See also: [Agent Workflow — Sync with main before opening a PR](#agent-workflo
 
 ### PR Requirements
 
-| Requirement        | Details                                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Work item link** | Optional. Linking is encouraged for traceability but enforce it only if your branch policy requires it.                                        |
-| **Title format**   | Conventional Commits format: `type(scope): description`                                                                                        |
-| **Description**    | Must include: summary of changes, rationale, verification steps, and a linked work item ID if applicable                                       |
+| Requirement        | Details                                                                                                                                                                                                                                      |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Work item link** | Optional. Linking is encouraged for traceability but enforce it only if your branch policy requires it.                                                                                                                                      |
+| **Title format**   | Conventional Commits format: `type(scope): description`                                                                                                                                                                                      |
+| **Description**    | Must include: summary of changes, rationale, verification steps, and a linked work item ID if applicable                                                                                                                                     |
 | **Pre-PR sync**    | **Mandatory rebase on latest `origin/<target>` before pushing.** See [🛑 Agent-mandatory pre-PR guard](#-agent-mandatory-pre-pr-guard) above — this applies even when opening PRs via raw `az repos pr create` / `gh pr create` / MCP tools. |
-| **Branch cleanup** | After merge, delete the source branch (local and remote).                                                                                      |
-| **PR link format** | All PR references in agent output should be clickable markdown links to the PR, not a bare `PR #NNN`.                                          |
+| **Branch cleanup** | After merge, delete the source branch (local and remote).                                                                                                                                                                                    |
+| **PR link format** | All PR references in agent output should be clickable markdown links to the PR, not a bare `PR #NNN`.                                                                                                                                        |
 
 ### Agent PR Workflow
 
@@ -522,6 +522,7 @@ Every commit must clearly identify **who produced the content** and **who approv
 - If **you** wrote the content: don't override author. Your global Git config is used.
 - If an **agent** produced the content: use `--author` to set the agent's identity.
 - If an **interactive AI tool** (Copilot, Claude in VS Code) produced the content: use the tool-level identity.
+- If the content is an **Arcane vendored scaffold or managed update**: do not invent a vendor email identity and do not use an agent author. Keep the operator's Git identity and record package provenance with `Vendor: arcane-cli` plus a programmatically derived `Vendor-Version` when available. Split mixed vendor/operator changes first.
 
 ### Agent Email Convention
 
@@ -531,14 +532,14 @@ Give every agent/tool a stable email under a domain you control. Most hosts trea
 
 Maintain a registry of the identities you use, for example:
 
-| Identity        | Email                       | Type                            | Role                       |
-| --------------- | --------------------------- | ------------------------------- | -------------------------- |
-| {OPERATOR_NAME} | `{OPERATOR_EMAIL}`          | Human (owner)                   | —                          |
-| {AGENT_NAME}    | `{AGENT_EMAIL}`             | Autonomous agent                | Product Operations Manager |
-| Merlin         | `merlin@{OPERATOR_DOMAIN}` | Autonomous agent                | CTO / Architecture Lead    |
-| Lafayette            | `lafayette@{OPERATOR_DOMAIN}`    | Autonomous agent                | Full-Stack Developer       |
-| Copilot         | `copilot@{OPERATOR_DOMAIN}` | GitHub Copilot                  | Tool                       |
-| Claude          | `claude@{OPERATOR_DOMAIN}`  | Claude Code                     | Tool                       |
+| Identity        | Email                         | Type             | Role                       |
+| --------------- | ----------------------------- | ---------------- | -------------------------- |
+| {OPERATOR_NAME} | `{OPERATOR_EMAIL}`            | Human (owner)    | —                          |
+| {AGENT_NAME}    | `{AGENT_EMAIL}`               | Autonomous agent | Product Operations Manager |
+| Merlin          | `merlin@{OPERATOR_DOMAIN}`    | Autonomous agent | CTO / Architecture Lead    |
+| Lafayette       | `lafayette@{OPERATOR_DOMAIN}` | Autonomous agent | Full-Stack Developer       |
+| Copilot         | `copilot@{OPERATOR_DOMAIN}`   | GitHub Copilot   | Tool                       |
+| Claude          | `claude@{OPERATOR_DOMAIN}`    | Claude Code      | Tool                       |
 
 New agents are registered during onboarding.
 
@@ -546,19 +547,30 @@ New agents are registered during onboarding.
 
 Agent-authored commits MUST include trailers in the commit message footer. Human commits MAY include them.
 
-| Trailer        | Required    | Example                                       |
-| -------------- | ----------- | --------------------------------------------- |
-| `Agent`        | Yes         | `kellar`, `copilot`, `claude`                 |
-| `Model`        | Yes         | `claude-opus-4-20250918`, `gpt-4o`            |
-| `Provider`     | Yes         | `anthropic`, `openai`                         |
-| `Role`         | Recommended | `product-ops`, `developer`, `cto`             |
-| `Task-Type`    | Optional    | `docs`, `code`, `review`, `marketing`         |
-| `Approval`     | Optional    | `interactive`, `batch`, `post-review`         |
-| `Channel`      | Optional    | `chat`, `cli`, `editor`                       |
-| `Risk-Class`   | Optional    | `low`, `medium`, `high`                       |
-| `Request-ID`   | Optional    | `req-001`                                     |
-| `Session`      | Optional    | `session-01`                                  |
-| `Rollback-Ref` | Optional    | path or commit to the pre-change state        |
+| Trailer        | Required    | Example                                |
+| -------------- | ----------- | -------------------------------------- |
+| `Agent`        | Yes         | `kellar`, `copilot`, `claude`          |
+| `Model`        | Yes         | `claude-opus-4-20250918`, `gpt-4o`     |
+| `Provider`     | Yes         | `anthropic`, `openai`                  |
+| `Role`         | Recommended | `product-ops`, `developer`, `cto`      |
+| `Task-Type`    | Optional    | `docs`, `code`, `review`, `marketing`  |
+| `Approval`     | Optional    | `interactive`, `batch`, `post-review`  |
+| `Channel`      | Optional    | `chat`, `cli`, `editor`                |
+| `Risk-Class`   | Optional    | `low`, `medium`, `high`                |
+| `Request-ID`   | Optional    | `req-001`                              |
+| `Session`      | Optional    | `session-01`                           |
+| `Rollback-Ref` | Optional    | path or commit to the pre-change state |
+
+### Vendored Framework Trailers
+
+Vendored scaffold/update commits use these provenance trailers instead of an invented Arcane author identity:
+
+| Trailer          | Requirement | Value                                                                                                         |
+| ---------------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
+| `Vendor`         | Required    | `arcane-cli`                                                                                                  |
+| `Vendor-Version` | Conditional | Output of `arcane --version` / `spell --version`, whose value is read from the installed CLI's `package.json` |
+
+Never type or infer `Vendor-Version`. If the installed CLI cannot be resolved programmatically, omit the version trailer and disclose incomplete provenance rather than guessing.
 
 ### Complete Examples
 

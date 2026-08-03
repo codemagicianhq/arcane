@@ -31,6 +31,15 @@ describe("commit and merge autonomy gates", () => {
     expect(commitWork).toContain("concern grouping must never recombine authors");
   });
 
+  it("records vendored content without inventing author or version identity", () => {
+    expect(commitWork).toContain("**Arcane vendored scaffold/update:** no `--author` override");
+    expect(commitWork).toContain("Vendor: arcane-cli");
+    expect(commitWork).toContain("running `arcane --version`");
+    expect(commitWork).toContain("never type the version");
+    expect(commitWork).toContain("omit `Vendor-Version`");
+    expect(commitWork).toContain("must be split before concern grouping");
+  });
+
   it("requires authenticated approval tied to the exact interactive commit", () => {
     expect(commitWork).toContain("interaction_context: interactive | autonomous");
     expect(commitWork).toContain("exact staged diff plus proposed commit message");

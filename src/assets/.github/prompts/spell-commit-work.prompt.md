@@ -54,6 +54,10 @@ Workflow:
    - **Invariant: one commit has exactly one author.** Changes spanning authors must be split into separate commits.
    - Partition changed files by author first. Step 4 then groups by concern within each author partition; concern grouping must never recombine authors.
    - **Human wrote it:** no `--author` override needed (uses global Git config)
+    - **Arcane vendored scaffold/update:** no `--author` override; the operator's Git identity records the repository action. Add `Vendor: arcane-cli` and, when derivable, `Vendor-Version: <version>` trailers.
+       - Derive the version at commit time by running `arcane --version` (or the resolved `spell --version` alias). The CLI reads its installed package's `package.json`; never type the version, copy it from memory, or infer it from the repository manifest.
+       - If the installed CLI version cannot be read programmatically, omit `Vendor-Version` and report that provenance is incomplete. Never guess.
+       - A batch mixing vendored files with human- or agent-authored changes spans provenance authors and must be split before concern grouping.
    - **AI agent/tool produced it:** use `--author` with the agent's registered identity:
      - Roster agent: `--author="{AGENT_NAME} <{AGENT_EMAIL}>"` — resolve `{AGENT_NAME}` / `{AGENT_EMAIL}` from the active agent config (see [[agent-policies]] / [[naming-conventions]]); ask if unset.
      - Generic CLI/IDE tool: `--author="{TOOL_NAME} <{TOOL_NAME_LOWER}@{OPERATOR_DOMAIN}>"` — resolve `{TOOL_NAME}` from the channel in use and `{OPERATOR_DOMAIN}` from `.arcane.json`; ask if unset.
@@ -114,6 +118,8 @@ Workflow:
    Agent: [lowercase-persona or tool name]
    Model: [model identifier, e.g., claude-opus-4-20250918]
    Provider: [anthropic or openai]
+   Vendor: [arcane-cli, for vendored scaffold/update commits]
+   Vendor-Version: [programmatically derived installed package version, when available]
    Role: [agent role slug, if applicable]
    Task-Type: [docs, code, review, marketing, infra]
    Channel: [vscode, cli, chat]
@@ -126,6 +132,7 @@ Workflow:
    - Reference ADRs if applicable (e.g., "Implements ADR-028")
    - Trailers go after a blank line following the body (standard Git footer position)
    - Required trailers for agent commits: `Agent`, `Model`, `Provider`
+   - Required trailer for Arcane-vendored commits: `Vendor: arcane-cli`; include `Vendor-Version` only when derived from the installed CLI at commit time
    - Human-authored commits: trailers are optional
 
 8. **Gate and execute the commit:**
