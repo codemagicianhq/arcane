@@ -9,7 +9,7 @@ tags: [governance, queue, agents, work-management]
 
 # Agent Work Queue Model
 
-Defines a single markdown-first queue for assigning work across businesses, while keeping Azure DevOps at Story-level visibility per [[DECISIONS#ADR-015|ADR-015]].
+Defines a single markdown-first queue for assigning work across businesses, while keeping Azure DevOps at Story-level visibility for human milestone tracking.
 
 ## Executive Summary
 
@@ -31,19 +31,19 @@ Defines a single markdown-first queue for assigning work across businesses, whil
 
 ## Canonical Fields
 
-| Field | Description |
-|------|-------------|
-| Queue ID | Unique work identifier |
-| Business | `acme-store`, `example-app`, etc. |
-| Repo | Target repo name |
-| DevOps Item | Story/Task/Bug link or ID |
-| Priority | Critical / High / Medium / Low |
+| Field          | Description                                    |
+| -------------- | ---------------------------------------------- |
+| Queue ID       | Unique work identifier                         |
+| Business       | `acme-store`, `example-app`, etc.              |
+| Repo           | Target repo name                               |
+| DevOps Item    | Story/Task/Bug link or ID                      |
+| Priority       | Critical / High / Medium / Low                 |
 | Assigned Agent | {AGENT_NAME}, Lafayette, Mercurio, Lince, etc. |
-| Power Level | Apprentice/Wizard/Sorcerer/Magus/Archmage |
-| Execution Host | Atlas, Voyager, Nimbus |
-| Approval Gate | Required reviewer and checkpoint |
-| Exit Criteria | Objective definition of done |
-| Status | Backlog / Ready / In Progress / Blocked / Done |
+| Power Level    | Apprentice/Wizard/Sorcerer/Magus/Archmage      |
+| Execution Host | Atlas, Voyager, Nimbus                         |
+| Approval Gate  | Required reviewer and checkpoint               |
+| Exit Criteria  | Objective definition of done                   |
+| Status         | Backlog / Ready / In Progress / Blocked / Done |
 
 ---
 

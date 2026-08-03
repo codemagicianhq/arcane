@@ -21,7 +21,7 @@
 - [ ] **[EF-21 — HIGH: close-session has no pending-verification mechanism](docs/intake/batch-001/EF-21.md).** Add structured pending states and an in-flight check before handoff. Distinguish dispatched, pending, succeeded, failed, and unverifiable; only succeeded may be called complete.
 - [ ] **[EF-05 — MEDIUM: a fresh install cannot complete its first close-session flow](docs/intake/batch-001/EF-05.md).** Define the new/unborn repository initialization contract without silently committing into an existing repository; coordinate initial provenance with EF-15.
 - [ ] **[EF-08 — MEDIUM: business root resolution is inconsistent](docs/intake/batch-001/EF-08.md).** After EF-14 defines canonical storage, replace five hardcoded `ventures/` consumers with one shared resolution rule.
-- [ ] **[EF-23 — MEDIUM: shipped governance cites decisions that are not distributed](docs/intake/batch-001/EF-23.md).** Make framework citations resolvable and add a build/doctor broken-reference check for every distributed `ADR-NNN`, including ADR-048, ADR-049, and ADR-051.
+- [x] **[EF-23 — MEDIUM: shipped governance cites decisions that are not distributed](docs/intake/batch-001/EF-23.md).** Completed 2026-08-02 for `0.15.5`: every profile now ships an offline legacy framework-decision reference, private/example IDs were generalized, and CI scans all distributed governance, prompts, and instructions for missing or malformed `ADR-NNN` citations with positive and negative fixtures.
 
 ### PR Workflow and Prompt Integrity
 

@@ -105,13 +105,17 @@ These ADRs were recorded before the ARC-NNN sequence existed. They document fram
 | ADR-030 | Canonical Agent Git Identity Domain                                                         | Agent identity                                 |
 | ADR-031 | Agent Roster Overhaul: Role Consolidation and Thematic Naming                               | Agent roster                                   |
 | ADR-032 | Agent Autonomy Redesign: Gamified Power Levels with Context-Dependent Assignment            | Autonomy model                                 |
+| ADR-034 | Actionable Recommendation Guardrails                                                        | Recommendation safety                          |
 | ADR-038 | Separation-Ready Framework: Keep Reusable Components In-Repo Until External Consumer Exists | Extraction boundary — **fulfilled by ARC-001** |
+| ADR-048 | Code Versus Docs Branch Policy                                                              | Git and PR policy                              |
 | ADR-049 | Spell Loop: Autonomous Implementation Loop + Structured Planning + Spell System             | Core methodology                               |
 | ADR-050 | Testing Standards: Framework Selection and Coverage Policy                                  | Testing policy                                 |
+| ADR-051 | Infrastructure Agent Ownership                                                              | Agent responsibility                           |
 | ADR-052 | Product Excellence Standards and spell-enchant PRD Quality Enhancement                      | Quality gates                                  |
 | ADR-054 | Feature Folder Convention: Per-Repo Spell Artifact Persistence                              | Project structure                              |
 | ADR-061 | Arcane Framework Identity: Name, 4-Layer Architecture                                       | Core framework identity                        |
 | ADR-062 | npm CLI as Governance Package Distribution Format                                           | Distribution format                            |
+| ADR-068 | Root Cause Analysis Standard                                                                | Governance improvement                         |
 | ADR-073 | Portable Agent Identity System: YAML Canonical Definitions with Multi-Client Fan-Out        | Agent system                                   |
 
 ---
@@ -822,7 +826,7 @@ Persistent framework inputs need one upgrade-safe source of truth. Repeated prom
 ## ARC-021 — Vendored Framework Content Attribution
 
 **Date:** 2026-07-31
-**Status:** Proposed
+**Status:** Accepted
 **Intake:** [EF-15](docs/intake/batch-001/EF-15.md)
 
 **Context:**
