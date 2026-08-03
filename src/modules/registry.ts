@@ -26,6 +26,11 @@ const COMPONENTS: RegistryComponent[] = [
     files: [".arcane/governance/testing-standards.md"],
   },
   {
+    name: "framework-decisions",
+    description: "Offline reference for legacy framework ADR citations",
+    files: [".arcane/governance/framework-decisions.md"],
+  },
+  {
     name: "decision-documentation-standard",
     description: "ADR format and decision-logging conventions",
     files: [".arcane/governance/decision-documentation-standard.md"],

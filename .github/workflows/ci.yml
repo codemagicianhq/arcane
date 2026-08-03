@@ -63,6 +63,9 @@ jobs:
       - name: Verify generated self-host copies
         run: npm run check:self-host-parity
 
+      - name: Verify distributed ADR references
+        run: npm run check:adr-references
+
       - name: Lint
         run: npm run lint
 

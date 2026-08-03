@@ -26,10 +26,10 @@ This document defines how significant decisions are documented in this repositor
 
 Arcane separates framework-level decisions from org-specific ones using two prefixes:
 
-| Prefix    | File                  | Scope                                                                                |
-| --------- | --------------------- | ------------------------------------------------------------------------------------ |
-| `ADR-NNN` | `DECISIONS.md`        | Org-specific decisions (ventures, infrastructure, runtime config, org conventions)   |
-| `ARC-NNN` | `arcane/DECISIONS.md` | Arcane framework decisions (spell library, CLI, agent system, governance templates)  |
+| Prefix    | File                  | Scope                                                                               |
+| --------- | --------------------- | ----------------------------------------------------------------------------------- |
+| `ADR-NNN` | `DECISIONS.md`        | Org-specific decisions (ventures, infrastructure, runtime config, org conventions)  |
+| `ARC-NNN` | `arcane/DECISIONS.md` | Arcane framework decisions (spell library, CLI, agent system, governance templates) |
 
 **Rules:**
 
@@ -99,7 +99,7 @@ This check was added after [[governance/rcas/RCA-001-naming-collision|RCA-001]] 
 **Create a companion doc if:**
 
 - Decision justification exceeds 5 bullets in "Reasoning" section
-- Multiple ADRs share a common theme (e.g., authentication strategy covers ADR-007, ADR-008, ADR-009, ADR-017)
+- Multiple ADRs share a common theme (e.g., several authentication decisions belong in one authentication strategy)
 - Implementation has significant gotchas or edge cases
 - Decision has ongoing review/maintenance requirements (quarterly audits, version compatibility)
 - You anticipate "why did we do this?" questions from future team members or external auditors
@@ -115,13 +115,13 @@ This check was added after [[governance/rcas/RCA-001-naming-collision|RCA-001]] 
 
 Use existing folder structure; **do not create `deep-dives/` or `DECISIONS-details/` folders**.
 
-| Decision Theme                       | Location           | Example                                                                                 |
-| ------------------------------------ | ------------------ | --------------------------------------------------------------------------------------- |
-| Authentication, credentials, keys    | `security/`        | [security/authentication-strategy.md](../security/authentication-strategy.md)           |
-| Hardware, OS, dual-boot              | `infrastructure/`  | [infrastructure/compute-architecture.md](../infrastructure/compute-architecture.md)     |
-| Agent runtime config, agent policies | `agents/`          | [agents/architecture-decisions.md](../agents/architecture-decisions.md)                 |
-| Git, naming, documentation standards | `governance/`      | This file                                                                               |
-| Business-specific operations         | `ventures/{name}/` | `ventures/acme-store/DECISIONS.md`, `ventures/example-app/operations-model.md` |
+| Decision Theme                       | Location           | Example                                                                             |
+| ------------------------------------ | ------------------ | ----------------------------------------------------------------------------------- |
+| Authentication, credentials, keys    | `security/`        | [security/authentication-strategy.md](../security/authentication-strategy.md)       |
+| Hardware, OS, dual-boot              | `infrastructure/`  | [infrastructure/compute-architecture.md](../infrastructure/compute-architecture.md) |
+| Agent runtime config, agent policies | `agents/`          | [agents/architecture-decisions.md](../agents/architecture-decisions.md)             |
+| Git, naming, documentation standards | `governance/`      | This file                                                                           |
+| Business-specific operations         | `ventures/{name}/` | `ventures/acme-store/DECISIONS.md`, `ventures/example-app/operations-model.md`      |
 
 **Rationale:** Keeps security knowledge with security docs, infrastructure with infrastructure, etc. Easier to discover via folder browsing.
 
@@ -131,7 +131,7 @@ Use existing folder structure; **do not create `deep-dives/` or `DECISIONS-detai
 
 - ✅ `security/authentication-strategy.md` — covers SSH, PATs, API keys, tokens (multiple ADRs)
 - ✅ `infrastructure/compute-architecture.md` — covers dual-boot, Ubuntu choice, hardware sizing
-- ❌ `security/ADR-008-deep-dive.md` — Forces 1:1 mapping, harder to group related decisions
+- ❌ `security/ADR-NNN-deep-dive.md` — Forces 1:1 mapping, harder to group related decisions
 
 **Filename format:** `{topic-slug}.md` (lowercase, hyphen-separated)
 
@@ -214,7 +214,7 @@ Add this section **after Reasoning, before Rejected alternatives** in the ADR:
 **Deep dive:** [[security/authentication-strategy|Authentication Strategy]]
 ```
 
-**Example from ADR-017:**
+**Example from an authentication ADR:**
 
 ```markdown
 **Reasoning:**
@@ -238,12 +238,12 @@ Create "Related ADRs" section at the top of every companion doc:
 ```markdown
 ## Related ADRs
 
-- [[DECISIONS#ADR-007|ADR-007: Runtime Gateway Security]]
-- [[DECISIONS#ADR-008|ADR-008: Inter-Machine Communication]]
-- [[DECISIONS#ADR-017|ADR-017: Git SSH Authentication]]
+- [[DECISIONS#ADR-NNN|Runtime Gateway Security decision]]
+- [[DECISIONS#ADR-NNN|Inter-Machine Communication decision]]
+- [[DECISIONS#ADR-NNN|Git SSH Authentication decision]]
 ```
 
-**Rationale:** Creates bidirectional graph edges in Obsidian visualization. Clicking ADR-017 shows link to authentication-strategy.md; clicking authentication-strategy.md shows all related ADRs.
+**Rationale:** Creates bidirectional graph edges in Obsidian visualization. Clicking an ADR shows its authentication strategy companion; the companion links back to each related ADR.
 
 ---
 

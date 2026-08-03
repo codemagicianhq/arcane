@@ -167,7 +167,7 @@ Use `git add -p` or selective staging to separate unrelated changes that were ed
 ```bash
 # Stage only the files related to one logical change
 git add governance/new-standard.md DECISIONS.md CLAUDE.md
-git commit -m "docs(governance): add new-standard with ADR-053"
+git commit -m "docs(governance): add new-standard with ADR-NNN"
 
 # Then stage the unrelated fix
 git add README.md

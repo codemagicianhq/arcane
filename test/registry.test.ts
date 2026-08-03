@@ -95,7 +95,7 @@ describe("registry", () => {
       expect(names).not.toContain("agent-definitions");
     });
 
-    it("contains all 19 governance components", () => {
+    it("contains every governance component including framework decisions", () => {
       const names = getProfile("governance-only").map((c) => c.name);
       expect(names).toContain("agent-output-instructions");
       expect(names).toContain("git-conventions");
@@ -105,7 +105,8 @@ describe("registry", () => {
       expect(names).toContain("cicd-standards");
       expect(names).toContain("universal-agent-rules");
       expect(names).toContain("spell-authoring-standards");
-      expect(names).toHaveLength(20);
+      expect(names).toContain("framework-decisions");
+      expect(names).toHaveLength(21);
     });
   });
 

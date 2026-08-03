@@ -67,7 +67,7 @@ Expand the idea into one or more concrete TODO items. Each item must:
 
 If the idea naturally decomposes into multiple sub-items (e.g., "build dashboard" → design, implement, deploy, document), list them individually — do not bundle vague compound items.
 
-If the idea is an `adr-candidate`, also draft a one-sentence ADR title suggestion (e.g., `ADR-027: Use GitHub Actions for CI instead of Azure Pipelines`).
+If the idea is an `adr-candidate`, also draft a one-sentence ADR title suggestion (e.g., `ADR-NNN: Use GitHub Actions for CI instead of Azure Pipelines`).
 
 ## Step 3 — Route to the Right Document
 

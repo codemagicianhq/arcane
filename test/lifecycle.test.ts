@@ -70,7 +70,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       const manifest = JSON.parse(raw) as ArcaneManifest;
 
       expect(manifest.version).toBe(PACKAGE_VERSION);
-      expect(manifest.components).toHaveLength(6);
+      expect(manifest.components).toHaveLength(7);
 
       const names = manifest.components.map((c) => c.name);
       expect(names).toContain("spell-prompts");
@@ -78,6 +78,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       expect(names).toContain("agent-output-instructions");
       expect(names).toContain("git-conventions");
       expect(names).toContain("testing-standards");
+      expect(names).toContain("framework-decisions");
     }, 30_000);
 
     it("copies lite-profile files to the target directory", async () => {
@@ -88,6 +89,10 @@ describe("lifecycle — full spell loop (init → add → status → update → 
 
       await expect(
         fs.access(join(tmpDir, ".arcane/governance/testing-standards.md")),
+      ).resolves.toBeUndefined();
+
+      await expect(
+        fs.access(join(tmpDir, ".arcane/governance/framework-decisions.md")),
       ).resolves.toBeUndefined();
 
       await expect(
@@ -118,7 +123,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       const raw = await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8");
       const manifest = JSON.parse(raw) as ArcaneManifest;
 
-      expect(manifest.components).toHaveLength(7); // 6 lite + 1 extra
+      expect(manifest.components).toHaveLength(8); // 7 lite + 1 extra
       expect(manifest.components.map((c) => c.name)).toContain(EXTRA_COMPONENT);
     });
 
@@ -129,10 +134,10 @@ describe("lifecycle — full spell loop (init → add → status → update → 
         runAdd("git-conventions", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION),
       ).resolves.toBeUndefined();
 
-      // Manifest should still have exactly 7 components (no duplicate)
+      // Manifest should still have exactly 8 components (no duplicate)
       const raw = await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8");
       const manifest = JSON.parse(raw) as ArcaneManifest;
-      expect(manifest.components).toHaveLength(7);
+      expect(manifest.components).toHaveLength(8);
     });
   });
 
