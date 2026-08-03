@@ -81,4 +81,16 @@ describe("session branch mutation guard", () => {
     expect(commitWork).toContain("Create and switch the current worktree to a compliant topic branch");
     expect(commitWork).toContain("Never strand a local-only commit on a topic branch with no usable merge path");
   });
+
+  it("keeps close-session provider-neutral and consistent with open-session", () => {
+    expect(closeSession).toContain("github.com");
+    expect(closeSession).toContain("dev.azure.com");
+    expect(closeSession).toContain("visualstudio.com");
+    expect(closeSession).toContain("resolve the actual remote name and integration branch");
+    expect(closeSession).toContain("Skip this entire step for local-only and read-only sessions");
+    expect(closeSession).toContain("Never assume `origin` or `main`");
+    expect(closeSession).toContain("git switch <trunk>");
+    expect(closeSession).toContain("git pull --ff-only <remote> <trunk>");
+    expect(closeSession).not.toContain("git checkout main && git pull origin main");
+  });
 });
