@@ -10,7 +10,7 @@ agent: agent
 - This prompt performs an adversarial code review — "looks good" is not acceptable.
 - The reviewer must explicitly cover every lens — correctness, security, performance, tests, naming/clarity, architecture — and state "no issues" for any lens that is clean. There is no finding quota: zero findings is a valid outcome on a clean or small diff.
 - Checks architecture compliance, test coverage, security, and coding standards.
-- See [[governance/development-methodology|Development Methodology]] for the adversarial review pattern.
+- See [[.arcane/governance/development-methodology|Development Methodology]] for the adversarial review pattern.
 
 ---
 
@@ -18,8 +18,8 @@ Perform an adversarial review of the specified code changes.
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Adversarial review requirements
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Coverage thresholds to validate
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Adversarial review requirements
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Coverage thresholds to validate
 - [DECISIONS.md](../../DECISIONS.md) — ADRs to check compliance against
 - [security/threat-model.md](../../security/threat-model.md) — Security controls to validate
 - The feature's `architecture.md` — tech decisions that code must follow

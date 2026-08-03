@@ -24,6 +24,8 @@ const ASSETS_DIR = join(process.cwd(), "src/assets");
 const PACKAGE_VERSION = "0.1.0";
 
 const SESSION_FILES = [
+  "README.md",
+  "project.md",
   "TODO.md",
   "DECISIONS.md",
   "ai-context/system-prompt-context.md",
@@ -124,6 +126,18 @@ describe("session-continuity — init scaffolding", () => {
 
     const result = await fs.readFile(join(tmpDir, "TODO.md"), "utf-8");
     expect(result).toBe(userContent);
+  });
+
+  it("does not overwrite existing project orientation files", async () => {
+    const readme = "# Existing README\n";
+    const project = "# Existing Project Context\n";
+    await fs.writeFile(join(tmpDir, "README.md"), readme);
+    await fs.writeFile(join(tmpDir, "project.md"), project);
+
+    await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    await expect(fs.readFile(join(tmpDir, "README.md"), "utf8")).resolves.toBe(readme);
+    await expect(fs.readFile(join(tmpDir, "project.md"), "utf8")).resolves.toBe(project);
   });
 
   it("does not overwrite existing DECISIONS.md", async () => {

@@ -9,7 +9,7 @@ agent: agent
 
 - This spell takes an existing PRD and enchants it to production-grade quality.
 - It proactively identifies missing features, UX gaps, accessibility issues, performance targets, and security requirements that the original PRD didn't specify.
-- Applies two analytical lenses: a **research lens** (competitive analysis, industry standards) and a **marketing/brand lens** (brand, UX, first-impression review). In the default Arcane roster these map to the Alexander and Circe personas; other orgs map their own — see [agent-policies](../../agents/agent-policies.md) / [naming-conventions](../../governance/naming-conventions.md).
+- Applies two analytical lenses: a **research lens** (competitive analysis, industry standards) and a **marketing/brand lens** (brand, UX, first-impression review). In the default Arcane roster these map to the Alexander and Circe personas; other orgs map their own — see [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md).
 - Output: Enhanced PRD with `[ENCHANTED]`-tagged additions, before/after quality scorecard, and research summaries.
 - Use this between `spell-plan` and `spell-architect` (or `spell-scope` for large PRDs). It **consumes** a drafted PRD and **feeds** an architecture/scoping spell; it does not author a PRD from scratch (that is `spell-plan`) nor implement one (`spell-implement`).
 
@@ -19,11 +19,11 @@ Enchant the provided PRD to exceptional quality.
 
 Use these files for context. All are optional — if a file is absent, fall back as noted and continue rather than aborting:
 
-- [governance/product-excellence-standards.md](../../governance/product-excellence-standards.md) — Quality dimensions, PRD Quality Scorecard, scoring rubric (Bronze / Silver / Gold). **If missing:** warn the user that the canonical scorecard was not found, then proceed with the embedded dimension list (Requirements Completeness, UX, Accessibility, Performance, Security, Responsive Design, Competitive Differentiation) and default to the **Public MVP** profile.
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop methodology, story sizing rules. **If missing:** treat story sizing as advisory and proceed.
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Testing frameworks and coverage thresholds. **If missing:** omit framework-specific coverage targets from acceptance criteria.
+- [governance/product-excellence-standards.md](../../.arcane/governance/product-excellence-standards.md) — Quality dimensions, PRD Quality Scorecard, scoring rubric (Bronze / Silver / Gold). **If missing:** warn the user that the canonical scorecard was not found, then proceed with the embedded dimension list (Requirements Completeness, UX, Accessibility, Performance, Security, Responsive Design, Competitive Differentiation) and default to the **Public MVP** profile.
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop methodology, story sizing rules. **If missing:** treat story sizing as advisory and proceed.
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Testing frameworks and coverage thresholds. **If missing:** omit framework-specific coverage targets from acceptance criteria.
 - [security/threat-model.md](../../security/threat-model.md) — Active threat model. **If missing:** apply generic OWASP-style security baselines for the Security dimension.
-- [agents/agent-policies.md](../../agents/agent-policies.md) / [governance/naming-conventions.md](../../governance/naming-conventions.md) — Agent roster and persona naming. **If missing:** apply the two lenses (research, marketing/brand) without naming personas.
+- [agents/agent-policies.md](../../.arcane/governance/agent-policies.md) / [governance/naming-conventions.md](../../.arcane/governance/naming-conventions.md) — Agent roster and persona naming. **If missing:** apply the two lenses (research, marketing/brand) without naming personas.
 - [DECISIONS.md](../../DECISIONS.md) — Existing ADRs to respect. **If missing:** assume no binding ADR constraints.
 - [project.md](../../project.md) — Project goals and business context. **If missing:** infer business context from the PRD itself and flag any assumptions.
 
@@ -42,7 +42,7 @@ Accept the PRD from one of these input sources:
 | **Tracker work item ID** | `#508` or `508` with a tracker reference | Respect `tracking_mode` and detect the provider (see below), then fetch the work item and extract its title, description, and acceptance criteria |
 
 If the input is a tracker work item ID:
-1. **Determine tracking mode and provider.** Read `tracking_mode` (internal/external) from `.arcane.json` or PRD frontmatter, and detect the configured tracker provider rather than assuming one. The shared tracker-resolution rules live in [governance/development-methodology.md](../../governance/development-methodology.md) — follow them rather than hard-coding a single provider.
+1. **Determine tracking mode and provider.** Read `tracking_mode` (internal/external) from `.arcane.json` or PRD frontmatter, and detect the configured tracker provider rather than assuming one. The shared tracker-resolution rules live in [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — follow them rather than hard-coding a single provider.
    - For an **Azure DevOps** provider, fetch via `az boards work-item show --id {id} --org https://dev.azure.com/{ADO_ORG} --output json` and extract `System.Description`, `Microsoft.VSTS.Common.AcceptanceCriteria`, and `System.Title`. Resolve `{ADO_ORG}` (and `{ADO_PROJECT}` if needed) from `.arcane.json` or the PRD frontmatter; **if unset, ask the user** rather than assuming a default.
    - For other providers (e.g. a GitHub issue), use the provider's equivalent fetch and map title / body / acceptance-criteria fields accordingly.
 2. If the work item has child items, fetch those too — they may contain additional requirements.
@@ -93,7 +93,7 @@ For each dimension where the current score is **below the profile's target**, id
 
 ### 3. Research Phase (Research Lens)
 
-Apply the **research lens** (in the default Arcane roster this is the Alexander / Research & Backlog Analyst persona — see [agent-policies](../../agents/agent-policies.md) / [naming-conventions](../../governance/naming-conventions.md); other orgs map their own analyst). Conduct a thorough analysis:
+Apply the **research lens** (in the default Arcane roster this is the Alexander / Research & Backlog Analyst persona — see [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); other orgs map their own analyst). Conduct a thorough analysis:
 
 #### 3a. Competitive Analysis
 - Identify the top 3 alternatives/competitors for this type of app
@@ -143,7 +143,7 @@ Document findings as (the persona name below reflects the default roster; substi
 
 ### 4. Marketing & Brand Review (Marketing/Brand Lens)
 
-Apply the **marketing/brand lens** (in the default Arcane roster this is the Circe / Marketing Strategist persona — see [agent-policies](../../agents/agent-policies.md) / [naming-conventions](../../governance/naming-conventions.md); other orgs map their own strategist). Evaluate the PRD from a brand and user-perception perspective:
+Apply the **marketing/brand lens** (in the default Arcane roster this is the Circe / Marketing Strategist persona — see [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); other orgs map their own strategist). Evaluate the PRD from a brand and user-perception perspective:
 
 #### 4a. First Impressions
 - If a user saw this app for the first time with zero context, what would they think?

@@ -24,7 +24,7 @@ If any required value is missing, ask only for missing fields.
 Use these files first (each is optional — if missing, proceed as noted):
 
 - [playbooks/new-business-setup.md](../../playbooks/new-business-setup.md) — setup playbook. If `playbooks/` doesn't exist, skip and derive steps from the business-type checklist below.
-- [naming-conventions.md](../../naming-conventions.md) — slug/file naming rules. If missing, default to lowercase-with-dashes slugs.
+- [naming-conventions.md](../../.arcane/governance/naming-conventions.md) — slug/file naming rules. If missing, default to lowercase-with-dashes slugs.
 - [ventures/\_template/overview.md](../../ventures/_template/overview.md) — overview template. If missing, generate a minimal overview from the fields below.
 - [README.md](../../README.md) — repo navigation. If missing, skip cross-linking.
 - [project.md](../../project.md) — project context. If missing, skip.

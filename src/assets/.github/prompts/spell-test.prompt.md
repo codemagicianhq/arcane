@@ -10,7 +10,7 @@ agent: agent
 - This prompt runs tests, validates coverage against thresholds, and generates evidence artifacts.
 - Used after `spell-implement` to verify quality before `spell-review`.
 - Enforces the testing standards from ADR-050 (80% line / 95% critical path coverage).
-- See [[governance/testing-standards|Testing Standards]] for framework details.
+- See [[.arcane/governance/testing-standards|Testing Standards]] for framework details.
 
 ---
 
@@ -18,8 +18,8 @@ Run test suites and validate quality for the specified scope.
 
 Use these files for context:
 
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Frameworks, thresholds, evidence requirements
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop context
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Frameworks, thresholds, evidence requirements
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop context
 - The feature's `stories.json` — for acceptance criteria to validate
 
 Workflow:

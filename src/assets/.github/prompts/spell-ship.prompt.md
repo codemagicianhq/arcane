@@ -18,10 +18,10 @@ Run the ship workflow for the specified branch or PR.
 
 Use these files for context:
 
-- [governance/development-methodology.md](../../governance/development-methodology.md) — Spell Loop phases
-- [governance/cicd-standards.md](../../governance/cicd-standards.md) — CI/CD pipeline requirements and deployment gates
-- [governance/testing-standards.md](../../governance/testing-standards.md) — Coverage thresholds
-- [governance/git-conventions.md](../../governance/git-conventions.md) — Branch policies and merge strategy
+- [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) — Spell Loop phases
+- [governance/cicd-standards.md](../../.arcane/governance/cicd-standards.md) — CI/CD pipeline requirements and deployment gates
+- [governance/testing-standards.md](../../.arcane/governance/testing-standards.md) — Coverage thresholds
+- [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) — Branch policies and merge strategy
 
 Workflow:
 
@@ -86,7 +86,7 @@ Workflow:
 7. **Request human approval** — present the ship report and wait for explicit approval.
 
 8. **Execute merge** (after approval):
-   - Merge using the project's merge strategy as defined in [governance/git-conventions.md](../../governance/git-conventions.md). **Do NOT squash** — squash merges are prohibited because they collapse per-commit attribution. Prefer rebase and fast-forward.
+   - Merge using the project's merge strategy as defined in [governance/git-conventions.md](../../.arcane/governance/git-conventions.md). **Do NOT squash** — squash merges are prohibited because they collapse per-commit attribution. Prefer rebase and fast-forward.
    - Verify CI passes on the target branch post-merge.
    - Tag release if applicable.
 

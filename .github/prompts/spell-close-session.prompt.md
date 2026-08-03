@@ -137,7 +137,7 @@ Rules:
     - Delete the local topic branch: `git branch -d <branch>`.
    - Verify `git log --oneline -3` shows the merged change at HEAD.
     - If stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
-    - See [governance/git-conventions.md](../../governance/git-conventions.md) Post-Merge Cleanup section.
+    - See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Post-Merge Cleanup section.
 
 11. **Return a concise closure report.**
 

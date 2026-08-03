@@ -25,7 +25,7 @@ Use these files first:
 - [TODO.md](../../TODO.md)
 - [DECISIONS.md](../../DECISIONS.md)
 - [ai-context/system-prompt-context.md](../../ai-context/system-prompt-context.md)
-- [agents/agent-policies.md](../../agents/agent-policies.md)
+- [agents/agent-policies.md](../../.arcane/governance/agent-policies.md)
 - Most recent journal file(s) in [journal/](../../journal/)
 - Relevant business overviews under [ventures/](../../ventures/)
 

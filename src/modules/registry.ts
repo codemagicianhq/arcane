@@ -172,9 +172,11 @@ const COMPONENTS: RegistryComponent[] = [
   // Session continuity — files required for spell-close-session / spell-open-session
   {
     name: "session-continuity",
-    description: "Session lifecycle files (TODO.md, DECISIONS.md, ai-context/, journal/) for close/open session spells",
+    description: "Install-once project orientation and session lifecycle files",
     skipExisting: true,
     files: [
+      "README.md",
+      "project.md",
       "TODO.md",
       "DECISIONS.md",
       "ai-context/system-prompt-context.md",
