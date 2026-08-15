@@ -87,6 +87,7 @@
       N concurrent sessions as a control center; passes the brother test — a
       non-technical user should never fear the button. Output: ADR proposing
       the model BEFORE any implementation; this changes core architecture.
+  - **Update (2026-08-15):** research spike delivered — [ARC-028](DECISIONS.md#arc-028--concurrency-and-isolation-model-for-parallel-work) drafted (Proposed): three-primitive isolation model (primary checkout · linked worktree · full clone) with rules R1–R8, reconciling the private ADR-058 clone decision (daemon-scoped) and the 2026-07-17/07-22 parallel-vs-serialized evidence below. The ONE-word naming table (Wing / Parlor / Séance / Cabinet, live four-check results) awaits operator pick at PR review. Implementation follow-ups (governance wording, spell updates, DMC rendering contract, EF-33 rails, naming rollout) are enumerated in the ADR's final decision item; checkbox stays open until they ship.
 
 - [ ] **Website spell catalog: generate from the CLI registry, not hand-maintained
       site data (single source of truth).** The `arcane-website` spell catalog is

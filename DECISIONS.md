@@ -46,6 +46,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted   |
 | [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted   |
 | [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted   |
+| [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work)                             | Concurrency and Isolation Model for Parallel Work                              | 2026-08-15 | Proposed   |
 
 ---
 
@@ -1054,3 +1055,63 @@ Raw byte comparison also obscured the defect. It initially reported 38 differing
 - **Maintain a separate parity file list** — rejected because it would drift independently from the registry, recreating the same defect at a new layer.
 - **Fail on raw byte differences** — rejected because checkout-dependent line endings make the gate permanently red and train maintainers to ignore it.
 - **Use symlinks instead of generated copies** — remains rejected for the Windows and copier-path reasons preserved in ARC-006. This repository's own local `.git/config` sets `core.symlinks=false`, so the rejection is a demonstrated constraint of the maintainer's actual environment, not merely a judgment call about symlink fragility — modern Windows symlink support does not apply here because it is disabled, not absent.
+
+---
+
+## ARC-028 — Concurrency and Isolation Model for Parallel Work
+
+**Date:** 2026-08-15
+**Status:** Proposed
+**Intake:** [EF-33](docs/intake/batch-001/EF-33.md)
+
+**Context:**
+
+One working tree supports one thing at a time. On 2026-07-10 a live session had its branch switched underneath it mid-run by another actor glancing at `main` from a second terminal — the session recovered via reflog, and the incident chartered this record's research spike (TODO: "Concurrency model: parallel work for solo operators"). The same shared-tree configuration also produced a second incident class: files parked at the repository root by one session were swept into an unrelated pull request by a co-tenant session.
+
+Parallelism evidence exists on both sides. A 2026-07-17 dogfooding run executed four epics as separate `spell-full-cycle` invocations — three in parallel isolated worktrees — against one consumer repo: two epics independently claimed the same DB-migration sequence number and two added conflicting imports to the same file region, all surfacing only at human merge review. A 2026-07-22 re-run of three invocations strictly serialized in one workspace produced zero cross-run collisions and zero migration incidents.
+
+Worktrees carry their own recorded hazards. All linked worktrees share one physical `.git/config`: a test fixture's `git init` inherited `GIT_DIR` and contaminated the shared config, flipping `core.bare` and overwriting identity (journal 2026-08-03). And a repository read through a cross-filesystem mount honestly reported eight healthy linked worktrees as `prunable` — a `git worktree prune` from that vantage point would have deregistered all of them with no warning ([EF-33](docs/intake/batch-001/EF-33.md)).
+
+A prior decision in the operator's private operations records (ADR-058) selected per-agent **full clones** for autonomous daemon fleets, rejecting worktrees there because shared `.git` state raises lock-contention risk under concurrent unattended cron auto-pulls. That rejection is scoped to the daemon topology; it says nothing about interactive sessions.
+
+A 2026-08-14 live observation supplied the missing positive evidence: two concurrent interactive sessions ran against one repo, one in the primary checkout and one in a linked worktree. The worktree session could neither see nor disturb the primary's pre-existing uncommitted files; git itself refused to check the same branch out twice; and the merge path (topic branch → PR gate) was identical from both. While drafting this very record, the source repository's primary checkout was found occupied by another active session (staged changes on its own session branch) — the drafting session applied rule R3 below and proceeded in a fresh linked worktree without touching the primary.
+
+Finally, the concept has no name. Four colliding "workspace" terms are in circulation (git worktree · VS Code workspace · Codespaces · OpenClaw workspace), DMC must be able to render N concurrent sessions as a control center, and the model must pass the brother test — a non-technical user should never fear the button. Per the spike charter, this ADR proposes the model before any implementation.
+
+**Decision:**
+
+1. **Three isolation primitives, five decision inputs.** Every unit of work runs in exactly one of: the **primary checkout**, a **linked worktree**, or a **full clone**. The primitive is selected from: purpose (produce work vs. manage repo state), concurrent-actor count, task footprint overlap, autonomy level (interactive vs. unattended), and local-state needs (visibility of uncommitted state; untracked tooling such as `node_modules`/`.env`).
+2. **R1 — Repo-state management runs in the primary checkout only.** Reconciling uncommitted files, branch pruning, fast-forwarding `main`, releases, and worktree lifecycle operations are primary-checkout work. This explicitly includes local `--ff-only` self-merge of `main`: a linked worktree cannot hold `main` while the primary does, so from any other primitive, self-merge (where power level permits it) goes through the platform's PR merge instead of a local fast-forward.
+3. **R2 — A solo session defaults to the primary checkout on a session branch.** The zero-friction path stays the do-nothing path: one actor, one checkout, standard session-branch discipline, no new tooling.
+4. **R3 — Every additional concurrent interactive session gets its own linked worktree.** At most one actor occupies the primary checkout at a time. Never switch or delete a branch attached to another worktree; git's refusal to double-checkout a branch is the enforcement, not an obstacle.
+5. **R4 — Overlapping footprints serialize.** Parallel tasks that touch the same files or shared sequences (DB migration numbers, generated indexes) must not run in parallel isolation: run them sequentially in one workspace, or re-scope them to disjoint footprints first. Isolation hides collisions until merge review; serialization is the safe default until re-derivation tooling (fresh-pull sequence re-derivation, shared numbering locks) exists.
+6. **R5 — Autonomous daemons with unattended automated git operations use full clones.** This upholds the private ADR-058 decision within its scope: cron-driven fleets contend on shared `.git` state, and clone isolation also contains blast radius.
+7. **R6 — Delegation states the primitive.** When the orchestrator delegates work, the delegation message must name the isolation primitive for the task, extending the existing rule that delegation must name the target repo.
+8. **R7 — Hazard rails.** All linked worktrees share one physical `.git` and `.git/config`: treat config-mutating operations as fleet-wide. Any `git worktree prune`, `worktree remove`, `gc`, or branch deletion requires a same-vantage-point existence check first (adopting EF-33's proposed rule — a path that resolves as dead through a mount may be alive). A branch attached to an active worktree cannot be locally deleted — skip local delete, use remote delete + prune. A fresh worktree contains no untracked tooling state; budget for re-install in code repos.
+9. **R8 — The primitive never changes governance.** Topic branch, attribution, and PR gate are identical from every primitive. The existing "return to `main` after merge" convention is hereby scoped to the primary checkout: a worktree session ends with push → PR → worktree removal (performed from the primary vantage point per R7), not with a checkout of `main`.
+10. **Naming.** The chosen Arcane word names the **product-level container concept** — the isolated parallel-session unit that DMC renders — and never replaces git vocabulary in technical payloads ("worktree" remains the correct term for the git primitive). Live four-check results (who coined it · estate activity · same-audience claims · first association):
+
+    | Candidate | Four-check result | Verdict |
+    |---|---|---|
+    | **Wing** | Common English; no estate. **Same-audience conflict: Wingware's Wing Python IDE — active commercial developer IDE, now shipping AI-assisted development.** | Kill-leaning |
+    | **Parlor** | Common English; parlor magic is public-domain stage-magic vocabulary. Two small active tech products (Parlor.fm social app; Parlor customer-collaboration SaaS) — adjacent, no giant, neither in agent/CLI tooling. | Viable, with disclosure |
+    | **Séance** | French common noun — literally "a sitting/session," etymologically exact. Séance lore ties to the roster (Bess). **Adjacent AI claim: "Seance AI" (AE Studio), a consumer talk-to-the-departed product.** Occult first-association and the diacritic (CLI: `seance`) are brother-test considerations. | Viable, with flags |
+    | **Cabinet** | Spirit cabinet (Davenport Brothers, 1850s) is public-domain stage-magic lore. Active claims are out-of-space (woodworking CAD cluster; Microsoft's dormant `.cab` archive format). **Internal collision: the File Cabinet UI concept already planned for DMC.** | Viable, with internal-collision flag |
+
+    Prior kills for the record: Backstage (Spotify OSS developer portal), Vault (HashiCorp), Studio (saturated), Stage/Staging (collides with git/deploy vocabulary). **Selection: operator pick at review of this record.** Corollary of the naming standard's "the more autonomous the tool, the more boring its name": daemon full clones (the most autonomous primitive) do **not** take the lore word.
+11. **Follow-up scope — explicitly not executed by this record:** (a) governance wording updates — scope git-conventions' "return to main after merge" to the primary checkout, add the working-tree dimension to agent-policies' Multi-Agent Concurrency Rules, and scope the Magus+ local ff-merge flow per R1 (each touches `src/assets/` → version bump + parity regeneration); (b) spell updates — `spell-open-session` primitive selection at session start, `spell-close-session` worktree-aware session ending, `spell-full-cycle` multi-epic serialization guidance per R4; (c) DMC rendering contract for N session containers; (d) EF-33 rails implementation (flips EF-33 `deferred → shipped`); (e) naming rollout after the operator's pick.
+
+**Reasoning:**
+
+- **The model is evidence-shaped, not aesthetic.** Every rule maps to a recorded incident: R1/R3 to the 2026-07-10 branch-switch and root-sweep incidents, R4 to the 2026-07-17 collision vs. 2026-07-22 zero-collision pair, R5 to the private ADR-058 lock-contention finding, R7 to the shared-config contamination and EF-33 near-miss, R8 to the 2026-08-14 observation that the PR gate is primitive-independent.
+- **The brother test is satisfied by construction.** The default (R2) is the do-nothing path; every escalation is additive and reversible, and the scariest operations (prune, remove, config mutation) are fenced behind R7's explicit checks.
+- **DMC gets a clean rendering contract:** one container = one primitive instance; the primary checkout is simply the container that also holds repo-state authority.
+- **Enforcement is free where possible.** Git already refuses double-checkout of a branch and already blocks deletion of worktree-attached branches — the model treats those refusals as guardrails to lean on rather than errors to work around.
+
+**Rejected alternatives:**
+
+- **Plain branches in one shared tree for concurrent actors** — rejected: this is the exact configuration that produced the 2026-07-10 branch-switch and root-sweep incident class.
+- **Full clones for interactive sessions** — rejected: heavyweight (no shared object store, duplicated tooling state, slower spin-up), and the private ADR-058 rationale for clones is scoped to unattended daemon fleets, not interactive work.
+- **Worktree-always, no primary default** — rejected: violates the near-zero-friction constraint for solo operators, and forfeits the primary checkout's unique visibility into pre-existing uncommitted state (the 2026-08-14 observation).
+- **An Arcane-native virtual workspace layer** — rejected: nothing ships today; delegation itself is still persona roleplay in practice (no runtime agent registry), so building a novel isolation layer would stack an unproven abstraction on an unshipped one. Build on git primitives every tool already understands.
+- **Coordination locks to keep overlapping-footprint work parallel** — rejected: the 2026-07-17 vs. 2026-07-22 evidence says serialization, not added machinery, is the safe default until re-derivation tooling exists.
