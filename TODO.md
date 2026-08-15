@@ -89,6 +89,26 @@
       the model BEFORE any implementation; this changes core architecture.
   - **Update (2026-08-15):** research spike delivered — [ARC-028](DECISIONS.md#arc-028--concurrency-and-isolation-model-for-parallel-work) drafted (Proposed): three-primitive isolation model (primary checkout · linked worktree · full clone) with rules R1–R8, reconciling the private ADR-058 clone decision (daemon-scoped) and the 2026-07-17/07-22 parallel-vs-serialized evidence below. The ONE-word naming table (Wing / Parlor / Séance / Cabinet, live four-check results) awaits operator pick at PR review. Implementation follow-ups (governance wording, spell updates, DMC rendering contract, EF-33 rails, naming rollout) are enumerated in the ADR's final decision item; checkbox stays open until they ship.
 
+- [ ] **Fix [EF-34](docs/intake/batch-001/EF-34.md): pre-commit test runs inherit `GIT_DIR` and corrupt the real repository (3 confirmed firings — 2026-08-03 ×2, 2026-08-15).**
+      Hook-spawned vitest fixtures run `git` with cwd-only isolation; git's
+      hook-context env (`GIT_DIR` et al.) overrides cwd, so fixture
+      init/commit/config hit the real repo — fixture commits on real
+      branches, `core.bare`/identity flipped in the shared `.git/config`
+      (fleet-wide across all linked worktrees; broke a concurrent session's
+      primary checkout on 2026-08-15). Scope (operator-approved 2026-08-15):
+      (a) strip `GIT_*` env in test git helpers + hermetic
+      `GIT_CONFIG_GLOBAL`/`GIT_CONFIG_SYSTEM`; (b) fixture tripwire —
+      `rev-parse --absolute-git-dir` must resolve inside the fixture temp
+      dir, throw otherwise; (c) hook restructure to community-standard
+      shape — pre-commit = lint + typecheck only; full suite moves to
+      pre-push, with `GIT_*` scrubbed in any suite-invoking hook (pre-push
+      is also a git hook with the same env); CI stays the authoritative
+      gate; (d) negative regression test per ARC-027 doctrine (decoy repo
+      untouched); (e) retire the journal 2026-08-03 `--no-verify`
+      workaround note once shipped — fast commits remove the bypass
+      incentive. Acceptance proof: full suite green from inside a linked
+      worktree. Evidence: `backup/arc028-contaminated-2026-08-15`.
+
 - [ ] **Website spell catalog: generate from the CLI registry, not hand-maintained
       site data (single source of truth).** The `arcane-website` spell catalog is
       authored by hand and drifts from the CLI's actual source of truth
