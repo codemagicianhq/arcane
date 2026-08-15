@@ -47,6 +47,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted   |
 | [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted   |
 | [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work)                             | Concurrency and Isolation Model for Parallel Work                              | 2026-08-15 | Proposed   |
+| [ARC-029](#arc-029--best-practice-first-solution-selection-standard)                               | Best-Practice-First Solution Selection Standard                                | 2026-08-15 | Proposed   |
 
 ---
 
@@ -1115,3 +1116,38 @@ Finally, the concept has no name. Four colliding "workspace" terms are in circul
 - **Worktree-always, no primary default** — rejected: violates the near-zero-friction constraint for solo operators, and forfeits the primary checkout's unique visibility into pre-existing uncommitted state (the 2026-08-14 observation).
 - **An Arcane-native virtual workspace layer** — rejected: nothing ships today; delegation itself is still persona roleplay in practice (no runtime agent registry), so building a novel isolation layer would stack an unproven abstraction on an unshipped one. Build on git primitives every tool already understands.
 - **Coordination locks to keep overlapping-footprint work parallel** — rejected: the 2026-07-17 vs. 2026-07-22 evidence says serialization, not added machinery, is the safe default until re-derivation tooling exists.
+
+---
+
+## ARC-029 — Best-Practice-First Solution Selection Standard
+
+**Date:** 2026-08-15
+**Status:** Proposed
+**Intake:** [EF-34](docs/intake/batch-001/EF-34.md)
+
+**Context:**
+
+Twice in one incident chain, expedience silently displaced correctness. First, the 2026-08-03 contamination firings were closed with a journal-documented `--no-verify` workaround instead of a root-cause fix — the expedient path became institutional practice, unfiled and unfixed, until the class fired a third time (EF-34). Second, while scoping that fix on 2026-08-15, the drafting agent recommended the minimal option (scrub hook environment only) over the community-standard hook shape (fast pre-commit; full suite on pre-push) — not because the minimal option was better, but because it was the smallest diff and avoided a workflow change the operator had not yet approved. The operator caught it only by explicitly asking "what does the community actually do?"
+
+Existing governance covers fragments of this but not the principle: universal-agent-rules rule 4 ("no fix-it-later shortcuts") forbids deferring work but says nothing about which solution to choose; rule 15 / ADR-034 mandates verified information and flagged trade-offs, but only for purchase-class recommendations; the operations-side "pause-before-pivot" concept ("ensure the RIGHT tool is used, not just any working one") captures the spirit but was never promoted into distributed governance. No rule tells an agent that "smaller change" and "avoids needing approval" are not reasons to recommend a worse solution.
+
+**Decision:**
+
+1. **Correctness precedence.** When candidate solutions differ in quality, the default choice is the solution that is correct for the problem and recognized as standard practice by the relevant community — never the easiest, fastest, or smallest-diff option on those grounds alone. Expedience is legitimate only as an explicitly labeled stopgap with a queued follow-up to the correct solution.
+2. **Recommendation contract (enforcement contract, per ARC-023).** Whenever an agent presents options or makes a recommendation, it must identify which option is the community-standard / best-practice choice — verified live when checkable (extending ADR-034's verification mandate from purchases to engineering decisions), never asserted from memory. If the agent recommends a different option, it must state the justification explicitly. "Smaller diff," "faster to implement," and "avoids needing human approval" are not justifications — they are signals to ask the human.
+3. **The absent-human rule.** The absence of a human approver never downgrades the target solution. If the correct solution exceeds the agent's power level, scope, or session mandate, the agent queues it (TODO / intake finding / work item) and either halts or applies a clearly labeled interim measure that links to the queued item. An unlabeled stopgap that persists is a governance violation, not a solution.
+4. **Not gold-plating.** "Correct" means fit for the problem as the community would recognize it — not maximal. Scope discipline (YAGNI, the brother test) still applies. This standard governs the quality of the chosen solution, not its size; invoking it to justify over-engineering inverts its intent.
+5. **Follow-up scope — explicitly not executed by this record:** (a) add the rule to `universal-agent-rules.md` (new Solution Selection section) and a one-line echo in `portable-bootstrap.md`; (b) add recommendation-contract language to the option-presenting spells (`spell-plan`, `spell-architect`, `spell-review`); each touches `src/assets/` → version bump + parity regeneration. `product-excellence-standards.md` is not the home — it scores product quality, not agent conduct.
+
+**Reasoning:**
+
+- **The rule would have fired on its own motivating incident.** Under decision 2, the 2026-08-15 hook recommendation would have been forced to read "community standard is the pre-push shape; I am recommending the minimal option only because it is the smallest change" — surfacing the trade-off immediately instead of after operator cross-examination.
+- **A bare principle would be an inert control.** Per ARC-023 and the EF-24 lesson, the standard ships with a checkable contract (best-practice option named, deviation justified) that reviewers and spells can verify mechanically, not an aspiration.
+- **It closes the loop that produced EF-34.** The `--no-verify` culture was expedience institutionalized by the absent-human path: the workaround was applied when no fix session was convenient, never labeled as a stopgap, and never queued. Decision 3 makes that sequence a named violation.
+
+**Rejected alternatives:**
+
+- **Aspirational statement without an enforcement contract** — rejected: inert control (ARC-023, EF-24); the repository already had the spirit of this rule in scattered fragments and it failed to prevent the motivating incident.
+- **Always choose the most thorough solution** — rejected: inverts into gold-plating and violates the brother test; decision 4 exists precisely to block this reading.
+- **Ban stopgaps entirely** — rejected: labeled, queued stopgaps are legitimate under real constraints; the violation is the unlabeled stopgap that quietly becomes permanent.
+- **Fold into ADR-034's recommendation guardrails** — rejected: ADR-034 is scoped to spending and irreversible-action recommendations with a confirmation-gate mechanism; solution selection applies to every engineering choice and needs its own contract.
