@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.9] - 2026-08-21
+
+### Fixed
+
+- `spell agents init`/`sync` no longer silently drops the `mobile-dev` role: an unquoted colon-space in a `behavioral_rules` item made the bundled template parse as a YAML mapping and fail validation, skipping the agent from every client output with a zero exit code. Every shipped agent template is now covered by a validation regression test.
+
 ## [0.15.8] - 2026-08-03
 
 ### Changed
