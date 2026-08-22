@@ -18,7 +18,7 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "test/git.test.ts unmodified, 3/3 passing (R5). Full suite 468/469 passing (1 skipped, unrelated). Coverage src/modules/git.ts: 97.32% line / 90.9% branch."
+      "testEvidence": "test/git.test.ts unmodified, 3/3 passing (R5). Full suite 469/470 passing (1 skipped, unrelated). Coverage src/modules/git.ts: 98.05% line / 90.24% branch. Revised post-review: classifyGitCommand is now three-tier (explicit read/write/network) with a write-biased fallback for unrecognized subcommands, correctly skips -c/-C separate-token values, killSignal changed to SIGTERM, timeout lookup has a defensive fallback, GitTimeoutError doc corrected to not overclaim."
     },
     {
       "id": "GEC-2",
@@ -34,7 +34,7 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "test/git-execution-contract.test.ts: 13/13 passing, covering R1-R4 plus the EF-13 optional-locks regression (Windows-only chmod fixture). Full suite 468/469 passing, lint clean, typecheck clean."
+      "testEvidence": "test/git-execution-contract.test.ts: 14/14 passing, covering R1-R4. The original EF-13 optional-locks test used a Windows chmod fixture that adversarial review proved vacuous (chmod-444 on a Windows directory doesn't block file creation inside it) -- removed and replaced with an honest scope disclosure rather than a false-confidence test; see TODO.md's EF-13/EF-20 entry and the follow-up task filed for a real restricted-filesystem harness. Full suite 469/470 passing, lint clean, typecheck clean."
     }
   ]
 }
