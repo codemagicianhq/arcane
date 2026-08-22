@@ -95,7 +95,7 @@ Development follows the **Spell Loop** — structured planning phases feeding an
 - `spell-commit-work` — Standard Git workflow: stage → message → approve → execute
 - `spell-todo` — Review TODO.md, prioritize, move resolved items to canonical docs
 - `spell-check-drift` — Find stale assumptions in docs vs. reality
-- `spell-bootstrap-business` — Initialize a new business: folder, template docs, project setup
+- `spell-summon-venture` — Create a new venture (hub-gated): folder, template docs, idea/todo books, registry entry
 
 ### Specialized
 

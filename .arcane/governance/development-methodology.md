@@ -364,7 +364,7 @@ A tool that both writes and validates its own work cannot be trusted to catch it
 | `spell-close-session`      | Journal, summarize, update TODO              |
 | `spell-commit-work`        | Conventional Commits with trailers           |
 | `spell-check-drift`        | Documentation audit for staleness            |
-| `spell-bootstrap-business` | Scaffold new business docs                   |
+| `spell-summon-venture`     | Create a new venture: folder, books, registry entry (hub-gated) |
 | `spell-explain-concept`    | Bridge concepts to project context           |
 | `spell-todo`               | Manage TODO.md lifecycle                     |
 | `spell-generate-bot-icons` | Generate agent avatar assets                 |
