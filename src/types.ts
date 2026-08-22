@@ -17,7 +17,24 @@ export interface ArcaneManifest {
   selfHosted?: boolean;
   tracking_mode?: TrackingMode;
   external_provider?: ExternalProvider | null;
+  /**
+   * Declares this repo as a hub that manages other ventures (idea books,
+   * spell-manifest promotion, venture registry). Absent means "consumer" —
+   * the default for every install. Never inferred from repo content (e.g.
+   * a `ventures/` directory existing is not sufficient — `spell-summon-venture`
+   * legitimately creates that directory in consumer repos too) and never
+   * written automatically by `spell init`/`spell update`; only set via an
+   * explicit operator answer to the CLI's hub question / retrofit wizard.
+   */
+  role?: HubRole;
+  /**
+   * Directory holding venture/business folders in a hub repo. Defaults to
+   * "ventures" when `role` is "hub" and this is unset.
+   */
+  business_root?: string;
 }
+
+export type HubRole = "hub" | "consumer";
 
 export type TrackingMode = "internal" | "external";
 export type ExternalProvider = "azure-devops" | "github" | "gitlab" | "jira";

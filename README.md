@@ -126,7 +126,7 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 **Operational & Git** — `commit-work` · `todo` · `check-drift` · `bug` · `create-pull-request` · `address-review` · `bump`
 **Specialized** — `full-cycle` · `review-batch` · `security-review` · `dotnet-expert` · `product-review` · `suggest-feature`
 **Knowledge & Docs** — `document` · `explain-concept` · `feedback` · `save-idea`
-**Business & Admin** — `bootstrap-business` · `brainstorm` · `generate-bot-icons` · `present-arcane` · `arcane-version`
+**Business & Admin** — `summon-venture` · `brainstorm` · `generate-bot-icons` · `present-arcane` · `arcane-version`
 
 </details>
 

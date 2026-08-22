@@ -131,7 +131,7 @@ const COMPONENTS: RegistryComponent[] = [
       ".github/prompts/spell-architect.prompt.md",
       ".github/prompts/spell-brainstorm.prompt.md",
       ".github/prompts/spell-scope.prompt.md",
-      ".github/prompts/spell-bootstrap-business.prompt.md",
+      ".github/prompts/spell-summon-venture.prompt.md",
       ".github/prompts/spell-bug.prompt.md",
       ".github/prompts/spell-bump.prompt.md",
       ".github/prompts/spell-check-drift.prompt.md",
@@ -166,8 +166,12 @@ const COMPONENTS: RegistryComponent[] = [
   // Templates
   {
     name: "venture-template",
-    description: "Starter template for a new business venture folder",
-    files: [".arcane/templates/venture-template/overview.md"],
+    description: "Starter template for a new business venture folder — overview plus idea/todo books",
+    files: [
+      ".arcane/templates/venture-template/overview.md",
+      ".arcane/templates/venture-template/IDEAS.md",
+      ".arcane/templates/venture-template/TODO.md",
+    ],
   },
   // Session continuity — files required for spell-close-session / spell-open-session
   {
@@ -204,7 +208,7 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-architect.md",
       ".claude/commands/spell-brainstorm.md",
       ".claude/commands/spell-scope.md",
-      ".claude/commands/spell-bootstrap-business.md",
+      ".claude/commands/spell-summon-venture.md",
       ".claude/commands/spell-bug.md",
       ".claude/commands/spell-bump.md",
       ".claude/commands/spell-check-drift.md",
