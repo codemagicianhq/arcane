@@ -1,0 +1,91 @@
+{
+  "feature": "manifest-tracking-config",
+  "branchName": "claude/feat/arc020-manifest-tracking-fields",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "MTC-1",
+      "title": "Correct ExternalProvider type; add manifest field validation",
+      "description": "ExternalProvider -> ado|jira|other (matches ARC-011 + both prompts, not the stale azure-devops|github|gitlab|jira). readManifest rejects unsupported tracking_mode/external_provider values via new ManifestInvalidFieldError (D2).",
+      "acceptanceCriteria": [
+        "ExternalProvider = \"ado\" | \"jira\" | \"other\"",
+        "readManifest throws ManifestInvalidFieldError for an unsupported tracking_mode or external_provider value",
+        "readManifest accepts external_provider: null and accepts the field being absent entirely"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/manifest.test.ts: 9 new cases (bad tracking_mode, bad/stale external_provider value, external_provider: null accepted, both fields absent accepted, parameterized accept-cases for all 2 tracking_mode and all 3 external_provider valid values). Full manifest.test.ts: 31/32 passing (1 pre-existing POSIX-only skip). tsc --noEmit clean."
+    },
+    {
+      "id": "MTC-2",
+      "title": "spell init asks/defaults tracking_mode once, persists it",
+      "description": "New Step 5b in init.ts, per D5/D6: governance-only/methodology profiles get a silent internal/null default (even scripted); full/lite ask once interactively (Track work in this repo vs an external tracker; if external, which provider); full/lite scripted (--profile) leaves it unset for later retrofit.",
+      "acceptanceCriteria": [
+        "governance-only and methodology profiles write tracking_mode: internal, external_provider: null with no question, including under --profile",
+        "full/lite interactive: asks once with D6's wording, persists the answer (and provider, if external)",
+        "full/lite with --profile: no question asked, tracking_mode left unset"
+      ],
+      "priority": "high",
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "MTC-3",
+      "title": "spell update backfills tracking_mode via MANIFEST_RETROFITS",
+      "description": "ManifestRetrofit.ask gains a manifest parameter (D4). New tracking_mode retrofit entry mirrors init's D5 branching exactly, reachable from spell update for installs that predate the field.",
+      "acceptanceCriteria": [
+        "needsRetrofit is true only when tracking_mode is undefined",
+        "ask(manifest) applies the same governance-only/methodology silent default, or asks for full/lite",
+        "idempotent: a second update with tracking_mode already set asks nothing"
+      ],
+      "priority": "high",
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "MTC-4",
+      "title": "spell-open-session / spell-plan resolve tracking config from the manifest before asking",
+      "description": "open-session: add the missing self-hosted-source-manifest fallback tier (root .arcane.json -> src/assets/.arcane.json when selfHosted -> PRD frontmatter -> ask), fixing the live contradiction with EF-14's own recorded resolution order. plan: add the resolution chain that currently doesn't exist at all, plus an explicit ask-instruction.",
+      "acceptanceCriteria": [
+        "spell-open-session.prompt.md documents reading src/assets/.arcane.json's tracking_mode/external_provider when selfHosted is true and root .arcane.json is absent",
+        "spell-plan.prompt.md's 'Configure tracking mode first' step reads .arcane.json (currently absent) before falling through to asking",
+        "Both files state concrete question wording (Track work in this repo / an external tracker) rather than only raw enum tokens"
+      ],
+      "priority": "high",
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "MTC-5",
+      "title": "EF-08: five files resolve {BUSINESS_ROOT} instead of hardcoding ventures/",
+      "description": "spell-check-drift, spell-commit-work, spell-open-session, spell-plan, spell-todo -- ungated {BUSINESS_ROOT} resolution (D8), matching spell-present-arcane/spell-product-review's existing non-hub-gated idiom exactly (spell-summon-venture's hub-gated version doesn't apply -- these five run in any repo).",
+      "acceptanceCriteria": [
+        "No literal top-level ventures/ remains in a resolution-instruction or user-facing-label context in any of the five files",
+        "Each of the five states the {BUSINESS_ROOT} resolution sentence (from .arcane.json's business_root field, default ventures/ if unset)"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "MTC-6",
+      "title": "New ADR amending ARC-020; EF-14/EF-08 shipped; version bump",
+      "description": "New ARC-0XX (Amends: ARC-020, ARC-020 itself untouched/still Proposed), per D2/D3. EF-14.md and EF-08.md frontmatter -> shipped. TODO.md/CHANGELOG.md updated. package.json minor bump (0.17.0 -- feature-sized, not patch, matching the plan's own categorization).",
+      "acceptanceCriteria": [
+        "New ADR's Status is Accepted with an explicit Amends: ARC-020 header; ARC-020's own Status remains Proposed, unedited",
+        "EF-14.md and EF-08.md: status: shipped",
+        "package.json version is 0.17.0"
+      ],
+      "priority": "high",
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    }
+  ]
+}
