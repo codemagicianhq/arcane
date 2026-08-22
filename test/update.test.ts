@@ -17,6 +17,17 @@ const { inspectGitRepositoryMock } = vi.hoisted(() => ({
   inspectGitRepositoryMock: vi.fn(),
 }));
 
+// The two tests that build their fixture via runInit({ profile: "lite" }, ...)
+// skip init's own hub question (profile is set -- non-interactive path), so
+// their manifest genuinely has no `role` yet. The subsequent runUpdate() call
+// correctly triggers the retrofit wizard for it -- this mock is what lets that
+// resolve instead of hanging on real stdin. Every other test in this file goes
+// through the local writeManifest() helper, which sets role: "consumer"
+// directly and never reaches a prompt at all.
+vi.mock("@inquirer/prompts", () => ({
+  confirm: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock("../src/modules/git.js", () => ({
   inspectGitRepository: inspectGitRepositoryMock,
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
@@ -43,6 +54,12 @@ async function writeManifest(dir: string, partial?: Partial<ArcaneManifest>) {
     profile: "lite",
     installedAt: "2026-01-01T00:00:00.000Z",
     components: [],
+    // role: "consumer" by default -- these are generic file-copy/update-mechanics
+    // tests, unrelated to hub retrofit behavior. Without this, every one of them
+    // would trigger runManifestRetrofits' confirm() prompt and hang (no
+    // @inquirer/prompts mock exists in this file, unlike init.test.ts/
+    // lifecycle.test.ts). The dedicated retrofit-wizard tests override this.
+    role: "consumer",
     ...partial,
   };
   await fs.writeFile(join(dir, ".arcane.json"), JSON.stringify(manifest, null, 2));
