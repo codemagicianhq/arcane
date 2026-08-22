@@ -18,7 +18,11 @@ import {
   printWarning,
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
-import { countUncommittedChanges } from "../modules/git.js";
+import {
+  correctUnbornMasterDefault,
+  ensureLocalPullRebase,
+  inspectGitRepository,
+} from "../modules/git.js";
 import type {
   ArcaneManifest,
   HubRole,
@@ -147,22 +151,51 @@ export async function runInit(
 
   console.log(chalk.hex("#a855f7")(`\n  ✦ Arcane v${packageVersion}\n`));
 
-  // ── Safety check: warn about uncommitted changes ───────────────────────
+  // ── Git-state checks (EF-05, EF-32) ─────────────────────────────────────
+  // Never runs `git init` or creates a commit -- see
+  // features/init-git-state-contract/PRD.md's "Design decision" section for
+  // why that's declined rather than deferred. Only acts where it's provably
+  // safe (an unborn repo has no commits to conflict with) or where the
+  // operator already explicitly confirmed continuing (uncommitted changes).
+  let repoNotFound = false;
   if (!options.dryRun) {
-    const dirtyCount = await countUncommittedChanges(targetDir);
-    if (dirtyCount > 0) {
-      printWarning(`This repo has ${dirtyCount} uncommitted change${dirtyCount === 1 ? "" : "s"}.`);
-      printInfo("Running spell init will add new files to your working tree.");
-      console.log();
-      const continueAnyway = await confirm({
-        message: "Continue anyway?",
-        default: true,
-      });
-      if (!continueAnyway) {
-        console.log("\nCancelled. Commit or stash your changes first.");
-        return;
+    const gitState = await inspectGitRepository(targetDir);
+
+    if (gitState.status === "not-repository") {
+      repoNotFound = true;
+    } else {
+      if (gitState.status === "no-commits") {
+        const correction = await correctUnbornMasterDefault(targetDir);
+        if (correction.corrected) {
+          printInfo(
+            `Repointed the unborn branch from "${correction.from}" to "${correction.to}" (avoids the Git for Windows default-branch trap).`,
+          );
+        }
       }
-      console.log();
+
+      if (gitState.status === "ready" && gitState.uncommittedChanges > 0) {
+        printWarning(
+          `This repo has ${gitState.uncommittedChanges} uncommitted change${gitState.uncommittedChanges === 1 ? "" : "s"}.`,
+        );
+        printInfo("Running spell init will add new files to your working tree.");
+        console.log();
+        const continueAnyway = await confirm({
+          message: "Continue anyway?",
+          default: true,
+        });
+        if (!continueAnyway) {
+          console.log("\nCancelled. Commit or stash your changes first.");
+          return;
+        }
+        console.log();
+      }
+
+      const rebaseResult = await ensureLocalPullRebase(targetDir);
+      if (rebaseResult.action === "explicit-false-preserved") {
+        printWarning(
+          "This repo's pull.rebase is explicitly set to false, but Arcane's governance mandates rebase-and-fast-forward (see .arcane/governance/git-conventions.md). Left as-is since you set it explicitly.",
+        );
+      }
     }
   }
 
@@ -351,6 +384,12 @@ export async function runInit(
     printNextStep(
       step++,
       "Review .arcane/governance/ docs and customize for your project",
+    );
+  }
+  if (repoNotFound) {
+    printNextStep(
+      step++,
+      'Initialize Git for this project: `git init -b main` (avoids defaulting to "master" on systems where that\'s the system default)',
     );
   }
   printNextStep(

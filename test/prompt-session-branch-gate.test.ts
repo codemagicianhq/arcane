@@ -94,3 +94,20 @@ describe("session branch mutation guard", () => {
     expect(closeSession).not.toContain("git checkout main && git pull origin main");
   });
 });
+
+describe("close-session not-a-repository state (EF-05)", () => {
+  it("checks for no repository before any other remote-capability classification", () => {
+    const checkIndex = closeSession.indexOf("Remote-capability check");
+    const notRepoIndex = closeSession.indexOf("Not a Git repository (EF-05)");
+    const usableRemoteIndex = closeSession.indexOf("Usable supported remote/merge path");
+    expect(checkIndex).toBeGreaterThan(-1);
+    expect(notRepoIndex).toBeGreaterThan(checkIndex);
+    expect(notRepoIndex).toBeLessThan(usableRemoteIndex);
+  });
+
+  it("fails closed without attempting any git operation, and points at the same fix init.ts suggests", () => {
+    expect(closeSession).toContain("git rev-parse --is-inside-work-tree");
+    expect(closeSession).toContain("Do not attempt any git operation");
+    expect(closeSession).toContain("git init -b main");
+  });
+});

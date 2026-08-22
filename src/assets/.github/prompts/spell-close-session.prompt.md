@@ -101,7 +101,8 @@ Rules:
 
 9. **Stage and commit session-close docs.**
 
-   **Remote-capability check:** classify the state created by `spell-open-session` before branching, staging, push, or PR operations.
+   **Remote-capability check:** classify the state created by `spell-open-session` before branching, staging, push, or PR operations. Check for **not a repository at all** first — every other classification assumes a `.git` directory exists.
+   - **Not a Git repository (EF-05):** `git rev-parse --is-inside-work-tree` fails. Do not attempt any git operation (branch, add, commit, push). Fail closed with: `No Git repository detected. Run \`git init -b main\` first (explicit -b avoids landing on "master" on systems where that's the init.defaultBranch default), then re-run spell-close-session.` This mirrors `spell init`'s own next-steps guidance for the same state.
    - **Usable supported remote/merge path:** requires an authenticated supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`). Keep the current compliant session/PR/worktree branch, resolve the actual remote name and integration branch, and use the provider-neutral PR path below.
    - **No usable remote/merge path:** remain on the current trunk. Do not create a dead session branch, push, pull, or open a PR. Apply the EF-28 interactive commit approval gate, commit locally on trunk after approval, report `Local-only close: committed on <trunk>; no remote PR/pull performed`, and skip steps 9a, 9c, and 10's remote operations.
    - **Read-only session:** if no repository mutation occurred, do not create a branch or commit.

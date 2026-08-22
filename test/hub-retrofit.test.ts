@@ -20,8 +20,16 @@ vi.mock("@inquirer/prompts", () => ({
 }));
 
 vi.mock("../src/modules/git.js", () => ({
-  inspectGitRepository: inspectGitRepositoryMock,
+  // Default matches these tests' real environment (plain fs.mkdtemp dirs,
+  // never git-init'd); the "hub-update" describe block below overrides
+  // this per-test via inspectGitRepositoryMock.mockResolvedValue(...) in
+  // its own beforeEach. This file never calls restoreAllMocks/resetAllMocks,
+  // so a factory-level default (rather than re-arming every beforeEach) is
+  // safe here.
+  inspectGitRepository: inspectGitRepositoryMock.mockResolvedValue({ status: "not-repository" }),
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
+  correctUnbornMasterDefault: vi.fn().mockResolvedValue({ corrected: false, to: "main" }),
+  ensureLocalPullRebase: vi.fn().mockResolvedValue({ action: "already-set" }),
 }));
 
 const { runInit } = await import("../src/commands/init.js");

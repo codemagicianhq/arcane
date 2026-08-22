@@ -13,9 +13,12 @@ import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { runGit } from "./helpers/git-fixture.js";
 
-const { inspectGitRepositoryMock } = vi.hoisted(() => ({
-  inspectGitRepositoryMock: vi.fn(),
-}));
+const { inspectGitRepositoryMock, correctUnbornMasterDefaultMock, ensureLocalPullRebaseMock } =
+  vi.hoisted(() => ({
+    inspectGitRepositoryMock: vi.fn(),
+    correctUnbornMasterDefaultMock: vi.fn(),
+    ensureLocalPullRebaseMock: vi.fn(),
+  }));
 
 // The two tests that build their fixture via runInit({ profile: "lite" }, ...)
 // skip init's own hub question (profile is set -- non-interactive path), so
@@ -31,6 +34,14 @@ vi.mock("@inquirer/prompts", () => ({
 vi.mock("../src/modules/git.js", () => ({
   inspectGitRepository: inspectGitRepositoryMock,
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
+  // Two tests in this file build their fixture via a real runInit() call
+  // (see the runInit(...) calls below), which now also calls these two
+  // EF-05/EF-32 functions -- mocked here (and re-armed in beforeEach,
+  // alongside inspectGitRepositoryMock) purely so that path doesn't crash;
+  // their actual behavior is covered by test/init-git-state.test.ts's real
+  // fixtures, not here.
+  correctUnbornMasterDefault: correctUnbornMasterDefaultMock,
+  ensureLocalPullRebase: ensureLocalPullRebaseMock,
 }));
 
 const { runUpdate } = await import("../src/commands/update.js");
@@ -98,6 +109,8 @@ describe("spell update — handler", () => {
       status: "ready",
       uncommittedChanges: 0,
     });
+    correctUnbornMasterDefaultMock.mockResolvedValue({ corrected: false, to: "main" });
+    ensureLocalPullRebaseMock.mockResolvedValue({ action: "already-set" });
   });
 
   afterEach(async () => {

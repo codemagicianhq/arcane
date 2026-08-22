@@ -1,0 +1,80 @@
+{
+  "feature": "init-git-state-contract",
+  "branchName": "claude/fix/ef05-32-init-git-contract",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "IGS-1",
+      "title": "Add correctUnbornMasterDefault and ensureLocalPullRebase to git.ts",
+      "description": "New exported functions in src/modules/git.ts per architecture D1-D3, built on WP1's runGit.",
+      "acceptanceCriteria": [
+        "correctUnbornMasterDefault repoints HEAD from master to main only when current unborn branch is exactly master (D2)",
+        "correctUnbornMasterDefault leaves any other branch name untouched",
+        "ensureLocalPullRebase distinguishes unset-locally from explicit-local-false via --local --get (D3)",
+        "ensureLocalPullRebase never overwrites an explicit local false"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/init-git-state.test.ts: correctUnbornMasterDefault and ensureLocalPullRebase suites, real git fixtures. Also caught and fixed during implementation: the initial version trusted the caller to only invoke correctUnbornMasterDefault on an unborn repo -- added an internal rev-parse --verify HEAD check so a BORN repo on master is never touched (would otherwise detach HEAD from master's history without moving commits). Covered by a dedicated test."
+    },
+    {
+      "id": "IGS-2",
+      "title": "Wire the new git-state block into runInit",
+      "description": "Replace init.ts's countUncommittedChanges dirty-check with an inspectGitRepository-driven block calling both new functions; make next-steps output state-aware for not-repository.",
+      "acceptanceCriteria": [
+        "not-repository: no git mutation, next-steps includes exact git init -b main guidance (R4)",
+        "no-commits: correctUnbornMasterDefault and ensureLocalPullRebase both run",
+        "ready: existing uncommitted-changes confirm UX unchanged, ensureLocalPullRebase also runs",
+        "dry-run never triggers any git-state action"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/init-git-state.test.ts's end-to-end real-git runInit test proves the full wire-up (unborn master->main correction + pull.rebase set, in one real init run). test/init.test.ts's 14 existing tests pass unmodified in behavior (git mock extended, not replaced)."
+    },
+    {
+      "id": "IGS-3",
+      "title": "Add checkPullRebase to spell doctor",
+      "description": "New independent doctor check verifying the EFFECTIVE pull.rebase resolves to true; non-blocking warning otherwise (D4).",
+      "acceptanceCriteria": [
+        "Registered in runDoctor's check list",
+        "Passes when effective pull.rebase is true",
+        "Non-blocking warning (not a hard failure) when it isn't"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/init-git-state.test.ts's checkPullRebase suite: passes on true, warns non-blocking on unset/explicit-false/outside-a-repo (4 real-fixture tests)."
+    },
+    {
+      "id": "IGS-4",
+      "title": "Regression coverage: real-git fixtures for R2/R3/R5/R6 plus checkPullRebase",
+      "description": "New test/init-git-state.test.ts using test/helpers/git-fixture.ts; extend test/init.test.ts's git mock factory to include inspectGitRepository without breaking existing tests (R8).",
+      "acceptanceCriteria": [
+        "All existing test/init.test.ts assertions pass unmodified in behavior",
+        "New fixtures prove R2, R3, R5, R6 against real git",
+        "checkPullRebase tested against real fixtures",
+        "coverage on touched files meets the 80% repo-standard threshold"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "12 new tests in test/init-git-state.test.ts, all real-git fixtures, no mocking of src/modules/git.js in that file. Extending the git mock in test/init.test.ts surfaced a pre-existing latent issue (also present, separately, in test/update.test.ts, test/hub-retrofit.test.ts, test/session-continuity.test.ts): vi.restoreAllMocks() in several beforeEach blocks clears a plain vi.fn()'s configured resolved value, previously masked because the old code's numeric countUncommittedChanges > 0 comparison tolerated an undefined return silently -- the new code's gitState.status property access does not. Fixed in all four files by re-applying mock resolved values in beforeEach (matching the pattern already used for @inquirer/prompts mocks in two of them). Full suite: 488/489 passing (1 unrelated skip), lint clean, typecheck clean. Coverage src/modules/git.ts: 94.21% line / 96.29% branch."
+    },
+    {
+      "id": "IGS-5",
+      "title": "spell-close-session: not-a-repository classification",
+      "description": "Add a fourth remote-capability state (not a repository at all) to spell-close-session.prompt.md, checked first, failing closed with the same git init -b main guidance as init.ts.",
+      "acceptanceCriteria": [
+        "New state documented alongside the existing three (usable remote / no usable remote / read-only)",
+        "Guidance text matches init.ts's next-steps wording for consistency"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "New describe block in test/prompt-session-branch-gate.test.ts (2 tests): asserts ordering (checked before the other three states) and content (rev-parse --is-inside-work-tree, no git operation attempted, git init -b main guidance matching init.ts). Self-host parity regenerated and verified clean."
+    }
+  ]
+}
