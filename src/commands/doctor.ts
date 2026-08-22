@@ -150,7 +150,11 @@ export async function checkArcaneManifest(targetDir: string): Promise<CheckResul
 export async function checkPullRebase(targetDir: string): Promise<CheckResult> {
   const name = "Git pull.rebase (rebase-and-fast-forward mandate)";
   try {
-    const { stdout } = await runGit(targetDir, ["config", "--get", "pull.rebase"]);
+    // --type=bool normalizes any of git's valid boolean spellings
+    // (true/yes/on/1, false/no/off/0) to canonical "true"/"false" -- a raw
+    // string comparison against "true" alone would false-positive-warn on
+    // a fully compliant "yes"/"on"/"1".
+    const { stdout } = await runGit(targetDir, ["config", "--type=bool", "--get", "pull.rebase"]);
     const value = stdout.trim();
     if (value === "true") {
       return { name, passed: true, message: "pull.rebase=true" };
@@ -162,10 +166,13 @@ export async function checkPullRebase(targetDir: string): Promise<CheckResult> {
       blocking: false,
     };
   } catch {
+    // Two cases collapse here: unset entirely, or set to a non-boolean
+    // value (e.g. "merges") --type=bool can't coerce -- both mean
+    // "not affirmatively true", which is what this check cares about.
     return {
       name,
       passed: false,
-      message: "pull.rebase is unset (or this isn't a Git repository) -- effective behavior inherits your machine's default, and Git for Windows defaults this to false. Run: git config --local pull.rebase true",
+      message: "pull.rebase is unset, not a recognized boolean, or this isn't a Git repository -- effective behavior may not be rebase-and-fast-forward, and Git for Windows defaults this to false when unset. Run: git config --local pull.rebase true",
       blocking: false,
     };
   }
