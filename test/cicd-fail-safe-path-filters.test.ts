@@ -28,8 +28,11 @@ function extractYamlBlockAfter(text: string, heading: string): string {
   return match[1];
 }
 
-// R4 (adversarial review): ARC-022 unconditionally names six categories that
-// must always remain triggering inputs. One representative example path per
+// R4 (adversarial review, second pass): ARC-022 unconditionally names SEVEN
+// categories that must always remain triggering inputs -- containers was
+// missing from the first fix pass's count of six (DECISIONS.md's ARC-022
+// entry: "Pipeline definitions, manifests, lockfiles, scripts, migrations,
+// containers, and infrastructure"). One representative example path per
 // category, checked against every exclude list in this document -- not just
 // a handful of ad-hoc substrings.
 const ARC022_MUST_ALWAYS_TRIGGER: Record<string, string> = {
@@ -38,27 +41,36 @@ const ARC022_MUST_ALWAYS_TRIGGER: Record<string, string> = {
   lockfile: "package-lock.json",
   script: "scripts/build.sh",
   migration: "migrations/0001_init.sql",
+  container: "Dockerfile",
   infrastructure: "infrastructure/main.tf",
 };
 
 /**
- * Deliberately minimal glob check, scoped to exactly the two pattern shapes
- * this document's path filters actually use: "**\/*.ext" / "**.ext" (match
- * by extension, at any depth -- both spellings appear across the four
- * templates) and an exact literal path/filename (e.g. a pipeline
- * definition's own name). This is NOT a general glob matcher -- `minimatch`
- * is present in node_modules only as an incidental transitive dependency of
- * other tooling (confirmed via package-lock.json, not declared in
- * package.json), so importing it directly here would be a silent,
- * undeclared dependency that could disappear on an unrelated dependency
- * bump. If a future pattern needs real glob semantics, add a declared
- * devDependency for it rather than extending this helper past what it
- * honestly covers.
+ * Deliberately minimal glob check, scoped to exactly the pattern shapes this
+ * document's path filters actually use: "**\/*.ext" / "**.ext" (match by
+ * extension, at any depth, including multi-part extensions like
+ * ".tf.json" -- both spellings appear across the four templates),
+ * "**\/<exact filename>" (match one specific filename at any depth, e.g.
+ * Terraform's ".terraform.lock.hcl" dependency lock file, which isn't an
+ * extension pattern at all), and an exact literal path/filename (e.g. a
+ * pipeline definition's own name). This is NOT a general glob matcher --
+ * `minimatch` is present in node_modules only as an incidental transitive
+ * dependency of other tooling (confirmed via package-lock.json, not
+ * declared in package.json), so importing it directly here would be a
+ * silent, undeclared dependency that could disappear on an unrelated
+ * dependency bump. If a future pattern needs real glob semantics, add a
+ * declared devDependency for it rather than extending this helper past what
+ * it honestly covers.
  */
 function matchesGlob(pattern: string, path: string): boolean {
-  const extensionGlob = pattern.match(/^\*\*(?:\/\*)?(\.[a-zA-Z0-9]+)$/);
+  const extensionGlob = pattern.match(/^\*\*(?:\/\*)?(\.[a-zA-Z0-9.]+)$/);
   if (extensionGlob) {
     return path.endsWith(extensionGlob[1]);
+  }
+  const anyDepthFilename = pattern.match(/^\*\*\/([^*/]+)$/);
+  if (anyDepthFilename) {
+    const filename = anyDepthFilename[1];
+    return path === filename || path.endsWith(`/${filename}`);
   }
   return pattern === path;
 }
@@ -101,10 +113,10 @@ describe(".NET and Node.js pipelines use exclude-based fail-safe filters, filety
   // .arcane/governance/**), which would ALSO exclude any non-Markdown file
   // (a script, a manifest) a consumer happened to place there -- silently
   // violating ARC-022's unconditional list. Assert the fix: exclude is
-  // filetype-scoped (**/*.md), so nothing in the six always-trigger
+  // filetype-scoped (**/*.md), so nothing in the seven always-trigger
   // categories can ever match it, regardless of what directory it's in.
   for (const heading of ["### .NET Backend Pipeline", "### Node.js Pipeline"]) {
-    it(`${heading}: none of ARC-022's six always-trigger categories can match the exclude list, even nested under a docs-like path`, () => {
+    it(`${heading}: none of ARC-022's seven always-trigger categories can match the exclude list, even nested under a docs-like path`, () => {
       const doc = parse(extractYamlBlockAfter(cicdStandards, heading)) as {
         trigger: { paths: { exclude: string[] } };
       };
@@ -158,6 +170,22 @@ describe("Terraform and Markdown-lint pipelines stay include-based, filetype-sco
       pr: { paths: { include: string[] } };
     };
     expect(matchesAnyPattern(doc.pr.paths.include, "modules/networking/main.tf")).toBe(true);
+  });
+
+  // R2 (adversarial review, second pass): **/*.tf and **/*.tfvars alone
+  // still miss Terraform's dependency lock file and JSON-syntax variants --
+  // none of them end in .tf/.tfvars, so they need their own named entries.
+  // The lock file specifically is ARC-022's "lockfile" category applied to
+  // Terraform, which the fail-safe filter must never miss regardless of
+  // location.
+  it("Terraform include list also covers the dependency lock file and JSON-syntax file variants, at any depth", () => {
+    const doc = parse(extractYamlBlockAfter(cicdStandards, "### Terraform Pipeline")) as {
+      pr: { paths: { include: string[] } };
+    };
+    expect(matchesAnyPattern(doc.pr.paths.include, "infrastructure/terraform/.terraform.lock.hcl")).toBe(true);
+    expect(matchesAnyPattern(doc.pr.paths.include, ".terraform.lock.hcl")).toBe(true);
+    expect(matchesAnyPattern(doc.pr.paths.include, "modules/networking/variables.tf.json")).toBe(true);
+    expect(matchesAnyPattern(doc.pr.paths.include, "modules/networking/terraform.tfvars.json")).toBe(true);
   });
 
   it("Terraform and Markdown-lint include lists each cover their own pipeline definition file", () => {
