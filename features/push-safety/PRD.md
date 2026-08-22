@@ -166,13 +166,18 @@ guidance Arcane surfaces at the right moment but cannot itself enforce.
    validate, retrofit) already exists and is already proven working in this
    codebase -- this PRD is not proposing new infrastructure, only a new field and a
    new consumer of the existing one.
-2. **`"blocked"`**: `spell init` sets `core.hooksPath` to a new versioned,
-   Arcane-distributed hook directory (a new registry component, e.g.
+2. **`"blocked"`**: `spell init` first checks `core.hooksPath` for an existing
+   value (per the Hook-Manager Collision note above and R7 -- **not** an
+   unconditional overwrite). If unset, it points `core.hooksPath` at a new
+   versioned, Arcane-distributed hook directory (a new registry component, e.g.
    `push-safety-hooks`) whose `pre-push` script exits non-zero unconditionally, with
    a message naming the repo's own `push_policy` and pointing at the Bypass/Recovery
-   Contract below. It also sets the push URL to a clearly-invalid sentinel (M2),
-   so even a `--no-verify` push fails at the transport layer instead of silently
-   succeeding.
+   Contract below. If `core.hooksPath` is already set (Husky, Lefthook, pre-commit,
+   or anything else), installation either chains the new script after the existing
+   one or refuses with a clear, actionable error -- it never silently repoints an
+   existing hook manager's slot. Either way, it also sets the push URL to a
+   clearly-invalid sentinel (M2), so even a `--no-verify` push fails at the
+   transport layer instead of silently succeeding.
 3. **`"guarded"`**: hook + disabled push URL are NOT installed, but `spell init`
    prints the M5/M6 guidance once, and `doctor` gains a non-blocking check that
    reminds the operator this repo is flagged sensitive with no active technical
@@ -246,7 +251,7 @@ own, not a control shaped for human fat-fingering. Proposed instead:
 | R1 | `push_policy` field persists in `.arcane.json` on the `profile`/`tracking_mode` contract | Chosen once, retrofit-backfilled, never silently overwritten |
 | R2 | `"blocked"` installs a versioned pre-push hook via `core.hooksPath` | New registry component; hook exits non-zero unconditionally; message names the policy and points at the unblock command |
 | R3 | `"blocked"` also disables the push URL | `git push` fails at the transport layer even with `--no-verify` |
-| R4 | `"guarded"` surfaces guidance without installing a technical control | One-time `spell init` message; non-blocking `doctor` check |
+| R4 | `"guarded"` surfaces guidance without installing a technical control | One-time `spell init` message; non-blocking `doctor` check that keeps firing regardless of remote state (never stops just because a remote -- possibly the wrong one -- exists) |
 | R5 | Deliberate, confirmed, logged unblock path | New command; interactive-TTY-only (refuses scripted/piped/CI invocation) plus typed repo-name confirmation; never a side effect of another command |
 | R6 | Real fixture coverage for hook installation, push-URL disabling, and the unblock flow | Using a real local git remote fixture (a second local bare repo as the "remote"), not mocked -- prove the hook and disabled URL actually block a real `git push` attempt, not just that the config was written |
 | R7 | Installation must detect and never silently clobber an existing `core.hooksPath` | If one is already set (e.g. Husky, Lefthook, pre-commit -- confirmed live in this very repository, `.husky/_`), either chain the new hook after the existing one or refuse installation with a clear, actionable error; never overwrite silently |
