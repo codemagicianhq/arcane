@@ -101,7 +101,7 @@ Workflow:
    - `infrastructure` — infrastructure/ directory, hardware, OS setup
    - `decisions` — DECISIONS.md updates
    - `journal` — journal/ entries
-   - `business` — ventures/ directory
+   - `business` — `{BUSINESS_ROOT}` directory (resolve from `.arcane.json`'s `business_root` field, default `ventures/` if unset)
    - `playbooks` — playbooks/ directory
    - `governance` — governance/ directory
    - Multiple scopes? Pick the primary one or use a broader scope like `docs` or `repo`.

@@ -28,7 +28,7 @@ Use these files first:
 - [ai-context/system-prompt-context.md](../../ai-context/system-prompt-context.md)
 - [agents/agent-policies.md](../../.arcane/governance/agent-policies.md)
 - Most recent journal file(s) in [journal/](../../journal/)
-- Relevant business overview(s) under [ventures/](../../ventures/)
+- Relevant business overview(s) under `{BUSINESS_ROOT}/` (resolve from `.arcane.json`'s `business_root` field, default `ventures/` if unset)
 
 **Handoff Detection (run before anything else):**
 
@@ -77,10 +77,10 @@ Before anything else, check:
   - If current branch is non-compliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
 - **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted. This lists candidates only — before deleting any, apply the same-vantage-point check (EF-33) and, separately, verify by content rather than trusting ancestry alone (rebase-and-fast-forward merges are invisible to `--merged`; see the merged-branch cleanup item in TODO.md).
-- **Tracker configuration check (early):** resolve active tracking settings before planning. Read root `.arcane.json` first (if present), then the current feature PRD frontmatter if available. A self-host marker under `src/assets/` is doctor metadata, not active repository configuration; never use it as tracking provenance. If neither active source sets tracking, ask the operator and treat the answer as session-scoped until EF-14 defines persistent configuration:
+- **Tracker configuration check (early):** resolve active tracking settings before planning, in this order: root `.arcane.json` (if present) -> the committed self-hosted source manifest (`src/assets/.arcane.json`, read only when it declares `selfHosted: true` -- this is EF-14's recorded self-hosting resolution tier, distinct from treating the mere presence of a self-host marker as license to infer other, unrelated config) -> the current feature PRD frontmatter -> ask. Persisted once at `spell init`/`spell update` (EF-14); do not re-ask when any of the first three sources already sets it.
   - `tracking_mode: internal | external`
   - `external_provider: ado | jira | other`
-  - If missing, ask the operator to choose now. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
+  - If all three sources are absent, ask: "Track work in this repo (TODO.md / PRDs)" [internal] vs "Track work in an external tracker (Azure DevOps / Jira / other)" [external]. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
 - **Open PRs (external/ado mode only):** if tracking mode is `external` with provider `ado` and ADO MCP is available, list all open PRs across all repos in the configured repo list (resolve from `.arcane.json`; if unset, ask the operator which repos to scan). Flag PRs older than 3 days as stale, older than 7 days as overdue. Format each as a clickable markdown link: `[PR #{id} — {title}](https://dev.azure.com/{ADO_ORG}/{ADO_PROJECT}/_git/{repo}/pullrequest/{id})` — resolve `{ADO_ORG}` and `{ADO_PROJECT}` from `.arcane.json` / PRD frontmatter; ask if unset. Never list a bare `PR #NNN`.
 - **Uncommitted changes:** Run `git status` and report any uncommitted files.
 - **Arcane version check (two-axis):** If `.arcane.json` exists in the repo root, check both whether the repo's managed files are behind the installed CLI _and_ whether the installed CLI is behind the latest published version of `arcane-cli`:

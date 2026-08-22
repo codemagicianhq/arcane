@@ -15,11 +15,13 @@ agent: agent
 
 ---
 
+Resolve `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field (default `ventures/` if unset) before either mode below.
+
 ## Sweep Mode (`--sweep`)
 
 If the argument is (or starts with) `--sweep`, skip every other step in this spell entirely and run this instead:
 
-- **In a hub repo:** report `status: new` counts and oldest-entry age for the hub root `TODO.md` plus every `ventures/<slug>/TODO.md` that exists. Group by book, point at `spell-manifest` for entries ready to promote. Report-only — no edits.
+- **In a hub repo:** report `status: new` counts and oldest-entry age for the hub root `TODO.md` plus every `{BUSINESS_ROOT}/<slug>/TODO.md` that exists. Group by book, point at `spell-manifest` for entries ready to promote. Report-only — no edits.
 - **In a consumer repo:** report the same, for the repo-root `TODO.md` only (no venture books exist there).
 
 Output format:
@@ -27,16 +29,16 @@ Output format:
 ```
 Todo sweep — N books, M open items
 
-hub TODO.md               12 open, oldest 2026-07-14
-ventures/ordovica/TODO.md  3 open, oldest 2026-08-10
+hub TODO.md                    12 open, oldest 2026-07-14
+{BUSINESS_ROOT}/ordovica/TODO.md  3 open, oldest 2026-08-10
 ```
 
 ## Step 0 — Venture Targeting (Hub Only)
 
-If the input names a venture ("add a todo for ordo", `--venture <slug>`), resolve it through `ventures/registry.json`'s aliases first (exact slug → alias → closest match offered — never guessed). Unknown slug:
+If the input names a venture ("add a todo for ordo", `--venture <slug>`), resolve it through `{BUSINESS_ROOT}/registry.json`'s aliases first (exact slug → alias → closest match offered — never guessed). Unknown slug:
 
 ```
-No venture "<slug>" under ventures/ (closest: ordovica, tidewright).
+No venture "<slug>" under {BUSINESS_ROOT}/ (closest: ordovica, tidewright).
 1) use <closest>  2) add to hub root TODO.md  3) cancel (create the venture first: spell-summon-venture)
 ```
 
@@ -81,7 +83,7 @@ Classify the idea along two axes:
 - `infrastructure` — hardware, OS, cloud, networking, provisioning
 - `governance` — git conventions, agent autonomy, spending controls, work management
 - `ci-cd` — repos, pipelines, build/release automation
-- `business` — a specific business under `ventures/` — name which one
+- `business` — a specific business under `{BUSINESS_ROOT}/` — name which one
 - `product-ideas` — new product concepts or packaging ideas
 - `legal` — LLC, ToS, contracts
 - `playbooks` — runbooks, setup guides, automation scripts
@@ -116,7 +118,7 @@ Determine the target file(s) for each item:
 | Speculative idea or future-facing concept             | `TODO.md` under `## Product Ideas` or the best matching section                    |
 | ADR candidate                                         | `DECISIONS.md` — flag it as pending, do not write the full ADR yet                 |
 | Journal-worthy context                                | `journal/` — propose a filename with today's date slug, do not create the file yet |
-| Business-specific execution item                      | Both `TODO.md` AND the relevant `ventures/<name>/overview.md` reference section  |
+| Business-specific execution item                      | Both `TODO.md` AND the relevant `{BUSINESS_ROOT}/<name>/overview.md` reference section  |
 
 ## Step 4 — Show Proposal
 
