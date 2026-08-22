@@ -12,12 +12,30 @@ const { confirmMock } = vi.hoisted(() => ({
   confirmMock: vi.fn(),
 }));
 
+const { selectMock } = vi.hoisted(() => ({
+  selectMock: vi.fn(),
+}));
+
 vi.mock("@inquirer/prompts", () => ({
-  select: vi.fn().mockResolvedValue("lite"),
+  select: selectMock,
   confirm: confirmMock,
   checkbox: vi.fn().mockResolvedValue([]),
   input: vi.fn().mockResolvedValue("Agent"),
 }));
+
+// Message-branching default -- same shape as mockConfirms below. Tests that
+// don't care about tracking-mode answers still get a valid default (not the
+// old blanket "lite" for every select call, which would have written an
+// invalid tracking_mode value once EF-14's question was added).
+function resetSelectMock(trackingAnswer: "internal" | "external" = "internal", providerAnswer: "ado" | "jira" | "other" = "ado") {
+  selectMock.mockReset();
+  selectMock.mockImplementation(async (opts: { message: string }) => {
+    if (opts.message.includes("installation profile")) return "lite";
+    if (opts.message.includes("How will work be tracked")) return trackingAnswer;
+    if (opts.message.includes("Which external tracker")) return providerAnswer;
+    return "lite";
+  });
+}
 
 vi.mock("../src/modules/git.js", () => ({
   // Default matches these tests' real environment (plain fs.mkdtemp dirs,
@@ -70,6 +88,7 @@ describe("spell init — hub question", () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "hub-init-test-"));
     confirmMock.mockReset();
     confirmMock.mockResolvedValue(true);
+    resetSelectMock();
   });
 
   afterEach(async () => {
@@ -113,6 +132,78 @@ describe("spell init — hub question", () => {
   });
 });
 
+describe("spell init — tracking mode (EF-14)", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(join(tmpdir(), "tracking-init-test-"));
+    confirmMock.mockReset();
+    confirmMock.mockImplementation(async (opts: { message: string }) => {
+      if (opts.message.includes("Set up your agent team")) return false;
+      if (opts.message.includes("manage other ventures as a hub")) return false;
+      return true;
+    });
+    resetSelectMock();
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it("governance-only profile gets a silent internal/null default, no question asked", async () => {
+    await runInit({ profile: "governance-only" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).not.toHaveBeenCalled();
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("internal");
+    expect(manifest.external_provider).toBeNull();
+  });
+
+  it("methodology profile gets a silent internal/null default, no question asked", async () => {
+    await runInit({ profile: "methodology" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).not.toHaveBeenCalled();
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("internal");
+    expect(manifest.external_provider).toBeNull();
+  });
+
+  it("lite profile with --profile (scripted): no question asked, tracking_mode left unset", async () => {
+    await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("How will work be tracked") }),
+    );
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBeUndefined();
+    expect(manifest.external_provider).toBeUndefined();
+  });
+
+  it("lite profile interactive: asks once, persists internal when chosen", async () => {
+    resetSelectMock("internal");
+    await runInit({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("How will work be tracked") }),
+    );
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("internal");
+    expect(manifest.external_provider).toBeNull();
+  });
+
+  it("lite profile interactive: asks once, persists external + chosen provider", async () => {
+    resetSelectMock("external", "jira");
+    await runInit({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("Which external tracker") }),
+    );
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("external");
+    expect(manifest.external_provider).toBe("jira");
+  });
+});
+
 describe("spell update — manifest retrofit wizard", () => {
   let tmpDir: string;
 
@@ -121,6 +212,7 @@ describe("spell update — manifest retrofit wizard", () => {
     inspectGitRepositoryMock.mockResolvedValue({ status: "ready", uncommittedChanges: 0 });
     confirmMock.mockReset();
     confirmMock.mockResolvedValue(true);
+    resetSelectMock();
   });
 
   afterEach(async () => {
@@ -170,6 +262,40 @@ describe("spell update — manifest retrofit wizard", () => {
 
     expect(confirmMock).not.toHaveBeenCalled();
   });
+
+  // -- tracking_mode retrofit backfill (EF-14, MTC-3) ----------------------
+
+  it("backfills tracking_mode silently for a governance-only install, no question asked", async () => {
+    await writeManifest(tmpDir, { profile: "governance-only", role: "consumer" });
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).not.toHaveBeenCalled();
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("internal");
+    expect(manifest.external_provider).toBeNull();
+  });
+
+  it("asks the tracking_mode retrofit question for a lite install that predates it", async () => {
+    resetSelectMock("external", "ado");
+    await writeManifest(tmpDir, { profile: "lite", role: "consumer" });
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("How will work be tracked") }),
+    );
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("external");
+    expect(manifest.external_provider).toBe("ado");
+  });
+
+  it("does not ask the tracking_mode retrofit again once already set (idempotent)", async () => {
+    await writeManifest(tmpDir, { profile: "lite", role: "consumer", tracking_mode: "internal", external_provider: null });
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(selectMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("How will work be tracked") }),
+    );
+  });
 });
 
 describe("MANIFEST_RETROFITS registry", () => {
@@ -179,6 +305,14 @@ describe("MANIFEST_RETROFITS registry", () => {
     expect(retrofit!.needsRetrofit({ role: undefined } as ArcaneManifest)).toBe(true);
     expect(retrofit!.needsRetrofit({ role: "hub" } as ArcaneManifest)).toBe(false);
     expect(retrofit!.needsRetrofit({ role: "consumer" } as ArcaneManifest)).toBe(false);
+  });
+
+  it("tracking_mode retrofit correctly identifies manifests that predate it", () => {
+    const retrofit = MANIFEST_RETROFITS.find((r) => r.field === "tracking_mode");
+    expect(retrofit).toBeDefined();
+    expect(retrofit!.needsRetrofit({ tracking_mode: undefined } as ArcaneManifest)).toBe(true);
+    expect(retrofit!.needsRetrofit({ tracking_mode: "internal" } as ArcaneManifest)).toBe(false);
+    expect(retrofit!.needsRetrofit({ tracking_mode: "external" } as ArcaneManifest)).toBe(false);
   });
 });
 
