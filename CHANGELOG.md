@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-08-22
+
+### Added
+
+- `tracking_mode`/`external_provider` persist in `.arcane.json` on exactly `profile`'s contract ([ARC-032](DECISIONS.md#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest), amends [ARC-020](DECISIONS.md#arc-020--canonical-repository-configuration-schema), [EF-14](docs/intake/batch-001/EF-14.md)): asked once at `spell init` (silent `internal`/`null` default for docs-only profiles, asked interactively for `full`/`lite`), backfilled via a new `MANIFEST_RETROFITS` entry on `spell update` for pre-existing installs.
+
+### Fixed
+
+- `spell-open-session`/`spell-plan` now resolve tracking configuration from root `.arcane.json` → the committed self-hosted source manifest → PRD frontmatter → ask, instead of asking every session — this repo's own checkout previously asked every time despite `src/assets/.arcane.json` already declaring `tracking_mode: internal`, because the prompt explicitly refused to read it.
+- `ExternalProvider`'s type corrected from `azure-devops | github | gitlab | jira` (never actually used anywhere) to `ado | jira | other`, matching ARC-011 and both consuming prompts.
+- Five spells hardcoded `ventures/` instead of resolving `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field ([EF-08](docs/intake/batch-001/EF-08.md)): `spell-check-drift`, `spell-commit-work`, `spell-open-session`, `spell-plan`, `spell-todo`. `spell-check-drift` and `spell-todo` each needed more fixes than the intake's now-stale line citations found.
+
 ## [0.16.6] - 2026-08-22
 
 ### Changed

@@ -83,9 +83,9 @@
         "package.json version is 0.17.0"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "New ARC-032 in DECISIONS.md: Status Accepted, explicit Amends: ARC-020 header, own Relationship to ARC-020 paragraph (mirrors ARC-030's exact convention) explaining why this data class gets inline treatment (profile's shape) vs ARC-030's registry getting a separate file (a different data shape) -- ARC-020's own Status field independently confirmed untouched (still Proposed) via grep after the edit. EF-14.md/EF-08.md: status: shipped. TODO.md: replaced the stale lone EF-08 line with one combined checked entry (matching the established EF-13+EF-20 / EF-05+EF-32 combined-entry pattern for coupled findings). CHANGELOG.md: new 0.17.0 entry (Added + Fixed sections). package.json: 0.16.6 -> 0.17.0. Full verification: tsc --noEmit clean, lint clean, npm run check:self-host-parity clean (93/93), npm run check:version-bump passed (minor bump confirmed), npm run check:adr-references passed, full suite 581/582 passing (1 pre-existing unrelated skip), no new failures."
     }
   ]
 }
