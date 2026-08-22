@@ -28,6 +28,7 @@ Use these files first:
 - [agents/agent-policies.md](../../.arcane/governance/agent-policies.md)
 - Most recent journal file(s) in [journal/](../../journal/)
 - Relevant business overviews under [ventures/](../../ventures/)
+- `ventures/registry.json`, if present (hub-role and registry-consistency detectors)
 
 Scope selection (`--scope <value>`, default `all`):
 
@@ -48,6 +49,12 @@ Concrete detectors to run (in addition to general contradiction/stale-date check
   - If normalized content differs, report **real content drift** with normal severity grading.
   - If normalized content matches, report **line-ending-only drift** separately. Do not count these paths as real content findings and do not include them in severity totals or the Go / No-Go decision.
   - Report exact path counts for both classes. Never summarize all byte-different files as content drift.
+- **Hub-artifact leak (non-hub repos)** — if `.arcane.json` does not have `role: "hub"`, the existence of any `ventures/*/IDEAS.md`, `ventures/*/TODO.md`, or `ventures/registry.json` is **Critical**: hub-only artifacts (potentially including sibling-venture and portfolio data) do not belong in a repo that isn't a declared hub. This check is deliberately structural (file existence only) — a non-hub repo cannot safely hold the sibling-name list a content-level check would need, so that asymmetry is by design, not a gap.
+- **Hub role/registry consistency (hub repos only)** — when `.arcane.json` has `role: "hub"`:
+  - `role: "hub"` with no `{business_root}` directory (default `ventures/`) present — **High**: the manifest claims a role the repo can't actually fulfill.
+  - `ventures/registry.json` slugs that don't match an existing `ventures/<slug>/` folder, or venture folders with no registry entry — **Medium**, both directions.
+  - Malformed `status: promoted → …` / `status: dropped …` markers in any book (unparseable destination, missing date) — **Low**.
+  - A `ventures/<slug>/` folder with a `role`-shaped `.arcane.json`-like marker of its own (i.e., it looks like it's trying to be a hub itself) — **Medium**: flag for operator review; nested hubs are unsupported.
 
 For each drift finding include:
 

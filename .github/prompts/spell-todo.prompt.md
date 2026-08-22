@@ -1,7 +1,7 @@
 ---
 name: Spell — Todo
-description: Elaborate a raw idea into one or more well-scoped TODO items and place them in the right document(s).
-argument-hint: The raw idea to elaborate (e.g., "add spending limits doc", "automate ADR numbering", "build a dashboard for {AGENT_NAME}"). `{AGENT_NAME}` resolves from `.arcane.json` / frontmatter; ask if unset.
+description: Elaborate a raw idea into one or more well-scoped TODO items and place them in the right document(s). In a hub repo, optionally target a venture's own TODO book, or sweep every book's open-item counts.
+argument-hint: The raw idea to elaborate (e.g., "add spending limits doc", "automate ADR numbering", "build a dashboard for {AGENT_NAME}"), optionally "for <venture>" (hub only). `{AGENT_NAME}` resolves from `.arcane.json` / frontmatter; ask if unset. Use `--sweep` instead to report open-item counts across every book.
 agent: agent
 ---
 
@@ -11,16 +11,52 @@ agent: agent
 - It reads the current TODO landscape and repo structure to avoid duplicates and pick the right home.
 - Use this any time you have an idea mid-session and don't want to lose it or park it in the wrong place.
 - If the idea is ADR-worthy or journal-worthy, it flags that and routes accordingly.
+- **In a hub repo:** "add a todo for &lt;venture&gt;" targets that venture's own `TODO.md` book instead of the hub root. `--sweep` skips elaboration entirely and reports new/open counts across every book (hub root + every venture).
 
 ---
 
-Elaborate the idea given by the user and add it to the right document(s).
+## Sweep Mode (`--sweep`)
+
+If the argument is (or starts with) `--sweep`, skip every other step in this spell entirely and run this instead:
+
+- **In a hub repo:** report `status: new` counts and oldest-entry age for the hub root `TODO.md` plus every `ventures/<slug>/TODO.md` that exists. Group by book, point at `spell-manifest` for entries ready to promote. Report-only — no edits.
+- **In a consumer repo:** report the same, for the repo-root `TODO.md` only (no venture books exist there).
+
+Output format:
+
+```
+Todo sweep — N books, M open items
+
+hub TODO.md            12 open, oldest 2026-07-14
+ventures/kiubo-mexico/TODO.md   3 open, oldest 2026-08-10
+```
+
+## Step 0 — Venture Targeting (Hub Only)
+
+If the input names a venture ("add a todo for kiubo", `--venture <slug>`), resolve it through `ventures/registry.json`'s aliases first (exact slug → alias → closest match offered — never guessed). Unknown slug:
+
+```
+No venture "<slug>" under ventures/ (closest: kiubo-mexico, stillface).
+1) use <closest>  2) add to hub root TODO.md  3) cancel (create the venture first: spell-summon-venture)
+```
+
+If `role` in `.arcane.json` is not `"hub"`, venture-targeting phrasing is refused:
+
+> Venture targeting works only in the hub repo (`role: "hub"` in `.arcane.json`). This repo has no venture books.
+> 1) add to this repo's TODO.md (venture reference removed)
+> 2) skip — capture it in the hub: `spell-todo --venture <slug> "<idea>"`
+
+If option 1 is chosen and the named venture is a *different* venture than this repo's own, strip that name from the item text before writing it — a sibling venture's name must never land in a consumer repo's `TODO.md`. If it's this repo's own venture, keep the text as given.
+
+An idea that only *mentions* a venture, without targeting phrasing, is not redirected — proceed with the hub root as normal (speed rule: don't block on a maybe).
+
+Elaborate the idea given by the user and add it to the right document(s) — the hub root `TODO.md` by default, or the resolved venture's own `TODO.md` when targeted.
 
 The raw idea from the user is in the prompt argument. If no argument was provided, ask the user to describe the idea before proceeding.
 
 Use these files first:
 
-- [TODO.md](../../TODO.md) — section structure and existing items (avoid duplicates)
+- [TODO.md](../../TODO.md) — section structure and existing items (avoid duplicates); or the targeted venture's own `TODO.md`
 - [DECISIONS.md](../../DECISIONS.md) — ADR registry (check if the idea is decision-worthy)
 - [README.md](../../README.md) — repo structure (find the right canonical doc to reference)
 - [project.md](../../project.md) — active priorities (calibrate urgency)
