@@ -49,9 +49,12 @@ Re-verified against current HEAD (this is where the finding had gone stale):
   unsupported tracking_mode/external_provider value, contradicting EF-14 point 2 ("Reject
   unsupported values rather than silently treating them as a provider").
 
-**EF-08.** Five spells hardcode ventures/ while three already resolve {BUSINESS_ROOT}
-dynamically. Re-verified against current HEAD (two of the five original line citations are now
-stale -- files were edited after EF-08 was filed):
+**EF-08.** Seven spells ended up needing this fix -- five named in the original intake, plus
+two more (spell-summon-venture.prompt.md, spell-save-idea.prompt.md) found only by adversarial
+review after the first fix pass, since neither was in EF-08's own citation list. Only two spells
+(not the originally-assumed three) were genuinely already correct. Re-verified against current
+HEAD (two of the five originally-cited line numbers are now stale -- files were edited after
+EF-08 was filed):
 
 - spell-check-drift.prompt.md:30 -- still hardcoded, matches EF-08's citation.
 - spell-open-session.prompt.md:31 -- still hardcoded, matches EF-08's citation.
@@ -148,7 +151,7 @@ new pattern invented; copies the two already-correct, non-hub-gated examples' wo
 | R4 | spell init asks/defaults tracking_mode once, persists it | src/commands/init.ts; behavior per D5/D6 |
 | R5 | spell update backfills tracking_mode for pre-existing installs | src/modules/hub.ts retrofit entry |
 | R6 | spell-open-session/spell-plan resolve from manifest before asking | Root .arcane.json -> self-hosted source manifest -> PRD frontmatter -> ask |
-| R7 | Five EF-08 files resolve {BUSINESS_ROOT} instead of hardcoding ventures/ | spell-check-drift, spell-commit-work, spell-open-session, spell-plan, spell-todo |
+| R7 | Seven EF-08 files resolve {BUSINESS_ROOT} instead of hardcoding ventures/ | spell-check-drift, spell-commit-work, spell-open-session, spell-plan, spell-todo, spell-summon-venture, spell-save-idea |
 | R8 | EF-14.md, EF-08.md flip to shipped | Frontmatter |
 
 ## Constraints
