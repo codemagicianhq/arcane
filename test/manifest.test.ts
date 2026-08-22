@@ -11,6 +11,7 @@ import {
   hasComponent,
   ManifestNotFoundError,
   ManifestCorruptError,
+  ManifestInvalidFieldError,
 } from "../src/modules/manifest.js";
 import type { ArcaneManifest, InstalledComponent } from "../src/types.js";
 
@@ -110,6 +111,83 @@ describe("manifest", () => {
       expect(thrownError).not.toBeInstanceOf(ManifestNotFoundError);
       expect(thrownError).not.toBeInstanceOf(ManifestCorruptError);
     });
+
+    // -- tracking_mode / external_provider validation (EF-14 point 2) ------
+
+    it("throws ManifestInvalidFieldError for an unsupported tracking_mode value", async () => {
+      await fs.writeFile(
+        join(tempDir, ".arcane.json"),
+        JSON.stringify({ version: "1.0.0", profile: "lite", installedAt: "x", components: [], tracking_mode: "bogus" }),
+      );
+      await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+    });
+
+    it("throws ManifestInvalidFieldError for an unsupported external_provider value", async () => {
+      await fs.writeFile(
+        join(tempDir, ".arcane.json"),
+        JSON.stringify({
+          version: "1.0.0",
+          profile: "lite",
+          installedAt: "x",
+          components: [],
+          tracking_mode: "external",
+          external_provider: "azure-devops",
+        }),
+      );
+      await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+    });
+
+    it("accepts external_provider: null (internal mode, no provider)", async () => {
+      await fs.writeFile(
+        join(tempDir, ".arcane.json"),
+        JSON.stringify({
+          version: "1.0.0",
+          profile: "lite",
+          installedAt: "x",
+          components: [],
+          tracking_mode: "internal",
+          external_provider: null,
+        }),
+      );
+      const manifest = await readManifest(tempDir);
+      expect(manifest.external_provider).toBeNull();
+    });
+
+    it("accepts a manifest where tracking_mode/external_provider are absent entirely", async () => {
+      await createManifest(tempDir, "lite", "1.0.0");
+      await expect(readManifest(tempDir)).resolves.not.toThrow();
+    });
+
+    it.each(["internal", "external"] as const)(
+      "accepts tracking_mode: %s",
+      async (mode) => {
+        await fs.writeFile(
+          join(tempDir, ".arcane.json"),
+          JSON.stringify({ version: "1.0.0", profile: "lite", installedAt: "x", components: [], tracking_mode: mode }),
+        );
+        const manifest = await readManifest(tempDir);
+        expect(manifest.tracking_mode).toBe(mode);
+      },
+    );
+
+    it.each(["ado", "jira", "other"] as const)(
+      "accepts external_provider: %s",
+      async (provider) => {
+        await fs.writeFile(
+          join(tempDir, ".arcane.json"),
+          JSON.stringify({
+            version: "1.0.0",
+            profile: "lite",
+            installedAt: "x",
+            components: [],
+            tracking_mode: "external",
+            external_provider: provider,
+          }),
+        );
+        const manifest = await readManifest(tempDir);
+        expect(manifest.external_provider).toBe(provider);
+      },
+    );
   });
 
   // ─── writeManifest ────────────────────────────────────────────────────────

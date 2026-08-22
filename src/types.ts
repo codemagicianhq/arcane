@@ -37,7 +37,12 @@ export interface ArcaneManifest {
 export type HubRole = "hub" | "consumer";
 
 export type TrackingMode = "internal" | "external";
-export type ExternalProvider = "azure-devops" | "github" | "gitlab" | "jira";
+/**
+ * ARC-011's already-shipped vocabulary (spell-open-session.prompt.md,
+ * spell-plan.prompt.md). Not "azure-devops"/"github"/"gitlab" -- those were
+ * never used anywhere; "ado" is the literal value both prompts read/write.
+ */
+export type ExternalProvider = "ado" | "jira" | "other";
 
 export interface RegistryComponent {
   name: string;

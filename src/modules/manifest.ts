@@ -2,8 +2,10 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
   ArcaneManifest,
+  ExternalProvider,
   InstalledComponent,
   Profile,
+  TrackingMode,
 } from "../types.js";
 
 export class ManifestNotFoundError extends Error {
@@ -22,16 +24,51 @@ export class ManifestCorruptError extends Error {
   }
 }
 
+/**
+ * Distinct from ManifestCorruptError: the file IS valid JSON, but a field
+ * holds a value outside its supported enum (EF-14 point 2 -- "reject
+ * unsupported values rather than silently treating them as a provider").
+ */
+export class ManifestInvalidFieldError extends Error {
+  constructor(manifestPath: string, field: string, value: unknown) {
+    super(
+      `Manifest at "${manifestPath}" has an unsupported value for "${field}": ${JSON.stringify(value)}.`,
+    );
+    this.name = "ManifestInvalidFieldError";
+  }
+}
+
 const MANIFEST_FILE = ".arcane.json";
+
+const VALID_TRACKING_MODES: TrackingMode[] = ["internal", "external"];
+const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "jira", "other"];
 
 function manifestPath(targetDir: string): string {
   return path.join(targetDir, MANIFEST_FILE);
+}
+
+function validateTrackingFields(manifest: ArcaneManifest, filePath: string): void {
+  if (
+    manifest.tracking_mode !== undefined &&
+    !VALID_TRACKING_MODES.includes(manifest.tracking_mode)
+  ) {
+    throw new ManifestInvalidFieldError(filePath, "tracking_mode", manifest.tracking_mode);
+  }
+  if (
+    manifest.external_provider !== undefined &&
+    manifest.external_provider !== null &&
+    !VALID_EXTERNAL_PROVIDERS.includes(manifest.external_provider)
+  ) {
+    throw new ManifestInvalidFieldError(filePath, "external_provider", manifest.external_provider);
+  }
 }
 
 /**
  * Reads .arcane.json from targetDir.
  * Throws ManifestNotFoundError if the file is missing.
  * Throws ManifestCorruptError if the file contains invalid JSON.
+ * Throws ManifestInvalidFieldError if tracking_mode/external_provider hold
+ * an unsupported value.
  */
 export async function readManifest(targetDir: string): Promise<ArcaneManifest> {
   const filePath = manifestPath(targetDir);
@@ -46,11 +83,15 @@ export async function readManifest(targetDir: string): Promise<ArcaneManifest> {
     throw err;
   }
 
+  let manifest: ArcaneManifest;
   try {
-    return JSON.parse(content) as ArcaneManifest;
+    manifest = JSON.parse(content) as ArcaneManifest;
   } catch {
     throw new ManifestCorruptError(filePath);
   }
+
+  validateTrackingFields(manifest, filePath);
+  return manifest;
 }
 
 /**
