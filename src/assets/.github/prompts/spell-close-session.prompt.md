@@ -148,7 +148,7 @@ Rules:
    - Resolve `<remote>` and `<trunk>` from observed Git/provider state: use the usable authenticated remote selected in step 9 and the merged PR's target branch (falling back to that remote's default branch). Never assume `origin` or `main`.
    - Verify through the detected provider that the PR is merged before changing branches.
    - Run `git switch <trunk>` followed by `git pull --ff-only <remote> <trunk>`. Do not end a remote-backed session on a topic branch.
-    - Delete the local topic branch: `git branch -d <branch>`.
+    - Delete the local topic branch: `git branch -d <branch>` — if the repository or its linked worktrees might be reached through more than one filesystem view, run the same-vantage-point check first (EF-33 / ARC-028 R7, [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Same-Vantage-Point Check section).
    - Verify `git log --oneline -3` shows the merged change at HEAD.
     - If stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
     - See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Post-Merge Cleanup section.

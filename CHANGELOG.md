@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.5] - 2026-08-22
+
+### Fixed
+
+- Ships ARC-028's R7 rail as standing operational governance ([EF-33](docs/intake/batch-001/EF-33.md)): a new "Same-Vantage-Point Check" section in `git-conventions.md` requires independently confirming a worktree/branch path from the *current process's own filesystem* before any irreversible worktree/branch operation, since `git worktree list` can truthfully report a live, healthy worktree as `prunable` when read through a bridged/remote mount. Railed into `spell-commit-work`, `spell-close-session`, and `spell-ship`'s branch-deletion steps, plus `spell-open-session`'s worktree-list/stale-branch reads. `agent-policies.md`'s Multi-Agent Concurrency Rules gains the working-tree dimension (ARC-028 item 11a). Not CI-testable per the intake's own scope (cross-mount filesystem visibility can't be reproduced on one runner); shipped with string-assertion coverage on the governance text itself. ARC-028 remains Proposed — only two of its follow-up items are complete.
+
 ## [0.16.4] - 2026-08-22
 
 ### Fixed

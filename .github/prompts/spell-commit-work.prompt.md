@@ -206,7 +206,7 @@ Workflow:
   - `git push origin --delete <branch>` (if already deleted, treat as non-fatal)
   - `git fetch --prune origin`
 - If `<branch>` is attached to an active worktree, skip local branch deletion.
-- If branch is not attached to any active worktree, run `git branch -d <branch>`.
+- If branch is not attached to any active worktree, run `git branch -d <branch>` — but if the repository or its linked worktrees might be reached through more than one filesystem view, run the same-vantage-point check first (EF-33 / ARC-028 R7, [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Same-Vantage-Point Check section) before trusting a "safe to delete" read.
 - Return to `main` only when appropriate for the active session/worktree context.
 - If other stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
 - See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Post-Merge Cleanup section.

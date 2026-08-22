@@ -306,6 +306,7 @@ When more than one agent may work in the same repository simultaneously:
 5. **Story ownership.** Only the agent assigned to a feature modifies that feature's `stories.json`. If the assigned agent does not match your slug, halt and report.
 6. **No cross-repo mutations without coordination.** If a story requires changes in two repos, complete and push one before starting the second. Never hold uncommitted changes across two repos simultaneously.
 7. **Merge window.** When two agents have PRs open for the same repo, the first to merge wins; the second must rebase before merging. The operator coordinates merge order if there are conflicts.
+8. **Working-tree vantage point (EF-33 / ARC-028 R7).** All linked worktrees share one physical `.git` and `.git/config` — treat config-mutating operations as fleet-wide, not scoped to the worktree that ran them. Before any `git worktree prune`, `worktree remove`, `gc`, or branch deletion, confirm the target path from the *current process's own filesystem* (not just Git's own report) — a repository or its linked worktrees reached through a bridged/remote mount can report a live, healthy worktree as safe to prune with no error distinguishing "confirmed absent" from "not resolvable from here." See [governance/git-conventions.md](git-conventions.md) Same-Vantage-Point Check section.
 
 ---
 
