@@ -33,6 +33,20 @@ function lineContaining(text: string, needle: string): string {
   return matches[0];
 }
 
+/**
+ * Guards against a `lineContaining` proximity assertion being satisfied by
+ * an INVERTED sentence -- physical adjacency on one line proves attachment,
+ * not polarity. A future edit could keep every required phrase on the same
+ * line while flipping its meaning ("...is NOT required for...", "...does
+ * not apply here..."). Call after every positive lineContaining assertion
+ * in this file, not just the one this pattern was first built for.
+ */
+function expectNotNegated(line: string): void {
+  expect(line.toLowerCase()).not.toMatch(
+    /does not apply|is exempt|no check (is )?(required|needed)|not required|n\/a here|does not carry/,
+  );
+}
+
 describe("git-conventions.md defines the same-vantage-point check (EF-33 / ARC-028 R7)", () => {
   it("is present as a named section, after Post-Merge Cleanup", () => {
     const postMergeIndex = gitConventions.indexOf("### Post-Merge Cleanup");
@@ -97,7 +111,7 @@ describe("git-conventions.md defines the same-vantage-point check (EF-33 / ARC-0
     }
     // Directional guard: the scope statement must require the check, not
     // exempt these commands from it.
-    expect(scopeLine.toLowerCase()).not.toMatch(/does not apply|is exempt|no check (is )?(required|needed)/);
+    expectNotNegated(scopeLine);
   });
 
   it("documents itself as a standing operational caution, not a CI-testable gate", () => {
@@ -115,16 +129,19 @@ describe("branch-deletion sites reference the check, attached to the actual comm
     const line = lineContaining(commitWork, "git branch -d <branch>`");
     expect(line).toContain("EF-33 / ARC-028 R7");
     expect(line).toContain("Same-Vantage-Point Check");
+    expectNotNegated(line);
   });
 
   it("spell-close-session's git branch -d line is directly annotated with the check", () => {
     const line = lineContaining(closeSession, "git branch -d <branch>`");
     expect(line).toContain("EF-33 / ARC-028 R7");
+    expectNotNegated(line);
   });
 
   it("spell-ship's git branch -d line is directly annotated with the check", () => {
     const line = lineContaining(ship, "git branch -d <branch>`)");
     expect(line).toContain("EF-33 / ARC-028 R7");
+    expectNotNegated(line);
   });
 });
 
@@ -132,11 +149,13 @@ describe("spell-open-session caveats the reads that can produce false-prunable s
   it("the worktree-list line itself carries the cross-mount caveat", () => {
     const line = lineContaining(openSession, "git worktree list`.");
     expect(line).toContain("can truthfully report a live, healthy worktree as `prunable`");
+    expectNotNegated(line);
   });
 
   it("the stale-branch line itself points at content-verification, not ancestry alone", () => {
     const line = lineContaining(openSession, "git branch --merged main`");
     expect(line).toContain("rebase-and-fast-forward merges are invisible to `--merged`");
+    expectNotNegated(line);
   });
 });
 
@@ -162,5 +181,6 @@ describe("agent-policies.md gains the working-tree dimension (ARC-028 item 11a)"
       "8. **Working-tree vantage point (EF-33 / ARC-028 R7)",
     );
     expect(rule8).toContain("applies even to a solo agent");
+    expectNotNegated(rule8);
   });
 });
