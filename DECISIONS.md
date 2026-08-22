@@ -50,6 +50,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-029](#arc-029--best-practice-first-solution-selection-standard)                               | Best-Practice-First Solution Selection Standard                                | 2026-08-15 | Proposed   |
 | [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion)         | Venture Idea Lifecycle: Hub Role, Registry, and `spell-manifest` Promotion      | 2026-08-21 | Accepted   |
 | [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate)       | Fictional Venture Names for Examples, and a Repository-Wide Privacy Gate       | 2026-08-22 | Accepted   |
+| [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) | Persisted Tracking Configuration: tracking_mode and external_provider in the Manifest | 2026-08-22 | Accepted   |
 
 ---
 
@@ -1257,3 +1258,85 @@ Findings from both are merged and deduplicated by `file:line`; either layer fail
 - **Scan the whole repository with the merged token set** — rejected: the maintainer's own name appears legitimately throughout its own repository; this fails the build on `README.md` and `LICENSE`.
 - **One fictional venture instead of three** — rejected: examples that demonstrate alias resolution, closest-match suggestions, and portfolio sweeps are incoherent with a single name.
 - **Generic placeholders (`example-venture`, `acme`) instead of a named universe** — rejected: real examples read better and are easier to follow, `acme` is heavily overloaded, and a distinctive slug is far easier to grep for when auditing whether an example leaked.
+
+---
+
+## ARC-032 — Persisted Tracking Configuration: `tracking_mode` and `external_provider` in the Manifest
+
+**Date:** 2026-08-22
+**Status:** Accepted
+**Related:** [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping) (defined the `tracking_mode`/`external_provider` vocabulary this decision persists), [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (built the `MANIFEST_RETROFITS` mechanism this decision extends, and set the Accepted-while-amending-a-Proposed-ADR precedent this decision follows)
+**Amends:** [ARC-020](#arc-020--canonical-repository-configuration-schema) (see Relationship to ARC-020 below)
+**Intake:** [EF-14](docs/intake/batch-001/EF-14.md)
+
+**Context:**
+
+ARC-011 defined `tracking_mode`/`external_provider` as spell-flow-guidance concepts but never gave
+them a storage location — every session and every `spell-plan` run asks again, or silently infers
+from ADO context. `.arcane.json` already persists one directly analogous repo-level decision,
+`profile`, chosen once at init and reused everywhere. EF-14 asked for the same treatment.
+
+ARC-020 (Proposed) would eventually settle this as part of a full repository-configuration schema,
+but that schema's own scope — operator identity, business roots, provider coordinates, repository
+lists — and its central open question (inline in `.arcane.json` versus a separate file) are far
+broader than these two fields need to wait for.
+
+**Decision:**
+
+1. `tracking_mode` (`internal | external`) and `external_provider` (`ado | jira | other`) persist
+   in `.arcane.json`, using exactly `profile`'s contract: chosen once (at `spell init`, or via
+   `spell update`'s retrofit wizard for installs that predate the field), never silently
+   overwritten, read by spells instead of re-asked.
+2. `governance-only`/`methodology` profiles — no code, no CI, no artifact production — default to
+   `tracking_mode: internal, external_provider: null` without a question, even under a scripted
+   `--profile` install (a deterministic default has nothing for non-interactive mode to skip).
+   `full`/`lite` ask once, interactively only.
+3. Question wording states the actual choice — "Track work in this repo (TODO.md / PRDs)" vs.
+   "Track work in an external tracker (Azure DevOps / Jira / other)" — replacing the bare
+   `internal`/`external` tokens that field-tested as ambiguous with repository visibility.
+4. `ExternalProvider`'s TypeScript union is corrected to `"ado" | "jira" | "other"` — the values
+   ARC-011 and both consuming spells have always actually used. It had drifted to
+   `"azure-devops" | "github" | "gitlab" | "jira"`, values nothing in the codebase ever wrote or
+   read.
+5. `readManifest` rejects an unsupported `tracking_mode`/`external_provider` value instead of
+   silently accepting it — a new `ManifestInvalidFieldError`, distinct from the existing
+   `ManifestCorruptError` (which means "not valid JSON at all").
+
+**Relationship to ARC-020:** ARC-020 (Proposed, not yet Accepted) left open "whether user-owned
+configuration remains inside `.arcane.json` or moves to a separate file with an independent update
+lifecycle." ARC-030 already resolved that question for one data class — the venture registry — by
+choosing a separate file, precisely because that data is a growing, multi-entry, operationally
+independent dataset. `tracking_mode`/`external_provider` are the opposite shape: two small,
+session-independent scalar choices, the same shape `profile` already is. This decision resolves
+the inline-versus-separate-file question for **this** data class by choosing inline, matching
+`profile`'s existing, working precedent — not by generalizing a rule from ARC-030's registry
+decision, which was correct for a different shape of data. ARC-020's broader scope (operator
+identity, provider coordinates, repository lists in general) remains open; this ARC does not
+presume to answer it, only to add a second data point (alongside ARC-030's) showing that the right
+storage model depends on what the data actually looks like, not a single blanket answer.
+
+**Reasoning:**
+
+- `profile` is a proven precedent: chosen once, persisted, read everywhere, never re-asked. Two
+  more fields of the identical shape get the identical treatment rather than inventing a new
+  pattern.
+- `MANIFEST_RETROFITS` already exists and already generalizes past its original single field
+  (ARC-030's own stated intent: "future manifest fields register a retrofit here instead of
+  leaving older installs permanently unset"). Registering one more entry is the mechanism working
+  as designed, not scope creep.
+- Correcting `ExternalProvider`'s type to match what ARC-011 and both prompts actually use closes
+  a real, silent gap: the type could never have caught a typo in the values the codebase actually
+  reads and writes, because none of its allowed values were the real ones.
+
+**Rejected alternatives:**
+
+- **Wait for ARC-020's full schema before persisting anything** — rejected: ARC-030 already
+  established that a scoped, incremental field addition is preferable to blocking on a
+  broad-scope ADR with a genuinely open architectural fork; repeating that wait here would leave
+  EF-14's defect live for no reason tied to this specific field pair.
+- **Flip ARC-020 itself to Accepted** — rejected: ARC-020's own text has an explicit, unresolved
+  question this decision does not answer for the general case. Flipping it would misrepresent that
+  question as settled.
+- **A single combined question merging profile and tracking-mode selection (EF-04's proposal)** —
+  rejected as out of scope here: EF-04 is docs-mode work, not yet actioned. This decision keeps
+  the two as sequential, separate questions and leaves EF-04's deeper UX unification for later.
