@@ -1,0 +1,70 @@
+{
+  "feature": "cicd-fail-safe-path-filters",
+  "branchName": "claude/fix/ef22-cicd-path-filter-policy",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "CPF-1",
+      "title": "Accept ARC-022",
+      "description": "DECISIONS.md status flip, Proposed -> Accepted.",
+      "acceptanceCriteria": ["Status field reads Accepted"],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/cicd-fail-safe-path-filters.test.ts's 'ARC-022 accepted' suite: 1/1 passing. Also updated the ToC row (DECISIONS.md line 43) to match, not just the entry's own Status field."
+    },
+    {
+      "id": "CPF-2",
+      "title": ".NET and Node.js pipelines: exclude-based fail-safe filters",
+      "description": "Convert include-based (.NET) and unfiltered (Node.js) triggers to a narrow exclude list (D1).",
+      "acceptanceCriteria": [
+        "Both templates use paths.exclude, not paths.include",
+        "Exclude list is narrow (docs/journal/governance paths only)",
+        "Pipeline/manifest/lockfile paths are never in the exclude list"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/cicd-fail-safe-path-filters.test.ts's '.NET and Node.js pipelines' suite: 5/5 passing, including real YAML parsing (via the already-dependency 'yaml' package) confirming paths.exclude is set and paths.include is absent, a narrowness check (<=6 entries), a negative check that no dangerous path substring appears in the exclude list, and two scenario-class checks (docs-only excluded, brand-new directory not excluded)."
+    },
+    {
+      "id": "CPF-3",
+      "title": "Terraform and Markdown-lint pipelines: widen include filters",
+      "description": "Keep include-based filters (correct for their scoped purpose, D2) but widen each to also cover its own pipeline YAML file.",
+      "acceptanceCriteria": [
+        "Both templates' include lists cover their own pipeline definition path"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/cicd-fail-safe-path-filters.test.ts's 'Terraform and Markdown-lint pipelines' suite: 3/3 passing, including a check that the design-nuance reasoning (why include-scoping is correct here) is actually documented in the shipped text, not just decided internally."
+    },
+    {
+      "id": "CPF-4",
+      "title": "Commit-metadata prohibition + branch-policy alignment sections",
+      "description": "New standalone rule (D3) and new documented failure mode (D4).",
+      "acceptanceCriteria": [
+        "Explicit rule against commit message/author/branch-name CI trust signals",
+        "Branch-policy alignment documented with a concrete failure-mode example"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/cicd-fail-safe-path-filters.test.ts's 'commit-metadata prohibition and branch-policy alignment' suite: 2/2 passing."
+    },
+    {
+      "id": "CPF-5",
+      "title": "EF-22.md status flip + regression coverage",
+      "description": "Fixture-shaped string-assertion + YAML-parse tests covering all 5 ARC-022 scenario classes.",
+      "acceptanceCriteria": [
+        "docs/intake/batch-001/EF-22.md: deferred -> shipped",
+        "New test file passes; all edited YAML fragments parse; self-host parity clean"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "New test/cicd-fail-safe-path-filters.test.ts: 15/15 passing, including a parameterized test proving all 4 edited YAML pipeline blocks parse without error. Full suite: 548/549 passing (1 unrelated skip), lint clean, typecheck clean, self-host parity clean. TODO.md gained a new checked entry (no prior EF-22 entry existed)."
+    }
+  ]
+}

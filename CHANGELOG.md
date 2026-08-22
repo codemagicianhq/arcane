@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.6] - 2026-08-22
+
+### Changed
+
+- Accepted [ARC-022](DECISIONS.md#arc-022--fail-safe-ci-path-filter-policy) and wired it into `cicd-standards.md` ([EF-22](docs/intake/batch-001/EF-22.md)): the .NET and Node.js pipeline templates switch from include-based (or unfiltered) path triggers to a narrow, fail-safe exclude list, so a new code directory can no longer silently bypass CI. The Terraform and Markdown-lint templates stay correctly include-scoped for their narrower technology-specific purpose, widened to also cover their own pipeline definition file. New explicit rule against using commit message/author/branch name as a CI trust signal, and new guidance on keeping Azure DevOps branch-policy path filters aligned with YAML trigger scope.
+
 ## [0.16.5] - 2026-08-22
 
 ### Fixed

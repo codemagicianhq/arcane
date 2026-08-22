@@ -40,7 +40,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-019](#arc-019--repository-document-ownership-and-path-model)                                  | Repository Document Ownership and Path Model                                   | 2026-07-31 | Accepted   |
 | [ARC-020](#arc-020--canonical-repository-configuration-schema)                                     | Canonical Repository Configuration Schema                                      | 2026-07-31 | Proposed   |
 | [ARC-021](#arc-021--vendored-framework-content-attribution)                                        | Vendored Framework Content Attribution                                         | 2026-07-31 | Accepted   |
-| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Proposed   |
+| [ARC-022](#arc-022--fail-safe-ci-path-filter-policy)                                               | Fail-Safe CI Path-Filter Policy                                                | 2026-07-31 | Accepted   |
 | [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)                       | Normative Controls Require Inline Enforcement Contracts                        | 2026-07-31 | Accepted   |
 | [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences)                         | Confirmed Severity Must Have Operational Consequences                          | 2026-07-31 | Accepted   |
 | [ARC-025](#arc-025--pin-publish-tooling-to-the-supported-node-runtime)                             | Pin Publish Tooling to the Supported Node Runtime                              | 2026-08-01 | Accepted   |
@@ -862,7 +862,7 @@ Git's author field records who performed the repository action; the vendor trail
 ## ARC-022 — Fail-Safe CI Path-Filter Policy
 
 **Date:** 2026-07-31
-**Status:** Proposed
+**Status:** Accepted (2026-08-22)
 **Intake:** [EF-22](docs/intake/batch-001/EF-22.md)
 
 **Context:**
