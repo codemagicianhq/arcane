@@ -24,20 +24,35 @@ documented as a no-op outside `status`/`update-index`). Only the **timeout** var
 because an under-timed network operation is the one place blanket application would cause a
 real regression (killing a legitimately slow `fetch`).
 
-**D3 — Command classification by first non-flag argument.**
+**D3 — Command classification by first real subcommand token, three explicit tiers plus a
+write-biased fallback.**
 ```
-read:    default (status, rev-parse, log, diff, show, describe, cat-file, ls-files, symbolic-ref, merge-base)
+network: fetch, pull, push, clone, ls-remote, send-email
 write:   init, commit, add, checkout, switch, merge, rebase, reset, tag, mv, rm,
-         cherry-pick, revert, stash, apply, am
+         cherry-pick, revert, stash, apply, am, restore, submodule, sparse-checkout,
+         maintenance, notes
          + ambiguous-as-write: branch, config, remote, worktree
-network: fetch, pull, push, clone, ls-remote
+read:    status, rev-parse, log, diff, show, describe, cat-file, ls-files, ls-tree,
+         symbolic-ref, merge-base, blame, shortlog, grep, reflog, diff-tree, rev-list,
+         name-rev, count-objects, verify-commit, verify-tag, help, version
+(none of the above / genuinely unrecognized subcommand): write
+(no subcommand at all, e.g. `--version`): read
 ```
 Ambiguous subcommands (`branch -m` is a write, `branch --list` is a read) are classified toward
 the *safer over-estimate* — write's 30s ceiling is harmless for a read that finishes in 200ms,
 whereas classifying a write as read would give a rename/config-write an artificially short
-budget. No caller in this codebase invokes a network subcommand yet (confirmed by repo-wide
-grep) — the `network` class exists for forward compatibility per EF-20's explicit ask ("upper
-bounds… for large add, fetch, and push operations") and WP2 does not need it.
+budget. The same reasoning sets the fallback for a subcommand in none of the three explicit
+tiers: "write", not "read" — an *unknown* operation should get the benefit of the doubt that it
+might mutate. (An earlier version of this classifier defaulted unconditionally to "read" for
+anything not explicitly matched; adversarial review caught that this silently under-timed any
+real subcommand this module hadn't enumerated — e.g. `restore`, a mainstream write command,
+originally fell through to "read." The three-tier-plus-fallback shape fixes this while keeping
+known reads fast.) Leading global options that take a separate-token value (`-c <name>=<value>`,
+`-C <path>`) are explicitly skipped before the classifier looks for the subcommand — otherwise
+the *value* token (which doesn't start with `-`) is mistaken for the subcommand itself. No
+caller in this codebase invokes a network subcommand yet (confirmed by repo-wide grep) — the
+`network` class exists for forward compatibility per EF-20's explicit ask ("upper bounds… for
+large add, fetch, and push operations") and WP2 does not need it.
 
 **D4 — Timeout defaults.** `read: 15_000ms`, `write: 30_000ms`, `network: 120_000ms`. Overridable
 per call via `options.timeoutMs` for a caller with unusual needs; classification itself is
@@ -75,9 +90,17 @@ countUncommittedChanges(cwd)─┼──> runGit(cwd, args, opts?) ──> execF
     stdin pipe is exactly what would make this hang under the old implementation.
   - R4: call `runGit(dir, ["status"], { timeoutMs: 1 })` and assert it rejects with
     `GitTimeoutError` — proves the timeout plumbing actually fires.
-  - EF-13 regression: on a repo whose `.git/index.lock` path is made unwritable (chmod the
-    `.git` directory read-only on the relevant platform), `git status` still succeeds because
-    `GIT_OPTIONAL_LOCKS=0` means it never attempts the optional lock in the first place.
+  - EF-13: verified at the level this suite can actually prove — `buildGitEnv()` sets
+    `GIT_OPTIONAL_LOCKS=0` on every invocation (code-level regression guard: removing that line
+    fails the test immediately), and a real commit still succeeds with it in effect (doesn't
+    break normal writes). **Not verified by this suite:** external behavioral efficacy against a
+    genuinely restricted/unlink-denying filesystem. A chmod-based Windows simulation was tried
+    and discarded after direct verification showed chmod-444 on a Windows directory does not
+    block file creation inside it — the assertion held identically against the pre-fix code, so
+    it proved nothing. EF-13's own proposed fix already scopes a real restricted-filesystem test
+    harness as separate, dedicated work; this PR ships the documented git-level mitigation
+    (`core.optionalLocks` / `GIT_OPTIONAL_LOCKS`, per git-config(1)) without overclaiming an
+    end-to-end proof it doesn't have.
 - Coverage target: 80% line (module default) — `src/modules/git.ts` is small and central enough
   that all branches (classification table, timeout-vs-success, stdin-close) are realistically
   reachable at ~100%.
