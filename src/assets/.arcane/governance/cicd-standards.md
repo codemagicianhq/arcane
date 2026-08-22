@@ -57,6 +57,12 @@ For docs-only repos (Arcane):
 
 ### .NET Backend Pipeline
 
+Fail-safe path filter (ARC-022): **exclude** known-inert doc paths rather than **include** a
+named code directory — a new code directory added outside `src/**` would silently never trigger
+this pipeline under an include filter. The exclude list below stays deliberately narrow; anything
+not explicitly listed triggers CI by default, including pipeline definitions, manifests, lockfiles,
+scripts, migrations, and infrastructure.
+
 ```yaml
 # azure-pipelines.yml
 trigger:
@@ -64,8 +70,11 @@ trigger:
     include:
       - main
   paths:
-    include:
-      - src/**
+    exclude:
+      - '**/*.md'
+      - 'docs/**'
+      - 'journal/**'
+      - '.arcane/governance/**'
 
 pr:
   branches:
@@ -97,11 +106,21 @@ steps:
 
 ### Node.js Pipeline
 
+Previously had no path filter at all — fail-safe (never misses a code change) but wasteful (a
+pure docs commit still burns a full pipeline run). Fail-safe path filter (ARC-022): the same
+narrow **exclude** list as the .NET template, never an include list.
+
 ```yaml
 trigger:
   branches:
     include:
       - main
+  paths:
+    exclude:
+      - '**/*.md'
+      - 'docs/**'
+      - 'journal/**'
+      - '.arcane/governance/**'
 
 pr:
   branches:
@@ -129,6 +148,11 @@ steps:
 
 ### Terraform Pipeline
 
+An **include** filter is correct here, not the ARC-022 anti-pattern: this pipeline's job is
+inherently scoped to Terraform changes — it should not run `terraform plan` against a Node.js
+source change. Widened to also cover this pipeline's own definition file, so an edit to the
+pipeline itself is validated rather than silently unreviewed.
+
 ```yaml
 trigger: none  # Manual only for apply
 
@@ -139,6 +163,7 @@ pr:
   paths:
     include:
       - infrastructure/terraform/**
+      - azure-pipelines.terraform.yml
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -160,6 +185,10 @@ steps:
 
 ### Markdown Lint Pipeline
 
+Also correctly include-scoped, for the same reason as the Terraform pipeline: this pipeline
+exists specifically to lint markdown, not to validate code generally. Widened to cover its own
+definition file too.
+
 ```yaml
 trigger:
   branches:
@@ -168,6 +197,7 @@ trigger:
   paths:
     include:
       - '**.md'
+      - azure-pipelines.markdown.yml
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -184,6 +214,41 @@ steps:
     displayName: 'Check links'
     condition: succeededOrFailed()
 ```
+
+---
+
+## Never Trust Commit Metadata for CI Skipping (ARC-022)
+
+CI skip/run decisions are based **only on changed paths** — never on commit message, author
+identity, or branch name. Do not implement or accept a `[skip ci]` marker, a `docs(...)`-style
+commit-prefix convention, or any equivalent mechanism that lets a commit opt itself out of
+validation by what it *says* rather than what it *changed*.
+
+Commit messages, authorship, and branch names are attacker-controlled metadata — anyone who can
+push a commit controls all three. A CI-skip mechanism keyed on any of them is a bypass primitive:
+it lets a malicious or careless commit self-certify as "safe to skip" regardless of what it
+actually touched. Path-based filtering (above) is the only trust signal this repository
+recognizes, because the pipeline itself independently observes the changed paths rather than
+trusting a claim embedded in the commit.
+
+## Branch-Policy Path-Filter Alignment (ARC-022)
+
+A YAML pipeline's own `trigger`/`pr` path filter and an Azure DevOps branch policy's **build
+validation path filter** are two independent mechanisms, and only one of them controls whether a
+passing build is actually *required* before a PR can merge. If the branch policy's path filter is
+narrower than the pipeline's own trigger scope, a change that falls outside the policy's filter
+can merge with **no build check required at all** — even though the pipeline itself is correctly
+scoped and would have run and caught a problem, because nothing forced it to be a merge
+requirement for that specific change.
+
+**Concrete failure mode:** the .NET pipeline above triggers on everything except docs (exclude
+filter, fail-safe). If the repo's branch policy still requires the build check only for changes
+under `paths: src/**` (an older include-style policy filter, or one configured before this repo
+adopted exclude-based YAML triggers), a change to a new top-level code directory outside `src/`
+triggers the pipeline (YAML is fail-safe) but does **not** require it to pass before merge (branch
+policy is not) — the build can run, fail, and be ignored, or the PR can merge before it finishes.
+Whenever a pipeline's YAML trigger scope changes, the branch policy's own path filter (if it has
+one) must be reviewed and updated to match or be a strict superset — never left narrower.
 
 ---
 
