@@ -119,10 +119,30 @@ describe("EF-08: {BUSINESS_ROOT} resolution replaces hardcoded ventures/ (MTC-5)
   // so it was never checked. Covered directly now.
   it("spell-summon-venture: registry write path resolves {BUSINESS_ROOT}, not a hardcoded ventures/registry.json", () => {
     expect(summonVenture).not.toContain("`ventures/registry.json` and append");
-    expect(summonVenture).not.toContain("[ventures/_template/overview.md]");
+    // Round-2 review found this exact assertion was decorative: the real
+    // pre-fix markdown link escaped the underscore (_template, standard
+    // markdown syntax to prevent _..._ italics), so a search string without
+    // the backslash never matched before OR after the fix. Corrected.
+    expect(summonVenture).not.toContain("[ventures/\\_template/overview.md]");
     expect(summonVenture).not.toContain("including the `ventures/registry.json` entry");
+    // [Round 2] the Executive Summary (line 10) had the same hardcode as the
+    // Step 3 write path -- missed by the first fix pass entirely, caught by
+    // a second independent review's completeness sweep. Fixed by dropping
+    // the resolved-path detail from the summary (not by placing
+    // {BUSINESS_ROOT} there, which would itself use the token before its
+    // own Step 0 definition -- an overview doesn't need the exact path,
+    // and this sidesteps a second definition-ordering bug entirely).
+    expect(summonVenture).not.toContain("its `ventures/registry.json` entry");
     expect(summonVenture).toContain("`{BUSINESS_ROOT}/registry.json` and append");
     expect(summonVenture).toContain("{BUSINESS_ROOT}/_template/overview.md");
+    expect(summonVenture).toContain("its registry entry");
+  });
+
+  it("spell-summon-venture defines {BUSINESS_ROOT} before its first use", () => {
+    const definitionIdx = summonVenture.indexOf("resolve `{BUSINESS_ROOT}` from `.arcane.json`");
+    const firstUseIdx = summonVenture.indexOf("{BUSINESS_ROOT}");
+    expect(definitionIdx).toBeGreaterThan(-1);
+    expect(definitionIdx).toBeLessThanOrEqual(firstUseIdx);
   });
 
   // [Review round] spell-save-idea and spell-todo were built as siblings in

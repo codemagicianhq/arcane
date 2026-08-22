@@ -7,7 +7,7 @@ agent: agent
 
 ## Executive Summary
 
-- This prompt creates a new venture in a **hub** repo: the venture folder, its starter docs, its two idea/todo books, and its `ventures/registry.json` entry — one operation instead of several manual steps.
+- This prompt creates a new venture in a **hub** repo: the venture folder, its starter docs, its two idea/todo books, and its registry entry — one operation instead of several manual steps.
 - **Hub-gated:** requires `role: "hub"` in `.arcane.json`. Refuses cleanly in a consumer repo, pointing at the right place to capture the idea instead.
 - Use this when starting a new venture (business, product, or personal project) that the hub should track.
 - Input format is: `Venture Name | Venture Type | Description` — prompt will ask for missing fields.

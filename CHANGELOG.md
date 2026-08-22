@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `spell-open-session`/`spell-plan` now resolve tracking configuration from root `.arcane.json` → the committed self-hosted source manifest → PRD frontmatter → ask, instead of asking every session — this repo's own checkout previously asked every time despite `src/assets/.arcane.json` already declaring `tracking_mode: internal`, because the prompt explicitly refused to read it.
 - `ExternalProvider`'s type corrected from `azure-devops | github | gitlab | jira` (never actually used anywhere) to `ado | jira | other`, matching ARC-011 and both consuming prompts.
-- Five spells hardcoded `ventures/` instead of resolving `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field ([EF-08](docs/intake/batch-001/EF-08.md)): `spell-check-drift`, `spell-commit-work`, `spell-open-session`, `spell-plan`, `spell-todo`. `spell-check-drift` and `spell-todo` each needed more fixes than the intake's now-stale line citations found.
+- Seven spells hardcoded `ventures/` instead of resolving `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field ([EF-08](docs/intake/batch-001/EF-08.md)): `spell-check-drift`, `spell-commit-work`, `spell-open-session`, `spell-plan`, `spell-todo`, `spell-summon-venture`, `spell-save-idea`. `spell-check-drift` and `spell-todo` each needed more fixes than the intake's now-stale line citations found; `spell-summon-venture` and `spell-save-idea` weren't in the intake's citation list at all -- found by an adversarial-review completeness sweep, not the original diagnosis.
 
 ## [0.16.6] - 2026-08-22
 
