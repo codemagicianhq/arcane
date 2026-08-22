@@ -1,12 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import {
-  buildGitEnv,
-  classifyGitCommand,
-  GitTimeoutError,
-  runGit,
-} from "../src/modules/git.js";
+import { buildGitEnv, classifyGitCommand, runGit } from "../src/modules/git.js";
 import { createFixtureDir, runGit as fixtureGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
@@ -102,12 +97,6 @@ describe("buildGitEnv", () => {
 });
 
 describe("runGit — timeout contract (R4)", () => {
-  it("rejects with GitTimeoutError when a command exceeds its timeout", async () => {
-    const dir = await createCommittedRepo();
-
-    await expect(runGit(dir, ["status"], { timeoutMs: 1 })).rejects.toThrow(GitTimeoutError);
-  });
-
   it("does not throw GitTimeoutError for a command that finishes within budget", async () => {
     const dir = await createCommittedRepo();
 
@@ -116,16 +105,15 @@ describe("runGit — timeout contract (R4)", () => {
     });
   });
 
-  it("honors an explicit commandClass override", async () => {
-    const dir = await createCommittedRepo();
-
-    // "status" auto-classifies as read (15s default); force it into the 1ms
-    // timeout via an explicit override to prove the override path fires
-    // independently of auto-classification.
-    await expect(
-      runGit(dir, ["status"], { commandClass: "read", timeoutMs: 1 }),
-    ).rejects.toThrow(GitTimeoutError);
-  });
+  // The "does a real command that exceeds a tiny timeout actually get
+  // rejected as GitTimeoutError" and "does an explicit commandClass
+  // override change the effective timeout" claims moved to
+  // test/git-timeout-mapping.test.ts, which asserts them deterministically
+  // against a mocked node:child_process rather than racing a real `git`
+  // process against an artificially tiny millisecond value. That race was
+  // flaky by construction -- a fast enough machine (confirmed: this repo's
+  // Linux CI runner) can complete a real `git status` in under 1ms, which
+  // isn't a timeout bug, just a timing assumption that didn't hold.
 });
 
 describe("runGit — stdin closure (R3)", () => {
