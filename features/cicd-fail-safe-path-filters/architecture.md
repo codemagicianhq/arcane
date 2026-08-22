@@ -85,15 +85,19 @@ NOT be skipped, by construction of what is and isn't in the exclude list.
   and Node.js post-fix. Replaced with heading-anchored extraction (`extractYamlBlockAfter(text,
   "### .NET Backend Pipeline")`) — a missing/moved heading now throws immediately instead of
   silently mismatching.
-- The original "narrow exclude list" check covered only 3 of ARC-022's 6 named always-trigger
-  categories (pipeline definition, manifest, lockfile — missing script, migration,
+- The original "narrow exclude list" check covered only 3 of ARC-022's 7 named always-trigger
+  categories (pipeline definition, manifest, lockfile — missing script, migration, container,
   infrastructure), via ad-hoc substring checks, plus an arbitrary length bound that wasn't a real
-  safety proxy. Replaced with a table of all 6 categories, each checked with a real representative
+  safety proxy. Replaced with a table of all 7 categories, each checked with a real representative
   path against a small, deliberately-scoped glob matcher (extension-suffix or exact-literal
   matching only — not a general glob library; `minimatch` is present in `node_modules` only as an
   incidental transitive dependency of other tooling, not declared in `package.json`, so importing
   it directly would be an undeclared dependency) — including each category nested under a
-  docs-like path, which is exactly the scenario a directory-wide exclude would have broken.
+  docs-like path, which is exactly the scenario a directory-wide exclude would have broken. (A
+  second review pass caught that this table itself still undercounted — "containers" was missing
+  — and that `**/*.tf`/`**/*.tfvars` alone still missed Terraform's own lockfile
+  (`.terraform.lock.hcl`) and JSON-syntax variants; the glob matcher gained an any-depth exact-
+  filename shape and a multi-part-extension shape to make both fixes expressible and testable.)
 
 ## Security
 

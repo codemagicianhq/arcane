@@ -63,8 +63,8 @@ this pipeline under an include filter. The exclude entry is a **filetype** glob,
 glob, and deliberately just one entry: `docs/**`/`journal/**`/`.arcane/governance/**`-style
 directory-wide excludes would ALSO exclude any non-Markdown file a consumer happens to place in
 those directories (a build script, a manifest, tooling config) — silently violating ARC-022's own
-unconditional requirement that scripts, manifests, lockfiles, migrations, and infrastructure
-always remain triggering inputs, regardless of which directory they live in. Filetype-scoping to
+unconditional requirement that scripts, manifests, lockfiles, migrations, containers, and
+infrastructure always remain triggering inputs, regardless of which directory they live in. Filetype-scoping to
 `**/*.md` closes that gap: only actual Markdown files are excluded, anywhere in the tree; anything
 else — including a `.md`-adjacent script — still triggers CI by default.
 
@@ -160,6 +160,13 @@ tree, while a Node.js/`.NET` source change still correctly does not. Widened to 
 pipeline's own definition file, so an edit to the pipeline itself is validated rather than
 silently unreviewed.
 
+Widened further to cover Terraform's JSON-syntax file variants (`.tf.json`/`.tfvars.json`,
+HashiCorp's own first-class alternative syntax to `.tf`/`.tfvars`) and its dependency lock file
+(`.terraform.lock.hcl`, one per root module directory). ARC-022 names lockfiles as a non-negotiable
+always-trigger category in their own right, independent of the general "Terraform files trigger
+this pipeline" argument above — a lock file's own name doesn't end in `.tf`/`.tfvars`, so it would
+have silently fallen through the filetype glob above without a named entry of its own.
+
 ```yaml
 # azure-pipelines.terraform.yml
 trigger: none  # Manual only for apply
@@ -172,6 +179,9 @@ pr:
     include:
       - '**/*.tf'
       - '**/*.tfvars'
+      - '**/*.tf.json'
+      - '**/*.tfvars.json'
+      - '**/.terraform.lock.hcl'
       - azure-pipelines.terraform.yml
 
 pool:
