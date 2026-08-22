@@ -28,9 +28,9 @@
         "full/lite with --profile: no question asked, tracking_mode left unset"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "test/hub-retrofit.test.ts new 'spell init — tracking mode (EF-14)' suite: 5/5 passing (governance-only silent default, methodology silent default, lite --profile leaves unset, lite interactive internal branch, lite interactive external+jira branch). select() converted to a hoisted, message-branching mock (selectMock) shared with the existing hub-question tests, which continue to pass unmodified (12/12). Full file: 21/21 passing. tsc --noEmit clean."
     },
     {
       "id": "MTC-3",
@@ -42,9 +42,9 @@
         "idempotent: a second update with tracking_mode already set asks nothing"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "Same suite, 'spell update — manifest retrofit wizard' + 'MANIFEST_RETROFITS registry': 4 new cases (governance-only silent backfill, lite interactive backfill with external+ado, idempotent no-ask once set, needsRetrofit true/false coverage). ManifestRetrofit.ask signature change (adds manifest param) verified compatible with the existing role entry, which ignores it -- role's own 3 pre-existing tests still pass unchanged."
     },
     {
       "id": "MTC-4",

@@ -1,8 +1,8 @@
-import { confirm } from "@inquirer/prompts";
+import { confirm, select } from "@inquirer/prompts";
 import { readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "./copier.js";
-import type { ArcaneManifest, HubRole } from "../types.js";
+import type { ArcaneManifest, ExternalProvider, HubRole, TrackingMode } from "../types.js";
 
 /**
  * A manifest-field retrofit: a schema question `spell update` asks exactly
@@ -16,8 +16,14 @@ export interface ManifestRetrofit {
   field: string;
   /** True if the installed manifest predates this field and should be asked. */
   needsRetrofit(manifest: ArcaneManifest): boolean;
-  /** Ask the operator; return the partial patch to merge into the manifest. */
-  ask(): Promise<Partial<ArcaneManifest>>;
+  /**
+   * Ask the operator (or apply a deterministic default); return the partial
+   * patch to merge into the manifest. Receives the manifest so a retrofit
+   * can branch on already-known fields (e.g. profile) the way the
+   * tracking_mode retrofit below does -- entries that don't need it (role)
+   * simply ignore the parameter.
+   */
+  ask(manifest: ArcaneManifest): Promise<Partial<ArcaneManifest>>;
 }
 
 export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
@@ -31,6 +37,36 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
         default: false,
       });
       return { role: (isHub ? "hub" : "consumer") as HubRole };
+    },
+  },
+  {
+    field: "tracking_mode",
+    needsRetrofit: (m) => m.tracking_mode === undefined,
+    // Mirrors init.ts's Step 5b branching exactly (EF-14 D5): docs-only
+    // profiles get a silent default, full/lite get asked.
+    ask: async (manifest) => {
+      if (manifest.profile === "governance-only" || manifest.profile === "methodology") {
+        return { tracking_mode: "internal" as TrackingMode, external_provider: null };
+      }
+      const tracking_mode = (await select({
+        message: "How will work be tracked in this repo?",
+        choices: [
+          { value: "internal", name: "Track work in this repo (TODO.md / PRDs)" },
+          { value: "external", name: "Track work in an external tracker (Azure DevOps / Jira / other)" },
+        ],
+      })) as TrackingMode;
+      if (tracking_mode === "external") {
+        const external_provider = (await select({
+          message: "Which external tracker?",
+          choices: [
+            { value: "ado", name: "Azure DevOps" },
+            { value: "jira", name: "Jira" },
+            { value: "other", name: "Other" },
+          ],
+        })) as ExternalProvider;
+        return { tracking_mode, external_provider };
+      }
+      return { tracking_mode, external_provider: null };
     },
   },
 ];
@@ -55,7 +91,7 @@ export async function runManifestRetrofits(
 
   let patch: Partial<ArcaneManifest> = {};
   for (const retrofit of applicable) {
-    const answer = await retrofit.ask();
+    const answer = await retrofit.ask({ ...manifest, ...patch });
     patch = { ...patch, ...answer };
   }
   return patch;

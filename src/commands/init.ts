@@ -25,11 +25,13 @@ import {
 } from "../modules/git.js";
 import type {
   ArcaneManifest,
+  ExternalProvider,
   HubRole,
   InstalledComponent,
   Profile,
   RegistryComponent,
   SpellInitOptions,
+  TrackingMode,
 } from "../types.js";
 
 const VALID_PROFILES: Profile[] = ["full", "lite", "governance-only", "methodology"];
@@ -338,6 +340,40 @@ export async function runInit(
     role = isHub ? "hub" : "consumer";
   }
 
+  // ── Step 5b: Tracking-mode question (EF-14) ─────────────────────────────
+  // governance-only/methodology profiles have no code-tracking surface --
+  // default without asking, even under --profile (deterministic, no prompt
+  // to skip). full/lite ask once, interactively only, mirroring the hub
+  // question's own gating exactly -- a scripted full/lite install leaves
+  // this unset, resolved later by spell update's retrofit wizard.
+  let tracking_mode: TrackingMode | undefined;
+  let external_provider: ExternalProvider | null | undefined;
+  if (profile === "governance-only" || profile === "methodology") {
+    tracking_mode = "internal";
+    external_provider = null;
+  } else if (!options.profile) {
+    console.log();
+    tracking_mode = (await select({
+      message: "How will work be tracked in this repo?",
+      choices: [
+        { value: "internal", name: "Track work in this repo (TODO.md / PRDs)" },
+        { value: "external", name: "Track work in an external tracker (Azure DevOps / Jira / other)" },
+      ],
+    })) as TrackingMode;
+    if (tracking_mode === "external") {
+      external_provider = (await select({
+        message: "Which external tracker?",
+        choices: [
+          { value: "ado", name: "Azure DevOps" },
+          { value: "jira", name: "Jira" },
+          { value: "other", name: "Other" },
+        ],
+      })) as ExternalProvider;
+    } else {
+      external_provider = null;
+    }
+  }
+
   // ── Step 6: Write manifest ─────────────────────────────────────────────
   const manifest: ArcaneManifest = {
     version: packageVersion,
@@ -345,6 +381,7 @@ export async function runInit(
     installedAt: new Date().toISOString(),
     components: installedComponents,
     ...(role ? { role } : {}),
+    ...(tracking_mode ? { tracking_mode, external_provider } : {}),
   };
   await writeManifest(targetDir, manifest);
 
