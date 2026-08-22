@@ -59,9 +59,14 @@ For docs-only repos (Arcane):
 
 Fail-safe path filter (ARC-022): **exclude** known-inert doc paths rather than **include** a
 named code directory — a new code directory added outside `src/**` would silently never trigger
-this pipeline under an include filter. The exclude list below stays deliberately narrow; anything
-not explicitly listed triggers CI by default, including pipeline definitions, manifests, lockfiles,
-scripts, migrations, and infrastructure.
+this pipeline under an include filter. The exclude entry is a **filetype** glob, not a directory
+glob, and deliberately just one entry: `docs/**`/`journal/**`/`.arcane/governance/**`-style
+directory-wide excludes would ALSO exclude any non-Markdown file a consumer happens to place in
+those directories (a build script, a manifest, tooling config) — silently violating ARC-022's own
+unconditional requirement that scripts, manifests, lockfiles, migrations, and infrastructure
+always remain triggering inputs, regardless of which directory they live in. Filetype-scoping to
+`**/*.md` closes that gap: only actual Markdown files are excluded, anywhere in the tree; anything
+else — including a `.md`-adjacent script — still triggers CI by default.
 
 ```yaml
 # azure-pipelines.yml
@@ -72,9 +77,6 @@ trigger:
   paths:
     exclude:
       - '**/*.md'
-      - 'docs/**'
-      - 'journal/**'
-      - '.arcane/governance/**'
 
 pr:
   branches:
@@ -108,7 +110,8 @@ steps:
 
 Previously had no path filter at all — fail-safe (never misses a code change) but wasteful (a
 pure docs commit still burns a full pipeline run). Fail-safe path filter (ARC-022): the same
-narrow **exclude** list as the .NET template, never an include list.
+filetype-scoped `**/*.md` **exclude** entry as the .NET template above — never a directory-wide
+exclude, and never an include list.
 
 ```yaml
 trigger:
@@ -118,9 +121,6 @@ trigger:
   paths:
     exclude:
       - '**/*.md'
-      - 'docs/**'
-      - 'journal/**'
-      - '.arcane/governance/**'
 
 pr:
   branches:
@@ -148,12 +148,20 @@ steps:
 
 ### Terraform Pipeline
 
-An **include** filter is correct here, not the ARC-022 anti-pattern: this pipeline's job is
-inherently scoped to Terraform changes — it should not run `terraform plan` against a Node.js
-source change. Widened to also cover this pipeline's own definition file, so an edit to the
-pipeline itself is validated rather than silently unreviewed.
+An **include** filter is correct here, not the ARC-022 anti-pattern — but only if it's a
+**filetype** glob, not a directory-prefix one. An earlier version of this template included only
+`infrastructure/terraform/**`: a directory-prefix pattern that silently misses any `.tf` file
+added *outside* that one named directory (a new `modules/**` root, a renamed infra folder) —
+exactly the "new code locations fail open" failure ARC-022 rejects, and exactly what EF-22's own
+report flagged for this template specifically, grouped with .NET's `src/**` problem, not treated
+as a different category. `**/*.tf`/`**/*.tfvars` has the same closure property `**/*.md` has for
+the Markdown-lint template below: Terraform files trigger this pipeline from *anywhere* in the
+tree, while a Node.js/`.NET` source change still correctly does not. Widened to also cover this
+pipeline's own definition file, so an edit to the pipeline itself is validated rather than
+silently unreviewed.
 
 ```yaml
+# azure-pipelines.terraform.yml
 trigger: none  # Manual only for apply
 
 pr:
@@ -162,7 +170,8 @@ pr:
       - main
   paths:
     include:
-      - infrastructure/terraform/**
+      - '**/*.tf'
+      - '**/*.tfvars'
       - azure-pipelines.terraform.yml
 
 pool:
@@ -186,10 +195,13 @@ steps:
 ### Markdown Lint Pipeline
 
 Also correctly include-scoped, for the same reason as the Terraform pipeline: this pipeline
-exists specifically to lint markdown, not to validate code generally. Widened to cover its own
-definition file too.
+exists specifically to lint markdown, not to validate code generally, and `**.md` already has the
+same anywhere-in-the-tree closure property `**/*.tf` gives the Terraform template above (unlike a
+directory-prefix pattern, it was never the gap this fix needed to close). Widened to cover its
+own definition file too.
 
 ```yaml
+# azure-pipelines.markdown.yml
 trigger:
   branches:
     include:
@@ -220,9 +232,9 @@ steps:
 ## Never Trust Commit Metadata for CI Skipping (ARC-022)
 
 CI skip/run decisions are based **only on changed paths** — never on commit message, author
-identity, or branch name. Do not implement or accept a `[skip ci]` marker, a `docs(...)`-style
-commit-prefix convention, or any equivalent mechanism that lets a commit opt itself out of
-validation by what it *says* rather than what it *changed*.
+identity, or branch name. Do not add a *new* mechanism (a custom `docs(...)`-style commit-prefix
+convention, a bot rule, a pipeline-level check) that lets a commit opt itself out of validation by
+what it *says* rather than what it *changed*.
 
 Commit messages, authorship, and branch names are attacker-controlled metadata — anyone who can
 push a commit controls all three. A CI-skip mechanism keyed on any of them is a bypass primitive:
@@ -230,6 +242,19 @@ it lets a malicious or careless commit self-certify as "safe to skip" regardless
 actually touched. Path-based filtering (above) is the only trust signal this repository
 recognizes, because the pipeline itself independently observes the changed paths rather than
 trusting a claim embedded in the commit.
+
+**Know the platform default, don't assume this rule alone controls it.** Azure Pipelines honors
+`[skip ci]`, `[ci skip]`, `skip-checks: true`, `[skip azurepipelines]`, `[skip azpipelines]`,
+`[skip azp]`, and `***NO_CI***` in a pushed commit message **by default**, on `trigger:`-driven
+runs — this is platform behavior, not something a consumer opts into, and this governance rule
+cannot disable it from the YAML alone. The required-before-merge gate this repo's own Branch
+Policies table relies on (**build validation on the PR's merge commit**) is documented to run
+*regardless* of `[skip ci]` and its variants, so the merge gate itself stays sound. What is **not**
+protected: any other trigger-based run this repo depends on for signal outside that one gate —
+direct pushes to a non-PR branch, a secondary environment build, a dashboard keyed off pipeline
+status. Treat those as a residual, platform-level exposure this document can flag but not close;
+if a trigger-based run must be tamper-resistant, that requires an organization-level policy
+outside this repo's own YAML, not a governance sentence.
 
 ## Branch-Policy Path-Filter Alignment (ARC-022)
 

@@ -28,23 +28,49 @@ migrations, containers, and infrastructure always remain triggering inputs; prov
 filters must be documented and tested alongside YAML triggers. This PRD accepts that ADR and
 implements it.
 
-## Design nuance: not every include filter is the anti-pattern
+## Design nuance: not every include filter is the anti-pattern — but the glob SHAPE decides that, not the pipeline's category
 
-ARC-022's own "Rejected alternatives" targets *general* code-validation pipelines using include
-lists ("new code locations fail open") — that anti-pattern applies squarely to the .NET and Node.js
-templates, whose job is "validate this codebase," full stop. It does **not** cleanly apply to the
-Terraform and Markdown-lint templates, whose job is inherently scoped to a specific path/filetype
-(a Terraform pipeline correctly should not run `terraform plan` on a Node.js source change). Two
+**Correction, made after adversarial review found the first version of this section wrong:** an
+earlier draft argued that "narrowly-scoped, technology-specific" pipelines (Terraform,
+Markdown-lint) are inherently exempt from ARC-022's anti-pattern just by virtue of having a scoped
+purpose. That argument was not internally consistent, and review proved it empirically: this
+document's own Markdown-lint template used a **filetype** glob (`**.md`, matching any Markdown
+file at any depth) while the Terraform template used a **directory-prefix** glob
+(`infrastructure/terraform/**`, matching only files under one named directory) — the two were
+treated as the same category of "correctly scoped," but only one of them actually has the closure
+property that makes include-scoping safe. A new `.tf` file added *outside*
+`infrastructure/terraform/**` (a new `modules/**` root, a renamed folder) would have silently
+never triggered — exactly ARC-022's "new code locations fail open" failure, and exactly what
+EF-22's own Verification section flagged for the Terraform template, grouped in the same sentence
+as .NET's `src/**` problem — not treated as a different, exempt category anywhere in ARC-022's or
+EF-22's own text. That distinction was this PRD's invention, not the source material's, and it
+didn't hold for one of the two examples used to justify it.
+
+**Corrected principle:** the deciding factor is the glob's own shape, not which pipeline it
+belongs to. A **directory-prefix** include glob (`path/to/dir/**`) fails open — new content
+elsewhere is invisible to it. A **filetype** include glob (`**/*.ext`) does not — it matches that
+filetype at any depth, so it has the same "can't miss a new location" property an exclude filter
+has, just inverted (matches everything of a kind, rather than everything except a kind). Two
 different fixes follow:
 
-- **.NET, Node.js** (general validation): convert to **exclude**-based filters — trigger on
-  everything except a narrow, named list of known-inert doc paths. Any new code directory triggers
-  by default.
-- **Terraform, Markdown-lint** (narrowly-scoped by design): keep **include**-based filters (correct
-  for their actual job), but widen each to also cover its own pipeline-definition file and
-  immediately-adjacent config (satisfying ARC-022's "pipeline definitions... remain triggering
-  inputs" requirement), and document explicitly *why* include-scoping is the right call here,
-  distinguishing it from the rejected anti-pattern.
+- **.NET, Node.js** (general "validate this codebase" pipelines, no natural filetype/path scope of
+  their own): convert to **exclude**-based filters — trigger on everything except a narrow, named,
+  filetype-scoped list of known-inert paths (`**/*.md`, not `docs/**` — see the exclude-list
+  correction below). Any new code directory triggers by default.
+- **Terraform, Markdown-lint** (pipelines whose job is inherently about one filetype): keep
+  **include**-based filters, but as **filetype** globs (`**/*.tf`/`**/*.tfvars`, `**.md`), not
+  directory-prefix ones — Terraform's template was corrected from the latter to the former as part
+  of this fix. Both are widened to also cover their own pipeline-definition file (satisfying
+  ARC-022's "pipeline definitions... remain triggering inputs" requirement), and the document now
+  states explicitly *why* filetype-scoped include-scoping is the right call here, distinguishing
+  it from the directory-prefix anti-pattern ARC-022 actually rejects.
+
+**A second correction in the same review round:** the .NET/Node.js exclude list originally named
+whole directories (`docs/**`, `journal/**`, `.arcane/governance/**`), not just `**/*.md`. That's
+also directory-wide, not content-type-scoped — it would exclude *any* file found under those
+paths, including a script, manifest, or tooling config a consumer might place there, directly
+contradicting ARC-022's unconditional list. Simplified to the single filetype-scoped `**/*.md`
+entry, which excludes only genuine Markdown, anywhere in the tree, and nothing else.
 
 ## Requirements
 
