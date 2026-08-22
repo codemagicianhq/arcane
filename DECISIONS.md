@@ -48,6 +48,8 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted   |
 | [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work)                             | Concurrency and Isolation Model for Parallel Work                              | 2026-08-15 | Proposed   |
 | [ARC-029](#arc-029--best-practice-first-solution-selection-standard)                               | Best-Practice-First Solution Selection Standard                                | 2026-08-15 | Proposed   |
+| [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion)         | Venture Idea Lifecycle: Hub Role, Registry, and `spell-manifest` Promotion      | 2026-08-21 | Accepted   |
+| [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate)       | Fictional Venture Names for Examples, and a Repository-Wide Privacy Gate       | 2026-08-22 | Accepted   |
 
 ---
 

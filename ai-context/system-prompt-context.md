@@ -18,10 +18,12 @@
 
 ## Current Priorities
 
-1. **EF-14 remains deliberately deferred** (canonical `{BUSINESS_ROOT}`/repository configuration schema, ARC-020 Proposed). Nothing in this backlog should re-open it without a fresh decision.
-2. **15 batch-001 items remain deferred**, most gated behind docs-mode profile work (EF-03, 04, 07, 10, 11, 12) or EF-14 (EF-08). Independently actionable ones: EF-05 (root cause confirmed — fix must explicitly create/rename the branch, not assume `main`), EF-09, EF-13, EF-18, EF-20, EF-21, EF-22, EF-32.
+1. **ARC-030 (Accepted 2026-08-21) partially resolved EF-14's scope, not the whole of it.** It defines `role`/`business_root` on `ArcaneManifest` and moves venture/portfolio data to a separate hub-owned `registry.json` — but explicitly amends, not closes, ARC-020 (still Proposed): operator identity and tracking-provider/repository-list configuration remain open. Treat EF-14/ARC-020 as narrowed, not deferred-and-untouched.
+2. **15 batch-001 items remain deferred**, most gated behind docs-mode profile work (EF-03, 04, 07, 10, 11, 12) or the still-open slice of EF-14 (EF-08). Independently actionable ones: EF-05 (root cause confirmed — fix must explicitly create/rename the branch, not assume `main`), EF-09, EF-13, EF-18, EF-20, EF-21, EF-22, EF-32.
 3. **`spell-sync-pull-request`** (open PR branch synchronization) remains an open MEDIUM feature in `TODO.md`, not yet planned.
-4. **Distribution-model research (2026-08-21)** landed as three `IDEAS.md` entries (`#distribution`, `#governance`, `#spell-compiler`) awaiting triage — MCP/marketplace/Skills/APM delivery channels, copier/`ng update` upgrade-safety, and single-source spell emit. Coordinate with the pending disclosure-model idea and ARC-028/029. The `spell agents sync`/`init` loud-failure hardening is a new open `TODO.md` item split from the `v0.15.9` mobile-dev fix.
+4. **Distribution-model research (2026-08-21)** landed as three `IDEAS.md` entries (`#distribution`, `#governance`, `#spell-compiler`) awaiting triage — MCP/marketplace/Skills/APM delivery channels, copier/`ng update` upgrade-safety, and single-source spell emit. Coordinate with the pending disclosure-model idea and ARC-028/029; check for overlap with ARC-030 before triaging, since it landed after these ideas were filed.
+5. **ARC-031 (Accepted 2026-08-22)** widened the org-token gate into portability + repository-wide privacy layers and established the Ordovica/Tidewright/Overshore fictional venture family as the canonical example placeholder set. `v0.16.1` is current on `main`.
+6. Merged-branch cleanup remains ancestry-based and is structurally defeated by ARC-009's sanctioned rebase-and-fast-forward — see the open `TODO.md` item under *PR Workflow and Prompt Integrity*. Confirmed still live 2026-08-22: ~25 stale local branches in a linked worktree evaded `git branch --merged main` despite most already being landed.
 
 ---
 
@@ -37,3 +39,5 @@
 - **Branch:** `sessions/2026-08-21-branch-cleanup-verification`.
 - **Blockers:** None.
 - **Notes:** The previous session's close initially appeared stranded locally (`6fb8c8a` on `docs/session-close-2026-08-21`, unpushed) but had already landed on `main` as `bcf49cb` (patch-identical, different SHA); this PR briefly carried the duplicate, hit a merge conflict, and was rebased onto `main` so the duplicate auto-dropped — this close now ships alone, and its handoff block supersedes the prior one. `v0.15.9` (mobile-dev template fix) is on `main`. Distribution-model research remains routed to `IDEAS.md`, not a new ARC. Consumer-repo follow-ups from this session (remote-branch deletions, one held unmerged branch, host no-ff-only policy, two stale doc claims) live consumer-side, not here. No screenshots were provided.
+
+> ✓ Consumed: 2026-08-22 — 8 commits landed on `main` after this handoff was written (ARC-030, ARC-031, `v0.16.0`/`v0.16.1`), none reflected here. Surfaced and reconciled by `spell-open-session` in [sessions/2026-08-22-reconcile-session-docs-drift]; see updated *Current Priorities* above and `TODO.md`/`CHANGELOG.md`/`DECISIONS.md` drift fixes in the same session.

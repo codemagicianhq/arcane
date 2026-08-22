@@ -5,6 +5,31 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.1] - 2026-08-22
+
+### Fixed
+
+- Widened the org-token build gate from a portability check (package-derived tokens in `src/assets/.github/prompts` only, unchanged) into two layers: portability, and a repository-wide privacy layer scanning docs, tests, and decision records against a denylist supplied via the `ARCANE_ORG_TOKENS` CI secret (unset = inert, so forks and local builds are unaffected). Established the Ordovica/Tidewright/Overshore fictional venture family as the canonical placeholder set for all examples (ARC-031).
+- Replaced a hardcoded `codemagicianhq/arcane` literal in `spell-feedback`'s upstream-routing step with `{ARCANE_UPSTREAM_REPO}`, resolved from the installed package's own repository field, so forks/renames route correctly and the org-token lint no longer flags the spell itself.
+
+## [0.16.0] - 2026-08-21
+
+### Added
+
+- **`role`/`business_root`** on `ArcaneManifest` (explicit opt-in only, never inferred): `spell init` asks whether a repo is a venture hub on interactive installs; `spell update` gains a general manifest-retrofit mechanism that asks about any field the installed version predates, once. Answering "hub" offers to scaffold `ventures/registry.json` from existing venture folders.
+- **`spell-manifest`** — a new hub-gated spell that batch-triages `status: new` entries out of hub-side `IDEAS.md`/`TODO.md` books to a consumer repo, a PRD scaffold, a tracker item, a demoted todo, another venture's book, or public disclosure (gated per-entry on the literal word "disclose", keyed off destination visibility rather than destination type). Spell count 33 → 34.
+- Venture-targeting phrasing for `spell-save-idea`/`spell-todo` (hub-only; refused in consumer repos), and hub-role/registry-consistency detectors in `spell-check-drift`.
+- `spell-feedback` upstream-routing: framework-shaped feedback is genericized and offered as a GitHub issue against Arcane itself, gated by the same disclosure discipline.
+- Full decision record: [ARC-030](DECISIONS.md#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion).
+
+### Changed
+
+- **BREAKING:** `spell-bootstrap-business` is renamed to `spell-summon-venture` with no compatibility alias (ARC-008 clean-break precedent) — its behavior changed substantively (hub gate, per-venture books, registry entry), so an alias would have promised behavior that no longer exists. Use `spell-summon-venture`.
+
+### Fixed
+
+- Pre-commit hook test runs no longer inherit `GIT_DIR` and corrupt the real repository ([EF-34](docs/intake/batch-001/EF-34.md)): test git fixtures are now hermetic, `pre-commit` is fast-checks-only (lint + typecheck), and the full suite moved to `pre-push` with its own environment scrub.
+
 ## [0.15.9] - 2026-08-21
 
 ### Fixed
