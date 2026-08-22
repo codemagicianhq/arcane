@@ -35,6 +35,7 @@ Use these files first:
 Check `ai-context/system-prompt-context.md` for a `## Next Session Handoff` section.
 
 - If present and **not yet marked consumed** (no `> ✓ Consumed:` line): surface it immediately as `## Picking Up From Last Session` at the very top of your output, before all other sections. Use the `Next concrete action` field as the first item in `## Next Session Plan`. Use the `Active task`, `Active files`, and `Branch` fields to pre-populate the State Snapshot.
+- **If the handoff's `Pending Verification` field lists anything other than "None" (EF-21):** surface each listed item explicitly, then actively re-check its current status (per the item's stated verification action) rather than treating the state recorded at close-session time as still current — a `dispatched`/`pending` item may have since succeeded, failed, or still be running, and carrying it forward as inert text would repeat the exact failure mode this field exists to prevent. Report what you found (resolved succeeded / resolved failed / still pending / still unverifiable) before relying on anything downstream that depended on it.
 - After surfacing it, apply the Mutation Guard below before appending `> ✓ Consumed: YYYY-MM-DD` (today's date). The marker write is a repository mutation.
 - If the section is absent or already marked consumed: skip this step and proceed with the normal workspace scan.
 

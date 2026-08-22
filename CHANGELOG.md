@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.4] - 2026-08-22
+
+### Fixed
+
+- `spell-close-session` gained a structured pending-verification mechanism ([EF-21](docs/intake/batch-001/EF-21.md)): a new step requires actively checking the status of every async operation dispatched during the session (CI runs, deployments, publishes) before the journal, TODO.md, or handoff are written, classifying each into `dispatched` / `pending` / `succeeded` / `failed` / `unverifiable` — only `succeeded` work may be described as complete anywhere. The handoff template gained a `Pending Verification` field; `spell-open-session` now actively re-checks any non-`succeeded` item from the prior handoff instead of relaying it as still-current fact.
+
 ## [0.16.3] - 2026-08-22
 
 ### Fixed

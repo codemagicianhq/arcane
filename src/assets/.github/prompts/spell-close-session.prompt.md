@@ -33,16 +33,26 @@ Workflow:
    - Lessons learned (anything that cost time, surprised the user, or should prevent future mistakes).
    - **Capture tie-in tip:** If this session produced durable analysis worth formalizing (a design, an investigation, a reusable explanation), suggest running `spell-document` before closing so it lands in the right doc. For quick ideas worth keeping but not yet actionable, suggest `spell-save-idea`.
 
+1b. **Verify in-flight async work before writing any output artifact (EF-21).** "I started it" is not "it worked." Before the journal, TODO.md, or the handoff are written, enumerate every piece of asynchronous work dispatched during this session that could still be running or could have failed after being kicked off — CI/CD runs, deployments, package publishes, long-running background tasks, PR checks. For each, actively check its current status through whatever means is available (CI provider API/CLI, deployment dashboard, `gh run view`, `az pipelines runs show`, etc.) and classify it into exactly one state:
+
+    - **succeeded** — confirmed complete and correct. Only this state may be described as "done," "completed," or "shipped" anywhere in the journal, TODO.md, or the handoff.
+    - **failed** — confirmed to have failed. Record as a blocker or carry-forward item, never as done.
+    - **pending** — still running at last check. Record as in-flight; do not describe as complete.
+    - **dispatched** — kicked off, but no result has been observed at all (the letter was handed to the post office — you know it was sent, not whether it arrived).
+    - **unverifiable** — this environment cannot query the target system (no CLI/API access, no credentials, provider outage). State the exact command, URL, or action the operator must run to check it themselves — a bare "unverifiable" with no next step is barely better than silence.
+
+    A commit succeeding, code being pushed, or a build being triggered are all **dispatched**, not **succeeded** — do not write any of them as complete until independently confirmed. Carry every non-succeeded item into the handoff's `Pending Verification` field (step 5b).
+
 2. **Update today's journal file** at `journal/YYYY-MM-DD-topic-slug.md`.
    - If it exists and already has a session section from this chat, **update that section in place** (do not create a duplicate).
    - If it exists but has no section for this session, **append** a new `## Session: <title>` section.
    - If it does not exist, **create** it using the existing journal frontmatter style.
    - Journal entries must include:
      - `### Prompt Context` — original prompt text or a faithful paraphrase of the multi-turn request when the session began from a substantive user ask. Include follow-up scope inputs if they materially changed the direction of the work.
-     - `### What Got Done` — numbered list of concrete outcomes with file/ADR references.
+     - `### What Got Done` — numbered list of concrete outcomes with file/ADR references. Only list an outcome here if step 1b classified it `succeeded` (or it never involved async work at all, e.g. a local file edit). A `pending`/`dispatched`/`unverifiable` item belongs in Open Items Carried Forward, not here — do not let this section imply completion step 1b couldn't confirm.
      - `### Decisions Made` — table of ADR number, decision, and rationale. If no decisions were made, omit this section.
      - `### Lessons Learned` — one heading per lesson with enough context to prevent the mistake again. Use narrative, not bullet fragments.
-     - `### Open Items Carried Forward` — items that remain undone from this session.
+     - `### Open Items Carried Forward` — items that remain undone from this session, including every `pending`/`dispatched`/`failed`/`unverifiable` item from step 1b.
 
 3. **Update [DECISIONS.md](../../DECISIONS.md).**
    - Add ADRs for any decisions made during the session (naming choices, tool preferences, workflow standards, security policies, etc.).
@@ -50,7 +60,7 @@ Workflow:
    - Follow the existing format: Date, Status, Context, Decision, Reasoning, Rejected alternatives.
 
 4. **Update [TODO.md](../../TODO.md).**
-   - Mark verifiably completed items as done with date.
+   - Mark an item done with date only if step 1b classified its outcome `succeeded` (or it required no async verification at all). A `pending`, `dispatched`, or `unverifiable` item stays open, regardless of how confident the session felt about it.
    - Keep unresolved items open.
    - Remove completed checklist items only when completion is documented in the correct source-of-truth file.
 
@@ -74,6 +84,7 @@ In `ai-context/system-prompt-context.md`, replace the existing `## Next Session 
 - **Active files:** Files with uncommitted changes or the focus of the last edit (comma-separated).
 - **Branch:** Output of `git branch --show-current`.
 - **Blockers:** Known unresolved blockers or dependencies. Write "None" if clear.
+- **Pending Verification:** One line per non-`succeeded` item from step 1b: `<what> — <state> — <verification action or "N/A" if the state is self-evident>`. States: `dispatched`, `pending`, `failed`, `unverifiable` (never list a `succeeded` item here — it belongs in Last completed step / TODO.md / the journal instead). Write "None" only if step 1b found every dispatched item resolved to `succeeded` or `failed` before this handoff was written.
 - **Notes:** Anything time-sensitive, fragile, or contextual that would be lost if not stated explicitly.
 ```
 
@@ -197,7 +208,7 @@ Route the user to the right next spell based on the end state:
 
 Rules:
 
-- Do not invent completions — only mark items done if verifiable from context.
+- Do not invent completions — only mark items done if verifiable from context. "Verifiable" means classified `succeeded` under step 1b's five-state vocabulary (`dispatched`/`pending`/`succeeded`/`failed`/`unverifiable`), not merely "I can see it was started" (EF-21).
 - Keep frontmatter date values in `YYYY-MM-DD`.
 - Preserve existing checklist and journal style.
 - Keep edits minimal and factual.

@@ -1,0 +1,73 @@
+{
+  "feature": "close-session-pending-verification",
+  "branchName": "claude/fix/ef21-pending-verification",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "PV-1",
+      "title": "Add step 1b: verify in-flight async work before any output artifact is written",
+      "description": "New step in spell-close-session.prompt.md, positioned before the journal/TODO/handoff writes (D1), defining the 5-state vocabulary (D2) and requiring a stated verification action for unverifiable items (D3).",
+      "acceptanceCriteria": [
+        "New step exists and is ordered before step 2 (journal write)",
+        "All 5 states present: dispatched, pending, succeeded, failed, unverifiable",
+        "unverifiable requires stating the exact verification action, not just the label"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-pending-verification.test.ts's 'close-session pending-verification vocabulary' suite: 4/4 passing, including an ordering check (step 1b's text index precedes the journal-write step's) and exact-text checks for the unverifiable requirement."
+    },
+    {
+      "id": "PV-2",
+      "title": "Add Pending Verification field to the handoff template",
+      "description": "New field in the ## Next Session Handoff markdown template (step 5b), positioned after Blockers.",
+      "acceptanceCriteria": [
+        "Field present in the template with population rules referencing step 1b's findings",
+        "\"None\" is the documented value when nothing is outstanding"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-pending-verification.test.ts's 'handoff template Pending Verification field' suite: 3/3 passing, including field-ordering (between Blockers and Notes) and presence in the fresh-install ai-context template stub, not just the prompt's own markdown template."
+    },
+    {
+      "id": "PV-3",
+      "title": "Update Rules section and TODO.md/journal instructions to require the vocabulary",
+      "description": "Rules section keeps existing 'do not invent completions' line, appends the vocabulary reference (R1/R4). TODO.md step 4 and journal step 2 instructions updated so only succeeded work is described as done.",
+      "acceptanceCriteria": [
+        "Rules section references the 5-state vocabulary, not just the original ambiguous phrasing",
+        "TODO.md-update step and journal-write step both scope completion claims to succeeded only"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-pending-verification.test.ts's 'completion claims scoped to succeeded only' suite: 4/4 passing."
+    },
+    {
+      "id": "PV-4",
+      "title": "spell-open-session: re-verify pending items, don't just relay them",
+      "description": "Handoff Detection section updated per D5 -- actively check current status of anything not already succeeded/failed from the prior handoff's Pending Verification field.",
+      "acceptanceCriteria": [
+        "Handoff Detection references checking current status for pending/dispatched/unverifiable items, not just displaying prior text"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-pending-verification.test.ts's 'open-session re-verifies pending items' suite: 2/2 passing, also confirming the original handoff-surfacing behavior (Picking Up From Last Session, Next Session Plan) is preserved alongside the new check."
+    },
+    {
+      "id": "PV-5",
+      "title": "Regression coverage + self-host parity",
+      "description": "String-assertion tests for all of the above; regenerate and verify parity for both edited prompts.",
+      "acceptanceCriteria": [
+        "New/extended test file asserts the vocabulary, step ordering, handoff field, and open-session re-verification wording",
+        "check:self-host-parity passes after fix:self-host-parity"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "New test/prompt-pending-verification.test.ts: 13/13 passing. No collateral breakage in the other prompt-assertion suites (prompt-session-branch-gate, prompt-autonomy-gates, prompt-path-resolution, repository-instructions, org-token-lint: 35/35 passing). Self-host parity regenerated (2 files repaired: both edited prompts) and verified clean. Full suite: 511/512 passing (1 unrelated skip), lint clean, typecheck clean."
+    }
+  ]
+}
