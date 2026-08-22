@@ -297,6 +297,22 @@ export async function correctUnbornMasterDefault(cwd: string): Promise<UnbornBra
     // rev-parse --verify HEAD failing IS the unborn signal -- proceed.
   }
 
+  // Also verify the TARGET doesn't already exist with real history.
+  // Confirming the source is unborn is not sufficient: if `refs/heads/main`
+  // already resolves (e.g. created earlier in this repo, or shared across
+  // git worktrees -- refs/heads/* is shared while HEAD is per-worktree, so
+  // an unborn "master" HEAD in one worktree can coexist with a fully born
+  // "main" from another), repointing HEAD onto it would silently attach
+  // whatever's currently staged/uncommitted on the unborn HEAD to main's
+  // real commit history -- a history splice, not a safe unborn-HEAD
+  // repoint, and the next `git commit` an operator runs would commit it.
+  try {
+    await runGit(cwd, ["rev-parse", "--verify", "refs/heads/main"]);
+    return { corrected: false, to: "main" }; // main already exists -- don't touch it
+  } catch {
+    // refs/heads/main doesn't exist -- safe to make it HEAD's target.
+  }
+
   await runGit(cwd, ["symbolic-ref", "HEAD", "refs/heads/main"]);
   return { corrected: true, from: current, to: "main" };
 }
@@ -316,21 +332,35 @@ export type PullRebaseResult =
  * -- the caller is expected to surface this as a warning instead).
  */
 export async function ensureLocalPullRebase(cwd: string): Promise<PullRebaseResult> {
-  let localValue: string | undefined;
+  let rawLocalValue: string | undefined;
   try {
     const { stdout } = await runGit(cwd, ["config", "--local", "--get", "pull.rebase"]);
-    localValue = stdout.trim();
+    rawLocalValue = stdout.trim();
   } catch {
-    localValue = undefined; // not set locally (may be unset entirely, or inherited)
+    rawLocalValue = undefined; // nothing set locally at all (may be inherited from global/system)
   }
 
-  if (localValue === "false") {
-    return { action: "explicit-false-preserved" };
+  if (rawLocalValue === undefined) {
+    await runGit(cwd, ["config", "--local", "pull.rebase", "true"]);
+    return { action: "set" };
   }
-  if (localValue) {
+
+  // Something IS set locally. Determine whether it's a falsy boolean via
+  // git's own boolean parser (`--type=bool` normalizes any of git's valid
+  // spellings -- true/yes/on/1 and false/no/off/0 -- to canonical
+  // "true"/"false"), rather than hand-matching the literal string "false"
+  // and missing every other valid spelling. A value `--type=bool` can't
+  // coerce (e.g. "merges" or "interactive" -- both valid, deliberate
+  // pull.rebase settings) means the operator explicitly chose something
+  // else entirely; that's still an explicit local choice and must never be
+  // overwritten, so it's treated the same as "already-set".
+  try {
+    const { stdout } = await runGit(cwd, ["config", "--local", "--type=bool", "--get", "pull.rebase"]);
+    if (stdout.trim() === "false") {
+      return { action: "explicit-false-preserved" };
+    }
+    return { action: "already-set" };
+  } catch {
     return { action: "already-set" };
   }
-
-  await runGit(cwd, ["config", "--local", "pull.rebase", "true"]);
-  return { action: "set" };
 }

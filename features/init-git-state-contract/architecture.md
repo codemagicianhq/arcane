@@ -18,25 +18,45 @@ side-effect-free mechanism (equivalent to what `git init -b main` does internall
 -m` requires an existing branch ref to rename *from*, which doesn't exist yet on a genuinely
 unborn repo.
 
-**D2 — Correction is conditional on the CURRENT value being exactly `master`, AND on the repo
-genuinely being unborn, checked internally rather than trusted from the caller.** EF-05's
-reported defect is a specific default-leak (`master`), not "Arcane requires `main`." Silently
-renaming any other operator-chosen branch name would exceed what was reported. Separately:
-`symbolic-ref --short HEAD` resolves identically whether a repo is born or unborn, so
-`correctUnbornMasterDefault` additionally verifies `rev-parse --verify HEAD` fails (the same
-signal `inspectGitRepository` uses for its own `no-commits` state) before writing — a BORN repo
-already on `master` must never be touched, since `symbolic-ref HEAD refs/heads/main` on a born
-repo would detach HEAD from `master`'s commit history without moving any commits, leaving `main`
-an empty ref while every real commit stays reachable only via the now-abandoned `master`. This
-makes the function safe to call directly (as the test suite does) rather than correct only by
-accident of `init.ts`'s current call site being gated on `no-commits`.
+**D2 — Correction requires THREE conditions, all checked internally rather than trusted from the
+caller: current value is exactly `master`, the repo is genuinely unborn, AND the target
+(`refs/heads/main`) doesn't already exist.** EF-05's reported defect is a specific default-leak
+(`master`), not "Arcane requires `main`." Silently renaming any other operator-chosen branch name
+would exceed what was reported. Separately: `symbolic-ref --short HEAD` resolves identically
+whether a repo is born or unborn, so `correctUnbornMasterDefault` additionally verifies
+`rev-parse --verify HEAD` fails (the same signal `inspectGitRepository` uses for its own
+`no-commits` state) before writing — a BORN repo already on `master` must never be touched, since
+`symbolic-ref HEAD refs/heads/main` on a born repo would detach HEAD from `master`'s commit
+history without moving any commits. **A third check, added after adversarial review found the
+first version missing it:** confirming the source is unborn is not sufficient on its own — the
+function also verifies `rev-parse --verify refs/heads/main` fails before writing. `refs/heads/*`
+is shared across git worktrees while `HEAD` is per-worktree, so an unborn `master` HEAD in one
+worktree can coexist with a fully born `main` from another (or from an earlier abandoned attempt
+in the same repo); without this check, repointing HEAD onto an already-born `main` silently
+attaches whatever's staged on the unborn HEAD to `main`'s real commit history — a history splice
+a later `git commit` would make permanent. Review reproduced this empirically before the fix
+landed. All three checks together make the function safe to call directly (as the test suite
+does) rather than correct only by accident of `init.ts`'s current call site being gated on
+`no-commits`.
 
 **D3 — `pull.rebase`: distinguish "unset locally" from "explicitly false locally" via `git config
---local --get`, never the effective/inherited value.** `--local` only returns a value if one is
-set in *this repository's* `.git/config`; it errors if the value is only inherited from
-global/system config (e.g. Git for Windows' `pull.rebase=false` system default). This is the
-precise distinction EF-32's own required-tests section asks for: unset (safe to set) vs.
-explicitly local-false (never silently override — warn instead, per EF-32's proposed fix).
+--local --get`, never the effective/inherited value; normalize boolean spellings via git's own
+`--type=bool`, not a hand-matched string.** `--local` only returns a value if one is set in *this
+repository's* `.git/config`; it errors if the value is only inherited from global/system config
+(e.g. Git for Windows' `pull.rebase=false` system default). This is the precise distinction
+EF-32's own required-tests section asks for: unset (safe to set) vs. explicitly local-false
+(never silently override — warn instead, per EF-32's proposed fix). **A second issue adversarial
+review found:** the first version matched only the literal string `"false"`, so git-valid falsy
+spellings (`no`, `off`, `0`) fell through to "already-set" — silently misreporting a
+non-compliant value as correctly configured, worse than doing nothing since `checkPullRebase`
+(doctor) had the mirrored bug in the opposite direction (`yes`/`on`/`1` false-positive-warned as
+non-compliant). Fixed by a two-step read: first `--local --get` (no type) to detect "is anything
+set at all," regardless of shape; then, only if something is set, a second `--local --type=bool
+--get` call, whose output git itself normalizes to canonical `"true"`/`"false"`. If that second
+call fails to coerce (a genuinely non-boolean value like `"merges"` or `"interactive"` — both
+valid, deliberate `pull.rebase` settings), the value is treated as an explicit choice
+(`already-set`) and never overwritten — delegating boolean-spelling knowledge to git's own parser
+rather than re-implementing it was both the bug's root cause and its fix.
 
 **D4 — `checkPullRebase` (doctor) checks the *effective* value (`git config --get`, no
 `--local`), not the local-only value.** Its job is different from init's: catch drift regardless

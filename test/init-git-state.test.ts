@@ -89,6 +89,40 @@ describe("correctUnbornMasterDefault (EF-05, R2/R3)", () => {
       to: "main",
     });
   });
+
+  it("never repoints onto a main that already has real, unrelated history (R1)", async () => {
+    // The hazard this guards against: confirming the SOURCE (master) is
+    // unborn is not enough -- if the TARGET (main) already has commits
+    // (realistic via `git worktree add`, which shares refs/heads/* across
+    // worktrees while HEAD is per-worktree, or simply an earlier `main`
+    // that was created and later abandoned for `master`), repointing HEAD
+    // onto it would silently attach whatever's staged on the unborn HEAD
+    // to main's real commit history -- a history splice a later `git
+    // commit` would make permanent.
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["symbolic-ref", "HEAD", "refs/heads/main"]);
+    fixtureGit(dir, ["config", "user.name", "Arcane Tests"]);
+    fixtureGit(dir, ["config", "user.email", "arcane-tests@example.invalid"]);
+    await fs.writeFile(join(dir, "only-on-main.txt"), "real history");
+    fixtureGit(dir, ["add", "-A"]);
+    fixtureGit(dir, ["commit", "-m", "test: seed main with real history"]);
+    const mainSha = fixtureGit(dir, ["rev-parse", "main"]);
+
+    // Now repoint HEAD back to an unborn "master" -- the exact state
+    // correctUnbornMasterDefault is designed to detect and correct.
+    fixtureGit(dir, ["symbolic-ref", "HEAD", "refs/heads/master"]);
+    await fs.writeFile(join(dir, "staged-on-orphan.txt"), "should never touch main's history");
+    fixtureGit(dir, ["add", "-A"]);
+
+    const result = await correctUnbornMasterDefault(dir);
+
+    expect(result).toEqual({ corrected: false, to: "main" });
+    // HEAD must still be the unborn "master" -- untouched.
+    expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("master");
+    // main's real history must be completely unaffected.
+    expect(fixtureGit(dir, ["rev-parse", "main"])).toBe(mainSha);
+  });
 });
 
 describe("ensureLocalPullRebase (EF-32, R5/R6)", () => {
@@ -121,6 +155,54 @@ describe("ensureLocalPullRebase (EF-32, R5/R6)", () => {
     const result = await ensureLocalPullRebase(dir);
 
     expect(result).toEqual({ action: "already-set" });
+  });
+
+  // R2: git recognizes several falsy boolean spellings for this key, not
+  // just the literal word "false" -- each must be preserved (never
+  // silently overwritten) and reported the same as an explicit "false".
+  it.each(["no", "off", "0"])(
+    "preserves and reports pull.rebase=%s the same as an explicit false",
+    async (falsySpelling) => {
+      const dir = await createTempDir();
+      fixtureGit(dir, ["init"]);
+      fixtureGit(dir, ["config", "--local", "pull.rebase", falsySpelling]);
+
+      const result = await ensureLocalPullRebase(dir);
+
+      expect(result).toEqual({ action: "explicit-false-preserved" });
+      // The raw local value is untouched -- only its normalized boolean
+      // meaning is used for the decision, never rewritten to a canonical
+      // spelling.
+      expect(fixtureGit(dir, ["config", "--local", "--get", "pull.rebase"])).toBe(falsySpelling);
+    },
+  );
+
+  it.each(["yes", "on", "1"])(
+    "treats pull.rebase=%s as already-set, not unset",
+    async (truthySpelling) => {
+      const dir = await createTempDir();
+      fixtureGit(dir, ["init"]);
+      fixtureGit(dir, ["config", "--local", "pull.rebase", truthySpelling]);
+
+      const result = await ensureLocalPullRebase(dir);
+
+      expect(result).toEqual({ action: "already-set" });
+      expect(fixtureGit(dir, ["config", "--local", "--get", "pull.rebase"])).toBe(truthySpelling);
+    },
+  );
+
+  it("never overwrites a non-boolean local value like 'merges'", async () => {
+    // "merges" and "interactive" are valid, deliberate pull.rebase
+    // settings that --type=bool can't coerce -- must be treated as an
+    // explicit choice (already-set), never silently replaced with "true".
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["config", "--local", "pull.rebase", "merges"]);
+
+    const result = await ensureLocalPullRebase(dir);
+
+    expect(result).toEqual({ action: "already-set" });
+    expect(fixtureGit(dir, ["config", "--local", "--get", "pull.rebase"])).toBe("merges");
   });
 });
 
@@ -158,6 +240,19 @@ describe("checkPullRebase (EF-32, doctor)", () => {
     expect(result.message).toContain("false");
   });
 
+  // R4: a non-canonical but fully compliant boolean spelling must PASS,
+  // not false-positive-warn -- git itself treats "yes" identically to
+  // "true" for this key.
+  it("passes on a non-canonical but compliant boolean spelling ('yes')", async () => {
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["config", "--local", "pull.rebase", "yes"]);
+
+    const result = await checkPullRebase(dir);
+
+    expect(result.passed).toBe(true);
+  });
+
   it("degrades gracefully (non-blocking warning, not a crash) outside a Git repository", async () => {
     const dir = await createTempDir();
 
@@ -193,6 +288,53 @@ describe("runInit — end-to-end git-state wiring (real git)", () => {
     expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("main");
     expect(fixtureGit(dir, ["config", "--local", "--get", "pull.rebase"])).toBe("true");
 
+    vi.doUnmock("@inquirer/prompts");
+    vi.resetModules();
+  });
+
+  it("R3: warns and preserves an explicit local pull.rebase=false during a real init, instead of silently overwriting it", async () => {
+    // This is the exact scenario EF-32.md's own "Required tests" section
+    // asks for: "a second fixture proving an existing explicit
+    // pull.rebase=false ... is surfaced as a warning rather than silently
+    // overwritten." The underlying ensureLocalPullRebase primitive already
+    // had a direct test for this; this one proves the operator-facing
+    // behavior in init.ts's actual warning branch fires too -- adversarial
+    // review found that branch had zero coverage before this test existed.
+    vi.resetModules();
+    vi.doMock("@inquirer/prompts", () => ({
+      select: vi.fn().mockResolvedValue("governance-only"),
+      confirm: vi.fn().mockResolvedValue(true),
+      checkbox: vi.fn().mockResolvedValue([]),
+      input: vi.fn().mockResolvedValue("Agent"),
+    }));
+    const { runInit } = await import("../src/commands/init.js");
+
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["config", "user.name", "Arcane Tests"]);
+    fixtureGit(dir, ["config", "user.email", "arcane-tests@example.invalid"]);
+    await fs.writeFile(join(dir, "f.txt"), "x");
+    fixtureGit(dir, ["add", "-A"]);
+    fixtureGit(dir, ["commit", "-m", "test: seed so this repo is born, not unborn"]);
+    fixtureGit(dir, ["config", "--local", "pull.rebase", "false"]);
+
+    const logSpy = vi.spyOn(console, "log");
+
+    await runInit(
+      { profile: "governance-only" },
+      dir,
+      join(process.cwd(), "src/assets"),
+      "0.1.0",
+    );
+
+    const logged = logSpy.mock.calls.map((call) => String(call[0]));
+    expect(logged.some((line) => line.includes("pull.rebase") && line.includes("false"))).toBe(
+      true,
+    );
+    // The whole point: the explicit choice must survive untouched.
+    expect(fixtureGit(dir, ["config", "--local", "--get", "pull.rebase"])).toBe("false");
+
+    logSpy.mockRestore();
     vi.doUnmock("@inquirer/prompts");
     vi.resetModules();
   });

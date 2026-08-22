@@ -17,7 +17,19 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "test/init-git-state.test.ts: correctUnbornMasterDefault and ensureLocalPullRebase suites, real git fixtures. Also caught and fixed during implementation: the initial version trusted the caller to only invoke correctUnbornMasterDefault on an unborn repo -- added an internal rev-parse --verify HEAD check so a BORN repo on master is never touched (would otherwise detach HEAD from master's history without moving commits). Covered by a dedicated test."
+      "testEvidence": "test/init-git-state.test.ts: correctUnbornMasterDefault and ensureLocalPullRebase suites, real git fixtures. Two rounds of fixes: (1) during implementation, added an internal rev-parse --verify HEAD check so a BORN repo on master is never touched. (2) Adversarial review (independent subagent) empirically reproduced a HIGH-severity gap: the function checked the SOURCE was unborn but never checked the TARGET (refs/heads/main) didn't already have real history -- reproduced via git worktree-style orphan branch + pre-existing main, showing a silent history splice. Fixed with a third internal check (rev-parse --verify refs/heads/main must also fail); new dedicated regression test reproduces the exact reviewer scenario. Same review also found ensureLocalPullRebase only matched the literal string 'false', missing git's other falsy spellings (no/off/0) -- fixed via git's own --type=bool normalization instead of hand-matching; non-boolean values (merges, interactive) are correctly preserved as deliberate choices, never overwritten. New parametrized tests for both truthy and falsy spellings plus the non-boolean case."
+    },
+    {
+      "id": "IGS-3b",
+      "title": "[Review-driven] Normalize checkPullRebase's boolean comparison to match ensureLocalPullRebase",
+      "description": "checkPullRebase originally string-matched 'true' literally, false-positive-warning on compliant spellings like 'yes'/'on'/'1'. Fixed via --type=bool, mirroring IGS-1's fix.",
+      "acceptanceCriteria": [
+        "A non-canonical but compliant boolean spelling (yes) passes, not warns"
+      ],
+      "priority": "low",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "New test in test/init-git-state.test.ts's checkPullRebase suite."
     },
     {
       "id": "IGS-2",
@@ -61,7 +73,7 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "12 new tests in test/init-git-state.test.ts, all real-git fixtures, no mocking of src/modules/git.js in that file. Extending the git mock in test/init.test.ts surfaced a pre-existing latent issue (also present, separately, in test/update.test.ts, test/hub-retrofit.test.ts, test/session-continuity.test.ts): vi.restoreAllMocks() in several beforeEach blocks clears a plain vi.fn()'s configured resolved value, previously masked because the old code's numeric countUncommittedChanges > 0 comparison tolerated an undefined return silently -- the new code's gitState.status property access does not. Fixed in all four files by re-applying mock resolved values in beforeEach (matching the pattern already used for @inquirer/prompts mocks in two of them). Full suite: 488/489 passing (1 unrelated skip), lint clean, typecheck clean. Coverage src/modules/git.ts: 94.21% line / 96.29% branch."
+      "testEvidence": "22 tests in test/init-git-state.test.ts (up from 12 after review-driven additions), all real-git fixtures, no mocking of src/modules/git.js in that file. Extending the git mock in test/init.test.ts surfaced a pre-existing latent issue (also present, separately, in test/update.test.ts, test/hub-retrofit.test.ts, test/session-continuity.test.ts): vi.restoreAllMocks() in several beforeEach blocks clears a plain vi.fn()'s configured resolved value, previously masked because the old code's numeric countUncommittedChanges > 0 comparison tolerated an undefined return silently -- the new code's gitState.status property access does not. Fixed in all four files by re-applying mock resolved values in beforeEach (matching the pattern already used for @inquirer/prompts mocks in two of them); an independent adversarial review verified this fix was real, correctly scoped, and applied to exactly the 4 files that needed it (grepped all git.js mockers). Adversarial review also found the new explicit-false-preserved warning path in init.ts had ZERO coverage (lcov confirmed) despite being exactly what EF-32's own 'Required tests' section asked for -- added a real end-to-end runInit test that seeds pull.rebase=false and asserts the warning actually prints (verified by watching it print during the test run, not just asserting a mock was called). Full suite (after all review fixes): 498/499 passing (1 unrelated skip), lint clean, typecheck clean. Coverage src/modules/git.ts: 94.5% line / 96.61% branch; src/commands/init.ts: 87.76% line / 92.07% branch."
     },
     {
       "id": "IGS-5",
