@@ -220,6 +220,13 @@ Create the session branch as the **first action** of any session, before any fil
   1. `git branch -m <old> <new>`
   2. `git push -u origin <new>`
   3. `git push origin --delete <old>` (skip this if an active PR still depends on `<old>`).
+- **EF-20 hazard:** on some Windows/Git-for-Windows filesystems, a rename or delete can trigger
+  an interactive retry prompt (e.g. a file lock from an editor or antivirus scan) that blocks
+  indefinitely on a terminal with no non-interactive fallback. When running these commands
+  directly through a tool that supports a per-call timeout (an agent's shell tool, a CI step),
+  set one rather than assuming the command will return. Arcane's own TypeScript Git helper
+  (`src/modules/git.ts`) applies this as a standing contract — closed stdin plus a
+  command-class timeout — for every `git` invocation the CLI itself makes.
 
 **Agents:**
 
