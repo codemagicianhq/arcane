@@ -35,6 +35,16 @@ The operator's "seven prunable" report and this session's own worktree-state rep
 
 #### Shared `.git/config` across worktrees is a standing hazard
 
+> **Retired 2026-08-21:** the root cause (leaked `GIT_DIR` reaching fixture `git`
+> subprocesses spawned with only `cwd` set) is fixed — see
+> [EF-34](../docs/intake/batch-001/EF-34.md) (now `shipped`). Fixture git calls
+> are hermetic (`test/helpers/git-fixture.ts`), the full suite moved from
+> pre-commit to pre-push (which also scrubs `GIT_*` as defense-in-depth), and a
+> negative regression test proves a leaked `GIT_DIR` no longer reaches a decoy
+> repository. The `--no-verify` workaround below is no longer required —
+> ordinary `git commit` is safe again. Left unedited as the historical record
+> of why the workaround existed.
+
 This is the second and third time this exact contamination class fired in one session. The only fully safe pattern found: validate manually first (build, parity, lint, typecheck, full test), then commit with `--no-verify`, never re-running husky hooks on top of an already-validated state inside a shared-config worktree fleet.
 
 #### Corrections are worth more than conclusions

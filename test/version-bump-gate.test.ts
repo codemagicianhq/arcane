@@ -3,17 +3,11 @@ import { promises as fs } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { runGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
 const TSX = join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
 const GATE_SOURCE = join(process.cwd(), "scripts", "check-version-bump.ts");
-
-function runGit(dir: string, args: string[]) {
-    const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
-    if (result.status !== 0) {
-        throw new Error(result.stderr || `git ${args.join(" ")} failed`);
-    }
-}
 
 async function createPullRequestFixture() {
     const dir = await fs.mkdtemp(join(tmpdir(), "version-bump-gate-test-"));

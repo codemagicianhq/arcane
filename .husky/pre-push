@@ -1,0 +1,8 @@
+# EF-34: pre-push is a git hook too, so it receives the same repository-context
+# environment (GIT_DIR, etc.) that made pre-commit dangerous to run the full
+# suite from. Scrub it here as defense-in-depth, on top of the fixture-level
+# hardening in test/helpers/git-fixture.ts -- even if a future test forgets to
+# use that helper, this layer still closes the leak before npm test starts.
+for v in $(env | grep '^GIT_' | cut -d= -f1); do unset "$v"; done
+
+npm test

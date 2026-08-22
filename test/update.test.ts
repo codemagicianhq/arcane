@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { runGit } from "./helpers/git-fixture.js";
 
 const { inspectGitRepositoryMock } = vi.hoisted(() => ({
   inspectGitRepositoryMock: vi.fn(),
@@ -60,12 +61,6 @@ async function seedComponentFile(dir: string, relativePath: string, content = "o
   await fs.writeFile(dest, content);
 }
 
-function runGit(dir: string, args: string[]) {
-  const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
-  if (result.status !== 0) {
-    throw new Error(result.stderr || `git ${args.join(" ")} failed`);
-  }
-}
 
 function commitBaseline(dir: string) {
   runGit(dir, ["init"]);
