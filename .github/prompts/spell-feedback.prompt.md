@@ -10,7 +10,7 @@ agent: agent
 - This spell captures post-session feedback on how well the spells and AI assistance worked.
 - It structures the feedback into actionable improvement items and appends them to `FEEDBACK.md` at the repo root.
 - Use it after any session where assistance felt notably effective or notably off — the record feeds `spell-enchant`.
-- **Framework-shaped items** (about a spell, template, governance doc, playbook, or CLI behavior — not this repo's own content) can additionally route upstream as a GitHub issue on `codemagicianhq/arcane` — the same public intake path any arcane user would use, genericized first and gated by an explicit disclosure confirm. This is the whole consumer→arcane feedback loop: arcane is the one thing every consumer repo may reference without violating sibling isolation, because it's the installed, publicly-homed dependency, not a sibling venture.
+- **Framework-shaped items** (about a spell, template, governance doc, playbook, or CLI behavior — not this repo's own content) can additionally route upstream as a GitHub issue on `{ARCANE_UPSTREAM_REPO}` — the same public intake path any arcane user would use, genericized first and gated by an explicit disclosure confirm. This is the whole consumer→arcane feedback loop: arcane is the one thing every consumer repo may reference without violating sibling isolation, because it's the installed, publicly-homed dependency, not a sibling venture.
 
 ---
 
@@ -114,12 +114,14 @@ If the rating is ≤ 2, prepend a `⚠️ LOW RATING` line to this proposal so i
 
 ## Step 6 — Upstream Routing (Framework-Shaped Items)
 
+`{ARCANE_UPSTREAM_REPO}` is this install's own arcane framework repository (`owner/repo`) — resolve it from the installed `arcane-cli` package's `repository` field (e.g. `node_modules/arcane-cli/package.json`, or `npm view arcane-cli repository.url` if not vendored locally); ask the user if it cannot be determined. Never hardcode a specific org/repo here — a fork or downstream rename changes this value.
+
 For each framework-shaped item:
 
 1. **Genericize.** Strip anything identifying this specific consumer: venture/business names, org tokens, machine names, hub or local paths. Write "a consumer repo session" instead of naming the actual venture, generalize file paths to their relative form. The finding must read the same whether it came from this repo or any other arcane user's.
 2. **Check `gh`.** If unauthenticated or offline, skip straight to the fallback below.
-3. **Disclosure confirm.** Print the exact issue title and body that will be filed publicly on `codemagicianhq/arcane`, and ask for the literal word `disclose` — same discipline as `spell-manifest`'s disclosure gate; this is the same kind of act (private observation → public issue). Anything else is a decline, not an error.
-4. **File.** On `disclose`: `gh issue create --repo codemagicianhq/arcane --title "<title>" --body "<genericized body>"`. Report the issue URL.
+3. **Disclosure confirm.** Print the exact issue title and body that will be filed publicly on `{ARCANE_UPSTREAM_REPO}`, and ask for the literal word `disclose` — same discipline as `spell-manifest`'s disclosure gate; this is the same kind of act (private observation → public issue). Anything else is a decline, not an error.
+4. **File.** On `disclose`: `gh issue create --repo {ARCANE_UPSTREAM_REPO} --title "<title>" --body "<genericized body>"`. Report the issue URL.
 5. **Fallback.** If `gh` is unavailable, offline, or the operator declines: append `<!-- upstream: queued -->` to that item's line in `FEEDBACK.md`. Never block the rest of the session on this — queuing is a complete, valid outcome. The next `spell-feedback` run (or `spell-feedback --flush`) re-offers every queued item.
 
 Maintainer side is unchanged: GitHub issues are arcane's normal public intake; triage into arcane's own `IDEAS.md`/`DECISIONS.md` happens in arcane sessions like any other issue. This spell never writes to a hub's venture books and never reads `ventures/registry.json` — framework feedback and venture ideas are different channels on purpose (venture ideas → hub books → `spell-manifest`; framework lessons → here → arcane's GitHub).

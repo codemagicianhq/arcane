@@ -117,7 +117,7 @@ Stage (never commit) the touched files in each repo that received a write, inclu
 Staged (not committed):
   hub:            ventures/ordovica/IDEAS.md
                   proposed: docs(ideas): promote 1 entry to ordovica
-  ordovica:   IDEAS.md
+  ordovica:       IDEAS.md
                   proposed: docs(ideas): capture dark-mode toggle candidate
 Run spell-commit-work in each repo. N entries remain new.
 ```
