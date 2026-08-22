@@ -15,6 +15,9 @@ vi.mock("@inquirer/prompts", () => ({
 // ─── Mock git module ──────────────────────────────────────────────────────────
 vi.mock("../src/modules/git.js", () => ({
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
+  inspectGitRepository: vi.fn().mockResolvedValue({ status: "not-repository" }),
+  correctUnbornMasterDefault: vi.fn().mockResolvedValue({ corrected: false, to: "main" }),
+  ensureLocalPullRebase: vi.fn().mockResolvedValue({ action: "already-set" }),
 }));
 
 const { runInit } = await import("../src/commands/init.js");
@@ -90,9 +93,19 @@ describe("session-continuity — init scaffolding", () => {
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "session-test-"));
     vi.restoreAllMocks();
+    // restoreAllMocks clears a plain vi.fn()'s configured resolved value
+    // back to undefined -- re-apply every module-mocked function here, not
+    // just declared once in the factory (see test/init.test.ts for the
+    // same fix, applied first).
     const { select, confirm } = await import("@inquirer/prompts");
     vi.mocked(select).mockResolvedValue("lite" as never);
     vi.mocked(confirm).mockResolvedValue(true as never);
+    const { countUncommittedChanges, inspectGitRepository, correctUnbornMasterDefault, ensureLocalPullRebase } =
+      await import("../src/modules/git.js");
+    vi.mocked(countUncommittedChanges).mockResolvedValue(0);
+    vi.mocked(inspectGitRepository).mockResolvedValue({ status: "not-repository" });
+    vi.mocked(correctUnbornMasterDefault).mockResolvedValue({ corrected: false, to: "main" });
+    vi.mocked(ensureLocalPullRebase).mockResolvedValue({ action: "already-set" });
   });
 
   afterEach(async () => {

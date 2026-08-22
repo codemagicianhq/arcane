@@ -252,3 +252,85 @@ export async function countUncommittedChanges(cwd: string): Promise<number> {
     return 0;
   }
 }
+
+export interface UnbornBranchCorrection {
+  corrected: boolean;
+  from?: string;
+  to: "main";
+}
+
+/**
+ * EF-05: on an unborn repository (git init has run, no commit yet) whose
+ * HEAD currently targets exactly "master" -- the reported Git for Windows
+ * system-default leak (init.defaultBranch=master at the system config
+ * level) -- repoint it to "main" via `symbolic-ref`. Safe because no commit
+ * objects exist yet to conflict with; equivalent to what `git init -b main`
+ * does internally. Any OTHER branch name, including one an operator
+ * deliberately chose, is left untouched -- this corrects the specific
+ * reported default-leak, not a general "Arcane requires main" policy.
+ * No-op (not corrected) if `cwd` isn't an unborn repo at all.
+ */
+export async function correctUnbornMasterDefault(cwd: string): Promise<UnbornBranchCorrection> {
+  let current: string;
+  try {
+    const { stdout } = await runGit(cwd, ["symbolic-ref", "--short", "HEAD"]);
+    current = stdout.trim();
+  } catch {
+    return { corrected: false, to: "main" };
+  }
+
+  if (current !== "master") {
+    return { corrected: false, to: "main" };
+  }
+
+  // Verify unborn-ness internally rather than trusting the caller: on a
+  // BORN repo already on "master", `symbolic-ref HEAD refs/heads/main`
+  // would detach HEAD's branch pointer from its commit history without
+  // moving any commits -- `main` would exist as an empty ref while every
+  // real commit stays reachable only via the abandoned `master` ref. This
+  // check is the same one `inspectGitRepository` uses to distinguish
+  // "no-commits" from "ready".
+  try {
+    await runGit(cwd, ["rev-parse", "--verify", "HEAD"]);
+    return { corrected: false, to: "main" }; // HEAD resolves -- repo is born, don't touch it
+  } catch {
+    // rev-parse --verify HEAD failing IS the unborn signal -- proceed.
+  }
+
+  await runGit(cwd, ["symbolic-ref", "HEAD", "refs/heads/main"]);
+  return { corrected: true, from: current, to: "main" };
+}
+
+export type PullRebaseResult =
+  | { action: "set" }
+  | { action: "already-set" }
+  | { action: "explicit-false-preserved" };
+
+/**
+ * EF-32: ensure `pull.rebase` is set at the repository-LOCAL level so the
+ * mandated rebase-and-fast-forward workflow (git-conventions.md) doesn't
+ * silently depend on the operator's machine-wide default (Git for Windows
+ * ships pull.rebase=false at the system level). Distinguishes "unset
+ * locally" (safe to set -- it was only ever inheriting a machine default)
+ * from "explicitly set locally, even to false" (never silently overridden
+ * -- the caller is expected to surface this as a warning instead).
+ */
+export async function ensureLocalPullRebase(cwd: string): Promise<PullRebaseResult> {
+  let localValue: string | undefined;
+  try {
+    const { stdout } = await runGit(cwd, ["config", "--local", "--get", "pull.rebase"]);
+    localValue = stdout.trim();
+  } catch {
+    localValue = undefined; // not set locally (may be unset entirely, or inherited)
+  }
+
+  if (localValue === "false") {
+    return { action: "explicit-false-preserved" };
+  }
+  if (localValue) {
+    return { action: "already-set" };
+  }
+
+  await runGit(cwd, ["config", "--local", "pull.rebase", "true"]);
+  return { action: "set" };
+}

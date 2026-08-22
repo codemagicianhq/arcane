@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.3] - 2026-08-22
+
+### Fixed
+
+- `spell init` now distinguishes not-a-repository / unborn / ready Git states instead of a blind uncommitted-changes count ([EF-05](docs/intake/batch-001/EF-05.md)): an unborn repo on `master` (the reported Git for Windows `init.defaultBranch` default-leak) is safely repointed to `main` via `symbolic-ref` before any commit exists; any other deliberately-chosen branch name is left untouched; a directory with no repository at all gets an explicit `git init -b main` next-step instead of a silent gap. `spell-close-session` gained a matching "not a repository" classification, checked first and failing closed with the same guidance.
+- `spell init` and `spell doctor` now address `pull.rebase` governance drift ([EF-32](docs/intake/batch-001/EF-32.md)): init sets the repository-local value to `true` when nothing is set locally (never overriding an explicit local `false`, which is surfaced as a warning instead), and doctor's new `checkPullRebase` independently warns (non-blocking) whenever the effective value isn't `true`.
+
 ## [0.16.2] - 2026-08-22
 
 ### Fixed

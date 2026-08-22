@@ -23,9 +23,16 @@ vi.mock("@inquirer/prompts", () => ({
 }));
 
 // ─── Mock git module ──────────────────────────────────────────────────────────
-// Prevent real git status checks in temp directories
+// Prevent real git status/config checks in temp directories. inspectGitRepository
+// defaults to "not-repository", matching these tests' real environment: every
+// tmpDir here is a plain fs.mkdtemp directory, never `git init`'d. Real-git
+// scenarios (unborn repo, pull.rebase) live in test/init-git-state.test.ts,
+// which does NOT mock this module.
 vi.mock("../src/modules/git.js", () => ({
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
+  inspectGitRepository: vi.fn().mockResolvedValue({ status: "not-repository" }),
+  correctUnbornMasterDefault: vi.fn().mockResolvedValue({ corrected: false, to: "main" }),
+  ensureLocalPullRebase: vi.fn().mockResolvedValue({ action: "already-set" }),
 }));
 
 // Import AFTER mocking so the mock is in place
@@ -42,10 +49,20 @@ describe("spell init — handler", () => {
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "init-test-"));
     vi.restoreAllMocks();
-    // Re-apply the mocks after restoreAllMocks
+    // Re-apply the mocks after restoreAllMocks -- restoreAllMocks clears a
+    // plain vi.fn()'s configured resolved value back to undefined (there's
+    // no "original implementation" to restore it to, unlike a vi.spyOn
+    // wrapping a real method), so every module-mocked function needs its
+    // return value reasserted here, not just declared once in the factory.
     const { select, confirm } = await import("@inquirer/prompts");
     vi.mocked(select).mockResolvedValue("lite" as never);
     vi.mocked(confirm).mockResolvedValue(true as never);
+    const { countUncommittedChanges, inspectGitRepository, correctUnbornMasterDefault, ensureLocalPullRebase } =
+      await import("../src/modules/git.js");
+    vi.mocked(countUncommittedChanges).mockResolvedValue(0);
+    vi.mocked(inspectGitRepository).mockResolvedValue({ status: "not-repository" });
+    vi.mocked(correctUnbornMasterDefault).mockResolvedValue({ corrected: false, to: "main" });
+    vi.mocked(ensureLocalPullRebase).mockResolvedValue({ action: "already-set" });
   });
 
   afterEach(async () => {

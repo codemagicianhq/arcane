@@ -4,6 +4,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
+import { runGit } from "../modules/git.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -137,6 +138,39 @@ export async function checkArcaneManifest(targetDir: string): Promise<CheckResul
   }
 }
 
+/**
+ * EF-32: independently verify the EFFECTIVE (not just repository-local)
+ * pull.rebase resolves to "true", catching drift regardless of source --
+ * an install that predates `spell init`'s own fix, a value unset again
+ * later, or any other path that bypassed init's one-time correction.
+ * Non-blocking: this repo has no CI job running inside the operator's own
+ * working copy, so a doctor warning is the only enforcement mode available
+ * here (see ARC-023's inline-enforcement-contract requirement).
+ */
+export async function checkPullRebase(targetDir: string): Promise<CheckResult> {
+  const name = "Git pull.rebase (rebase-and-fast-forward mandate)";
+  try {
+    const { stdout } = await runGit(targetDir, ["config", "--get", "pull.rebase"]);
+    const value = stdout.trim();
+    if (value === "true") {
+      return { name, passed: true, message: "pull.rebase=true" };
+    }
+    return {
+      name,
+      passed: false,
+      message: `pull.rebase resolves to "${value}", not "true" -- a bare \`git pull\` will create merge commits, contradicting git-conventions.md's rebase-and-fast-forward mandate. Run: git config --local pull.rebase true`,
+      blocking: false,
+    };
+  } catch {
+    return {
+      name,
+      passed: false,
+      message: "pull.rebase is unset (or this isn't a Git repository) -- effective behavior inherits your machine's default, and Git for Windows defaults this to false. Run: git config --local pull.rebase true",
+      blocking: false,
+    };
+  }
+}
+
 export function checkIncidentReleaseGate(): CheckResult {
   const result = evaluateIncidentGate(INCIDENT_QUEUE);
   if (result.blocked) {
@@ -222,6 +256,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkVSCodeExtension("GitHub.copilot-chat", "GitHub Copilot (Chat)"),
     checkArcaneManifest(targetDir),
     Promise.resolve(checkIncidentReleaseGate()),
+    checkPullRebase(targetDir),
   ]);
 
   // Add session continuity checks
