@@ -24,6 +24,34 @@ list` and `git branch --merged` themselves (read-only) get a *caveat*, not a gat
 run freely; the gate applies to the *next* step that would act on their output destructively
 (`prune`, `remove`, `gc`, branch `-d`/`-D`, `push --delete`).
 
+**D1a — (added after adversarial review, HIGH finding) The check must establish the agent's OWN
+vantage point before trusting anything it reads through that vantage point.** The first version
+of step 2 let an agent "confirm" a registered path via `Test-Path`/`os.path.exists()` run from its
+own process, without ever requiring the agent to establish that its own process is actually in the
+environment that registered the worktree. Running the "independent" check from the *same*
+bridged/mounted process that produced the false `git worktree list` read reproduces the exact
+failure the section exists to prevent — both signals share the identical wrong vantage point, so
+they agree with each other for the wrong reason. Fixed with a concrete, mechanical, low-effort
+first check: does the registered path's own syntax (drive-letter+backslash vs. POSIX
+root+forward-slash) match the current process's native OS conventions at all? A mismatch is
+proof-positive of the wrong vantage point and short-circuits straight to "stop and ask" — this
+directly closes the exact scenario EF-33's own incident describes (a Windows-registered path read
+from a Linux-side mount). Matching syntax alone doesn't *prove* a shared vantage point (two
+different containers can both speak POSIX) — it only rules out the cross-OS case, which is the
+one this fix can address without inventing new tooling. "Stop and ask" was also promoted from an
+edge-case escape hatch to the explicit default outcome whenever step 2's confidence isn't
+genuinely established.
+
+**D2a — (added after adversarial review, MEDIUM finding) The branch-`--merged` ancestry hazard is
+unconditional and must not share the cross-filesystem scope-gate.** The original section's
+opening sentence attributed both the worktree-prunable hazard AND the branch-ancestry hazard to
+"read through a cross-filesystem bridge" — true for the former, false for the latter (rebase/
+squash-driven SHA rewriting defeats `--merged` on a single machine, no bridge required). Worse,
+the bolded scope-gate wrapped the entire 4-step procedure including the ancestry reminder, so a
+same-machine agent could correctly conclude "no bridge here" and lose the ancestry reminder along
+with the vantage-point check it correctly didn't need. Split into a separate, explicitly
+unconditional closing paragraph, referenced (not gated) from the opening sentence.
+
 **D3 — No fabricated code-level enforcement.** Per the PRD's constraint: EF-33's own proposed fix
 and required-tests section frame this as operational discipline (a confirmation step a human or
 agent performs), not a mechanism CI can verify. Adding a `verifyWorktreeVantage()` function nobody

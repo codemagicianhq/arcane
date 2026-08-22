@@ -39,7 +39,7 @@
       "priority": "medium",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "test/prompt-worktree-vantage-check.test.ts's 'spell-open-session caveats the reads' suite: 2/2 passing, also confirming the stale-branch line cross-references the (separately shipped) ancestry-vs-content merged-branch verification finding."
+      "testEvidence": "test/prompt-worktree-vantage-check.test.ts's 'spell-open-session caveats the reads' suite: 2/2 passing, also confirming the stale-branch line cross-references the ancestry-vs-content merged-branch verification finding (TODO.md's own PR Workflow item -- that item is still open, not shipped; correcting an earlier draft of this note that wrongly called it shipped)."
     },
     {
       "id": "WVR-4",
@@ -65,7 +65,23 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "DECISIONS.md ARC-028 item 11 annotated (11a's agent-policies portion and 11d struck through as shipped 2026-08-22; ADR's own Status field left untouched at Proposed -- verified by direct read after edit). EF-33.md frontmatter: deferred -> shipped. New test/prompt-worktree-vantage-check.test.ts: 11/11 passing. Full suite: 528/529 passing (1 unrelated skip), lint clean, typecheck clean, self-host parity clean."
+      "testEvidence": "DECISIONS.md ARC-028 item 11 annotated (11a's agent-policies portion and 11d struck through as shipped 2026-08-22; ADR's own Status field left untouched at Proposed -- verified by direct read, twice, before and after the review-fix round). EF-33.md frontmatter: deferred -> shipped. Full suite: 528/529 passing (1 unrelated skip), lint clean, typecheck clean, self-host parity clean."
+    },
+    {
+      "id": "WVR-6",
+      "title": "[Review-driven] Close the loopholes an independent adversarial review found",
+      "description": "One HIGH and three MEDIUM/LOW findings, all fixed: (R1, HIGH) the mechanism let an agent 'confirm' a path from its own process without ever establishing that process is in the right vantage point -- checking from the same bridged process that produced the false read just reproduces the failure; fixed with a mechanical path-syntax-mismatch trigger and promoting 'stop and ask' to the default outcome. (R2, MEDIUM) the branch-ancestry hazard (unconditional, no bridge needed) was incorrectly gated behind the cross-filesystem scope-gate alongside the worktree hazard (which IS conditional); split into a separate unconditional note. (R3, MEDIUM) agent-policies.md rule 8 sits under a 'Multi-Agent' header but the hazard applies to a solo agent too -- flagged explicitly in the rule text. (R4, MEDIUM) tests only checked bare substring presence anywhere in the file, so a disconnected comment or an inverted sentence ('does NOT apply to...') would have passed while the real command shipped unguarded -- rewrote using line-level proximity assertions anchored to the actual command text. (R5, LOW) DECISIONS.md's inserted summary sentence broke the (a)-(e) enumeration's reading flow -- moved to the end of item 11. (R6, LOW) stories.json's own WVR-3 evidence wrongly called a still-open TODO.md item 'separately shipped' -- corrected.",
+      "acceptanceCriteria": [
+        "Same-vantage-point check requires establishing the agent's own vantage point first, with a concrete mechanical trigger",
+        "Branch-ancestry hazard stated as unconditional, not gated behind the cross-filesystem trigger",
+        "agent-policies.md rule 8 explicitly notes it applies even to a solo agent",
+        "Tests verify attachment/proximity, not just presence anywhere in the file",
+        "DECISIONS.md enumeration reads cleanly; stories.json's own factual error corrected"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "5 new tests added (16 total, up from 11), each anchored to the specific finding via the new lineContaining() proximity helper rather than bare .toContain(). All 16 passing. Full suite (after review fixes): 533/534 passing (1 unrelated skip), lint clean, typecheck clean, self-host parity clean. ARC-028 Status field re-verified untouched (Proposed) after this round too."
     }
   ]
 }
