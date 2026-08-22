@@ -125,7 +125,7 @@ const COMPONENTS: RegistryComponent[] = [
   // Spell prompts — installed to .github/prompts/ (VS Code Copilot convention)
   {
     name: "spell-prompts",
-    description: "Full Arcane spell prompt library (33 spells)",
+    description: "Full Arcane spell prompt library (34 spells)",
     files: [
       ".github/prompts/spell-arcane-version.prompt.md",
       ".github/prompts/spell-architect.prompt.md",
@@ -158,6 +158,7 @@ const COMPONENTS: RegistryComponent[] = [
       ".github/prompts/spell-create-pull-request.prompt.md",
       ".github/prompts/spell-document.prompt.md",
       ".github/prompts/spell-feedback.prompt.md",
+      ".github/prompts/spell-manifest.prompt.md",
       ".github/prompts/spell-save-idea.prompt.md",
       ".github/prompts/spell-status.prompt.md",
       ".github/prompts/spell-review-batch.prompt.md",
@@ -202,7 +203,7 @@ const COMPONENTS: RegistryComponent[] = [
   // Claude commands
   {
     name: "claude-commands",
-    description: "Claude Code slash command wrappers for all 33 Arcane spells",
+    description: "Claude Code slash command wrappers for all 34 Arcane spells",
     files: [
       ".claude/commands/spell-arcane-version.md",
       ".claude/commands/spell-architect.md",
@@ -235,6 +236,7 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-create-pull-request.md",
       ".claude/commands/spell-document.md",
       ".claude/commands/spell-feedback.md",
+      ".claude/commands/spell-manifest.md",
       ".claude/commands/spell-save-idea.md",
       ".claude/commands/spell-status.md",
       ".claude/commands/spell-review-batch.md",

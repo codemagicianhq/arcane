@@ -30,7 +30,7 @@ npm install -g arcane-cli   #  then:  spell init
 
 <div align="center">
 
-**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 33 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 19 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
+**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 34 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 19 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
 
 </div>
 
@@ -113,19 +113,19 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 
 | Layer | What you get |
 | --- | --- |
-| 📜 **Spells** | **33** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
+| 📜 **Spells** | **34** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
 | ⚖️ **Governance** | **19** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
 | 🤖 **Agents** | **12** ready-made agent personas with roles, clusters, and a gamified autonomy model — assign work and power levels per repo. |
 | 🛠️ **CLI** | `spell init / add / update / status / uninstall` — install by profile or à la carte, and keep everything in sync as new versions ship. |
 
 <details>
-<summary><b>📜 The full spell catalogue (33)</b></summary>
+<summary><b>📜 The full spell catalogue (34)</b></summary>
 
 **Core Spell Loop** — `plan` · `enchant` · `scope` · `architect` · `implement` · `test` · `review` · `ship`
 **Session** — `open-session` · `close-session` · `status`
 **Operational & Git** — `commit-work` · `todo` · `check-drift` · `bug` · `create-pull-request` · `address-review` · `bump`
 **Specialized** — `full-cycle` · `review-batch` · `security-review` · `dotnet-expert` · `product-review` · `suggest-feature`
-**Knowledge & Docs** — `document` · `explain-concept` · `feedback` · `save-idea`
+**Knowledge & Docs** — `document` · `explain-concept` · `feedback` · `save-idea` · `manifest`
 **Business & Admin** — `summon-venture` · `brainstorm` · `generate-bot-icons` · `present-arcane` · `arcane-version`
 
 </details>
