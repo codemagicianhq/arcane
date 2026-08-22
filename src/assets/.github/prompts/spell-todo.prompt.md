@@ -27,8 +27,8 @@ Output format:
 ```
 Todo sweep — N books, M open items
 
-hub TODO.md            12 open, oldest 2026-07-14
-ventures/ordovica/TODO.md   3 open, oldest 2026-08-10
+hub TODO.md               12 open, oldest 2026-07-14
+ventures/ordovica/TODO.md  3 open, oldest 2026-08-10
 ```
 
 ## Step 0 — Venture Targeting (Hub Only)
