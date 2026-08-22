@@ -359,6 +359,19 @@ git push origin --delete type/old-topic  # delete remote branch (safety net; ign
 
 This applies to all actors — humans, interactive tools (Copilot, Claude), and autonomous agents. The `spell-commit-work` and `spell-close-session` prompts enforce this check.
 
+### Same-Vantage-Point Check (EF-33 / ARC-028 R7)
+
+`git worktree list` and `git branch --merged` can **truthfully** report a live, healthy linked worktree or an unmerged branch as `prunable`/gone-safe-to-delete when read through a cross-filesystem bridge — a Linux-side mount of a Windows host, a remote-mounted volume, a container bind-mount, any path-translation layer between the reading process and the repository's actual owning environment. The registered absolute path simply doesn't resolve from that vantage point, even though the directory exists and is valid from the machine that owns it. Nothing in Git's own output distinguishes "confirmed absent" from "not resolvable from this process's filesystem view" — both render identically as `prunable`.
+
+**Before running any Git command with irreversible effects on worktree, branch, or ref state** — `git worktree prune`, `git worktree remove`, `git gc --prune=now`, `git branch -d`/`-D`, or manual deletion of `.git/worktrees/<name>` metadata — **when the repository or its linked worktrees might be reached through more than one filesystem view**, perform the same-vantage-point check first:
+
+1. Resolve the registered path exactly as Git sees it (`git worktree list --porcelain`'s `worktree` field, or the branch's tracked path).
+2. Independently confirm that path from the **current process's own filesystem** — `Test-Path` (PowerShell), `[ -e "$path" ]` (POSIX shell), `os.path.exists()` (Python), or equivalent. Never treat Git's own `prunable`/merged annotation as sufficient evidence on its own.
+3. Only proceed with the destructive command if the independent check agrees the path is genuinely absent (or, for branches, that the content is genuinely merged — see the ancestry-vs-content-verification finding in `TODO.md`'s PR Workflow section, a related but distinct hazard).
+4. If the two checks disagree, or if there is any doubt about which environment actually owns the repository, **stop and ask** rather than trusting the more convenient answer.
+
+This is documented as a standing operational caution, not a code-level gate: EF-33's own intake report frames the underlying defect as cross-machine/cross-mount filesystem visibility, which no single CI runner can reproduce — the confirmation step above must be followed manually by whichever human or agent is about to run the destructive command. Confirmed as a live near-miss on 2026-08-03: a Linux-side read reported eight healthy linked worktrees `prunable`; the same repository read from Windows (their actual owning environment) showed zero prunable entries, and `git worktree prune -v` there removed nothing.
+
 ### ADO PR Lifecycle — Complete Command Reference
 
 When working in an Azure DevOps repo with branch protection (direct push to `main` rejected), use this exact sequence. Several shortcut tools have known reliability issues on Windows — use the commands below instead.

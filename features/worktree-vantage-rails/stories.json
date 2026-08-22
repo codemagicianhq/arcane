@@ -1,0 +1,71 @@
+{
+  "feature": "worktree-vantage-rails",
+  "branchName": "claude/fix/ef33-worktree-vantage-rails",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "WVR-1",
+      "title": "New git-conventions.md section defining the same-vantage-point check",
+      "description": "Canonical definition (D1) placed after Post-Merge Cleanup, naming the exact mechanism per EF-33's proposed fix.",
+      "acceptanceCriteria": [
+        "Section exists, names the exact commands (git worktree list --porcelain cross-referenced against an independent existence check)",
+        "Scoped to destructive operations: worktree prune/remove, gc, branch deletion (D2)"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-worktree-vantage-check.test.ts's 'git-conventions.md defines the same-vantage-point check' suite: 4/4 passing, including section-ordering (after Post-Merge Cleanup) and scope (all 4 destructive operation names present)."
+    },
+    {
+      "id": "WVR-2",
+      "title": "Rail the three existing branch-deletion sites",
+      "description": "spell-commit-work.prompt.md, spell-close-session.prompt.md, spell-ship.prompt.md all reference the new check before their git branch -d step.",
+      "acceptanceCriteria": [
+        "All three sites reference the same-vantage-point check by name"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-worktree-vantage-check.test.ts's 'branch-deletion sites reference the check' suite: 3/3 passing."
+    },
+    {
+      "id": "WVR-3",
+      "title": "Caveat the worktree-list/stale-branch reads in spell-open-session",
+      "description": "The read that can produce the false-prunable state gets a caveat, not a gate (D2).",
+      "acceptanceCriteria": [
+        "spell-open-session.prompt.md's worktree list and branch --merged lines carry the cross-mount caveat"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-worktree-vantage-check.test.ts's 'spell-open-session caveats the reads' suite: 2/2 passing, also confirming the stale-branch line cross-references the (separately shipped) ancestry-vs-content merged-branch verification finding."
+    },
+    {
+      "id": "WVR-4",
+      "title": "agent-policies.md: working-tree dimension in Multi-Agent Concurrency Rules",
+      "description": "New rule alongside the existing 7, per ARC-028 item 11(a).",
+      "acceptanceCriteria": [
+        "New rule present, references the same-vantage-point check"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/prompt-worktree-vantage-check.test.ts's 'agent-policies.md gains the working-tree dimension' suite: 2/2 passing."
+    },
+    {
+      "id": "WVR-5",
+      "title": "DECISIONS.md ARC-028 annotation + EF-33.md status flip + regression coverage",
+      "description": "ARC-028 item 11(d) annotated shipped (ADR stays Proposed); EF-33.md deferred -> shipped; string-assertion tests for all of the above.",
+      "acceptanceCriteria": [
+        "ARC-028's status field is untouched (stays Proposed)",
+        "EF-33.md status: shipped",
+        "New test file passes; self-host parity clean"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "DECISIONS.md ARC-028 item 11 annotated (11a's agent-policies portion and 11d struck through as shipped 2026-08-22; ADR's own Status field left untouched at Proposed -- verified by direct read after edit). EF-33.md frontmatter: deferred -> shipped. New test/prompt-worktree-vantage-check.test.ts: 11/11 passing. Full suite: 528/529 passing (1 unrelated skip), lint clean, typecheck clean, self-host parity clean."
+    }
+  ]
+}

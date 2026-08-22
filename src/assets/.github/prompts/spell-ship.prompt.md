@@ -93,7 +93,7 @@ Workflow:
 9. **Post-merge branch cleanup** (after the PR merges) — the merge was the human gate, so cleanup is automatic:
    - Switch to the main branch (e.g. `git checkout main`).
    - Pull the latest (e.g. `git pull`).
-   - Delete the merged topic branch locally (e.g. `git branch -d <branch>`).
+   - Delete the merged topic branch locally (e.g. `git branch -d <branch>`) — if the repository or its linked worktrees might be reached through more than one filesystem view, run the same-vantage-point check first (EF-33 / ARC-028 R7, [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Same-Vantage-Point Check section).
    - Delete the merged topic branch on the remote (e.g. `git push origin --delete <branch>`); tolerate an already-deleted remote branch.
    - Prune stale remote-tracking refs (e.g. `git fetch --prune` or `git remote prune origin`).
 

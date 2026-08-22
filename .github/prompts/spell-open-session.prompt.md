@@ -70,13 +70,13 @@ Then produce output in this exact structure:
 
 Before anything else, check:
 
-- **Current branch:** Run `git branch --show-current` and `git worktree list`. Report the current state; do not switch during this read-only check. Branch creation/switching is owned by the lazy Mutation Guard.
+- **Current branch:** Run `git branch --show-current` and `git worktree list`. Report the current state; do not switch during this read-only check. Branch creation/switching is owned by the lazy Mutation Guard. **Caveat (EF-33):** if this repository or its linked worktrees might be reached through more than one filesystem view (a bridged/remote mount, a container bind-mount), `git worktree list` can truthfully report a live, healthy worktree as `prunable` when read from a vantage point that can't resolve its registered path — this is a read-only report, not a reason to act; never run a destructive worktree/branch command on its output alone (see git-conventions.md's Same-Vantage-Point Check section before any such command elsewhere in this or later sessions).
 - **Session branch naming compliance:** Branch names must be human-readable and policy-compliant:
   - Interactive session default: `sessions/YYYY-MM-DD-<topic-slug>` (kebab-case topic from current task/session objective).
   - Disallow random adjective-noun generator names (example: `ideal-disco`) as session defaults.
   - If current branch is non-compliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
-- **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted.
+- **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted. This lists candidates only — before deleting any, apply the same-vantage-point check (EF-33) and, separately, verify by content rather than trusting ancestry alone (rebase-and-fast-forward merges are invisible to `--merged`; see the merged-branch cleanup item in TODO.md).
 - **Tracker configuration check (early):** resolve active tracking settings before planning. Read root `.arcane.json` first (if present), then the current feature PRD frontmatter if available. A self-host marker under `src/assets/` is doctor metadata, not active repository configuration; never use it as tracking provenance. If neither active source sets tracking, ask the operator and treat the answer as session-scoped until EF-14 defines persistent configuration:
   - `tracking_mode: internal | external`
   - `external_provider: ado | jira | other`
