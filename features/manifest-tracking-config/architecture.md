@@ -2,10 +2,13 @@
 
 ## Overview
 
-One new ADR (amends ARC-020). Five source files (types.ts, manifest.ts, init.ts, hub.ts,
-plus their existing test files). Seven prompt-template edits in
-src/assets/.github/prompts/ (mirrored to root): two for tracking-mode resolution, five for
-{BUSINESS_ROOT} resolution.
+One new ADR (amends ARC-020). Four source files (types.ts, manifest.ts, init.ts, hub.ts),
+plus their existing test files. Nine prompt-template edits across seven files in
+src/assets/.github/prompts/ (mirrored to root): spell-open-session and spell-plan each get two
+edits (tracking-mode resolution AND {BUSINESS_ROOT} resolution, at separate lines); five more
+files get one {BUSINESS_ROOT} edit each (spell-check-drift, spell-commit-work, spell-todo,
+spell-summon-venture, spell-save-idea -- the last two found only by adversarial review, not the
+original intake or the first fix pass).
 
 ## Data flow
 
@@ -95,8 +98,10 @@ behavior for an unrecognized error).
 - New test/prompt-tracking-and-business-root.test.ts: string-assertion tests (matching this
   repo's established pattern for prompt-template content) confirming: both tracking-mode
   prompts document the full resolution chain including the self-hosted-source-manifest tier;
-  none of the five EF-08 files' resolution/label contexts contain a literal ventures/ where
-  {BUSINESS_ROOT} belongs; the {BUSINESS_ROOT} resolution sentence appears in each of the five.
+  none of the seven EF-08 files' resolution/label contexts contain a literal ventures/ where
+  {BUSINESS_ROOT} belongs; the {BUSINESS_ROOT} resolution sentence appears in each of the seven
+  (two of the seven -- spell-summon-venture, spell-save-idea -- were added across two later
+  adversarial-review rounds, not the original pass).
 
 ## Security
 
