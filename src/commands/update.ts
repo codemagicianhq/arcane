@@ -7,7 +7,8 @@ import {
 } from "../modules/manifest.js";
 import { inspectGitRepository } from "../modules/git.js";
 import { getComponent, ComponentNotFoundError } from "../modules/registry.js";
-import type { InstalledComponent, SpellUpdateOptions } from "../types.js";
+import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from "../modules/hub.js";
+import type { ArcaneManifest, InstalledComponent, SpellUpdateOptions } from "../types.js";
 
 /**
  * Runs the `spell update` command.
@@ -143,14 +144,36 @@ export async function runUpdate(
     console.log(
       `\n[dry-run] Would update ${fileCount} files.`,
     );
+    const applicableRetrofits = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
+    if (applicableRetrofits.length > 0) {
+      console.log(
+        `[dry-run] Would ask ${applicableRetrofits.length} manifest retrofit question${applicableRetrofits.length === 1 ? "" : "s"}: ${applicableRetrofits.map((r) => r.field).join(", ")}.`,
+      );
+    }
     return;
   }
 
-  // Update manifest with new version and refreshed component file paths
-  const updated = { ...manifest, version: packageVersion, components: updatedComponents };
+  // Retrofit wizard: ask about any manifest field this install predates
+  // (e.g. `role`), once, before writing the updated manifest.
+  const retrofitPatch = await runManifestRetrofits(manifest);
+
+  // Update manifest with new version, refreshed component file paths, and
+  // any retrofit answers.
+  const updated: ArcaneManifest = {
+    ...manifest,
+    version: packageVersion,
+    components: updatedComponents,
+    ...retrofitPatch,
+  };
   await writeManifest(targetDir, updated);
 
   console.log(
     `\n\u2713 Updated ${fileCount} files.`,
   );
+
+  // If this update just turned the repo into a hub, offer to scaffold the
+  // venture registry from whatever already exists under business_root.
+  if (manifest.role !== "hub" && updated.role === "hub") {
+    await offerRegistryScaffold(targetDir, updated.business_root ?? "ventures");
+  }
 }

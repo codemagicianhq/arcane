@@ -21,6 +21,7 @@ import { runAgentsInit } from "../modules/agents.js";
 import { countUncommittedChanges } from "../modules/git.js";
 import type {
   ArcaneManifest,
+  HubRole,
   InstalledComponent,
   Profile,
   RegistryComponent,
@@ -288,12 +289,29 @@ export async function runInit(
     return;
   }
 
+  // ── Step 5a: Hub question ───────────────────────────────────────────────
+  // Explicit opt-in only -- never inferred from repo content (a `ventures/`
+  // directory can legitimately exist in a consumer repo too, e.g. one this
+  // very init run just created via a governance-only profile). Written
+  // explicitly either way so a future `spell update` retrofit wizard can
+  // tell "asked and declined" apart from "predates this feature".
+  let role: HubRole | undefined;
+  if (!options.profile) {
+    console.log();
+    const isHub = await confirm({
+      message: "Will this repo manage other ventures as a hub? (idea books, spell-manifest promotion, venture registry)",
+      default: false,
+    });
+    role = isHub ? "hub" : "consumer";
+  }
+
   // ── Step 6: Write manifest ─────────────────────────────────────────────
   const manifest: ArcaneManifest = {
     version: packageVersion,
     profile,
     installedAt: new Date().toISOString(),
     components: installedComponents,
+    ...(role ? { role } : {}),
   };
   await writeManifest(targetDir, manifest);
 
