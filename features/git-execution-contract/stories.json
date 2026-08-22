@@ -34,7 +34,7 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "test/git-execution-contract.test.ts: 14/14 passing, covering R1-R4. The original EF-13 optional-locks test used a Windows chmod fixture that adversarial review proved vacuous (chmod-444 on a Windows directory doesn't block file creation inside it) -- removed and replaced with an honest scope disclosure rather than a false-confidence test; see TODO.md's EF-13/EF-20 entry and the follow-up task filed for a real restricted-filesystem harness. Full suite 469/470 passing, lint clean, typecheck clean."
+      "testEvidence": "test/git-execution-contract.test.ts: 14/14 passing, covering R1-R4. The original EF-13 optional-locks test used a Windows chmod fixture that adversarial review proved vacuous (chmod-444 on a Windows directory doesn't block file creation inside it) -- removed and replaced with an honest scope disclosure rather than a false-confidence test; see TODO.md's EF-13/EF-20 entry and the follow-up task filed for a real restricted-filesystem harness. Full suite 469/470 passing, lint clean, typecheck clean. A second independent review verified all 8 findings fixed (APPROVE); it also caught that this file's branch-coverage figure (90.24%) was measured from a full-suite coverage run, which differs slightly from an isolated two-file run (90.00%, 36/40 branches) -- both are real measurements of the same code, differing only in which other tests indirectly exercise git.ts in the same process."
     }
   ]
 }
