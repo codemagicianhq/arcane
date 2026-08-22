@@ -13,14 +13,18 @@ let plan: string;
 let checkDrift: string;
 let commitWork: string;
 let todo: string;
+let summonVenture: string;
+let saveIdea: string;
 
 beforeAll(async () => {
-  [openSession, plan, checkDrift, commitWork, todo] = await Promise.all([
+  [openSession, plan, checkDrift, commitWork, todo, summonVenture, saveIdea] = await Promise.all([
     read("spell-open-session.prompt.md"),
     read("spell-plan.prompt.md"),
     read("spell-check-drift.prompt.md"),
     read("spell-commit-work.prompt.md"),
     read("spell-todo.prompt.md"),
+    read("spell-summon-venture.prompt.md"),
+    read("spell-save-idea.prompt.md"),
   ]);
 });
 
@@ -86,13 +90,15 @@ describe("EF-08: {BUSINESS_ROOT} resolution replaces hardcoded ventures/ (MTC-5)
 
   it("spell-todo: none of its six ventures/ references remain hardcoded", () => {
     expect(todo).not.toContain("ventures/<slug>/TODO.md");
-    expect(todo).not.toContain("ventures/ordovica/TODO.md");
     expect(todo).not.toContain("`ventures/registry.json`'s aliases");
     expect(todo).not.toContain('under ventures/ (closest:');
     expect(todo).not.toContain("business under `ventures/`");
     expect(todo).not.toContain("`ventures/<name>/overview.md`");
-    // 7 total: the Step 0 resolution sentence itself, plus 6 fixed call sites.
-    expect((todo.match(/\{BUSINESS_ROOT\}/g) ?? []).length).toBe(7);
+    // 6 total: the resolution sentence itself, plus 5 fixed call sites -- the
+    // Sweep Mode sample-output block deliberately kept a concrete illustrative
+    // example (ventures/ordovica/TODO.md) rather than the literal placeholder,
+    // matching the codebase's established convention for worked-example output.
+    expect((todo.match(/\{BUSINESS_ROOT\}/g) ?? []).length).toBe(6);
   });
 
   it("spell-todo defines how {BUSINESS_ROOT} resolves before using it", () => {
@@ -103,6 +109,33 @@ describe("EF-08: {BUSINESS_ROOT} resolution replaces hardcoded ventures/ (MTC-5)
     // position IS the first raw occurrence -- assert the sentence starts
     // at or before it, not exact equality (the sentence's leading text
     // like "Resolve `" precedes the token within the same string).
+    expect(definitionIdx).toBeLessThanOrEqual(firstUseIdx);
+  });
+
+  // [Review round] spell-summon-venture already resolved {BUSINESS_ROOT} for
+  // folder creation but still hardcoded ventures/registry.json for the write
+  // path -- a real EF-08 instance the first pass missed because this file
+  // was (wrongly) cited in the PRD as an "already correct" reference example,
+  // so it was never checked. Covered directly now.
+  it("spell-summon-venture: registry write path resolves {BUSINESS_ROOT}, not a hardcoded ventures/registry.json", () => {
+    expect(summonVenture).not.toContain("`ventures/registry.json` and append");
+    expect(summonVenture).not.toContain("[ventures/_template/overview.md]");
+    expect(summonVenture).not.toContain("including the `ventures/registry.json` entry");
+    expect(summonVenture).toContain("`{BUSINESS_ROOT}/registry.json` and append");
+    expect(summonVenture).toContain("{BUSINESS_ROOT}/_template/overview.md");
+  });
+
+  // [Review round] spell-save-idea and spell-todo were built as siblings in
+  // the same ARC-030 commit with near-identical Step 0 venture-targeting
+  // logic; only spell-todo was fixed in the first pass. Covered directly now.
+  it("spell-save-idea: Step 0 venture targeting resolves {BUSINESS_ROOT}, not hardcoded ventures/", () => {
+    expect(saveIdea).not.toContain("`ventures/registry.json`'s aliases");
+    expect(saveIdea).not.toContain('under ventures/ (closest:');
+    expect(saveIdea).toContain("`{BUSINESS_ROOT}/registry.json`'s aliases");
+    expect(saveIdea).toContain("under {BUSINESS_ROOT}/ (closest:");
+    const definitionIdx = saveIdea.indexOf("Resolve `{BUSINESS_ROOT}` from `.arcane.json`");
+    const firstUseIdx = saveIdea.indexOf("{BUSINESS_ROOT}");
+    expect(definitionIdx).toBeGreaterThan(-1);
     expect(definitionIdx).toBeLessThanOrEqual(firstUseIdx);
   });
 });

@@ -21,10 +21,12 @@ The user's input IS the idea. If no idea text was provided, ask one short questi
 
 ## Step 0 — Venture Targeting (Hub Only)
 
-If the input names a venture ("save this idea for ordo", `--venture <slug>`), resolve it through `ventures/registry.json`'s aliases first (exact slug → alias → closest match offered — never guessed). Unknown slug:
+Resolve `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field (default `ventures/` if unset) before anything below.
+
+If the input names a venture ("save this idea for ordo", `--venture <slug>`), resolve it through `{BUSINESS_ROOT}/registry.json`'s aliases first (exact slug → alias → closest match offered — never guessed). Unknown slug:
 
 ```
-No venture "<slug>" under ventures/ (closest: ordovica, tidewright).
+No venture "<slug>" under {BUSINESS_ROOT}/ (closest: ordovica, tidewright).
 1) use <closest>  2) save to hub root IDEAS.md  3) cancel (create the venture first: spell-summon-venture)
 ```
 

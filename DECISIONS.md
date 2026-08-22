@@ -810,6 +810,7 @@ The single-layer model does not yet let an operator override a shipped standard 
 **Date:** 2026-07-31
 **Status:** Proposed
 **Intake:** [EF-14](docs/intake/batch-001/EF-14.md)
+**Amended by:** [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (resolved inline-vs-separate-file for venture/portfolio data -- chose separate, `{business_root}/registry.json`), [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (resolved the same question for `tracking_mode`/`external_provider` -- chose inline, matching `profile`). The broader schema (operator identity, provider coordinates, repository lists) remains open below.
 
 **Context:**
 

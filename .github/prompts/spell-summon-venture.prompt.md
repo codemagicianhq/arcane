@@ -36,7 +36,7 @@ Use these files first (each is optional — if missing, proceed as noted):
 
 - [playbooks/new-business-setup.md](../../playbooks/new-business-setup.md) — setup playbook. If `playbooks/` doesn't exist, skip and derive steps from the venture-type checklist below.
 - [naming-conventions.md](../../.arcane/governance/naming-conventions.md) — slug/file naming rules. If missing, default to lowercase-with-dashes slugs.
-- [ventures/\_template/overview.md](../../ventures/_template/overview.md) — overview template. If missing, generate a minimal overview from the fields below.
+- `{BUSINESS_ROOT}/_template/overview.md` — overview template. If missing, generate a minimal overview from the fields below.
 - [.arcane/templates/venture-template/IDEAS.md](../../.arcane/templates/venture-template/IDEAS.md) and [.arcane/templates/venture-template/TODO.md](../../.arcane/templates/venture-template/TODO.md) — book stubs. If missing, use the header format from [[spell-save-idea|spell-save-idea]] / [[spell-todo|spell-todo]].
 - [README.md](../../README.md) — repo navigation. If missing, skip cross-linking.
 - [project.md](../../project.md) — project context. If missing, skip.
@@ -54,7 +54,7 @@ Use these files first (each is optional — if missing, proceed as noted):
 
 ## Step 3 — Register the Venture
 
-Open (or create, with the standard header — see `ventures/registry.json`'s own `_comment` field for the expected shape) `ventures/registry.json` and append an entry keyed by the slug:
+Open (or create, with the standard header — see `{BUSINESS_ROOT}/registry.json`'s own `_comment` field for the expected shape) `{BUSINESS_ROOT}/registry.json` and append an entry keyed by the slug:
 
 ```json
 "<slug>": {
@@ -83,7 +83,7 @@ Output format:
 
 ## Created
 
-- File and folder paths created, including the `ventures/registry.json` entry.
+- File and folder paths created, including the `{BUSINESS_ROOT}/registry.json` entry.
 
 ## Defaults Applied
 
