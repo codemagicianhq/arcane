@@ -1,19 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { spawnSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { runGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
 const POLICY_PATH = join(process.cwd(), ".gitattributes");
-
-function runGit(root: string, args: string[]): string {
-    const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
-    if (result.status !== 0) {
-        throw new Error(result.stderr || `git ${args.join(" ")} failed`);
-    }
-    return result.stdout.trim();
-}
 
 async function writeFixtureFile(root: string, path: string, content: string | Uint8Array) {
     const target = join(root, path);

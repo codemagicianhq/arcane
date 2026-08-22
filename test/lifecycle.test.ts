@@ -10,10 +10,10 @@
  */
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { promises as fs } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { runGit } from "./helpers/git-fixture.js";
 
 // ─── Mock version-check module (used by runStatus) ───────────────────────────
 // Must be hoisted before any imports that transitively pull in version-check.
@@ -40,13 +40,6 @@ const PACKAGE_VERSION = "0.1.0";
 // A component not in the lite profile, used to exercise `spell add`
 const EXTRA_COMPONENT = "decision-documentation-standard";
 const EXTRA_FILE = ".arcane/governance/decision-documentation-standard.md";
-
-function runGit(dir: string, args: string[]) {
-  const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
-  if (result.status !== 0) {
-    throw new Error(result.stderr || `git ${args.join(" ")} failed`);
-  }
-}
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 describe("lifecycle — full spell loop (init → add → status → update → uninstall)", () => {

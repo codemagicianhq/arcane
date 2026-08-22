@@ -1,23 +1,15 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
-import { spawnSync } from "node:child_process";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { inspectGitRepository } from "../src/modules/git.js";
+import { createFixtureDir, runGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
 
 async function createTempDir() {
-    const dir = await fs.mkdtemp(join(tmpdir(), "git-state-test-"));
+    const dir = await createFixtureDir("git-state-test");
     tempDirs.push(dir);
     return dir;
-}
-
-function runGit(dir: string, args: string[]) {
-    const result = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
-    if (result.status !== 0) {
-        throw new Error(result.stderr || `git ${args.join(" ")} failed`);
-    }
 }
 
 afterEach(async () => {
