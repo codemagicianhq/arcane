@@ -24,18 +24,31 @@ verified") would re-introduce the ambiguity the fix exists to remove — "unveri
 needs to be distinct from "pending" (one means "can't check," the other means "checked and it's
 still running"), since they demand different handoff language and different operator actions.
 
-**D3 — `unverifiable` requires a stated verification action, not just the label.** A bare
-"unverifiable" is barely better than silence — the intake's own framing ("there's no structured
-way for a session to write down 'I couldn't check this'") specifically wants "I don't know yet"
-to be a *useful* state, which requires telling the next reader (operator or next session) exactly
-what to run or look at.
+**D3 — `unverifiable` requires a stated verification action, not just the label, AND requires
+genuinely attempting the check first.** A bare "unverifiable" is barely better than silence — the
+intake's own framing ("there's no structured way for a session to write down 'I couldn't check
+this'") specifically wants "I don't know yet" to be a *useful* state, which requires telling the
+next reader (operator or next session) exactly what to run or look at. **Adversarial review
+found a one-level-down version of EF-21's own core worry:** a vague rule creates room to
+rationalize "verified enough"; without a check, `unverifiable` could just as easily become the
+path of least resistance for "didn't want to spend the tool calls" as for a genuine access limit
+— technically satisfying the new rule's letter while defeating its purpose exactly as EF-21's
+original ambiguity did. Step 1b now states explicitly that `unverifiable` follows a genuine
+attempt, not a default. The verification-action field itself was also tightened: `dispatched`,
+`pending`, and `unverifiable` all require a real action; only `failed` (already resolved, nothing
+left to check) may say "N/A" — the original version let any non-succeeded state claim "N/A" if
+"self-evident," which under-specified exactly the states (dispatched/pending) where
+`spell-open-session`'s later re-check most needs something concrete to act on.
 
-**D4 — Generalizes the existing PR-merge check (step 10) rather than replacing it.** Step 10
-already verifies "through the detected provider that the PR is merged before changing branches"
-— a working example of exactly this pattern, scoped to one specific case (the close-session's own
-PR). D2's vocabulary and D1's step apply the same discipline to *every* piece of async work
-dispatched during the session, not just that one case; step 10's existing check is left intact
-and becomes one instance of the general pattern rather than a special case needing its own logic.
+**D4 — Generalizes the existing PR-merge check (step 10) rather than replacing it, with an
+explicit cross-reference (added after adversarial review found the first version only claimed
+this in the architecture doc, not in the shipped prompt text).** Step 10 already verifies
+"through the detected provider that the PR is merged before changing branches" — a working
+example of exactly this pattern, scoped to one specific case (the close-session's own PR). D2's
+vocabulary and D1's step apply the same discipline to *every* piece of async work dispatched
+during the session, not just that one case. Step 10's existing check is left intact; step 1b now
+explicitly states the two are the same requirement and both apply, so an agent can't satisfy one
+and assume the other is covered.
 
 **D5 — `spell-open-session` re-verifies, not just relays.** Per the intake's core point ("the next
 session trusts that handoff as source context... one ambiguous completion judgment can propagate

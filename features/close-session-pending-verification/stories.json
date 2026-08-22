@@ -67,7 +67,24 @@
       "priority": "high",
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "New test/prompt-pending-verification.test.ts: 13/13 passing. No collateral breakage in the other prompt-assertion suites (prompt-session-branch-gate, prompt-autonomy-gates, prompt-path-resolution, repository-instructions, org-token-lint: 35/35 passing). Self-host parity regenerated (2 files repaired: both edited prompts) and verified clean. Full suite: 511/512 passing (1 unrelated skip), lint clean, typecheck clean."
+      "testEvidence": "test/prompt-pending-verification.test.ts: 19/19 passing (up from 13 after review-driven additions). No collateral breakage in the other prompt-assertion suites. Self-host parity regenerated and verified clean. Full suite (after review fixes): 517/518 passing (1 unrelated skip), lint clean, typecheck clean."
+    },
+    {
+      "id": "PV-6",
+      "title": "[Review-driven] Close the loopholes an independent adversarial review found",
+      "description": "Two HIGH findings and four MEDIUM/LOW findings from adversarial review, all fixed: (R1, HIGH) the new Pending Verification field's own text named 'Last completed step' as a legitimate home for a completion claim, in the same breath as What Got Done/TODO.md -- but only those two were gated to step 1b's succeeded classification; Last completed step was left ungated, reproducing EF-21's exact incident shape one field away from the fix, in the field spell-open-session surfaces first and most prominently. (R2, HIGH) none of the original 13 tests covered step 1b's actual operative clause ('actively check its current status... and classify') -- a future edit could weaken that one sentence back into 'consider likely status' and every test would still pass, since they only checked state names and downstream gating. (R3, MEDIUM) unverifiable had no language distinguishing a genuine access limit from a lower-effort default. (R4, MEDIUM) architecture.md claimed step 1b 'generalizes' step 10's existing PR-merge check, but nothing in the shipped prompt text actually connected them. (R5, LOW) TODO.md's illustrative non-succeeded list omitted 'failed'. (R6, MEDIUM) the verification-action field allowed 'N/A' for any non-succeeded state, including dispatched/pending -- exactly where open-session's re-check needs something concrete.",
+      "acceptanceCriteria": [
+        "Last completed step is gated the same way as What Got Done and TODO.md",
+        "New tests directly assert the 'actively check' operative clause",
+        "unverifiable requires attempting the check first, stated explicitly",
+        "Step 10 and step 1b explicitly cross-reference as the same requirement",
+        "TODO.md's example list includes failed",
+        "N/A is restricted to the failed state only"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "6 new tests added to test/prompt-pending-verification.test.ts covering each finding directly. All 19 tests passing, full suite 517/518, lint clean, typecheck clean, self-host parity clean."
     }
   ]
 }

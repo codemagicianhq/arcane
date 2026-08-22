@@ -33,15 +33,17 @@ Workflow:
    - Lessons learned (anything that cost time, surprised the user, or should prevent future mistakes).
    - **Capture tie-in tip:** If this session produced durable analysis worth formalizing (a design, an investigation, a reusable explanation), suggest running `spell-document` before closing so it lands in the right doc. For quick ideas worth keeping but not yet actionable, suggest `spell-save-idea`.
 
-1b. **Verify in-flight async work before writing any output artifact (EF-21).** "I started it" is not "it worked." Before the journal, TODO.md, or the handoff are written, enumerate every piece of asynchronous work dispatched during this session that could still be running or could have failed after being kicked off — CI/CD runs, deployments, package publishes, long-running background tasks, PR checks. For each, actively check its current status through whatever means is available (CI provider API/CLI, deployment dashboard, `gh run view`, `az pipelines runs show`, etc.) and classify it into exactly one state:
+1b. **Verify in-flight async work before writing any output artifact (EF-21). Enforcement: a required manual step in this workflow — self-declared per ARC-023, since prose has no executable check to bind this to.** "I started it" is not "it worked." Before the journal, TODO.md, or the handoff are written, enumerate every piece of asynchronous work dispatched during this session that could still be running or could have failed after being kicked off — CI/CD runs, deployments, package publishes, long-running background tasks, PR checks. For each, **actively check** its current status through whatever means is available (CI provider API/CLI, deployment dashboard, `gh run view`, `az pipelines runs show`, etc.) — attempt the check before reaching for `unverifiable`; that state exists for genuine access limits (no CLI/API access, no credentials, provider outage), not for skipping a check that was merely inconvenient to run. Then classify into exactly one state:
 
     - **succeeded** — confirmed complete and correct. Only this state may be described as "done," "completed," or "shipped" anywhere in the journal, TODO.md, or the handoff.
     - **failed** — confirmed to have failed. Record as a blocker or carry-forward item, never as done.
     - **pending** — still running at last check. Record as in-flight; do not describe as complete.
     - **dispatched** — kicked off, but no result has been observed at all (the letter was handed to the post office — you know it was sent, not whether it arrived).
-    - **unverifiable** — this environment cannot query the target system (no CLI/API access, no credentials, provider outage). State the exact command, URL, or action the operator must run to check it themselves — a bare "unverifiable" with no next step is barely better than silence.
+    - **unverifiable** — only after genuinely attempting the check above and finding this environment cannot query the target system. State the exact command, URL, or action the operator must run to check it themselves — a bare "unverifiable" with no next step is barely better than silence, and reaching for this state without attempting the check first defeats the purpose of this step as surely as skipping it entirely.
 
-    A commit succeeding, code being pushed, or a build being triggered are all **dispatched**, not **succeeded** — do not write any of them as complete until independently confirmed. Carry every non-succeeded item into the handoff's `Pending Verification` field (step 5b).
+    A commit succeeding, code being pushed, or a build being triggered are all **dispatched**, not **succeeded** — do not write any of them as complete until independently confirmed. Carry every non-succeeded item into the handoff's `Pending Verification` field (step 5b), and into `Last completed step` worded as not-yet-complete (also step 5b).
+
+    Step 10's existing PR-merge check ("Verify through the detected provider that the PR is merged before changing branches") is this same requirement applied to one specific, already-shipped case — the close-session's own PR. Running step 10 does not substitute for step 1b's sweep of everything else dispatched this session, and step 1b does not substitute for step 10's specific merge check; both apply.
 
 2. **Update today's journal file** at `journal/YYYY-MM-DD-topic-slug.md`.
    - If it exists and already has a session section from this chat, **update that section in place** (do not create a duplicate).
@@ -60,7 +62,7 @@ Workflow:
    - Follow the existing format: Date, Status, Context, Decision, Reasoning, Rejected alternatives.
 
 4. **Update [TODO.md](../../TODO.md).**
-   - Mark an item done with date only if step 1b classified its outcome `succeeded` (or it required no async verification at all). A `pending`, `dispatched`, or `unverifiable` item stays open, regardless of how confident the session felt about it.
+   - Mark an item done with date only if step 1b classified its outcome `succeeded` (or it required no async verification at all). A `pending`, `dispatched`, `failed`, or `unverifiable` item stays open, regardless of how confident the session felt about it.
    - Keep unresolved items open.
    - Remove completed checklist items only when completion is documented in the correct source-of-truth file.
 
@@ -79,12 +81,12 @@ In `ai-context/system-prompt-context.md`, replace the existing `## Next Session 
 > Generated: YYYY-MM-DD
 
 - **Active task:** One-line description of the task that was in progress when this session closed.
-- **Last completed step:** The final concrete action taken — include file path or command text.
+- **Last completed step:** The final concrete action taken — include file path or command text. If that action was async work step 1b classified as anything other than `succeeded`, do not describe it as done here — name the action in `dispatched`/in-progress terms (e.g. "Pushed the fix and opened PR #NN" is fine; "Merged PR #NN" is not, unless step 1b confirmed the merge) and let `Pending Verification` carry the actual state.
 - **Next concrete action:** The exact first thing to do at next session start. Be specific: file, command, or decision. Never write "continue work."
 - **Active files:** Files with uncommitted changes or the focus of the last edit (comma-separated).
 - **Branch:** Output of `git branch --show-current`.
 - **Blockers:** Known unresolved blockers or dependencies. Write "None" if clear.
-- **Pending Verification:** One line per non-`succeeded` item from step 1b: `<what> — <state> — <verification action or "N/A" if the state is self-evident>`. States: `dispatched`, `pending`, `failed`, `unverifiable` (never list a `succeeded` item here — it belongs in Last completed step / TODO.md / the journal instead). Write "None" only if step 1b found every dispatched item resolved to `succeeded` or `failed` before this handoff was written.
+- **Pending Verification:** One line per non-`succeeded` item from step 1b: `<what> — <state> — <verification action>`. States: `dispatched`, `pending`, `failed`, `unverifiable` (never list a `succeeded` item here — it belongs in `Last completed step` / TODO.md / the journal instead, worded per the gating above). The verification action is required for `dispatched`, `pending`, and `unverifiable` — "N/A" is only valid for `failed`, where the state is already resolved and there is nothing left to check. Write "None" only if step 1b found every dispatched item resolved to `succeeded` or `failed` before this handoff was written.
 - **Notes:** Anything time-sensitive, fragile, or contextual that would be lost if not stated explicitly.
 ```
 
