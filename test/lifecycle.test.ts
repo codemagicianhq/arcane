@@ -28,15 +28,17 @@ vi.mock("../src/modules/version-check.js", () => ({
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 // Every runInit() call in this file passes an explicit profile, so init's own
-// interactive branches (profile picker, proceed confirm, hub question, agent
-// setup) are all skipped -- none of them ever reach a real prompt. But
-// runUpdate()'s manifest-retrofit wizard (src/modules/hub.ts) has no such
-// gate, and since this test's manifest predates `role` (init skipped that
-// question too), the update step is this file's first-ever real prompt call.
-// Without this mock it hits the actual @inquirer/prompts implementation and
-// hangs waiting on stdin.
+// interactive branches (profile picker, proceed confirm, hub question,
+// tracking-mode question, agent setup) are all skipped -- none of them ever
+// reach a real prompt. But runUpdate()'s manifest-retrofit wizard
+// (src/modules/hub.ts) has no such gate, and since this test's manifest
+// predates `role` and `tracking_mode` (init skipped both questions too), the
+// update step is this file's first-ever real prompt call. Without this mock
+// it hits the actual @inquirer/prompts implementation and hangs waiting on
+// stdin.
 vi.mock("@inquirer/prompts", () => ({
   confirm: vi.fn().mockResolvedValue(true),
+  select: vi.fn().mockResolvedValue("internal"),
 }));
 
 // Import handlers AFTER vi.mock() so the hoisted mock is in place.

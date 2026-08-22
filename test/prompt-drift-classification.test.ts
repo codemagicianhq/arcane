@@ -127,17 +127,24 @@ describe("spell-check-drift classification contract", () => {
 });
 
 describe("spell-open-session self-host tracking source", () => {
-    it("does not treat the self-host doctor marker as tracking provenance", async () => {
+    // EF-14 (shipped): tracking_mode/external_provider now persist in
+    // .arcane.json, so the self-hosted source manifest (src/assets/.arcane.json,
+    // when selfHosted: true) is a legitimate fallback tier for THIS specific
+    // field pair -- not a blanket "never use it" rule, and no longer
+    // session-scoped pending a future fix.
+    it("reads the self-hosted source manifest's tracking_mode as a resolution fallback, not blanket doctor-only metadata", async () => {
         const openSessionPrompt = await fs.readFile(
             join(ASSETS_DIR, ".github", "prompts", "spell-open-session.prompt.md"),
             "utf8",
         );
 
-        expect(openSessionPrompt).toContain(
-            "A self-host marker under `src/assets/` is doctor metadata, not active repository configuration",
+        expect(openSessionPrompt).toContain("src/assets/.arcane.json");
+        expect(openSessionPrompt).toContain('declares `selfHosted: true`');
+        expect(openSessionPrompt).not.toContain(
+            "never use it as tracking provenance",
         );
-        expect(openSessionPrompt).toContain(
-            "treat the answer as session-scoped until EF-14 defines persistent configuration",
+        expect(openSessionPrompt).not.toContain(
+            "session-scoped until EF-14 defines persistent configuration",
         );
     });
 });

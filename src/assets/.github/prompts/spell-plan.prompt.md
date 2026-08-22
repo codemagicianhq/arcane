@@ -31,8 +31,14 @@ Workflow:
    external_provider: ado | jira | other
    ```
 
+   Resolve in this order, matching spell-open-session's own resolution chain (EF-14): root
+   `.arcane.json` (if present) → the committed self-hosted source manifest (`src/assets/.arcane.json`,
+   read only when it declares `selfHosted: true`) → the current feature PRD frontmatter → ask.
+   Do not re-ask when any of the first three sources already sets it.
+
    Rules:
    - If not explicitly set and ADO context is already present (work item ID + org/project), default to `tracking_mode: external`, `external_provider: ado` for backward compatibility.
+   - If none of the three sources above set it and no ADO context exists, ask: "Track work in this repo (TODO.md / PRDs)" [internal] vs "Track work in an external tracker (Azure DevOps / Jira / other)" [external].
    - If `tracking_mode=internal`, do not require an external tracker ID.
    - If `tracking_mode=external` and `external_provider=ado`, collect org/project and resolve process template + available work item types before planning:
      ```bash
@@ -64,7 +70,7 @@ Workflow:
    - Are there existing ADRs or constraints?
    - **If `tracking_mode=external` and `external_provider=ado`: What is the ADO work item ID?** — required before proceeding in ADO mode. Store it as `adoWorkItemId` in PRD frontmatter so it flows to `spell-architect` and `stories.json`.
 
-3. **Research context** — check the relevant business docs in `ventures/` and any existing code repos.
+3. **Research context** — check the relevant business docs under `{BUSINESS_ROOT}/` (resolve from `.arcane.json`'s `business_root` field, default `ventures/` if unset) and any existing code repos.
 
 4. **Generate PRD.md** with these sections:
    ```markdown

@@ -56,9 +56,9 @@
         "Both files state concrete question wording (Track work in this repo / an external tracker) rather than only raw enum tokens"
       ],
       "priority": "high",
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "New test/prompt-tracking-and-business-root.test.ts (MTC-4 suite): 5/5 passing. spell-open-session.prompt.md's Tracker configuration check now reads root .arcane.json -> self-hosted source manifest (gated on selfHosted: true) -> PRD frontmatter -> ask, fixing the live contradiction with EF-14's own recorded resolution order (this repo's own checkout has no root .arcane.json, so the self-hosted tier is what actually resolves tracking mode here). spell-plan.prompt.md's Configure tracking mode first step gained the same chain (previously read .arcane.json nowhere at all). Both state concrete D6 question wording."
     },
     {
       "id": "MTC-5",
@@ -69,9 +69,9 @@
         "Each of the five states the {BUSINESS_ROOT} resolution sentence (from .arcane.json's business_root field, default ventures/ if unset)"
       ],
       "priority": "medium",
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "Same file, MTC-5 suite: 6/6 passing. spell-check-drift.prompt.md needed 6 fixes, not the 1 EF-08 originally cited (its Hub-artifact-leak detector had 5 more bare ventures/ mentions inconsistent with its own already-correct {business_root} usage one line above -- fixed all for consistency). spell-open-session/spell-plan/spell-commit-work: 1 fix each, matching EF-08's citations exactly. spell-todo.prompt.md needed 6 fixes (all of EF-08's own line citation was stale/imprecise -- none were at line 48), plus a genuine self-caught bug: my first pass defined {BUSINESS_ROOT} under Step 0, but Sweep Mode (which appears earlier in the file and uses the token first) would have referenced it before definition -- caught by my own ordering test, fixed by moving the resolution sentence before both modes."
     },
     {
       "id": "MTC-6",
