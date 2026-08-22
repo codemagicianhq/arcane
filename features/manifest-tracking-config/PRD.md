@@ -62,12 +62,20 @@ stale -- files were edited after EF-08 was filed):
 - spell-todo.prompt.md:48 -- not hardcoded there (blank line). The file has six ventures/
   references (lines 22, 31, 36, 39, 84, 119), none at line 48 -- EF-08's citation was imprecise even
   at filing time, or the file changed. All six need the same fix EF-08 asks for.
-- The three "already correct" examples: spell-summon-venture.prompt.md (renamed from
-  spell-bootstrap-business.prompt.md since EF-08 was filed, per ARC-008's clean-break precedent)
-  resolves {BUSINESS_ROOT} from .arcane.json's business_root field, default ventures/, gated
-  behind role === "hub". spell-present-arcane.prompt.md:35 and spell-product-review.prompt.md:
-  19,22 resolve the same way but without a hub gate -- general-purpose spells that any repo
-  (hub or consumer) can run. The five files this PRD fixes are general-purpose like the latter two,
+- **Correction, made after adversarial review found this section wrong:** an earlier version of
+  this PRD cited spell-summon-venture.prompt.md (renamed from spell-bootstrap-business.prompt.md
+  since EF-08 was filed, per ARC-008's clean-break precedent) as one of three "already correct"
+  reference examples. That was only half true: it resolves {BUSINESS_ROOT} from .arcane.json's
+  business_root field for folder creation (line 26/46), gated behind role === "hub" -- but still
+  hardcoded ventures/registry.json for the actual registry write path (line 57), plus a template
+  link (line 39) and an output label (line 86). Review also found spell-save-idea.prompt.md --
+  built as spell-todo.prompt.md's sibling in the same ARC-030 commit, with near-identical Step 0
+  venture-targeting logic -- had the exact same hardcode spell-todo did before this PRD's fix,
+  and was never checked because it wasn't named in EF-08's own citation list at all. Both are now
+  fixed here too (seven files total, not five). spell-present-arcane.prompt.md:35 and
+  spell-product-review.prompt.md:19,22 are the only examples that were genuinely fully correct
+  already, resolving the same way but without a hub gate -- general-purpose spells that any repo
+  (hub or consumer) can run. The seven files this PRD fixes are general-purpose like those two,
   not hub-only, so they follow that ungated pattern.
 
 ## Design decisions
