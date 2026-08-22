@@ -372,6 +372,7 @@ A tool that both writes and validates its own work cannot be trusted to catch it
 | `spell-suggest-feature`    | Feature capture: user story → tracker/TODO → backlog  |
 | `spell-save-idea`          | Fast-capture an idea into `IDEAS.md` (hub: optionally into a venture's book) |
 | `spell-manifest`           | Hub-gated: promote idea/todo-book entries downstream — consumer repo, PRD, tracker, or public disclosure |
+| `spell-feedback`           | Session-quality feedback; framework-shaped items route upstream to arcane's GitHub (genericized, disclosure-gated) |
 
 ---
 
