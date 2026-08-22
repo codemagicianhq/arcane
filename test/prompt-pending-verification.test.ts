@@ -66,9 +66,8 @@ describe("close-session pending-verification vocabulary (EF-21)", () => {
     expect(closeSession).toContain("both apply");
   });
 
-  it("self-declares its enforcement mode per ARC-023", () => {
-    expect(closeSession).toContain("Enforcement:");
-    expect(closeSession).toContain("ARC-023");
+  it("self-declares its enforcement mode per ARC-023, citing one of its four defined categories by name", () => {
+    expect(closeSession).toContain("Enforcement: structured spell gate (ARC-023)");
   });
 });
 
