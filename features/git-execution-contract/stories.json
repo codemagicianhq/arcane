@@ -1,0 +1,40 @@
+{
+  "feature": "git-execution-contract",
+  "branchName": "claude/fix/ef13-20-git-execution-contract",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "GEC-1",
+      "title": "Implement runGit chokepoint with env/stdio/timeout contract",
+      "description": "Add classifyGitCommand, buildEnv, GitTimeoutError, and runGit to src/modules/git.ts per architecture D1-D5. Refactor inspectGitRepository and countUncommittedChanges to call runGit internally with unchanged public signatures.",
+      "acceptanceCriteria": [
+        "runGit closes stdin on every invocation (D5)",
+        "runGit sets GIT_TERMINAL_PROMPT=0, GCM_INTERACTIVE=Never, GIT_OPTIONAL_LOCKS=0 on every invocation (D2)",
+        "runGit applies a command-class timeout, overridable via options (D3/D4)",
+        "A timed-out invocation rejects with GitTimeoutError, not a generic Error",
+        "inspectGitRepository and countUncommittedChanges keep identical exported signatures and return shapes"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/git.test.ts unmodified, 3/3 passing (R5). Full suite 468/469 passing (1 skipped, unrelated). Coverage src/modules/git.ts: 97.32% line / 90.9% branch."
+    },
+    {
+      "id": "GEC-2",
+      "title": "Regression coverage for the execution contract",
+      "description": "Add test/git-execution-contract.test.ts covering R1-R4 from the PRD plus the EF-13 optional-locks regression, using test/helpers/git-fixture.ts for real-repo fixtures. Confirm test/git.test.ts still passes unmodified.",
+      "acceptanceCriteria": [
+        "git credential fill against a fixture settles within a short bound instead of hanging (R3)",
+        "runGit with an artificially small timeoutMs throws GitTimeoutError (R4)",
+        "a real commit still succeeds with GIT_OPTIONAL_LOCKS=0 in effect (R2)",
+        "test/git.test.ts passes with zero modifications (R5)",
+        "coverage on src/modules/git.ts meets the 80% line / repo-standard threshold"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/git-execution-contract.test.ts: 13/13 passing, covering R1-R4 plus the EF-13 optional-locks regression (Windows-only chmod fixture). Full suite 468/469 passing, lint clean, typecheck clean."
+    }
+  ]
+}

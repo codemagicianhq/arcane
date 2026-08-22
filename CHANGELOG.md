@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.2] - 2026-08-22
+
+### Fixed
+
+- `src/modules/git.ts` now routes every production Git invocation through a single non-interactive execution contract ([EF-20](docs/intake/batch-001/EF-20.md), [EF-13](docs/intake/batch-001/EF-13.md)): closed stdin so an interactive prompt can't block indefinitely, `GIT_TERMINAL_PROMPT=0`/`GCM_INTERACTIVE=Never` to suppress credential prompts, `GIT_OPTIONAL_LOCKS=0` to avoid stranding an optional lock on filesystems that reject unlink, and a command-class-scoped timeout that throws a typed `GitTimeoutError` instead of hanging. `inspectGitRepository`/`countUncommittedChanges` are unchanged externally.
+
 ## [0.16.1] - 2026-08-22
 
 ### Fixed
