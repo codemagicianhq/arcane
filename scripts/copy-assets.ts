@@ -14,8 +14,11 @@ import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createOrgTokenRules,
+  dedupeFindings,
   resolveOrgTokens,
+  resolvePrivateTokens,
   scanPromptDirectory,
+  scanRepository,
 } from "./org-token-lint.js";
 import { INCIDENT_QUEUE } from "../src/config/incidents.js";
 import type { IncidentRecord } from "../src/config/incidents.js";
@@ -26,6 +29,10 @@ const SRC_ASSETS = process.env["ARCANE_SRC_ASSETS_DIR"]
   ?? join(__dirname, "../src/assets");
 const DIST_ASSETS = process.env["ARCANE_DIST_ASSETS_DIR"]
   ?? join(__dirname, "../dist/assets");
+// Root for the repository-wide privacy scan. Overridable so the gate's own
+// tests can point it at a fixture tree instead of this repository — otherwise
+// a test declaring a denylist would be flagged by the very scan it configures.
+const REPO_SCAN_DIR = process.env["ARCANE_REPO_SCAN_DIR"] ?? join(__dirname, "..");
 
 // ─── Secrets scan exclusions ─────────────────────────────────────────────────
 // Add path prefixes here to exclude directories from secrets scanning.
@@ -154,22 +161,31 @@ async function main() {
 
   console.log(`Assets copied: ${count} files`);
 
-  // Org-token lint over spell prompts (D2). Warn or fail per ORG_TOKEN_MODE.
+  // Org-token lint over the whole repository. Warn or fail per ORG_TOKEN_MODE.
   const packageIdentity = JSON.parse(
     await readFile(join(__dirname, "../package.json"), "utf8"),
   );
-  const orgRules = createOrgTokenRules(resolveOrgTokens(packageIdentity));
-  const orgFindings = await scanPromptDirectory(
+  // Portability: distributed spells must carry no org-specific literal at all
+  // (package-derived names included) — scanned only where they ship.
+  const portabilityFindings = await scanPromptDirectory(
     join(SRC_ASSETS, ".github/prompts"),
-    orgRules,
+    createOrgTokenRules(resolveOrgTokens(packageIdentity)),
   );
+  // Privacy: the ARCANE_ORG_TOKENS denylist (real venture/customer/machine
+  // names, supplied as a CI secret) must appear nowhere in the repository —
+  // docs, tests and decision records included. ARC-031.
+  const privacyFindings = await scanRepository(
+    REPO_SCAN_DIR,
+    createOrgTokenRules(resolvePrivateTokens()),
+  );
+  const orgFindings = dedupeFindings(portabilityFindings, privacyFindings);
   if (orgFindings.length > 0) {
     const fail = ORG_TOKEN_MODE === "fail";
     const log = fail ? console.error : console.warn;
     log(
       fail
-        ? "\n✗ Org-token lint FAILED — build blocked (org-specific literals in spells).\n"
-        : `\n⚠ Org-token lint (warn): ${orgFindings.length} org-specific literal(s) in spells — generalize to {UPPER_SNAKE} placeholders.\n`,
+        ? "\n✗ Org-token lint FAILED — build blocked (org-specific literals).\n  Use a fictional venture name (DECISIONS.md → ARC-031) or a {UPPER_SNAKE} placeholder.\n"
+        : `\n⚠ Org-token lint (warn): ${orgFindings.length} org-specific literal(s) — use a fictional venture name or a {UPPER_SNAKE} placeholder.\n`,
     );
     for (const v of orgFindings) {
       log(`  ${v.file}:${v.line}  [${v.rule}]`);

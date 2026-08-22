@@ -73,6 +73,10 @@ jobs:
         run: npm run typecheck
 
       - name: Build
+        env:
+          # Private denylist of real venture/customer/machine names (ARC-031).
+          # The secret holds the list; enforcement stays public.
+          ARCANE_ORG_TOKENS: ${{ secrets.ARCANE_ORG_TOKENS }}
         run: npm run build
 
       - name: Test

@@ -1199,3 +1199,59 @@ An operator running Arcane across a private governance-hub repo (holding per-ven
 - **Symmetric leak scanning (give consumers their own sibling-checking logic)** — rejected: requires distributing the sibling-name list to every consumer, defeating the purpose.
 - **A consumer→consumer idea-promotion path** — rejected as unneeded scope: the only cross-repo path this design supports is hub→consumer (via `spell-manifest`) and consumer→Arcane (via `spell-feedback`'s upstream routing); nothing here lets one venture's consumer repo write into another's.
 - **Alias for `spell-bootstrap-business`** — rejected per ARC-008 precedent: the renamed spell's behavior changed substantively (hub gate, books, registry), so an alias would silently promise old, no-longer-true behavior.
+
+---
+
+## ARC-031 — Fictional Venture Names for Examples, and a Repository-Wide Privacy Gate
+
+**Date:** 2026-08-22
+**Status:** Accepted
+**Related:** [ARC-014](#arc-014--org-token-lint-as-a-build-gate) (org-token gate — this widens its surface and splits its purpose), [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (build-in-public leak gate), [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (the venture examples this governs)
+
+**Context:**
+
+Arcane is a methodology framework, so almost every spell prompt, governance doc, and decision record carries a **worked example** — and examples about venture management have to name ventures. With no designated fictional set, each new example invents its own, and the path of least resistance is to reach for a real name because it reads as realistic. A real name written into a spell prompt is then copied verbatim into `dist/assets/` and published in the npm tarball.
+
+The existing org-token gate (ARC-014) was built for a related but *different* problem — **portability**: a distributed spell that hardcodes the maintainer's organization is not reusable by anyone else. It scanned exactly the surface that concern required, `src/assets/.github/prompts`. That surface is too narrow for a **privacy** concern: a real organization name reached a published release through a decision record and a test fixture, neither of which the gate looked at.
+
+The two concerns also need different token sets. "Code Magician" and `codemagicianhq` legitimately appear throughout this repository — it *is* Code Magician's repository, named in `package.json`, `LICENSE`, and `README.md`. They simply must not be baked into distributed spells. A private venture name has no such carve-out: it belongs nowhere, in any file.
+
+**Decision:**
+
+**1. A canonical fictional venture family — the "Three Frontiers" set.** Every example that needs a venture name uses one of:
+
+| Role | Name | Slug | Aliases | Fictional business |
+| --- | --- | --- | --- | --- |
+| Primary | Ordovica | `ordovica` | `ordo`, `ord` | Deep-earth geothermal and critical-mineral recovery |
+| Sibling | Tidewright | `tidewright` | `tide`, `tw` | Tidal energy; autonomous coastal-infrastructure repair |
+| Sibling | Overshore | `overshore` | `over`, `osh` | Orbital manufacturing in vacuum and microgravity |
+
+Three, not one, because several examples show *lists* of ventures — closest-match suggestions, portfolio registries, multi-book sweeps. The premise (a post-AI physical economy where energy, atoms and orbit stayed scarce) exists only to keep additions coherent; it carries no product meaning and readers never need to know it.
+
+**2. The org-token gate splits into two layers with distinct surfaces.**
+
+- **Portability layer** — package-derived tokens (author, repository owner) scanned across `src/assets/.github/prompts`, exactly as ARC-014 defined. Unchanged.
+- **Privacy layer** — a denylist of real venture, customer, and machine names, scanned across the **whole repository**: docs, decision records, tests, workflows, source. Generated and vendored trees (`node_modules`, `dist`, `coverage`, `.git`) are skipped.
+
+Findings from both are merged and deduplicated by `file:line`; either layer fails the build.
+
+**3. The denylist lives in a CI secret, never in the repository.** `ARCANE_ORG_TOKENS` is supplied to the build from `secrets.ARCANE_ORG_TOKENS`. Committing the list of names-that-must-not-appear would itself publish them — the enforcement is public and auditable, the list is not. With the secret unset (local builds, forks, contributors) the privacy layer is inert and costs nothing, so no contributor is blocked by a list they cannot see.
+
+**4. Adding a name to the fictional universe requires clearing a screening checklist** — npm registry, GitHub org namespace, company and trademark records, **and game/product/fiction listings**, plus no offensive or awkward reading in English or Spanish, no collision with code vocabulary (`node`, `null`, `main`), and no resemblance to any real venture. Candidates during this research passed a company search and were still real products; registry checks alone cleared names with four real companies behind them.
+
+**5. Fictional names must read corporate, not mystical.** An entire early shortlist was rejected because an elemental-fantasy register collides with Arcane's own branding — a reader could not tell a fictional venture from a framework concept. The placeholder reads as a company precisely because Arcane does not.
+
+**Reasoning:**
+
+- A designated set converts an unbounded judgment call ("is this example name safe?") into a lookup. Judgment fails under time pressure; lookups do not.
+- Splitting the layers is what makes a repository-wide scan viable at all. A single merged token set applied everywhere would flag hundreds of legitimate mentions of the maintainer's own name and be switched off within a day — a gate that cries wolf is worse than no gate.
+- Keeping the denylist in a secret resolves the obvious paradox of a privacy control that would otherwise have to enumerate the private data in public.
+- The precedent is well-established: Microsoft legally cleared Contoso, Fabrikam, and Northwind Traders for fictitious use rather than inventing names ad hoc, and moved to a frontier-era name (Zava) in Dec 2025 as the older set began to read as dated.
+
+**Rejected alternatives:**
+
+- **A documented rule ("never use real names in examples") with no mechanical gate** — rejected: the rule already existed in spirit and did not hold. Controls that depend on remembering are not controls (ARC-023).
+- **Commit the denylist to the repository** — rejected: publishes the exact names it exists to protect.
+- **Scan the whole repository with the merged token set** — rejected: the maintainer's own name appears legitimately throughout its own repository; this fails the build on `README.md` and `LICENSE`.
+- **One fictional venture instead of three** — rejected: examples that demonstrate alias resolution, closest-match suggestions, and portfolio sweeps are incoherent with a single name.
+- **Generic placeholders (`example-venture`, `acme`) instead of a named universe** — rejected: real examples read better and are easier to follow, `acme` is heavily overloaded, and a distinctive slug is far easier to grep for when auditing whether an example leaked.
