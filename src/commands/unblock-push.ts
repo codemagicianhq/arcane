@@ -1,7 +1,7 @@
 import { basename, resolve } from "node:path";
 import { input } from "@inquirer/prompts";
 import { readManifest, writeManifest, ManifestNotFoundError } from "../modules/manifest.js";
-import { removePrePushHook, restorePushUrl } from "../modules/push-safety.js";
+import { removePrePushHook, restorePushUrls } from "../modules/push-safety.js";
 import { printInfo, printSuccess, printWarning } from "../modules/banner.js";
 import type { ArcaneManifest } from "../types.js";
 
@@ -50,6 +50,16 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   }
 
   const repoName = basename(resolve(targetDir));
+  if (repoName === "") {
+    // A repository at a filesystem root has no basename, which would turn the
+    // confirmation into "press Enter". A gate that can silently become vacuous
+    // must fail closed instead.
+    console.error(
+      "Could not determine a repository name to confirm against (is this repository at a filesystem root?). Refusing to unblock.",
+    );
+    process.exit(1);
+    return;
+  }
 
   printWarning(`This repository's push_policy is "${policy}".`);
   printInfo(
@@ -70,7 +80,7 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   }
 
   await removePrePushHook(targetDir);
-  const restored = await restorePushUrl(targetDir);
+  const restored = await restorePushUrls(targetDir);
 
   // No "just this once" mode: the manifest must never claim a protection the
   // repository no longer has.
@@ -82,8 +92,8 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   await writeManifest(targetDir, updated);
 
   printSuccess(`Push unblocked for "${repoName}".`);
-  if (restored.status === "restored") {
-    printInfo(`Restored push URL for "${restored.remote}".`);
+  if (restored.length > 0) {
+    printInfo(`Restored push URL for: ${restored.join(", ")}.`);
   }
   printInfo(
     "Recorded in .arcane.json as push_policy: open, with the time it was lifted. " +
