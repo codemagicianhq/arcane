@@ -171,12 +171,18 @@ const COMPONENTS: RegistryComponent[] = [
   },
   {
     name: "spells-delivery",
-    description: "Pull-request lifecycle and code review",
+    description: "Pull-request lifecycle — open a PR, respond to review feedback",
     files: [
       ".github/prompts/spell-create-pull-request.prompt.md",
       ".claude/commands/spell-create-pull-request.md",
       ".github/prompts/spell-address-review.prompt.md",
       ".claude/commands/spell-address-review.md",
+    ],
+  },
+  {
+    name: "spells-review",
+    description: "Adversarial code review — requires source and tests, so excluded from docs-only profiles",
+    files: [
       ".github/prompts/spell-review.prompt.md",
       ".claude/commands/spell-review.md",
       ".github/prompts/spell-review-batch.prompt.md",
@@ -199,7 +205,7 @@ const COMPONENTS: RegistryComponent[] = [
   },
   {
     name: "spells-build",
-    description: "Code and product delivery — implementation, tests, stack experts, release, deployment",
+    description: "Code and product delivery — implementation, tests, stack experts, release, deployment, asset tooling",
     files: [
       ".github/prompts/spell-implement.prompt.md",
       ".claude/commands/spell-implement.md",
@@ -219,6 +225,8 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-ship.md",
       ".github/prompts/spell-enchant.prompt.md",
       ".claude/commands/spell-enchant.md",
+      ".github/prompts/spell-generate-bot-icons.prompt.md",
+      ".claude/commands/spell-generate-bot-icons.md",
     ],
   },
   {
@@ -233,14 +241,12 @@ const COMPONENTS: RegistryComponent[] = [
   },
   {
     name: "spells-meta",
-    description: "Arcane-about-Arcane — presentation, drift detection, asset generation",
+    description: "Arcane-about-Arcane — presentation and documentation drift detection",
     files: [
       ".github/prompts/spell-present-arcane.prompt.md",
       ".claude/commands/spell-present-arcane.md",
       ".github/prompts/spell-check-drift.prompt.md",
       ".claude/commands/spell-check-drift.md",
-      ".github/prompts/spell-generate-bot-icons.prompt.md",
-      ".claude/commands/spell-generate-bot-icons.md",
     ],
   },
   // Templates
@@ -308,23 +314,50 @@ export const SPELL_COMPONENT_NAMES: string[] = COMPONENTS.map((c) => c.name).fil
 );
 
 /**
+ * The exact set of components that reconstitutes what the retired monolithic
+ * `spell-prompts` / `claude-commands` pair used to install.
+ *
+ * **Deliberately a frozen literal, not derived from `SPELL_COMPONENT_NAMES`.**
+ * Deriving it would mean every future `spells-*` group silently joins this
+ * list, so a legacy install would be handed brand-new spells it never had —
+ * and a test asserting `migration === SPELL_COMPONENT_NAMES` would be
+ * self-referential, passing while the behaviour changed underneath it. This
+ * list describes history: what the old monolith contained, as of the 0.18.0
+ * split. It must not grow.
+ */
+const LEGACY_MONOLITH_REPLACEMENTS = [
+  "spells-session",
+  "spells-capture",
+  "spells-delivery",
+  "spells-review",
+  "spells-planning",
+  "spells-build",
+  "spells-venture",
+  "spells-meta",
+] as const;
+
+/**
  * Components that no longer exist under their old name, mapped to the set that
  * replaces them.
  *
  * `spell-prompts` and `claude-commands` were one monolithic pair holding all 34
- * spells in each client format. Both map to the same capability components,
- * because those components now carry both formats of every spell — so a
- * manifest listing either legacy name (or both, which every profile that had
- * one did) converges on the same result. Callers must dedupe.
+ * spells in each client format. Both map to the same replacements, because
+ * those components now carry both formats of every spell — so a manifest
+ * listing either legacy name (or both, which every profile that had one did)
+ * converges on the same result. Callers must dedupe.
  *
  * Without this, `spell update` would hit `ComponentNotFoundError` for the
  * legacy names, print "not in registry — skipping", preserve the dead entry,
  * and silently never update that repo's spells again.
+ *
+ * Null-prototype so a manifest component named `constructor` or `toString`
+ * can't resolve to an inherited function and blow up the lookup.
  */
-export const LEGACY_COMPONENT_MIGRATIONS: Readonly<Record<string, readonly string[]>> = {
-  "spell-prompts": SPELL_COMPONENT_NAMES,
-  "claude-commands": SPELL_COMPONENT_NAMES,
-};
+export const LEGACY_COMPONENT_MIGRATIONS: Readonly<Record<string, readonly string[]>> =
+  Object.assign(Object.create(null) as Record<string, readonly string[]>, {
+    "spell-prompts": LEGACY_MONOLITH_REPLACEMENTS,
+    "claude-commands": LEGACY_MONOLITH_REPLACEMENTS,
+  });
 
 export function getComponent(name: string): RegistryComponent {
   const component = componentIndex.get(name);
