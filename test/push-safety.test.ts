@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -13,6 +13,7 @@ import {
   readHooksPath,
   hookFilePath,
   listRemotes,
+  blockedRemotes,
   DISABLED_PUSH_URL,
   ARCANE_HOOKS_DIR,
 } from "../src/modules/push-safety.js";
@@ -23,6 +24,61 @@ import {
  * A prior session shipped a config-only assertion elsewhere and review called
  * it vacuous, so this suite pushes for real and asserts on exit codes.
  */
+
+/**
+ * Hermetic git scopes for the CODE UNDER TEST, not just the fixtures.
+ *
+ * `test/helpers/git-fixture.ts` scrubs the environment for calls it makes
+ * itself, but `push-safety` goes through `runGit` → `buildGitEnv()`, which
+ * spreads `process.env`. So the suite inherited the developer's real global
+ * config: on any machine with a global `core.hooksPath` (pre-commit, a corporate
+ * hook manager — exactly the setup finding #1 was about) six tests failed,
+ * because `installPrePushHook` correctly refused. The suite has to be hermetic
+ * on the machine the fix was written for.
+ *
+ * Pointing GIT_CONFIG_GLOBAL/SYSTEM at real temp files rather than /dev/null
+ * also lets the tests below STAGE a global or system value on purpose, which is
+ * how the global-scope regression is exercised for real.
+ */
+let globalConfig: string;
+let systemConfig: string;
+const savedEnv: Record<string, string | undefined> = {};
+
+beforeAll(async () => {
+  const dir = await createFixtureDir("push-safety-scopes-");
+  globalConfig = join(dir, "gitconfig-global");
+  systemConfig = join(dir, "gitconfig-system");
+  await fs.writeFile(globalConfig, "");
+  await fs.writeFile(systemConfig, "");
+  for (const key of ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"]) savedEnv[key] = process.env[key];
+  process.env["GIT_CONFIG_GLOBAL"] = globalConfig;
+  process.env["GIT_CONFIG_SYSTEM"] = systemConfig;
+});
+
+afterAll(() => {
+  for (const [key, value] of Object.entries(savedEnv)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
+});
+
+/** Writes a value into the staged global/system config file. */
+async function setScopedConfig(file: string, key: string, value: string): Promise<void> {
+  spawnSync("git", ["config", "--file", file, key, value], { encoding: "utf-8" });
+}
+
+async function clearScopedConfig(file: string): Promise<void> {
+  await fs.writeFile(file, "");
+}
+
+/** `git config --get-all` exits 1 when the key is absent; that is not an error here. */
+function configValues(dir: string, key: string): string[] {
+  const res = spawnSync("git", ["config", "--get-all", key], { cwd: dir, encoding: "utf-8" });
+  return (res.stdout ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
 async function repoWithRemote(): Promise<{ work: string; bare: string }> {
   const bare = await createFixtureDir("push-safety-bare-");
@@ -114,7 +170,7 @@ describe("push blocking (R2, R3) — against a real remote", () => {
     await disablePushUrls(work);
     expect(fixtureGit(work, ["remote", "get-url", "--push", "origin"])).toBe(DISABLED_PUSH_URL);
 
-    expect(await restorePushUrls(work)).toEqual(["origin"]);
+    expect(await restorePushUrls(work)).toEqual([{ remote: "origin", status: "restored" }]);
     expect(fixtureGit(work, ["remote", "get-url", "--push", "origin"]).replace(/\\/g, "/")).toBe(
       bare.replace(/\\/g, "/"),
     );
@@ -182,20 +238,63 @@ describe("hook-manager collision guard (R7)", () => {
   });
 
   it("reads the EFFECTIVE hooks path, not only the repository-local one", async () => {
-    // Found in review: reading `--local --get` missed a hooksPath set at
-    // *global* scope -- the standard way organisations deploy pre-commit and
-    // corporate hook managers. Since a local value overrides a global one,
-    // installing would have silently disabled it while reporting "installed":
-    // exactly the harm R7 exists to prevent. The reviewer reproduced that live
-    // against a real global config; this test pins the query shape instead,
-    // because mutating the machine's global git config from a test would be
-    // hostile to whoever runs it.
     const { work } = await repoWithRemote();
 
     expect(await readHooksPath(work)).toBeUndefined();
 
     fixtureGit(work, ["config", "--local", "core.hooksPath", ".husky/_"]);
     expect(await readHooksPath(work)).toEqual({ value: ".husky/_", scope: "local" });
+  });
+
+  it("refuses an org hook manager configured at GLOBAL scope, and leaves it running", async () => {
+    // The regression for review finding #1. An earlier version of this test set
+    // only a LOCAL value, so nothing in it distinguished `git config --get` from
+    // `git config --local --get` — the very difference being fixed. Staging a
+    // real global scope via GIT_CONFIG_GLOBAL is hermetic, so there is no excuse
+    // for the weaker version.
+    const { work } = await repoWithRemote();
+    await setScopedConfig(globalConfig, "core.hooksPath", "/org/hooks");
+
+    try {
+      expect(await readHooksPath(work)).toEqual({ value: "/org/hooks", scope: "global" });
+
+      const outcome = await installPrePushHook(work);
+      expect(outcome.status).toBe("refused-foreign-hooks-path");
+      if (outcome.status === "refused-foreign-hooks-path") expect(outcome.scope).toBe("global");
+
+      // The org's setting is untouched and no hook file was written.
+      expect((await readHooksPath(work))?.value).toBe("/org/hooks");
+      await expect(fs.access(hookFilePath(work))).rejects.toThrow();
+    } finally {
+      await clearScopedConfig(globalConfig);
+    }
+  });
+
+  it("refuses a hooks path set at SYSTEM scope too, and names that scope", async () => {
+    const { work } = await repoWithRemote();
+    await setScopedConfig(systemConfig, "core.hooksPath", "/system/hooks");
+
+    try {
+      expect(await readHooksPath(work)).toEqual({ value: "/system/hooks", scope: "system" });
+      const outcome = await installPrePushHook(work);
+      if (outcome.status === "refused-foreign-hooks-path") expect(outcome.scope).toBe("system");
+      else expect.unreachable("should have refused");
+    } finally {
+      await clearScopedConfig(systemConfig);
+    }
+  });
+
+  it("recognises equivalent spellings of its own hooks path", async () => {
+    // The hook fires on a real push for every one of these, so reporting "not
+    // enforced" would contradict what git actually does.
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+
+    for (const spelling of [".arcane/hooks/", "./.arcane/hooks", join(work, ".arcane", "hooks")]) {
+      fixtureGit(work, ["config", "--local", "core.hooksPath", spelling]);
+      expect(await isHookEnforced(work)).toBe(true);
+      expect(tryPush(work).ok).toBe(false);
+    }
   });
 
   it("refuses any foreign hooks path regardless of the scope it came from", async () => {
@@ -235,6 +334,135 @@ describe("hook-manager collision guard (R7)", () => {
     fixtureGit(work, ["config", "--local", "core.hooksPath", ".husky/_"]);
     await removePrePushHook(work);
     expect((await readHooksPath(work))?.value).toBe(".husky/_");
+  });
+});
+
+describe("awkward but legal remote configurations", () => {
+  it("covers a remote whose name is not a legal trailing config key", async () => {
+    // `my_remote` is a legal remote name but an illegal last config-key segment.
+    // The flat `arcane.originalPushUrl.<remote>` key made git error, which threw
+    // out of the loop and left EVERY remote after it live — in a repository the
+    // operator had just been told was blocked.
+    const { work } = await repoWithRemote();
+    const second = await createFixtureDir("push-safety-odd-");
+    fixtureGit(second, ["init", "--bare", "-b", "main"]);
+    fixtureGit(work, ["remote", "add", "my_remote", second]);
+    const third = await createFixtureDir("push-safety-odd2-");
+    fixtureGit(third, ["init", "--bare", "-b", "main"]);
+    fixtureGit(work, ["remote", "add", "team.backup", third]);
+
+    const results = await disablePushUrls(work);
+
+    expect(results.filter((r) => r.status === "failed")).toEqual([]);
+    expect(await undisabledRemotes(work)).toEqual([]);
+    // The consequence, not just the bookkeeping: every one is actually blocked.
+    for (const remote of ["origin", "my_remote", "team.backup"]) {
+      expect(tryPush(work, ["--no-verify", remote, "main"]).ok).toBe(false);
+    }
+  });
+
+  it("keeps `origin` and `Origin` apart instead of collapsing them onto one key", async () => {
+    // Trailing key segments are case-INSENSITIVE, so the flat key lost one of
+    // the two originals and restore pointed a remote at the OTHER remote's URL —
+    // the wrong-remote push this whole feature exists to prevent.
+    const { work, bare } = await repoWithRemote();
+    const upper = await createFixtureDir("push-safety-upper-");
+    fixtureGit(upper, ["init", "--bare", "-b", "main"]);
+    fixtureGit(work, ["remote", "add", "Origin", upper]);
+
+    await disablePushUrls(work);
+    await restorePushUrls(work);
+
+    const normalize = (p: string): string => p.replace(/\\/g, "/");
+    expect(normalize(fixtureGit(work, ["remote", "get-url", "--push", "origin"]))).toBe(
+      normalize(bare),
+    );
+    expect(normalize(fixtureGit(work, ["remote", "get-url", "--push", "Origin"]))).toBe(
+      normalize(upper),
+    );
+  });
+
+  it("blocks BOTH urls of a mirror remote and restores both", async () => {
+    // `git remote set-url --push` refuses a remote with multiple push URLs
+    // ("has multiple values"), which used to abort the run with both mirrors
+    // still pushable.
+    const { work, bare } = await repoWithRemote();
+    const mirror = await createFixtureDir("push-safety-mirror-");
+    fixtureGit(mirror, ["init", "--bare", "-b", "main"]);
+    fixtureGit(work, ["remote", "set-url", "--push", "--add", "origin", bare]);
+    fixtureGit(work, ["remote", "set-url", "--push", "--add", "origin", mirror]);
+
+    expect((await disablePushUrls(work)).filter((r) => r.status === "failed")).toEqual([]);
+    expect(tryPush(work, ["--no-verify", "origin", "main"]).ok).toBe(false);
+
+    await restorePushUrls(work);
+    expect(configValues(work, "remote.origin.pushurl")).toHaveLength(2);
+  });
+
+  it("does not pin a pushurl that was never there", async () => {
+    // A remote with no pushurl key pushes to its fetch URL. Writing the resolved
+    // URL into a new pushurl key means a later `git remote set-url` changes
+    // fetch only, and pushes silently keep going to the old location.
+    const { work } = await repoWithRemote();
+    expect(configValues(work, "remote.origin.pushurl")).toEqual([]);
+
+    await disablePushUrls(work);
+    await restorePushUrls(work);
+
+    expect(configValues(work, "remote.origin.pushurl")).toEqual([]);
+  });
+
+  it("survives a remote renamed while blocked", async () => {
+    // `git remote rename` moves the whole `remote.<name>.*` section, custom keys
+    // included — which the flat key did not get, leaving the record orphaned and
+    // the renamed remote permanently blocked while unblock reported success.
+    const { work } = await repoWithRemote();
+    await disablePushUrls(work);
+    fixtureGit(work, ["remote", "rename", "origin", "upstream"]);
+
+    const results = await restorePushUrls(work);
+
+    expect(results).toEqual([{ remote: "upstream", status: "restored" }]);
+    expect(await blockedRemotes(work)).toEqual([]);
+    expect(tryPush(work, ["upstream", "main"]).ok).toBe(true);
+  });
+
+  it("does not enshrine the sentinel as the original when disabled twice", async () => {
+    const { work, bare } = await repoWithRemote();
+    await disablePushUrls(work);
+    await disablePushUrls(work);
+    await disablePushUrls(work);
+
+    await restorePushUrls(work);
+    expect(fixtureGit(work, ["remote", "get-url", "--push", "origin"]).replace(/\\/g, "/")).toBe(
+      bare.replace(/\\/g, "/"),
+    );
+  });
+});
+
+describe("a neutered hook is not enforcement", () => {
+  it("reports not-enforced when the hook body has been replaced with a no-op", async () => {
+    // Existence alone is a declaration check wearing an enforcement check's
+    // name — one level down from the same defect review already found.
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    expect(await isHookEnforced(work)).toBe(true);
+
+    await fs.writeFile(hookFilePath(work), "#!/bin/sh\nexit 0\n");
+
+    expect(await isHookEnforced(work)).toBe(false);
+    // And prove the consequence: this hook lets a push straight to a URL through.
+    const elsewhere = await createFixtureDir("push-safety-elsewhere-");
+    fixtureGit(elsewhere, ["init", "--bare", "-b", "main"]);
+    expect(tryPush(work, [elsewhere, "main"]).ok).toBe(true);
+  });
+
+  it("reports not-enforced for a zero-byte hook file", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    await fs.writeFile(hookFilePath(work), "");
+
+    expect(await isHookEnforced(work)).toBe(false);
   });
 });
 
