@@ -5,6 +5,12 @@ import { promisify } from "node:util";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { runGit } from "../modules/git.js";
+import { readManifest } from "../modules/manifest.js";
+import {
+  readHooksPath,
+  ARCANE_HOOKS_DIR,
+  DISABLED_PUSH_URL,
+} from "../modules/push-safety.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -255,6 +261,77 @@ export interface DoctorOptions {
   fix?: boolean;
 }
 
+/**
+ * EF-09 R4. Reports the repository's declared push posture and, for a
+ * "blocked" repo, whether the controls are actually in place.
+ *
+ * Deliberately fires for every "guarded" repo REGARDLESS of remote state. An
+ * earlier draft only reported when no remote was configured, which meant the
+ * reminder went silent the instant any remote was added -- including a wrong
+ * one -- making "guarded" behave identically to "open" exactly when it
+ * mattered most.
+ */
+export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
+  const name = "Push policy (EF-09)";
+  let manifest;
+  try {
+    manifest = await readManifest(targetDir);
+  } catch {
+    return { name, passed: true, message: "not initialized — nothing to check" };
+  }
+
+  const policy = manifest.push_policy ?? "open";
+
+  if (policy === "open") {
+    return { name, passed: true, message: "open — pushes allowed" };
+  }
+
+  if (policy === "guarded") {
+    let remote = "none configured";
+    try {
+      const { stdout } = await runGit(targetDir, ["remote", "get-url", "--push", "origin"]);
+      remote = stdout.trim();
+    } catch {
+      // Leave the default.
+    }
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `guarded — no technical control installed. Push target is currently: ${remote}. Confirm that is the remote you intend before pushing.`,
+    };
+  }
+
+  // blocked: verify the controls are genuinely present, not just declared.
+  const hooksPath = await readHooksPath(targetDir);
+  const hookActive = hooksPath === ARCANE_HOOKS_DIR;
+
+  let urlDisabled = false;
+  try {
+    const { stdout } = await runGit(targetDir, ["remote", "get-url", "--push", "origin"]);
+    urlDisabled = stdout.trim() === DISABLED_PUSH_URL;
+  } catch {
+    // No remote: nothing to disable, so this half is vacuously satisfied.
+    urlDisabled = true;
+  }
+
+  if (hookActive && urlDisabled) {
+    return { name, passed: true, message: "blocked — pre-push hook and push URL both in place" };
+  }
+
+  const missing = [
+    hookActive ? null : `pre-push hook (core.hooksPath is ${hooksPath ?? "unset"})`,
+    urlDisabled ? null : "disabled push URL",
+  ].filter(Boolean);
+
+  return {
+    name,
+    passed: false,
+    blocking: false,
+    message: `declared "blocked" but not enforced — missing: ${missing.join(", ")}. The manifest claims a protection this repository does not have.`,
+  };
+}
+
 export async function runDoctor(targetDir: string, options: DoctorOptions = {}, assetsDir?: string): Promise<void> {
   console.log("\nspell doctor — checking your Arcane environment\n");
 
@@ -264,6 +341,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkArcaneManifest(targetDir),
     Promise.resolve(checkIncidentReleaseGate()),
     checkPullRebase(targetDir),
+    checkPushPolicy(targetDir),
   ]);
 
   // Add session continuity checks

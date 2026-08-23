@@ -52,6 +52,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate)       | Fictional Venture Names for Examples, and a Repository-Wide Privacy Gate       | 2026-08-22 | Accepted   |
 | [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) | Persisted Tracking Configuration: tracking_mode and external_provider in the Manifest | 2026-08-22 | Accepted   |
 | [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) | Docs Mode: Subject Root, Content Sensitivity, and Capability-Scoped Spell Components | 2026-08-23 | Accepted   |
+| [ARC-034](#arc-034--push-safety-for-sensitive-repositories)                                        | Push Safety for Sensitive Repositories                                        | 2026-08-23 | Accepted   |
 
 ---
 
@@ -1396,3 +1397,55 @@ One structural obstacle blocked all of it: every spell shipped inside a single `
 - **Deriving the legacy migration list from the live `spells-*` set** — rejected after adversarial review: future groups would ride into legacy installs silently, behind a self-referential test that could not detect it.
 - **Storing the `.gitattributes`/`.gitignore` sources as real dotfiles inside the package** — rejected: a nested `.gitignore` in an npm tarball can exclude sibling files from the published package, and a nested `.gitattributes` would apply its rules to Arcane's own source tree. Sources are stored under a plain path and mapped to their installed dotfile name.
 - **Keeping `spell-review` in the docs profile** — rejected during review: its own workflow validates that new code has corresponding tests, which a docs repository has neither of. Code review became its own component rather than being quietly retained.
+
+---
+
+## ARC-034 — Push Safety for Sensitive Repositories
+
+**Date:** 2026-08-23
+**Status:** Accepted
+**Related:** [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest), [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) (the persist-once manifest contract this reuses; `content_sensitivity` is the adjacent, distinct concern)
+**Intake:** [EF-09](docs/intake/batch-001/EF-09.md)
+**Design:** [features/push-safety/PRD.md](features/push-safety/PRD.md), accepted by the operator 2026-08-23
+
+**Context:**
+
+A repository holding sensitive material has no protection against one accidental `git push` publishing its entire history. Deleting the content later does not undo it: it remains in history, in any clone already taken, and in the remote's own backups. Arcane's registry had no hook, push guard, or sensitive-repository component of any kind, and `git-conventions.md` unconditionally assumed a push/PR flow.
+
+**Decision:**
+
+1. **`push_policy: "open" | "guarded" | "blocked"`** on the manifest, on the same ask-once/retrofit/never-silently-overwrite contract as `profile` and `tracking_mode`. Default `"open"` — strictly additive, so every existing repository behaves exactly as before.
+
+2. **`"blocked"` installs two layered controls.** A `pre-push` hook, and a sentinel push URL. Both are needed, because `git push --no-verify` skips hooks entirely — the hook alone is defeated by one extra flag, and only the transport-layer failure catches that path. The fetch URL is deliberately untouched, so a blocked repository can still pull.
+
+3. **Installation refuses rather than clobbering an existing `core.hooksPath`.** That config is a single exclusive slot: Git reads one hooks directory, never several. Pointing it at Arcane's would silently disable whatever hook manager already owns it. This is not hypothetical — Arcane's own repository uses `.husky/_` to run lint, typecheck and the full suite, so a naive install would have turned that off while appearing to add protection.
+
+4. **`"guarded"` installs nothing** but reports through `doctor` — and reports **regardless of remote state**. An earlier draft only reported when no remote was configured, which would have silenced the reminder the instant any remote was added, including a wrong one, making `"guarded"` behave identically to `"open"` exactly when it mattered.
+
+5. **`doctor` verifies enforcement, not just declaration.** A manifest saying `"blocked"` while the hook or push URL is absent is reported as *"declared but not enforced — the manifest claims a protection this repository does not have."* A control that is only asserted is worse than none, because it is trusted.
+
+6. **Unblocking is its own command, never a side effect.** `spell unblock-push` requires an interactive TTY, requires the repository name typed back, records `push_policy: "open"` with a timestamp, and offers no "just this once" mode — the manifest must never describe a protection the repository no longer has.
+
+7. **The retrofit records the choice but installs nothing.** Unlike `init`, a `spell update` that learns a repository should be blocked does not start blocking it mid-workflow; `doctor` reports the gap instead.
+
+**Reasoning — and what this deliberately does not claim:**
+
+The threat modelled is an **accidental** push: the wrong remote, muscle memory from another repository, an unsupervised agent, a misconfigured job. It is *not* a determined operator, and the PRD is explicit that nothing Arcane ships from a local CLI could be. Both controls are trivially reversible by anyone who decides to reverse them, and `core.hooksPath` does not travel to a fresh clone.
+
+Saying so plainly is part of the decision. A control that is believed to be stronger than it is produces exactly the behaviour it was meant to prevent — someone relies on it and stops being careful. The PRD's comparison of six mechanisms found that only platform-side controls (a remote that does not exist, or one that rejects the push) survive a deliberate client-side bypass, and those are outside what this CLI can configure or verify.
+
+The typed-repository-name confirmation is scoped honestly for the same reason: it guards a human against unblocking the wrong repository. It is **not** agent-resistance — anything that can read `.arcane.json` can read the name back. The interactive-TTY requirement is the actual bar against a scripted actor, and it is not absolute either, since a pseudo-TTY defeats it.
+
+**Open questions (unresolved, carried from the PRD):**
+
+- Whether an interactive-TTY requirement is sufficient agent-resistance for the unblock path, or whether that needs an out-of-band channel the local process cannot read back.
+- Whether `push_policy` should ever be settable per-directory rather than per-repository.
+- Whether non-CLI Git clients (GitHub Desktop, editor integrations) honour `core.hooksPath` hooks identically. Assumed yes, since hooks are a Git-level mechanism, but unverified — flagged rather than asserted.
+
+**Rejected alternatives:**
+
+- **A hook alone** — rejected: `--no-verify` skips it entirely, so it would fail against the single most likely bypass, which is not even deliberate.
+- **Encryption at rest** — rejected as the primary mechanism: it changes what a push *exposes*, not whether one happens, and does not satisfy an operator who wants no push event at all.
+- **Content scanning to decide what may be pushed** — rejected for the reason ARC-022 rejected it for CI filters: general documents have no reliable signature, so it degrades into a hand-maintained list that fails silently.
+- **A "just this once" override** — rejected: it would leave the manifest asserting `"blocked"` while a push went through, which is precisely the false-confidence failure this ADR exists to avoid.
+- **Blocking on the retrofit path too** — rejected: an upgrade should not begin blocking pushes in a repository someone is mid-workflow in.

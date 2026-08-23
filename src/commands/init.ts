@@ -19,6 +19,7 @@ import {
   printWarning,
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
+import { installPrePushHook, disablePushUrl } from "../modules/push-safety.js";
 import {
   correctUnbornMasterDefault,
   ensureLocalPullRebase,
@@ -32,6 +33,7 @@ import type {
   InstalledComponent,
   Profile,
   RegistryComponent,
+  PushPolicy,
   SpellInitOptions,
   TrackingMode,
 } from "../types.js";
@@ -452,6 +454,26 @@ export async function runInit(
     })) as ContentSensitivity;
   }
 
+  // ── Step 5e: Push policy (EF-09) ────────────────────────────────────────
+  // Default "open" — strictly additive, so every existing repository and every
+  // scripted install behaves exactly as before. Asked interactively only.
+  let push_policy: PushPolicy | undefined;
+  if (!options.profile) {
+    console.log();
+    push_policy = (await select({
+      message: "Should this repository be allowed to push to a remote?",
+      choices: [
+        { value: "open", name: "Yes — normal repository" },
+        { value: "guarded", name: "Sensitive, but keep push working — remind me instead" },
+        {
+          value: "blocked",
+          name: "No — block pushes (a pre-push hook plus a disabled push URL)",
+        },
+      ],
+      default: "open",
+    })) as PushPolicy;
+  }
+
   // ── Step 6: Write manifest ─────────────────────────────────────────────
   const manifest: ArcaneManifest = {
     version: packageVersion,
@@ -462,10 +484,42 @@ export async function runInit(
     ...(tracking_mode ? { tracking_mode, external_provider } : {}),
     ...(subject_root !== undefined ? { subject_root } : {}),
     ...(content_sensitivity ? { content_sensitivity } : {}),
+    ...(push_policy ? { push_policy } : {}),
   };
   await writeManifest(targetDir, manifest);
 
   printSuccess(`Initialized with profile "${profile}" — ${fileCount} files installed`);
+
+  // ── Push-safety controls (EF-09 R2/R3/R4/R7) ────────────────────────────
+  if (push_policy === "blocked") {
+    const hook = await installPrePushHook(targetDir);
+    if (hook.status === "refused-foreign-hooks-path") {
+      // R7: core.hooksPath is one exclusive slot, so pointing it at Arcane
+      // would silently disable whatever hook manager already owns it.
+      printWarning(
+        `Did not install the pre-push hook: core.hooksPath is already "${hook.existing}", ` +
+          "so another hook manager owns it. Overwriting would silently disable those hooks. " +
+          "Chain an Arcane pre-push guard into that directory yourself, or unset core.hooksPath first.",
+      );
+    } else {
+      printInfo("Installed a pre-push hook that blocks pushes from this repository.");
+    }
+
+    const url = await disablePushUrl(targetDir);
+    if (url.status === "no-remote") {
+      printInfo(
+        "No remote configured — nothing to disable yet. The block still applies if one is added.",
+      );
+    } else if (url.status === "disabled") {
+      printInfo(`Disabled the push URL for "${url.remote}" (fetch still works).`);
+    }
+    printInfo("Run `spell unblock-push` from a terminal to undo this.");
+  } else if (push_policy === "guarded") {
+    printInfo(
+      "Marked as push-guarded. No technical control was installed — check the remote is the one " +
+        "you intend before pushing. `spell doctor` will keep reminding you.",
+    );
+  }
 
   // ── Step 7: Offer agent setup (for full and lite profiles) ─────────────
   let agentsConfigured = false;

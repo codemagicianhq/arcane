@@ -48,6 +48,7 @@ vi.mock("@inquirer/prompts", () => ({
     if (opts.message.includes("Which external tracker")) return "ado";
     if (opts.message.includes("treat this repository's contents")) return "standard";
     if (opts.message.includes("What does this repository hold")) return "portfolio";
+    if (opts.message.includes("allowed to push to a remote")) return "open";
     return "internal";
   }),
 }));
