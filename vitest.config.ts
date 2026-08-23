@@ -1,7 +1,17 @@
-import { defineConfig } from "vitest/config";
+import { defaultExclude, defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    // Spread defaultExclude -- Vitest replaces this array rather than merging
+    // it, so a bare ["**/.claude/**"] would silently re-enable scanning of
+    // node_modules/ and dist/.
+    //
+    // .claude/worktrees/<name>/ holds full linked worktrees, each with its own
+    // complete test/ directory. Without this, `npm test` from the primary
+    // checkout discovers and runs every test file a second time (once per
+    // live worktree), roughly doubling suite runtime and creating spurious
+    // load-related flakes.
+    exclude: [...defaultExclude, "**/.claude/**"],
     passWithNoTests: true,
     reporters: ["default", "junit"],
     outputFile: {

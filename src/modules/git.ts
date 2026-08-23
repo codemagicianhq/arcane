@@ -84,6 +84,8 @@ const READ_SUBCOMMANDS = new Set([
   "ls-files",
   "ls-tree",
   "symbolic-ref",
+  "show-ref",
+  "for-each-ref",
   "merge-base",
   "blame",
   "shortlog",
@@ -257,6 +259,14 @@ export interface UnbornBranchCorrection {
   corrected: boolean;
   from?: string;
   to: "main";
+  /**
+   * Set when the correction was declined because the target ref could not be
+   * read (a broken/unreadable `refs/heads/main`) rather than because it was
+   * absent or already healthy. Callers should surface this: the repo has a
+   * real integrity problem the operator will want to know about, but it is
+   * not severe enough to abort an install over a cosmetic branch rename.
+   */
+  blockedReason?: "target-unreadable";
 }
 
 /**
@@ -306,11 +316,28 @@ export async function correctUnbornMasterDefault(cwd: string): Promise<UnbornBra
   // whatever's currently staged/uncommitted on the unborn HEAD to main's
   // real commit history -- a history splice, not a safe unborn-HEAD
   // repoint, and the next `git commit` an operator runs would commit it.
-  try {
-    await runGit(cwd, ["rev-parse", "--verify", "refs/heads/main"]);
+  // Distinguishing "absent" from "unreadable" needs stdout/stderr, not an
+  // exit code. Verified empirically against git 2.x -- BOTH `rev-parse
+  // --verify` and `show-ref --verify --quiet` return the same nonzero status
+  // for a corrupt ref as for a missing one (128 and 1 respectively), so
+  // either one behind a bare catch reads "this branch is broken" as "this
+  // branch does not exist" and repoints HEAD onto real history anyway.
+  //
+  // `for-each-ref` separates all three states cleanly (it exits 0 throughout):
+  //   healthy  -> stdout = the object id,  stderr empty
+  //   corrupt  -> stdout empty,            stderr "warning: ignoring broken ref ..."
+  //   absent   -> stdout empty,            stderr empty
+  // Only the third is safe to treat as absence.
+  const mainRef = await runGit(cwd, ["for-each-ref", "--format=%(objectname)", "refs/heads/main"]);
+
+  if (mainRef.stdout.trim() !== "") {
     return { corrected: false, to: "main" }; // main already exists -- don't touch it
-  } catch {
-    // refs/heads/main doesn't exist -- safe to make it HEAD's target.
+  }
+
+  if (mainRef.stderr.trim() !== "") {
+    // Broken ref: it may still hold real history we cannot see. Fail closed
+    // -- decline the correction, and tell the caller why so it can warn.
+    return { corrected: false, to: "main", blockedReason: "target-unreadable" };
   }
 
   await runGit(cwd, ["symbolic-ref", "HEAD", "refs/heads/main"]);

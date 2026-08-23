@@ -35,7 +35,14 @@ const DISTRIBUTABLE_PATTERNS: RegExp[] = [
 
 function run(cmd: string): string {
   try {
-    return execSync(cmd, { cwd: ROOT, encoding: "utf-8" }).trim();
+    // stderr piped, not inherited: this helper swallows failures by design
+    // (callers treat "" as "couldn't read"), so letting git's own `fatal:`
+    // lines reach the console would report a handled miss as a CI error.
+    return execSync(cmd, {
+      cwd: ROOT,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
   } catch {
     return "";
   }
@@ -86,7 +93,11 @@ const currentPkg = JSON.parse(
   readFileSync(join(ROOT, "package.json"), "utf-8"),
 ) as { version: string };
 const currentVersion = currentPkg.version;
-const mainVersion = getVersion("origin/main:package.json") || getVersion("origin/main");
+// getVersion appends ":package.json" itself -- pass the bare ref. An earlier
+// `getVersion("origin/main:package.json") || getVersion("origin/main")` built
+// "origin/main:package.json:package.json" on the first operand, so it could
+// never resolve and the fallback was doing all the work.
+const mainVersion = getVersion("origin/main");
 
 if (!mainVersion) {
   console.warn("⚠  Could not read version from origin/main — skipping version check.");

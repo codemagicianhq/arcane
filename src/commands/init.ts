@@ -172,6 +172,12 @@ export async function runInit(
           printInfo(
             `Repointed the unborn branch from "${correction.from}" to "${correction.to}" (avoids the Git for Windows default-branch trap).`,
           );
+        } else if (correction.blockedReason === "target-unreadable") {
+          printWarning(
+            'This repo\'s "main" branch ref exists but could not be read (broken ref). Left the current branch alone — ' +
+              "repointing onto an unreadable ref risks attaching your staged work to history Arcane cannot see. " +
+              "Check `git for-each-ref refs/heads/main` before committing.",
+          );
         }
       }
 

@@ -123,6 +123,57 @@ describe("correctUnbornMasterDefault (EF-05, R2/R3)", () => {
     // main's real history must be completely unaffected.
     expect(fixtureGit(dir, ["rev-parse", "main"])).toBe(mainSha);
   });
+
+  it("refuses to repoint when refs/heads/main is unreadable rather than absent", async () => {
+    // The R1 guard's own failure mode: it asked "does main resolve?" with a
+    // bare try/catch, so a CORRUPT main (exists, holds real history, but is
+    // unreadable) failed the check identically to an absent one -- and the
+    // code then attached HEAD to it. Absence and unreadability must not be
+    // the same answer.
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["symbolic-ref", "HEAD", "refs/heads/main"]);
+    fixtureGit(dir, ["config", "user.name", "Arcane Tests"]);
+    fixtureGit(dir, ["config", "user.email", "arcane-tests@example.invalid"]);
+    await fs.writeFile(join(dir, "only-on-main.txt"), "real history");
+    fixtureGit(dir, ["add", "-A"]);
+    fixtureGit(dir, ["commit", "-m", "test: seed main with real history"]);
+
+    // Corrupt the ref in place: keep the file (so it is NOT absent) but make
+    // its contents unresolvable.
+    await fs.writeFile(join(dir, ".git", "refs", "heads", "main"), "not-a-valid-object-id\n");
+
+    fixtureGit(dir, ["symbolic-ref", "HEAD", "refs/heads/master"]);
+    await fs.writeFile(join(dir, "staged-on-orphan.txt"), "must not reach main");
+    fixtureGit(dir, ["add", "-A"]);
+
+    const result = await correctUnbornMasterDefault(dir);
+
+    // Declines the correction AND reports why, so the caller can warn.
+    expect(result).toEqual({
+      corrected: false,
+      to: "main",
+      blockedReason: "target-unreadable",
+    });
+    // HEAD must be left exactly as it was -- never repointed onto the broken ref.
+    expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("master");
+  });
+
+  it("distinguishes an unreadable target from a genuinely absent one", async () => {
+    // The control for the test above: with no refs/heads/main at all, the
+    // correction must still go through. If this and the corrupt case ever
+    // return the same thing, the distinction has silently collapsed -- which
+    // is exactly the bug that motivated moving off `rev-parse --verify`.
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["symbolic-ref", "HEAD", "refs/heads/master"]);
+
+    const result = await correctUnbornMasterDefault(dir);
+
+    expect(result).toEqual({ corrected: true, from: "master", to: "main" });
+    expect(result.blockedReason).toBeUndefined();
+    expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("main");
+  });
 });
 
 describe("ensureLocalPullRebase (EF-32, R5/R6)", () => {
