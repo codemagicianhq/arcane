@@ -39,10 +39,24 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
     throw err;
   }
 
+  // Gate on the CONTROLS, not the declaration. A partial lift writes
+  // push_policy "open" while the hook or a sentinel URL is still in force, and
+  // keying the early return on the manifest meant that state made this command
+  // refuse to run again — the failed attempt closed its own retry path. Making
+  // partial lifts visible (0.20.1) is not the same as making them recoverable.
   const policy = manifest.push_policy ?? "open";
-  if (policy === "open") {
+  const stillInForce =
+    (await isHookEnforced(targetDir)) || (await blockedRemotes(targetDir)).length > 0;
+  if (policy === "open" && !stillInForce) {
     printInfo("This repository is not push-blocked — nothing to undo.");
     return;
+  }
+  if (policy === "open") {
+    printWarning(
+      "The manifest says push_policy: open, but this repository still has Arcane's push block " +
+        "in force — most likely a previous unblock only partly succeeded. Continuing so it can " +
+        "be finished.",
+    );
   }
 
   if (!process.stdin.isTTY) {

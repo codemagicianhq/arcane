@@ -14,9 +14,9 @@
  * Only combining both bypasses in one command gets through, which is squarely
  * the determined-operator case this does not claim to stop.
  */
-import { mkdir, readFile, writeFile, chmod, access, rm } from "node:fs/promises";
+import { mkdir, readFile, writeFile, chmod, access, rm, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, dirname, basename } from "node:path";
 import { fileExists } from "./copier.js";
 import { runGit } from "./git.js";
 
@@ -67,6 +67,7 @@ export type HookInstallOutcome =
   | { status: "installed"; path: string }
   | { status: "already-ours" }
   | { status: "refused-foreign-hooks-path"; existing: string; scope: ConfigScope }
+  | { status: "refused-default-hooks"; hooks: string[] }
   | { status: "refused-unreadable-config" };
 
 /**
@@ -124,7 +125,7 @@ export async function readHooksPath(cwd: string): Promise<HooksPathInfo | undefi
  * "not enforced" for something that is), but it means doctor contradicts what
  * git does, which is the exact class of confusion this module exists to remove.
  */
-function isArcaneHooksPath(cwd: string, value: string): boolean {
+function isArcaneHooksPath(root: string, value: string): boolean {
   // Case folding only where the filesystem actually folds case. On POSIX,
   // `.arcane/HOOKS` is a genuinely different directory, and treating it as ours
   // would make the R7 guard fail OPEN -- installing over someone else's hooks.
@@ -135,7 +136,10 @@ function isArcaneHooksPath(cwd: string, value: string): boolean {
   const windows = process.platform === "win32";
   const normalize = (p: string): string => {
     const separated = windows ? p.replace(/\\/g, "/") : p;
-    const absolute = resolve(cwd, separated).replace(/\\/g, "/").replace(/\/+$/, "");
+    // Relative values resolve against the repository ROOT, matching how git
+    // itself resolves core.hooksPath -- against the worktree top level, never
+    // against the process's working directory.
+    const absolute = resolve(root, separated).replace(/\\/g, "/").replace(/\/+$/, "");
     return windows ? absolute.toLowerCase() : absolute;
   };
   return normalize(value) === normalize(ARCANE_HOOKS_DIR);
@@ -184,9 +188,71 @@ export function describeConfigScope(scope: ConfigScope): string {
   }
 }
 
-/** Absolute path of the hook file Arcane installs. */
-export function hookFilePath(cwd: string): string {
-  return join(cwd, ARCANE_HOOKS_DIR, "pre-push");
+/**
+ * The repository's top level — where the hook must live.
+ *
+ * `targetDir` is whatever directory the CLI was run from, and
+ * `--is-inside-work-tree` is true from any subdirectory. Installing the hook
+ * relative to `targetDir` while pointing repo-wide `core.hooksPath` at the
+ * literal `.arcane/hooks` put the file somewhere git never looks: git resolves a
+ * relative hooksPath against the *worktree top-level*, so a `spell init` run
+ * inside a monorepo package disabled the repository's hooks entirely and
+ * reported the block installed.
+ */
+async function repositoryRoot(cwd: string): Promise<string> {
+  // Anchored on the COMMON git dir, so every linked worktree resolves to the
+  // same directory as the main one. `--show-toplevel` would give each worktree
+  // its own root, which is exactly the mistake being fixed: the hook lives in
+  // one place, and `core.hooksPath` is shared config that must point there from
+  // everywhere.
+  try {
+    const { stdout } = await runGit(cwd, [
+      "rev-parse",
+      "--path-format=absolute",
+      "--git-common-dir",
+    ]);
+    const commonDir = stdout.trim();
+    if (commonDir !== "") {
+      // `<main>/.git` -> `<main>`. A bare repository has no working tree above
+      // its git dir, so fall through to the worktree top level there.
+      const parent = dirname(commonDir);
+      if (basename(commonDir) === ".git" && parent !== "") return parent;
+    }
+  } catch {
+    // Older git without --path-format; fall back below.
+  }
+  try {
+    const { stdout } = await runGit(cwd, ["rev-parse", "--show-toplevel"]);
+    const top = stdout.trim();
+    if (top !== "") return top;
+  } catch {
+    // Not a work tree (bare repo).
+  }
+  return cwd;
+}
+
+/**
+ * Absolute path of the hook file Arcane installs, resolved against the
+ * repository top level rather than the working directory.
+ */
+export async function hookFilePath(cwd: string): Promise<string> {
+  return join(await repositoryRoot(cwd), ARCANE_HOOKS_DIR, "pre-push");
+}
+
+/**
+ * The value written to `core.hooksPath`: an ABSOLUTE path.
+ *
+ * A relative value is re-resolved per worktree, and `core.hooksPath` lives in
+ * shared local config while `.arcane/hooks/` is an untracked directory that
+ * exists only in the checkout where it was created. So every linked worktree
+ * inherited the config and had no hook file — the hook layer was simply absent
+ * there, and `git push <url>` (the bypass only the hook covers) delivered the
+ * full history in one ordinary command while `doctor` reported the repository
+ * blocked. That is not an edge case here: Arcane's own methodology sends
+ * concurrent sessions into linked worktrees.
+ */
+async function hooksPathValue(cwd: string): Promise<string> {
+  return join(await repositoryRoot(cwd), ARCANE_HOOKS_DIR).replace(/\\/g, "/");
 }
 
 /**
@@ -201,11 +267,12 @@ export function hookFilePath(cwd: string): string {
  * that off while appearing to add protection.
  */
 export async function installPrePushHook(cwd: string): Promise<HookInstallOutcome> {
+  const root = await repositoryRoot(cwd);
   const existing = await readHooksPath(cwd);
 
   if (existing?.unreadable === true) return { status: "refused-unreadable-config" };
 
-  if (existing !== undefined && !isArcaneHooksPath(cwd, existing.value)) {
+  if (existing !== undefined && !isArcaneHooksPath(root, existing.value)) {
     return {
       status: "refused-foreign-hooks-path",
       existing: existing.value,
@@ -213,16 +280,27 @@ export async function installPrePushHook(cwd: string): Promise<HookInstallOutcom
     };
   }
 
-  const hookPath = hookFilePath(cwd);
+  // The guard above only sees hook managers that announce themselves via
+  // core.hooksPath. A repository using git's DEFAULT hooks directory has no
+  // such key, so taking the slot silently disabled every hook it had -- the
+  // exact harm R7 names, reached by the one route R7 wasn't looking at.
+  if (existing === undefined) {
+    const displaced = await defaultHooks(cwd);
+    if (displaced.length > 0) {
+      return { status: "refused-default-hooks", hooks: displaced };
+    }
+  }
+
+  const hookPath = join(root, ARCANE_HOOKS_DIR, "pre-push");
 
   if (existing !== undefined && (await hookBodyMatches(cwd))) return { status: "already-ours" };
 
-  await mkdir(join(cwd, ARCANE_HOOKS_DIR), { recursive: true });
+  await mkdir(join(root, ARCANE_HOOKS_DIR), { recursive: true });
   await writeFile(hookPath, HOOK_BODY, "utf-8");
   // Git requires the hook be executable on POSIX. chmod is a no-op for the
   // owner on Windows, which is fine -- Git for Windows does not check the bit.
   await chmod(hookPath, 0o755);
-  await runGit(cwd, ["config", "--local", "core.hooksPath", ARCANE_HOOKS_DIR]);
+  await runGit(cwd, ["config", "--local", "core.hooksPath", await hooksPathValue(cwd)]);
 
   return { status: "installed", path: hookPath };
 }
@@ -236,7 +314,8 @@ export async function installPrePushHook(cwd: string): Promise<HookInstallOutcom
  */
 export async function isHookEnforced(cwd: string): Promise<boolean> {
   const hooksPath = await readHooksPath(cwd);
-  if (hooksPath === undefined || !isArcaneHooksPath(cwd, hooksPath.value)) return false;
+  if (hooksPath === undefined || hooksPath.unreadable === true) return false;
+  if (!isArcaneHooksPath(await repositoryRoot(cwd), hooksPath.value)) return false;
   return hookBodyMatches(cwd);
 }
 
@@ -249,8 +328,27 @@ export async function isHookEnforced(cwd: string): Promise<boolean> {
  * confusion review already found one level up, so the check compares content --
  * which `installPrePushHook` already needed for its `already-ours` decision.
  */
+/**
+ * Real hooks living in git's default directory, which taking `core.hooksPath`
+ * would silently switch off. `.sample` files are git's own inert templates.
+ */
+async function defaultHooks(cwd: string): Promise<string[]> {
+  let hooksDir: string;
+  try {
+    const { stdout } = await runGit(cwd, ["rev-parse", "--git-common-dir"]);
+    hooksDir = join(resolve(cwd, stdout.trim()), "hooks");
+  } catch {
+    return [];
+  }
+  try {
+    return (await readdir(hooksDir)).filter((name) => !name.endsWith(".sample")).sort();
+  } catch {
+    return [];
+  }
+}
+
 async function hookBodyMatches(cwd: string): Promise<boolean> {
-  const hookPath = hookFilePath(cwd);
+  const hookPath = await hookFilePath(cwd);
   if (!(await fileExists(hookPath))) return false;
   try {
     if ((await readFile(hookPath, "utf-8")) !== HOOK_BODY) return false;
@@ -275,7 +373,7 @@ async function hookBodyMatches(cwd: string): Promise<boolean> {
 export async function removePrePushHook(cwd: string): Promise<void> {
   const existing = await readHooksPath(cwd);
   if (existing === undefined || existing.unreadable === true) return;
-  if (!isArcaneHooksPath(cwd, existing.value)) return;
+  if (!isArcaneHooksPath(await repositoryRoot(cwd), existing.value)) return;
   if (existing.scope !== "local" && existing.scope !== "worktree") return;
 
   // Unset at the scope the value actually lives in. `--local` cannot touch a
@@ -292,7 +390,7 @@ export async function removePrePushHook(cwd: string): Promise<void> {
   // Remove the hook file too. Leaving it behind means a later `spell init` that
   // re-points core.hooksPath silently re-arms a block the operator lifted.
   try {
-    await rm(hookFilePath(cwd), { force: true });
+    await rm(await hookFilePath(cwd), { force: true });
   } catch {
     // Non-fatal: with core.hooksPath unset, git no longer reads this directory.
   }
@@ -410,15 +508,16 @@ async function readScopedAll(cwd: string, key: string): Promise<{ scope: string;
   }
   return stdout
     .split("\n")
-    .map((line) => line.trimEnd())
-    .filter(Boolean)
+    .filter((line) => line !== "")
     .map((line) => {
-      // `<scope>\t<value>`; the value may itself contain tabs, so split once.
+      // `<scope>\t<value>`; split BEFORE trimming. Trimming first ate the
+      // separator tab on an empty-valued entry (`global\t`), which then parsed
+      // as `{scope: "unknown", value: "global"}` and produced a remedy telling
+      // the operator to run `git config --unknown`, which is not a command.
       const separator = line.indexOf("\t");
       if (separator === -1) return { scope: "unknown", value: line.trim() };
       return { scope: line.slice(0, separator).trim(), value: line.slice(separator + 1).trim() };
-    })
-    .filter((entry) => entry.value !== "");
+    });
 }
 
 /** Push URLs git would actually use for a remote, across every config scope. */
@@ -466,16 +565,23 @@ async function disableOneRemote(cwd: string, remote: string): Promise<PushUrlRes
   // so the push is delivered and only then fails on the sentinel. Refuse and say
   // so, rather than writing a sentinel that makes the repository look covered
   // while the history walks out the front door.
-  const foreign = scoped.filter((entry) => entry.scope !== "local" && entry.value !== DISABLED_PUSH_URL);
+  // `worktree` scope is writable from inside the repository, so it is ours to
+  // manage, not foreign. Only genuinely outer scopes are unreachable.
+  const OVERRIDABLE = new Set(["local", "worktree"]);
+  const foreign = scoped.filter(
+    (entry) => !OVERRIDABLE.has(entry.scope) && entry.value !== DISABLED_PUSH_URL,
+  );
   if (foreign.length > 0) {
-    const where = [...new Set(foreign.map((entry) => entry.scope))].join(", ");
+    const scopes = [...new Set(foreign.map((entry) => entry.scope))];
+    const where = scopes.join(", ");
+    const flag = scopes[0] === "unknown" ? "<scope>" : `--${scopes[0]}`;
     return {
       remote,
       status: "failed",
       reason:
         `a push URL for this remote is configured at ${where} scope, which this repository cannot ` +
         `override — git would still deliver the push there. Remove it with ` +
-        `\`git config --${where.split(", ")[0]} --unset-all remote.${remote}.pushurl\` and re-apply.`,
+        `\`git config ${flag} --unset-all remote.${remote}.pushurl\` and re-apply.`,
     };
   }
 
@@ -513,6 +619,28 @@ async function disableOneRemote(cwd: string, remote: string): Promise<PushUrlRes
     `remote.${remote}.pushurl`,
     DISABLED_PUSH_URL,
   ]);
+
+  // Re-read what git ACTUALLY resolves, rather than trusting that the write did
+  // what we intended. The scope-based refusal above catches the cases git labels
+  // as an outer scope, but not all of them: a value contributed by a file the
+  // repository `include`s is reported as scope `local`, survives
+  // `--replace-all`, and — if the include precedes the remote section — sorts
+  // first and delivers the push. Verifying the outcome closes that whole class
+  // rather than the enumerated members of it, which is the difference between
+  // this check and the last three rounds of enumerating members.
+  const after = await effectivePushUrls(cwd, remote);
+  if (after.length !== 1 || after[0] !== DISABLED_PUSH_URL) {
+    const live = after.filter((url) => url !== DISABLED_PUSH_URL);
+    return {
+      remote,
+      status: "failed",
+      reason:
+        `the sentinel was written but git still resolves a live push URL for this remote ` +
+        `(${live.join(", ")}). It most likely comes from a file this repository \`include\`s, ` +
+        `which \`--replace-all\` cannot remove. Run \`git config --show-origin --get-all ` +
+        `remote.${remote}.pushurl\` to find the file, and clear it there.`,
+    };
+  }
   return { remote, status: "disabled" };
 }
 
@@ -577,7 +705,11 @@ async function restoreOneRemote(cwd: string, remote: string): Promise<PushUrlRes
   }
 
   if (hadNone) {
-    await runGit(cwd, ["config", "--local", "--unset-all", `remote.${remote}.pushurl`]);
+    // `--unset-all` exits 5 when the key is already absent. That is the goal
+    // state, not a failure -- letting it throw skipped the stale-key cleanup
+    // below, and a surviving `arcaneHadNoPushUrl` marker made the NEXT block
+    // record nothing and the next restore delete a genuine push URL.
+    await unsetIgnoringMissing(cwd, `remote.${remote}.pushurl`);
   } else {
     await runGit(cwd, [
       "config",
@@ -591,14 +723,38 @@ async function restoreOneRemote(cwd: string, remote: string): Promise<PushUrlRes
     }
   }
 
+  // Clear our bookkeeping only on success. Doing this unconditionally would
+  // destroy a record we had *deliberately* declined to apply -- the legacy-key
+  // refusal above prints the value for the operator to apply by hand, and
+  // wiping it in the same breath makes that instruction unfollowable.
+  //
+  // The stale-marker hazard this used to guard against is closed at its source:
+  // `unsetIgnoringMissing` treats git's exit 5 ("key already absent") as
+  // success, so the throw that previously skipped this cleanup no longer
+  // happens.
   for (const staleKey of [key, NO_PUSH_URL_MARKER(remote), `arcane.originalPushUrl.${remote}`]) {
     try {
-      await runGit(cwd, ["config", "--local", "--unset-all", staleKey]);
+      await unsetIgnoringMissing(cwd, staleKey);
     } catch {
       // Non-fatal: the URL is restored, which is what matters.
     }
   }
   return { remote, status: "restored" };
+}
+
+/**
+ * Unsets a config key, treating "it was already absent" as success.
+ *
+ * `git config --unset-all` exits **5** for a missing key. Letting that throw
+ * turned a no-op into a reported failure and, worse, skipped whatever cleanup
+ * followed it.
+ */
+async function unsetIgnoringMissing(cwd: string, key: string): Promise<void> {
+  try {
+    await runGit(cwd, ["config", "--local", "--unset-all", key]);
+  } catch (error) {
+    if ((error as { code?: unknown }).code !== 5) throw error;
+  }
 }
 
 async function hadNoPushUrl(cwd: string, remote: string): Promise<boolean> {

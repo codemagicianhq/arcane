@@ -71,6 +71,11 @@ async function clearScopedConfig(file: string): Promise<void> {
   await fs.writeFile(file, "");
 }
 
+/** Windows paths come back from git with forward slashes; compare on one form. */
+function normalizeSeparators(p: string): string {
+  return p.split("\\").join("/");
+}
+
 /** `git config --get-all` exits 1 when the key is absent; that is not an error here. */
 function configValues(dir: string, key: string): string[] {
   const res = spawnSync("git", ["config", "--get-all", key], { cwd: dir, encoding: "utf-8" });
@@ -198,7 +203,7 @@ describe("enforcement is verified, not assumed", () => {
     await installPrePushHook(work);
     expect(await isHookEnforced(work)).toBe(true);
 
-    await fs.rm(hookFilePath(work));
+    await fs.rm(await hookFilePath(work));
 
     expect(await isHookEnforced(work)).toBe(false);
     // And prove the consequence, not just the flag.
@@ -264,7 +269,7 @@ describe("hook-manager collision guard (R7)", () => {
 
       // The org's setting is untouched and no hook file was written.
       expect((await readHooksPath(work))?.value).toBe("/org/hooks");
-      await expect(fs.access(hookFilePath(work))).rejects.toThrow();
+      await expect(fs.access(await hookFilePath(work))).rejects.toThrow();
     } finally {
       await clearScopedConfig(globalConfig);
     }
@@ -304,7 +309,7 @@ describe("hook-manager collision guard (R7)", () => {
     fixtureGit(work, ["config", "--local", "core.hooksPath", "/some/org/hooks"]);
 
     expect((await installPrePushHook(work)).status).toBe("refused-foreign-hooks-path");
-    await expect(fs.access(hookFilePath(work))).rejects.toThrow();
+    await expect(fs.access(await hookFilePath(work))).rejects.toThrow();
   });
 
   it("does not write a hook file when it refuses", async () => {
@@ -323,7 +328,7 @@ describe("hook-manager collision guard (R7)", () => {
   it("re-writes a tampered hook body rather than reporting it unchanged", async () => {
     const { work } = await repoWithRemote();
     await installPrePushHook(work);
-    await fs.writeFile(hookFilePath(work), "#!/bin/sh\nexit 0\n");
+    await fs.writeFile(await hookFilePath(work), "#!/bin/sh\nexit 0\n");
 
     expect((await installPrePushHook(work)).status).toBe("installed");
     expect(tryPush(work).ok).toBe(false);
@@ -352,7 +357,7 @@ describe("hook-manager collision guard (R7)", () => {
     const { work } = await repoWithRemote();
     await installPrePushHook(work);
     await removePrePushHook(work);
-    await expect(fs.access(hookFilePath(work))).rejects.toThrow();
+    await expect(fs.access(await hookFilePath(work))).rejects.toThrow();
   });
 
   it("leaves a foreign hooks path alone when removing", async () => {
@@ -573,7 +578,7 @@ describe("a neutered hook is not enforcement", () => {
     await installPrePushHook(work);
     expect(await isHookEnforced(work)).toBe(true);
 
-    await fs.writeFile(hookFilePath(work), "#!/bin/sh\nexit 0\n");
+    await fs.writeFile(await hookFilePath(work), "#!/bin/sh\nexit 0\n");
 
     expect(await isHookEnforced(work)).toBe(false);
     // And prove the consequence: this hook lets a push straight to a URL through.
@@ -593,7 +598,7 @@ describe("a neutered hook is not enforcement", () => {
       await installPrePushHook(work);
       expect(await isHookEnforced(work)).toBe(true);
 
-      await fs.chmod(hookFilePath(work), 0o644);
+      await fs.chmod(await hookFilePath(work), 0o644);
 
       expect(await isHookEnforced(work)).toBe(false);
       expect(tryPush(work).ok).toBe(true);
@@ -603,7 +608,7 @@ describe("a neutered hook is not enforcement", () => {
   it("reports not-enforced for a zero-byte hook file", async () => {
     const { work } = await repoWithRemote();
     await installPrePushHook(work);
-    await fs.writeFile(hookFilePath(work), "");
+    await fs.writeFile(await hookFilePath(work), "");
 
     expect(await isHookEnforced(work)).toBe(false);
   });
@@ -618,5 +623,130 @@ describe("no remote configured", () => {
     expect(await disablePushUrls(dir)).toEqual([]);
     expect(await restorePushUrls(dir)).toEqual([]);
     expect(await undisabledRemotes(dir)).toEqual([]);
+  });
+});
+
+describe("the hook must exist where git actually looks", () => {
+  it("fires from a LINKED WORKTREE, not just the checkout that installed it", async () => {
+    // The worst defect this feature has had, and it shipped. `core.hooksPath`
+    // lives in shared local config, but `.arcane/hooks/` is an untracked
+    // directory that exists only where it was created — and git resolves a
+    // RELATIVE hooksPath against each worktree's own top level. So every linked
+    // worktree inherited the config and had no hook file: the hook layer was
+    // simply absent, and `git push <url>` (the bypass only the hook covers)
+    // delivered the full history in one ordinary command while doctor reported
+    // the repository blocked.
+    //
+    // Not an edge case: Arcane's own methodology (ARC-028 R3) sends concurrent
+    // sessions into linked worktrees.
+    const { work, bare } = await repoWithRemote();
+    await installPrePushHook(work);
+
+    const worktree = await createFixtureDir("push-safety-linked-");
+    await fs.rm(worktree, { recursive: true, force: true });
+    fixtureGit(work, ["worktree", "add", worktree, "-b", "topic/x"]);
+
+    expect(await isHookEnforced(worktree)).toBe(true);
+    // The consequence, which is the whole point.
+    expect(tryPush(worktree, [bare, "topic/x"]).ok).toBe(false);
+  });
+
+  it("writes core.hooksPath as an absolute path, so it cannot be re-resolved per worktree", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+
+    const configured = (await readHooksPath(work))?.value ?? "";
+    expect(configured).not.toBe(ARCANE_HOOKS_DIR);
+    expect(configured.endsWith(ARCANE_HOOKS_DIR)).toBe(true);
+  });
+
+  it("installs at the repository root when run from a subdirectory", async () => {
+    // `--is-inside-work-tree` is true from any subdirectory, so `spell init` in
+    // a monorepo package installed the hook under that package while pointing
+    // repo-wide core.hooksPath at a path git resolves from the ROOT. The hook
+    // layer was absent everywhere in the repository, doctor reported it in
+    // place, and the repo's own .git/hooks stopped firing as collateral.
+    const { work, bare } = await repoWithRemote();
+    const nested = join(work, "packages", "thing");
+    await fs.mkdir(nested, { recursive: true });
+
+    const outcome = await installPrePushHook(nested);
+    expect(outcome.status).toBe("installed");
+    if (outcome.status === "installed") {
+      expect(outcome.path).toBe(join(work, ".arcane", "hooks", "pre-push"));
+    }
+    expect(tryPush(work, [bare, "main"]).ok).toBe(false);
+  });
+});
+
+describe("hooks in git's DEFAULT directory are a collision too (R7)", () => {
+  it("refuses rather than silently switching off .git/hooks", async () => {
+    // The R7 guard only looked at core.hooksPath, so a repository using git's
+    // default directory — no hook manager, no config key to collide with — had
+    // every hook silently disabled by taking the slot. ARC-034's own stated
+    // rationale for R7 applies verbatim; the guard just wasn't looking there.
+    const { work } = await repoWithRemote();
+    const hooksDir = join(work, ".git", "hooks");
+    await fs.writeFile(join(hooksDir, "pre-commit"), "#!/bin/sh\nexit 0\n");
+
+    const outcome = await installPrePushHook(work);
+
+    expect(outcome.status).toBe("refused-default-hooks");
+    if (outcome.status === "refused-default-hooks") {
+      expect(outcome.hooks).toContain("pre-commit");
+    }
+    // Nothing written, nothing repointed.
+    await expect(fs.access(await hookFilePath(work))).rejects.toThrow();
+    expect(await readHooksPath(work)).toBeUndefined();
+  });
+
+  it("ignores git's inert .sample templates", async () => {
+    // Every fresh repo ships those; treating them as real hooks would refuse
+    // every ordinary repository and get the feature switched off.
+    const { work } = await repoWithRemote();
+    await fs.writeFile(join(work, ".git", "hooks", "pre-commit.sample"), "#!/bin/sh\nexit 0\n");
+
+    expect((await installPrePushHook(work)).status).toBe("installed");
+  });
+});
+
+describe("a partial unblock stays recoverable", () => {
+  it("does not let the manifest's 'open' lock out a retry", async () => {
+    // A partial lift writes push_policy "open" while controls remain in force.
+    // Keying the retry on the manifest meant the failed attempt closed its own
+    // recovery path.
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    await disablePushUrls(work);
+
+    expect(await blockedRemotes(work)).toEqual(["origin"]);
+    expect(await isHookEnforced(work)).toBe(true);
+
+    // Simulate the partial state: manifest lifted, controls untouched.
+    await removePrePushHook(work);
+    expect(await isHookEnforced(work)).toBe(false);
+    // The URL half is still blocked and must still be detectable.
+    expect(await blockedRemotes(work)).toEqual(["origin"]);
+  });
+
+  it("treats an already-absent key as done rather than a failure", async () => {
+    // `git config --unset-all` exits 5 for a missing key. Letting that throw
+    // skipped the stale-key cleanup, and a surviving marker made the NEXT
+    // block record nothing and the restore after that delete a genuine URL.
+    const { work, bare } = await repoWithRemote();
+    await disablePushUrls(work);
+    fixtureGit(work, ["config", "--local", "--unset-all", "remote.origin.pushurl"]);
+
+    const results = await restorePushUrls(work);
+    expect(results[0]?.status).not.toBe("failed");
+    expect(configValues(work, "remote.origin.arcaneHadNoPushUrl")).toEqual([]);
+
+    // And the next full cycle must round-trip a genuine URL correctly.
+    fixtureGit(work, ["config", "--local", "remote.origin.pushurl", bare]);
+    await disablePushUrls(work);
+    await restorePushUrls(work);
+    expect(configValues(work, "remote.origin.pushurl").map(normalizeSeparators)).toEqual([
+      normalizeSeparators(bare),
+    ]);
   });
 });
