@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-08-23
+
+Completes every [ARC-028](DECISIONS.md#arc-028--concurrency-and-isolation-model-for-parallel-work) follow-up this repository owns, and files one new intake finding.
+
+### Changed
+
+- **Governance now distinguishes the primary checkout from a linked worktree** (ARC-028 R1/R8). `git-conventions.md` previously told every session to `git checkout main` after merge and `git branch -d` the topic branch. From a linked worktree both **fail** — git refuses to check out one branch in two worktrees, and refuses to delete a branch still attached to one. The session-branch close, the docs-workflow fast-forward merge, the Magus+ self-merge step, and Post-Merge Cleanup are each scoped to the primary checkout, with the worktree path spelled out beside them: push → PR → `git worktree remove` from the primary vantage point. Both refusals were verified against real git rather than assumed, and the text says explicitly that they are the guardrail ARC-028 leans on, not an obstacle to force past with `-D`.
+- **`spell-open-session` selects the isolation primitive before anything is written.** Repo-state management → primary checkout; primary occupied → linked worktree; unattended automation → full clone; otherwise the do-nothing default. Overlapping footprints override the choice and serialize (R4), because isolation hides collisions until merge review rather than preventing them.
+- **`spell-close-session` no longer ends a worktree session by checking out trunk.** It detects the primitive with `git rev-parse --git-common-dir` vs `--git-dir` and forks: the primary path is unchanged, the worktree path reports the worktree and branch for removal from the primary vantage point and verifies the merge against the remote-tracking ref instead.
+- **`spell-full-cycle` requires a footprint comparison before running epics concurrently**, naming shared sequences (migration numbers, generated indexes, lockfiles) as the axis people miss. Backed by the recorded evidence: a four-epic parallel run produced two duplicate migration numbers and two conflicting imports, invisible until human review; a serialized three-epic re-run produced zero.
+- **`threat-model.md` no longer marks credential exposure "Mitigated".** The listed mitigation was entirely storage conventions with nothing verifying them; the row now states that detection is not implemented and says to rotate any credential that reaches a commit.
+
+### Added
+
+- **[EF-35](docs/intake/batch-001/EF-35.md)** — secret-handling policy is stated in five governance documents but no detection mechanism exists anywhere: no scanner on the commit path, the push path, or in CI, and nothing configuring GitHub's own secret scanning. Routed to an ADR rather than implementation, because the real decision is where the check binds and what it may block — and it must extend ARC-034's pre-push hook rather than compete for `core.hooksPath`.
+
+### Notes
+
+- ARC-028's naming four-check ran and **Chamber failed it** — OpenChamber (9.1k★, "an agentic development environment" organised around Sessions), cirruslabs/chamber (agent isolation in VMs), and Chamber YC W26 all occupy the same audience, with segmentio/chamber owning first association. The naming rollout stays parked; vetted alternatives are recorded in the ADR. ARC-028 remains Proposed for that reason alone — every implementation follow-up this repository owns is now done, and the DMC rendering contract belongs to a different repository.
+
 ## [0.20.2] - 2026-08-23
 
 More push-safety fixes, from a review that attacked the shipped `0.20.1` rather than reading it. **Two of these let a single ordinary command deliver the full history while `spell doctor` reported the repository blocked.** If you use `push_policy: "blocked"`, upgrade and re-run `spell doctor`.

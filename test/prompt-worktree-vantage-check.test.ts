@@ -34,6 +34,36 @@ function lineContaining(text: string, needle: string): string {
 }
 
 /**
+ * The paragraph containing `needle` — the anchored line plus the wrapped
+ * continuation lines that belong to it, up to the next blank line.
+ *
+ * Markdown prose in these documents is hard-wrapped, so a single bullet's
+ * meaning is routinely split across several lines. `lineContaining` is still
+ * the right tool when the assertion is about one command and its annotation
+ * sitting together; this one is for assertions about a whole statement.
+ * Proximity is still what is being proved — just at paragraph granularity
+ * rather than line granularity, so it cannot be satisfied by a match in an
+ * unrelated section.
+ */
+function blockContaining(text: string, needle: string): string {
+  const lines = text.split("\n");
+  const start = lines.findIndex((l) => l.includes(needle));
+  if (start === -1) throw new Error(`No line contains "${needle}"`);
+  if (lines.filter((l) => l.includes(needle)).length > 1) {
+    throw new Error(`"${needle}" appears more than once; test needs a unique anchor`);
+  }
+  const block = [lines[start]!];
+  for (let i = start + 1; i < lines.length; i += 1) {
+    const line = lines[i]!;
+    if (line.trim() === "") break;
+    // Stop at the next sibling bullet, so a block cannot absorb its neighbour.
+    if (/^\s*[-*]\s|^\s*\d+\.\s/.test(line)) break;
+    block.push(line);
+  }
+  return block.join(" ");
+}
+
+/**
  * Guards against a `lineContaining` proximity assertion being satisfied by
  * an INVERTED sentence -- physical adjacency on one line proves attachment,
  * not polarity. A future edit could keep every required phrase on the same
@@ -133,9 +163,35 @@ describe("branch-deletion sites reference the check, attached to the actual comm
   });
 
   it("spell-close-session's git branch -d line is directly annotated with the check", () => {
-    const line = lineContaining(closeSession, "git branch -d <branch>`");
+    // Anchored on the primary-checkout instruction specifically. ARC-028 R8
+    // added a SECOND mention of the same command on the linked-worktree path,
+    // which is a prohibition -- so the bare command string is no longer a
+    // unique anchor, and matching the wrong one would assert the EF-33
+    // annotation against a "do not run this" line.
+    const line = lineContaining(closeSession, "Delete the local topic branch: `git branch -d <branch>`");
     expect(line).toContain("EF-33 / ARC-028 R7");
     expectNotNegated(line);
+  });
+
+  it("spell-close-session forbids the same command on the linked-worktree path (ARC-028 R8)", () => {
+    // The counterpart assertion, so the split cannot silently lose either half:
+    // from a worktree the command FAILS, and the prompt must say so rather than
+    // leaving an agent to discover it and reach for `-D`.
+    const line = lineContaining(closeSession, "**Do not run `git branch -d <branch>`.**");
+    expect(line).toContain("cannot delete branch");
+    expect(line).toMatch(/never reach for `-D`|never reach for `-D`, `--force`/);
+  });
+
+  it("spell-close-session forbids checking out trunk from a linked worktree (ARC-028 R8)", () => {
+    const line = lineContaining(closeSession, "**Do not run `git switch <trunk>`.**");
+    expect(line).toContain("already used by worktree");
+  });
+
+  it("spell-close-session detects the primitive rather than assuming it", () => {
+    // The fork is only safe if it is derived from real repository state; a
+    // handoff claim is not evidence, and the session may have moved.
+    expect(closeSession).toContain("git rev-parse --git-common-dir");
+    expect(closeSession).toContain("git rev-parse --git-dir");
   });
 
   it("spell-ship's git branch -d line is directly annotated with the check", () => {
@@ -182,5 +238,123 @@ describe("agent-policies.md gains the working-tree dimension (ARC-028 item 11a)"
     );
     expect(rule8).toContain("applies even to a solo agent");
     expectNotNegated(rule8);
+  });
+});
+
+/**
+ * ARC-028 item 11(a)/(b) — the primitive-scoping pass.
+ *
+ * These assert the SCOPING, not merely that worktrees are mentioned. The
+ * defect being guarded is governance that instructs every session to
+ * `git checkout main` and `git branch -d` after merge: from a linked worktree
+ * both commands fail, and an agent told to do them unconditionally either
+ * gets stuck or escalates to `-D`, which is how attached branches get
+ * destroyed. Each site therefore has to name which primitive it applies to.
+ */
+describe("git-conventions scopes merge/cleanup to the primary checkout (ARC-028 R1/R8)", () => {
+  it("the session-branch close names the primary checkout and the worktree alternative", () => {
+    const line = lineContaining(gitConventions, "At close, push and open a PR.");
+    expect(line).toContain("primary checkout only");
+    expect(line).toContain("ARC-028 R8");
+    expect(line).toContain("worktree removal");
+    expectNotNegated(line);
+  });
+
+  it("the local fast-forward merge is marked primary-checkout work", () => {
+    const line = lineContaining(gitConventions, "**Merge to main via fast-forward**");
+    expect(line).toContain("primary-checkout work");
+    expect(line).toContain("ARC-028 R1");
+  });
+
+  it("Magus+ self-merge distinguishes authority from mechanism", () => {
+    // The scoping must not read as a power-level demotion: a Magus+ agent in a
+    // worktree still self-merges, just through the PR rather than locally.
+    // Block-scoped, not line-scoped -- this bullet wraps across four lines.
+    const block = blockContaining(
+      gitConventions,
+      "**Magus+ agents, working in a linked worktree or a clone:**",
+    );
+    expect(block).toContain("ARC-028 R1");
+    expect(block).toContain("The authority is the same");
+    expect(block).toContain("the isolation primitive decides *how*");
+  });
+
+  it("Post-Merge Cleanup gives the worktree its own procedure, not a prohibition alone", () => {
+    expect(gitConventions).toContain("**From a linked worktree, do not run the block above**");
+    expect(gitConventions).toContain("git worktree remove <path>");
+    // Both git refusals named, so neither reads as a tool malfunction.
+    expect(gitConventions).toContain("cannot delete branch");
+    expect(gitConventions).toContain("are the enforcement ARC-028 R3/R7 rely on");
+  });
+});
+
+describe("spell-open-session selects an isolation primitive (ARC-028 R1-R5)", () => {
+  it("names all three primitives and the selection order", () => {
+    const line = lineContaining(openSession, "- **Isolation primitive (ARC-028 R1–R5):**");
+    expect(line).toContain("primary checkout");
+    expect(line).toContain("linked worktree");
+    expect(line).toContain("full clone");
+    expectNotNegated(line);
+  });
+
+  it("requires the choice before the Mutation Guard writes anything", () => {
+    const line = lineContaining(openSession, "- **Isolation primitive (ARC-028 R1–R5):**");
+    expect(line).toContain("before* the Mutation Guard");
+  });
+
+  it("makes footprint overlap override the choice rather than a note beside it", () => {
+    const line = lineContaining(openSession, "**Footprint overlap overrides the choice (R4).**");
+    expect(line).toContain("serialize");
+    expect(line).toContain("hides them until merge review");
+  });
+});
+
+describe("spell-full-cycle serializes overlapping epics (ARC-028 R4)", () => {
+  let fullCycle: string;
+  beforeAll(async () => {
+    fullCycle = await readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8");
+  });
+
+  it("requires a footprint comparison, including shared sequences", () => {
+    const line = lineContaining(fullCycle, "**Multi-epic runs serialize by default (ARC-028 R4).**");
+    expect(line).toContain("shared sequence");
+    expect(line).toContain("migration");
+    expect(line).toContain("lockfiles");
+    expectNotNegated(line);
+  });
+
+  it("rejects an unstated comparison rather than accepting good intentions", () => {
+    const line = lineContaining(fullCycle, "**Multi-epic runs serialize by default (ARC-028 R4).**");
+    expect(line).toContain('"they seemed unrelated" is not a footprint comparison');
+  });
+
+  it("keeps parallelism available for genuinely disjoint work", () => {
+    // A default that reads as a ban gets ignored; R4 serializes overlap, not
+    // everything.
+    expect(fullCycle).toContain("parallelism is available for genuinely disjoint footprints");
+  });
+});
+
+describe("threat-model stops claiming credential exposure is mitigated (EF-35)", () => {
+  let threatModel: string;
+  beforeAll(async () => {
+    threatModel = await readFile(join(GOVERNANCE, "threat-model.md"), "utf8");
+  });
+
+  it("records committed credentials as NOT mitigated, with the reason", () => {
+    const line = lineContaining(threatModel, "| Credential committed to version control |");
+    expect(line).toContain("**Not mitigated**");
+    expect(line).toContain("no detection exists");
+  });
+
+  it("does not let the security-review spell stand in for a control", () => {
+    const line = lineContaining(threatModel, "| Credential committed to version control |");
+    expect(line).toContain("on-demand agent read, not a control");
+  });
+
+  it("still records at-rest token storage as mitigated, which is unchanged", () => {
+    // Guards against the correction over-reaching into a claim that was true.
+    const line = lineContaining(threatModel, "| Token/credential exposure (at rest) |");
+    expect(line).toContain("**Mitigated**");
   });
 });
