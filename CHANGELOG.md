@@ -5,6 +5,20 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-08-23
+
+### Added
+
+- **`docs` profile** ([EF-04](docs/intake/batch-001/EF-04.md), docs-mode PRD MH-01) — a fifth installable profile for documentation and records repositories. Installs session, capture, PR-delivery, planning and meta spells plus core governance; deliberately excludes implementation, test-coverage, stack-expert, deployment, PRD-enchantment and hub-venture workflows. Every retained spell completes its core workflow without source code, tests, CI, or an external tracker. `tracking_mode` defaults silently to `internal` for this profile, alongside `governance-only` and `methodology`.
+
+### Changed
+
+- **Spell components are now capability-scoped.** The monolithic `spell-prompts` (34 spells) and `claude-commands` (34 wrappers) components were split into seven groups — `spells-session`, `spells-capture`, `spells-delivery`, `spells-planning`, `spells-build`, `spells-venture`, `spells-meta` — so a profile can select spells by capability. **No spell file was renamed or moved**; grouping lives in the registry only, and every file stays flat in `.github/prompts/` and `.claude/commands/`.
+
+  Each component now carries *both* client formats of the same spell. The two were never independently selectable (every profile that took one took the other), and pairing them makes it structurally impossible for a spell's Copilot prompt and Claude wrapper to diverge across profiles.
+
+  **Existing installs migrate automatically on `spell update`** — no questions, no action required. A manifest listing either legacy name (or both, which is the common case) converges on the same seven components, deduped. Without this, `update` would have hit `ComponentNotFoundError`, preserved the dead entry, and silently stopped updating that repo's spells forever.
+
 ## [0.17.1] - 2026-08-23
 
 ### Fixed

@@ -2,8 +2,11 @@
  * Profile configuration — the canonical source of truth for Arcane profiles.
  *
  * A profile bundles a curated set of components for a common use case.
- * Adding or changing profiles requires only editing this file — no changes to
- * the registry or CLI command logic are needed.
+ * Changing which components an EXISTING profile bundles requires only editing
+ * this file. Adding a NEW profile id additionally touches the `Profile` union
+ * in types.ts, `VALID_PROFILES` and the presentation/gating branches in
+ * commands/init.ts, the --profile help string in index.ts, and the retrofit
+ * mirror in modules/hub.ts -- the registry itself needs no change.
  *
  * The special value "*" for `components` means "all registered components"
  * and is expanded by the registry at runtime.
@@ -33,15 +36,33 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
     id: "lite",
     displayName: "Essentials",
     description: "Spells + core governance — fast start",
-    components: ["spell-prompts", "claude-commands", "agent-output-instructions", "git-conventions", "testing-standards", "framework-decisions", "session-continuity"],
+    components: [
+      "spells-session",
+      "spells-capture",
+      "spells-delivery",
+      "spells-planning",
+      "spells-build",
+      "spells-venture",
+      "spells-meta",
+      "agent-output-instructions",
+      "git-conventions",
+      "testing-standards",
+      "framework-decisions",
+      "session-continuity",
+    ],
   },
   {
     id: "methodology",
     displayName: "Methodology Suite",
     description: "Spells + governance — full methodology without security/infra docs",
     components: [
-      "spell-prompts",
-      "claude-commands",
+      "spells-session",
+      "spells-capture",
+      "spells-delivery",
+      "spells-planning",
+      "spells-build",
+      "spells-venture",
+      "spells-meta",
       "agent-output-instructions",
       "git-conventions",
       "testing-standards",
@@ -50,6 +71,34 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "decision-documentation-standard",
       "agent-work-queue-model",
       "development-methodology",
+      "spell-authoring-standards",
+    ],
+  },
+  {
+    id: "docs",
+    displayName: "Docs / Records",
+    description: "Documentation and records repositories — no code, test, or deployment workflows",
+    components: [
+      // Deliberate exclusion: "spells-build" (implementation, tests, stack
+      // experts, release, deployment, PRD enchantment) and "spells-venture"
+      // (hub-only). Per docs-mode PRD MH-01, every retained spell must
+      // complete its core workflow without source code, tests, CI, or an
+      // external tracker. Asserted in test/registry.test.ts, exclusions
+      // included -- MH-01 requires the exclusions themselves be tested.
+      "spells-session",
+      "spells-capture",
+      "spells-delivery",
+      "spells-planning",
+      "spells-meta",
+      "agent-output-instructions",
+      "git-conventions",
+      "framework-decisions",
+      "session-continuity",
+      "decision-documentation-standard",
+      "agent-work-queue-model",
+      "development-methodology",
+      "naming-conventions",
+      "universal-agent-rules",
       "spell-authoring-standards",
     ],
   },

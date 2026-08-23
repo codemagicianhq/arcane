@@ -62,7 +62,7 @@ export interface RegistryComponent {
   skipExisting?: boolean;
 }
 
-export type Profile = "full" | "lite" | "governance-only" | "methodology";
+export type Profile = "full" | "lite" | "governance-only" | "methodology" | "docs";
 
 export interface ProfileDefinition {
   id: Profile;

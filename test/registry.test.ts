@@ -48,10 +48,10 @@ describe("registry", () => {
       const components = getProfile("full");
       const names = components.map((c) => c.name);
       expect(names).toContain("git-conventions");
-      expect(names).toContain("spell-prompts");
+      expect(names).toContain("spells-session");
       expect(names).toContain("venture-template");
       expect(names).toContain("agent-definitions");
-      expect(names).toContain("claude-commands");
+      expect(names).toContain("spells-build");
     });
 
     it("includes all 12 governance components", () => {
@@ -77,10 +77,10 @@ describe("registry", () => {
   });
 
   describe("getProfile('lite')", () => {
-    it("returns only spell-prompts + git-conventions + testing-standards", () => {
+    it("returns only the requested components", () => {
       const names = getProfile("lite").map((c) => c.name);
       expect(names).toEqual(
-        expect.arrayContaining(["spell-prompts", "git-conventions", "testing-standards"]),
+        expect.arrayContaining(["spells-session", "git-conventions", "testing-standards"]),
       );
       expect(names).not.toContain("threat-model");
       expect(names).not.toContain("venture-template");
@@ -90,7 +90,7 @@ describe("registry", () => {
   describe("getProfile('governance-only')", () => {
     it("returns only governance docs — no prompts, no agents, no template", () => {
       const names = getProfile("governance-only").map((c) => c.name);
-      expect(names).not.toContain("spell-prompts");
+      expect(names).not.toContain("spells-session");
       expect(names).not.toContain("venture-template");
       expect(names).not.toContain("agent-definitions");
     });
@@ -129,13 +129,13 @@ describe("registry", () => {
   // ─── listProfiles ─────────────────────────────────────────────────────────
 
   describe("listProfiles", () => {
-    it("returns exactly 4 profiles", () => {
-      expect(listProfiles()).toHaveLength(4);
+    it("returns exactly 5 profiles", () => {
+      expect(listProfiles()).toHaveLength(5);
     });
 
-    it("includes full, lite, methodology, governance-only in that order", () => {
+    it("includes full, lite, methodology, docs, governance-only in that order", () => {
       const ids = listProfiles().map((p) => p.id);
-      expect(ids).toEqual(["full", "lite", "methodology", "governance-only"]);
+      expect(ids).toEqual(["full", "lite", "methodology", "docs", "governance-only"]);
     });
 
     it("each profile has id, displayName, description, and components array", () => {
@@ -154,16 +154,16 @@ describe("registry", () => {
       expect(full.components).toEqual(expectedNames);
     });
 
-    it("lite profile includes spell-prompts and core governance", () => {
+    it("lite profile includes spell components and core governance", () => {
       const lite = listProfiles().find((p) => p.id === "lite")!;
-      expect(lite.components).toContain("spell-prompts");
+      expect(lite.components).toContain("spells-session");
       expect(lite.components).toContain("git-conventions");
       expect(lite.components).not.toContain("threat-model");
     });
 
     it("governance-only profile excludes prompts, agents, and templates", () => {
       const gov = listProfiles().find((p) => p.id === "governance-only")!;
-      expect(gov.components).not.toContain("spell-prompts");
+      expect(gov.components).not.toContain("spells-session");
       expect(gov.components).not.toContain("venture-template");
       expect(gov.components).not.toContain("agent-definitions");
     });
@@ -171,7 +171,7 @@ describe("registry", () => {
     it("returned array is a copy — mutation does not affect next call", () => {
       const first = listProfiles();
       first.push({ id: "full", displayName: "X", description: "X", components: [] });
-      expect(listProfiles()).toHaveLength(4);
+      expect(listProfiles()).toHaveLength(5);
     });
 
     it("full profile component list is a copy — mutation does not affect next call", () => {

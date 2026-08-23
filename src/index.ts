@@ -41,7 +41,7 @@ program
 program
   .command("init")
   .description("Scaffold Arcane framework files into the current repository")
-  .option("--profile <profile>", "Profile: full | lite | methodology | governance-only")
+  .option("--profile <profile>", "Profile: full | lite | methodology | docs | governance-only")
   .option("--force", "Overwrite existing files without error")
   .option("--dry-run", "Preview what would be installed without making changes")
   .action(

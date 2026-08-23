@@ -122,46 +122,125 @@ const COMPONENTS: RegistryComponent[] = [
     description: "Copilot enforcement rules: PR link format, merge strategy, and branch naming",
     files: [".github/instructions/agent-output.instructions.md"],
   },
-  // Spell prompts — installed to .github/prompts/ (VS Code Copilot convention)
+  // ─── Spells ────────────────────────────────────────────────────────────────
+  // Split from the former monolithic `spell-prompts` + `claude-commands` pair
+  // so a profile can select spells by capability (see ARC-0NN). Grouping lives
+  // here and only here -- every spell file stays flat and unrenamed on disk.
+  //
+  // Each component carries BOTH client formats of the same spell: the Copilot
+  // prompt (.github/prompts/*.prompt.md) and the Claude Code wrapper
+  // (.claude/commands/*.md). They are never independently selectable -- every
+  // profile that wanted one always wanted the other -- and pairing them here
+  // makes it structurally impossible for the two formats of one spell to drift
+  // apart across profiles.
   {
-    name: "spell-prompts",
-    description: "Full Arcane spell prompt library (34 spells)",
+    name: "spells-session",
+    description: "Session lifecycle — open, close, commit, status, version",
     files: [
-      ".github/prompts/spell-arcane-version.prompt.md",
-      ".github/prompts/spell-architect.prompt.md",
-      ".github/prompts/spell-brainstorm.prompt.md",
-      ".github/prompts/spell-scope.prompt.md",
-      ".github/prompts/spell-summon-venture.prompt.md",
-      ".github/prompts/spell-bug.prompt.md",
-      ".github/prompts/spell-bump.prompt.md",
-      ".github/prompts/spell-check-drift.prompt.md",
-      ".github/prompts/spell-close-session.prompt.md",
-      ".github/prompts/spell-commit-work.prompt.md",
-      ".github/prompts/spell-dotnet-expert.prompt.md",
-      ".github/prompts/spell-enchant.prompt.md",
-      ".github/prompts/spell-explain-concept.prompt.md",
-      ".github/prompts/spell-full-cycle.prompt.md",
-      ".github/prompts/spell-generate-bot-icons.prompt.md",
-      ".github/prompts/spell-implement.prompt.md",
       ".github/prompts/spell-open-session.prompt.md",
-      ".github/prompts/spell-plan.prompt.md",
-      ".github/prompts/spell-present-arcane.prompt.md",
-      ".github/prompts/spell-product-review.prompt.md",
-      ".github/prompts/spell-review.prompt.md",
-      ".github/prompts/spell-security-review.prompt.md",
-      ".github/prompts/spell-ship.prompt.md",
-      ".github/prompts/spell-suggest-feature.prompt.md",
-      ".github/prompts/spell-test.prompt.md",
-      ".github/prompts/spell-todo.prompt.md",
-      // Workflow spell additions — PR lifecycle, status, capture, feedback
-      ".github/prompts/spell-address-review.prompt.md",
-      ".github/prompts/spell-create-pull-request.prompt.md",
-      ".github/prompts/spell-document.prompt.md",
-      ".github/prompts/spell-feedback.prompt.md",
-      ".github/prompts/spell-manifest.prompt.md",
-      ".github/prompts/spell-save-idea.prompt.md",
+      ".claude/commands/spell-open-session.md",
+      ".github/prompts/spell-close-session.prompt.md",
+      ".claude/commands/spell-close-session.md",
+      ".github/prompts/spell-commit-work.prompt.md",
+      ".claude/commands/spell-commit-work.md",
       ".github/prompts/spell-status.prompt.md",
+      ".claude/commands/spell-status.md",
+      ".github/prompts/spell-arcane-version.prompt.md",
+      ".claude/commands/spell-arcane-version.md",
+    ],
+  },
+  {
+    name: "spells-capture",
+    description: "Idea, todo, feedback and explanation capture",
+    files: [
+      ".github/prompts/spell-save-idea.prompt.md",
+      ".claude/commands/spell-save-idea.md",
+      ".github/prompts/spell-todo.prompt.md",
+      ".claude/commands/spell-todo.md",
+      ".github/prompts/spell-feedback.prompt.md",
+      ".claude/commands/spell-feedback.md",
+      ".github/prompts/spell-suggest-feature.prompt.md",
+      ".claude/commands/spell-suggest-feature.md",
+      ".github/prompts/spell-document.prompt.md",
+      ".claude/commands/spell-document.md",
+      ".github/prompts/spell-brainstorm.prompt.md",
+      ".claude/commands/spell-brainstorm.md",
+      ".github/prompts/spell-explain-concept.prompt.md",
+      ".claude/commands/spell-explain-concept.md",
+    ],
+  },
+  {
+    name: "spells-delivery",
+    description: "Pull-request lifecycle and code review",
+    files: [
+      ".github/prompts/spell-create-pull-request.prompt.md",
+      ".claude/commands/spell-create-pull-request.md",
+      ".github/prompts/spell-address-review.prompt.md",
+      ".claude/commands/spell-address-review.md",
+      ".github/prompts/spell-review.prompt.md",
+      ".claude/commands/spell-review.md",
       ".github/prompts/spell-review-batch.prompt.md",
+      ".claude/commands/spell-review-batch.md",
+    ],
+  },
+  {
+    name: "spells-planning",
+    description: "PRD, architecture, scoping and product review",
+    files: [
+      ".github/prompts/spell-plan.prompt.md",
+      ".claude/commands/spell-plan.md",
+      ".github/prompts/spell-architect.prompt.md",
+      ".claude/commands/spell-architect.md",
+      ".github/prompts/spell-scope.prompt.md",
+      ".claude/commands/spell-scope.md",
+      ".github/prompts/spell-product-review.prompt.md",
+      ".claude/commands/spell-product-review.md",
+    ],
+  },
+  {
+    name: "spells-build",
+    description: "Code and product delivery — implementation, tests, stack experts, release, deployment",
+    files: [
+      ".github/prompts/spell-implement.prompt.md",
+      ".claude/commands/spell-implement.md",
+      ".github/prompts/spell-test.prompt.md",
+      ".claude/commands/spell-test.md",
+      ".github/prompts/spell-full-cycle.prompt.md",
+      ".claude/commands/spell-full-cycle.md",
+      ".github/prompts/spell-bug.prompt.md",
+      ".claude/commands/spell-bug.md",
+      ".github/prompts/spell-bump.prompt.md",
+      ".claude/commands/spell-bump.md",
+      ".github/prompts/spell-dotnet-expert.prompt.md",
+      ".claude/commands/spell-dotnet-expert.md",
+      ".github/prompts/spell-security-review.prompt.md",
+      ".claude/commands/spell-security-review.md",
+      ".github/prompts/spell-ship.prompt.md",
+      ".claude/commands/spell-ship.md",
+      ".github/prompts/spell-enchant.prompt.md",
+      ".claude/commands/spell-enchant.md",
+    ],
+  },
+  {
+    name: "spells-venture",
+    description: "Hub-only venture management",
+    files: [
+      ".github/prompts/spell-summon-venture.prompt.md",
+      ".claude/commands/spell-summon-venture.md",
+      ".github/prompts/spell-manifest.prompt.md",
+      ".claude/commands/spell-manifest.md",
+    ],
+  },
+  {
+    name: "spells-meta",
+    description: "Arcane-about-Arcane — presentation, drift detection, asset generation",
+    files: [
+      ".github/prompts/spell-present-arcane.prompt.md",
+      ".claude/commands/spell-present-arcane.md",
+      ".github/prompts/spell-check-drift.prompt.md",
+      ".claude/commands/spell-check-drift.md",
+      ".github/prompts/spell-generate-bot-icons.prompt.md",
+      ".claude/commands/spell-generate-bot-icons.md",
     ],
   },
   // Templates
@@ -200,48 +279,6 @@ const COMPONENTS: RegistryComponent[] = [
   // files are generated per-roster by `spell agents init` / `spell agents sync`, so
   // installing a fixed-name set via `spell init` shipped stale names and collided
   // with the generated output.
-  // Claude commands
-  {
-    name: "claude-commands",
-    description: "Claude Code slash command wrappers for all 34 Arcane spells",
-    files: [
-      ".claude/commands/spell-arcane-version.md",
-      ".claude/commands/spell-architect.md",
-      ".claude/commands/spell-brainstorm.md",
-      ".claude/commands/spell-scope.md",
-      ".claude/commands/spell-summon-venture.md",
-      ".claude/commands/spell-bug.md",
-      ".claude/commands/spell-bump.md",
-      ".claude/commands/spell-check-drift.md",
-      ".claude/commands/spell-close-session.md",
-      ".claude/commands/spell-commit-work.md",
-      ".claude/commands/spell-dotnet-expert.md",
-      ".claude/commands/spell-enchant.md",
-      ".claude/commands/spell-explain-concept.md",
-      ".claude/commands/spell-full-cycle.md",
-      ".claude/commands/spell-generate-bot-icons.md",
-      ".claude/commands/spell-implement.md",
-      ".claude/commands/spell-open-session.md",
-      ".claude/commands/spell-plan.md",
-      ".claude/commands/spell-present-arcane.md",
-      ".claude/commands/spell-product-review.md",
-      ".claude/commands/spell-review.md",
-      ".claude/commands/spell-security-review.md",
-      ".claude/commands/spell-ship.md",
-      ".claude/commands/spell-suggest-feature.md",
-      ".claude/commands/spell-test.md",
-      ".claude/commands/spell-todo.md",
-      // Workflow spell additions — PR lifecycle, status, capture, feedback
-      ".claude/commands/spell-address-review.md",
-      ".claude/commands/spell-create-pull-request.md",
-      ".claude/commands/spell-document.md",
-      ".claude/commands/spell-feedback.md",
-      ".claude/commands/spell-manifest.md",
-      ".claude/commands/spell-save-idea.md",
-      ".claude/commands/spell-status.md",
-      ".claude/commands/spell-review-batch.md",
-    ],
-  },
 ];
 
 // ─── Profile map (derived from config) ───────────────────────────────────────
@@ -265,6 +302,30 @@ const componentIndex = new Map(COMPONENTS.map((c) => [c.name, c]));
  * Returns a component by name.
  * Throws ComponentNotFoundError if not found.
  */
+/** Names of the capability-scoped spell components, derived not hand-listed. */
+export const SPELL_COMPONENT_NAMES: string[] = COMPONENTS.map((c) => c.name).filter((n) =>
+  n.startsWith("spells-"),
+);
+
+/**
+ * Components that no longer exist under their old name, mapped to the set that
+ * replaces them.
+ *
+ * `spell-prompts` and `claude-commands` were one monolithic pair holding all 34
+ * spells in each client format. Both map to the same capability components,
+ * because those components now carry both formats of every spell — so a
+ * manifest listing either legacy name (or both, which every profile that had
+ * one did) converges on the same result. Callers must dedupe.
+ *
+ * Without this, `spell update` would hit `ComponentNotFoundError` for the
+ * legacy names, print "not in registry — skipping", preserve the dead entry,
+ * and silently never update that repo's spells again.
+ */
+export const LEGACY_COMPONENT_MIGRATIONS: Readonly<Record<string, readonly string[]>> = {
+  "spell-prompts": SPELL_COMPONENT_NAMES,
+  "claude-commands": SPELL_COMPONENT_NAMES,
+};
+
 export function getComponent(name: string): RegistryComponent {
   const component = componentIndex.get(name);
   if (!component) {
