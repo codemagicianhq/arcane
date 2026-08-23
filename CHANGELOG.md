@@ -5,6 +5,34 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.1] - 2026-08-23
+
+Fixes defects in `0.20.0`'s push-safety controls, found by a verification review that exercised them against real repositories rather than reading the code. **If you set `push_policy: "blocked"` on `0.20.0`, re-run `spell doctor` after upgrading** — it will tell you whether that repository is actually covered.
+
+### Fixed
+
+- **`blocked` could silently leave remotes pushable.** `0.20.0` recorded each remote's original push URL under `arcane.originalPushUrl.<remote>`, and three ordinary git configurations broke it — every one of them leaving remotes live in a repository the operator had just been told was blocked:
+  - A remote name that is legal for git but illegal as a trailing config key (`my_remote` — that segment must be alphanumeric or `-`) made `git config` fail. The error aborted the whole loop, so **every remote after it in git's ordering was never touched**.
+  - Trailing config-key segments are case-**insensitive**, so remotes `origin` and `Origin` collided on one key. One original was lost, and unblocking pointed one remote at the other's URL — the wrong-remote push this feature exists to prevent, arriving through its own recovery path.
+  - `git remote rename` orphaned the record. Unblocking then restored nothing while reporting success, and `doctor` reported `open` over a still-blocked remote.
+
+  The record now lives at `remote.<name>.arcaneOriginalPushUrl`, inside the remote's own section: git accepts any legal remote name there, subsection names **are** case-sensitive, and `git remote rename` moves the whole section including keys git has never heard of. Applying the block is also fault-isolated per remote now — one remote that cannot be covered is reported, never allowed to abandon the rest.
+- **A mirror remote with two push URLs defeated the block entirely.** `git remote set-url --push` refuses such a remote outright, which aborted the run with both mirrors still pushable. The sentinel is now written with `git config --replace-all`, and both URLs are restored on unblock.
+- **A blocked remote with no prior `pushurl` got one pinned to it.** Unblocking wrote the fetch URL into a new `pushurl` key that had never existed, so a later `git remote set-url` changed fetch only and pushes kept going to the old location. Restore now removes the key when there was none.
+- **`doctor` reported a neutered hook as enforcement.** It checked the hook file existed but not its contents, so a zero-byte file — or one edited down to `exit 0` — passed while real pushes succeeded. It now compares the body, and on POSIX also requires the execute bit, since git silently skips a hook without it.
+- **`doctor` reported an enforced hook as missing.** `core.hooksPath` was compared by exact string, so `.arcane/hooks/`, `./.arcane/hooks`, and an absolute spelling were all called foreign even though the hook demonstrably fires. Comparison is now path-normalised (case-folded only on Windows — folding on POSIX would make the collision guard fail open).
+- **`spell uninstall` left a blocked repository unable to push, with no way back.** It deleted `.arcane.json` while leaving the hook and sentinel URLs in force, so `spell unblock-push` no longer recognised the repository and recovery meant hand-editing git config — after being told the uninstall succeeded. It now refuses and points at `unblock-push`.
+
+### Changed
+
+- **A blocked push now names its own remedy.** With both layers active the URL fails first and the hook never runs, so the only text git prints is the scheme name. It is now `arcane-push-blocked-run-spell-unblock-push`, turning a dead end into an instruction.
+- **The `guarded` reminder prints each remote's push URL**, not just its name. Catching a wrong remote is the reminder's entire job, and `origin` alone says nothing about where it points.
+- **Config scope is read rather than inferred**, via `git config --show-scope`. A `core.hooksPath` set at *system* scope, or per-worktree, was previously described to the operator as "set globally" — sending them somewhere that did not have it.
+
+### Documentation
+
+- ARC-034 asserted that no single bypass gets through, three lines above the paragraph documenting the case where one does. That property holds only for remotes covered at the time the policy was applied, and now says so.
+
 ## [0.20.0] - 2026-08-23
 
 Implements the push-safety design accepted in [EF-09](docs/intake/batch-001/EF-09.md), recorded as [ARC-034](DECISIONS.md#arc-034--push-safety-for-sensitive-repositories).
@@ -12,11 +40,10 @@ Implements the push-safety design accepted in [EF-09](docs/intake/batch-001/EF-0
 ### Added
 
 - **`push_policy`** — `open` (default), `guarded`, or `blocked`. Strictly additive: every existing repository behaves exactly as before. Asked once at `spell init`, backfilled by `spell update`'s retrofit.
-- **`blocked` installs two layered controls** — a `pre-push` hook *and* a sentinel push URL on every configured remote, not just `origin`. Both are needed, and they cover each other's blind spot: `--no-verify` skips hooks so only the URL catches it, while `git push <url>` and second remotes never consult the first remote's URL so only the hook catches those. The fetch URL is untouched, so a blocked repository can still pull. Every remote is covered independently, including ones whose names are legal for git but awkward for config (`my_remote`, `team.backup`, `origin` alongside `Origin`) and mirror remotes carrying two push URLs — one remote that cannot be covered is reported rather than allowed to abandon the rest. **Known gap:** the URL layer only covers remotes that exist when the policy is applied — a remote added later is covered by the hook alone. `init` warns about this, and `doctor` reports any remote whose push URL is still live.
+- **`blocked` installs two layered controls** — a `pre-push` hook *and* a sentinel push URL on every configured remote, not just `origin`. Both are needed, and they cover each other's blind spot: `--no-verify` skips hooks so only the URL catches it, while `git push <url>` and second remotes never consult the first remote's URL so only the hook catches those. The fetch URL is untouched, so a blocked repository can still pull. **Known gap:** the URL layer only covers remotes that exist when the policy is applied — a remote added later is covered by the hook alone. `init` warns about this, and `doctor` reports any remote whose push URL is still live.
 - **A hook-manager collision guard, at any config scope.** `core.hooksPath` is a single exclusive slot — Git reads one hooks directory, never several — so installation refuses rather than silently disabling an existing Husky, Lefthook, or pre-commit setup. The effective value is read with `git config --get`, which respects local > global > system: an earlier implementation read only the local scope and was blind to a **global** `core.hooksPath`, the standard way organisations deploy hook managers, so it reported success while disabling them. (Arcane's own repository uses `.husky/_` for lint, typecheck and the test suite.)
 - **`spell unblock-push`** — the only way to lift a block. Interactive terminal only, requires the repository name typed back, records the change with a timestamp, and offers no "just this once" mode.
-- **A `doctor` check that verifies enforcement, not just declaration.** A manifest claiming `blocked` while the controls are absent is reported as such — a protection that is only asserted is worse than none, because it gets trusted. Enforcement means the hook file exists **and its contents are the hook Arcane wrote**: a zero-byte file, or one edited down to `exit 0`, satisfies an existence check while blocking nothing, which is the same declaration-wearing-enforcement's-name confusion one level down. A `blocked` repository with no remote is likewise not reported as fully protected. For `guarded` repositories the reminder fires regardless of remote state, and names each remote's push **URL** alongside its name — the reminder exists to catch a wrong remote, and `origin` alone says nothing about where it points.
-- **`spell uninstall` refuses on a `blocked` repository.** It used to delete `.arcane.json` while leaving the hook and sentinel URLs in place, so the repository could not push and `spell unblock-push` no longer recognised it — recovery meant hand-editing git config after being told the uninstall succeeded. Run `spell unblock-push` first, then uninstall.
+- **A `doctor` check that verifies enforcement, not just declaration.** A manifest claiming `blocked` while the controls are absent is reported as such — a protection that is only asserted is worse than none, because it gets trusted. That includes checking the hook **file** exists, not only that `core.hooksPath` points at it: deleting the file leaves the config intact and pushes succeed. A `blocked` repository with no remote is likewise not reported as fully protected. For `guarded` repositories the reminder fires regardless of remote state, rather than going silent the moment any remote (possibly the wrong one) is configured.
 
 ### What this deliberately does not claim
 
