@@ -7,9 +7,9 @@ import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { runGit } from "../modules/git.js";
 import { readManifest } from "../modules/manifest.js";
 import {
-  readHooksPath,
-  ARCANE_HOOKS_DIR,
-  DISABLED_PUSH_URL,
+  isHookEnforced,
+  listRemotes,
+  undisabledRemotes,
 } from "../modules/push-safety.js";
 
 const execFileAsync = promisify(execFile);
@@ -287,48 +287,55 @@ export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
   }
 
   if (policy === "guarded") {
-    let remote = "none configured";
-    try {
-      const { stdout } = await runGit(targetDir, ["remote", "get-url", "--push", "origin"]);
-      remote = stdout.trim();
-    } catch {
-      // Leave the default.
-    }
+    const remotes = await listRemotes(targetDir);
+    const where = remotes.length === 0 ? "none configured" : remotes.join(", ");
     return {
       name,
       passed: false,
       blocking: false,
-      message: `guarded — no technical control installed. Push target is currently: ${remote}. Confirm that is the remote you intend before pushing.`,
+      message: `guarded — no technical control installed. Push targets: ${where}. Confirm those are the remotes you intend before pushing.`,
     };
   }
 
-  // blocked: verify the controls are genuinely present, not just declared.
-  const hooksPath = await readHooksPath(targetDir);
-  const hookActive = hooksPath === ARCANE_HOOKS_DIR;
+  // blocked: verify the controls are genuinely IN FORCE, not merely declared.
+  // Checking config alone was a declaration check wearing an enforcement
+  // check's name -- deleting the hook file leaves core.hooksPath intact and
+  // pushes succeed, while this reported the hook as present.
+  const hookActive = await isHookEnforced(targetDir);
+  const remotes = await listRemotes(targetDir);
+  const open = await undisabledRemotes(targetDir);
 
-  let urlDisabled = false;
-  try {
-    const { stdout } = await runGit(targetDir, ["remote", "get-url", "--push", "origin"]);
-    urlDisabled = stdout.trim() === DISABLED_PUSH_URL;
-  } catch {
-    // No remote: nothing to disable, so this half is vacuously satisfied.
-    urlDisabled = true;
-  }
-
-  if (hookActive && urlDisabled) {
-    return { name, passed: true, message: "blocked — pre-push hook and push URL both in place" };
+  if (hookActive && open.length === 0) {
+    if (remotes.length === 0) {
+      // Don't claim a push URL is "in place" when there is no remote at all.
+      // The hook is the only live control here, and it is the one a
+      // `--no-verify` push walks straight past -- so say that plainly rather
+      // than reporting full protection.
+      return {
+        name,
+        passed: false,
+        blocking: false,
+        message:
+          "blocked — pre-push hook in place, but no remote is configured, so no push URL is disabled. If a remote is added later, run `spell doctor` again: a --no-verify push to it would succeed until the URL is disabled too.",
+      };
+    }
+    return {
+      name,
+      passed: true,
+      message: `blocked — pre-push hook in place and push URL disabled for ${remotes.join(", ")}`,
+    };
   }
 
   const missing = [
-    hookActive ? null : `pre-push hook (core.hooksPath is ${hooksPath ?? "unset"})`,
-    urlDisabled ? null : "disabled push URL",
+    hookActive ? null : "pre-push hook (config or hook file absent)",
+    open.length > 0 ? `push URL still live for: ${open.join(", ")}` : null,
   ].filter(Boolean);
 
   return {
     name,
     passed: false,
     blocking: false,
-    message: `declared "blocked" but not enforced — missing: ${missing.join(", ")}. The manifest claims a protection this repository does not have.`,
+    message: `declared "blocked" but not enforced — ${missing.join("; ")}. The manifest claims a protection this repository does not have.`,
   };
 }
 

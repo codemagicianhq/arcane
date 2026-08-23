@@ -19,7 +19,7 @@ import {
   printWarning,
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
-import { installPrePushHook, disablePushUrl } from "../modules/push-safety.js";
+import { installPrePushHook, disablePushUrls } from "../modules/push-safety.js";
 import {
   correctUnbornMasterDefault,
   ensureLocalPullRebase,
@@ -491,34 +491,56 @@ export async function runInit(
   printSuccess(`Initialized with profile "${profile}" — ${fileCount} files installed`);
 
   // ── Push-safety controls (EF-09 R2/R3/R4/R7) ────────────────────────────
-  if (push_policy === "blocked") {
-    const hook = await installPrePushHook(targetDir);
-    if (hook.status === "refused-foreign-hooks-path") {
-      // R7: core.hooksPath is one exclusive slot, so pointing it at Arcane
-      // would silently disable whatever hook manager already owns it.
-      printWarning(
-        `Did not install the pre-push hook: core.hooksPath is already "${hook.existing}", ` +
-          "so another hook manager owns it. Overwriting would silently disable those hooks. " +
-          "Chain an Arcane pre-push guard into that directory yourself, or unset core.hooksPath first.",
-      );
-    } else {
-      printInfo("Installed a pre-push hook that blocks pushes from this repository.");
-    }
+  // Wrapped: a failure here must not surface as a raw stack trace after
+  // "Initialized successfully", leaving a manifest that says "blocked" while
+  // the operator believes they are protected.
+  if (push_policy === "blocked" || push_policy === "guarded") {
+    try {
+      if (push_policy === "blocked") {
+        const hook = await installPrePushHook(targetDir);
+        if (hook.status === "refused-foreign-hooks-path") {
+          // R7: core.hooksPath is one exclusive slot, at local OR global
+          // scope, so pointing it at Arcane would silently disable whatever
+          // hook manager already owns it.
+          printWarning(
+            `Did not install the pre-push hook: core.hooksPath is already "${hook.existing}" ` +
+              `(set ${hook.scope === "local" ? "for this repository" : "globally"}), so another hook ` +
+              "manager owns it. Overwriting would silently disable those hooks. Chain an Arcane " +
+              "pre-push guard into that directory yourself, or unset core.hooksPath first.",
+          );
+        } else {
+          printInfo("Installed a pre-push hook that blocks pushes from this repository.");
+        }
 
-    const url = await disablePushUrl(targetDir);
-    if (url.status === "no-remote") {
-      printInfo(
-        "No remote configured — nothing to disable yet. The block still applies if one is added.",
+        const urls = await disablePushUrls(targetDir);
+        if (urls.length === 0) {
+          // Be precise: nothing is protecting a remote added later, because
+          // this only disables remotes that exist right now. Claiming
+          // otherwise would be exactly the false confidence ARC-034 warns of.
+          printWarning(
+            "No remote is configured, so only the pre-push hook is active. A remote added later " +
+              "will NOT have its push URL disabled automatically, and a `--no-verify` push to it " +
+              "would succeed. Run `spell doctor` after adding one — it reports this gap.",
+          );
+        } else {
+          printInfo(
+            `Disabled the push URL for: ${urls.map((u) => u.remote).join(", ")} (fetch still works).`,
+          );
+        }
+        printInfo("Run `spell unblock-push` from a terminal to undo this.");
+      } else {
+        printInfo(
+          "Marked as push-guarded. No technical control was installed — check the remote is the " +
+            "one you intend before pushing. `spell doctor` will keep reminding you.",
+        );
+      }
+    } catch (err) {
+      printWarning(
+        `Could not fully apply push-safety controls: ${err instanceof Error ? err.message : String(err)}. ` +
+          `The manifest records push_policy: "${push_policy}", but this repository may not actually be ` +
+          "protected. Run `spell doctor` to see exactly what is and isn't in place.",
       );
-    } else if (url.status === "disabled") {
-      printInfo(`Disabled the push URL for "${url.remote}" (fetch still works).`);
     }
-    printInfo("Run `spell unblock-push` from a terminal to undo this.");
-  } else if (push_policy === "guarded") {
-    printInfo(
-      "Marked as push-guarded. No technical control was installed — check the remote is the one " +
-        "you intend before pushing. `spell doctor` will keep reminding you.",
-    );
   }
 
   // ── Step 7: Offer agent setup (for full and lite profiles) ─────────────
