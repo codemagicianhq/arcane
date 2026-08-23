@@ -91,6 +91,17 @@ export interface RegistryComponent {
    */
   skipExisting?: boolean;
   /**
+   * When true, `spell update` never CREATES this component's files — it
+   * reports them as missing instead. `init` and `add` install normally.
+   *
+   * For files whose mere appearance changes how Git treats an existing
+   * repository: dropping a `.gitattributes` carrying `text=auto eol=lf` into a
+   * live repo triggers a renormalization that can touch every tracked file.
+   * That is a legitimate thing for an operator to choose, and an illegitimate
+   * thing to do to them silently during a routine version upgrade (EF-17).
+   */
+  initOnly?: boolean;
+  /**
    * Maps an installed path (as it appears in `files`, and therefore in the
    * manifest) to a different path under the assets root to copy it FROM.
    *

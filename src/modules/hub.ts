@@ -2,6 +2,7 @@ import { confirm, select, input } from "@inquirer/prompts";
 import { readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "./copier.js";
+import { isValidSubjectRoot } from "./manifest.js";
 import type {
   ArcaneManifest,
   ContentSensitivity,
@@ -130,6 +131,9 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
         const answer = await input({
           message: "Directory holding the subject's documents:",
           default: "docs",
+          validate: (v) =>
+          isValidSubjectRoot(v.trim() || "docs") ||
+          "Must be a relative path inside the repository (no leading /, drive letter, or ..).",
         });
         return { subject_root: answer.trim() || "docs" };
       }

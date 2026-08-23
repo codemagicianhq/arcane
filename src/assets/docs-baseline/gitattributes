@@ -49,5 +49,5 @@
 
 # Git LFS is deliberately NOT configured here. It requires server-side support
 # and changes clone behaviour for everyone, so it is an opt-in decision rather
-# than a default. Consider it when a binary is large or changes often; see
-# records-conventions.md.
+# than a default. Consider it when a binary is large or changes often -- once
+# a large file is committed without LFS, removing it needs a history rewrite.

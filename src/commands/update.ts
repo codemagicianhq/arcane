@@ -152,8 +152,19 @@ export async function runUpdate(
     const updatedFiles: string[] = [];
     for (const file of component.files) {
       const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
-      const preserveExisting = component.skipExisting
-        && await fileExists(join(targetDir, file));
+      const targetExists = await fileExists(join(targetDir, file));
+      const preserveExisting = Boolean(component.skipExisting) && targetExists;
+
+      // initOnly: update never creates these. Their appearance alone changes
+      // how Git treats the whole repository, so adding one mid-life is the
+      // operator's call, not a side effect of a version upgrade (EF-17).
+      if (component.initOnly && !targetExists) {
+        console.log(
+          `  ! Missing: ${file} — not added automatically, because doing so would change how Git treats existing files. Run "spell add ${component.name}" if you want it.`,
+        );
+        continue;
+      }
+
       if (preserveExisting) {
         console.log(`  ${options.dryRun ? "[dry-run] Would preserve" : "Preserved"}: ${file}`);
       } else if (options.dryRun) {
@@ -163,7 +174,16 @@ export async function runUpdate(
         await copyFile(srcPath, targetDir, file, { force: true });
         fileCount++;
       }
-      updatedFiles.push(file);
+
+      // Only record a preserved file if Arcane installed it in the first
+      // place. Recording one it merely declined to overwrite would claim
+      // ownership of an operator-authored file, and `spell uninstall` deletes
+      // everything the manifest lists -- so an operator's own .gitignore or
+      // DECISIONS.md would be destroyed by an uninstall that never wrote it.
+      // A file Arcane DID write must stay recorded, or uninstall leaks it.
+      if (!preserveExisting || installed.files.includes(file)) {
+        updatedFiles.push(file);
+      }
     }
     // Also copy directories
     for (const dir of component.directories ?? []) {
@@ -199,7 +219,26 @@ export async function runUpdate(
 
   // Retrofit wizard: ask about any manifest field this install predates
   // (e.g. `role`), once, before writing the updated manifest.
-  const retrofitPatch = await runManifestRetrofits(manifest);
+  //
+  // Skipped without a TTY. These are interactive questions, and @inquirer
+  // throws ExitPromptError on a closed stdin -- which would crash `update`
+  // AFTER files were copied but BEFORE the manifest was written, leaving the
+  // repo with new files and a stale recorded version. CI, piped input, and
+  // scripted upgrades all land here. The fields stay unset and are asked on
+  // the next interactive run, which is exactly how a scripted `init` already
+  // behaves.
+  const interactive = Boolean(process.stdin.isTTY);
+  const retrofitPatch = interactive ? await runManifestRetrofits(manifest) : {};
+  if (!interactive) {
+    const pending = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
+    if (pending.length > 0) {
+      console.log(
+        `  ! Skipped ${pending.length} manifest question${pending.length === 1 ? "" : "s"} (${pending
+          .map((r) => r.field)
+          .join(", ")}) — no interactive terminal. Run \`spell update\` from a terminal to answer.`,
+      );
+    }
+  }
 
   // Update manifest with new version, refreshed component file paths, and
   // any retrofit answers.

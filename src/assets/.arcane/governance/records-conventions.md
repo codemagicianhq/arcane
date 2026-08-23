@@ -72,6 +72,18 @@ Rules:
   (`superseded_by: none — <reason>`), rather than leaving the field off.
 - Do not delete the original content. The tombstone is a header, not a
   replacement for the body.
+- **Add the reverse link on the replacement**, so the relationship is
+  discoverable from either end. A reader who finds only the current document
+  should still be able to see what it replaced:
+
+  ```yaml
+  ---
+  supersedes: path/to/old-document.md
+  ---
+  ```
+
+  One-directional linking only helps readers who arrive at the old document.
+  The reverse direction is what preserves the record's own history.
 
 ## Retention and deletion
 

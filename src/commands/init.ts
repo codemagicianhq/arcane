@@ -5,6 +5,7 @@ import { copyFile, copyDirectory } from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
+  isValidSubjectRoot,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
 import { getProfile, listProfiles } from "../modules/registry.js";
@@ -417,6 +418,9 @@ export async function runInit(
       const answer = await input({
         message: "Directory holding the subject's documents:",
         default: "docs",
+        validate: (v) =>
+          isValidSubjectRoot(v.trim() || "docs") ||
+          "Must be a relative path inside the repository (no leading /, drive letter, or ..).",
       });
       subject_root = answer.trim() || "docs";
     }

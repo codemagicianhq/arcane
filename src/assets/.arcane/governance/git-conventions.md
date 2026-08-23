@@ -313,16 +313,16 @@ When working across machines, topic branches are the coordination mechanism:
 | Repo Type      | Examples                           | Merge Method | PR Required? |
 | -------------- | ---------------------------------- | ------------ | ------------ |
 | **Docs repos** | docs hub, prototypes               | PR or local ff-only | No — see note |
+| **Code repos** | application, API, storefront repos | PR           | Yes          |
 
 > **Docs-only repositories.** A PR is *not* required. `cicd-standards.md` records
 > the docs-only exception (ADR-048): branch discipline still applies — branch,
 > work, then fast-forward merge — but a review gate is optional where there is no
 > build to validate. This table previously said "PR required: Yes", contradicting
-> that; the exception governs. Repositories that produce artifacts keep the PR
-> requirement in full.
-| **Code repos** | application, API, storefront repos | PR           | Yes          |
+> that exception; the exception governs. Repositories that produce artifacts keep
+> the PR requirement in full.
 
-- **All repos have main branch protection.** Direct pushes to main are rejected. All changes must go through a PR.
+- **Code repos have main branch protection.** Direct pushes to main are rejected, and all changes go through a PR. Docs-only repositories keep branch discipline (branch → work → fast-forward merge) but may merge locally without a PR, per the exception above.
 
 #### Azure DevOps PR Merge Type
 

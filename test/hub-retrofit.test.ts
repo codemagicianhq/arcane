@@ -209,8 +209,17 @@ describe("spell init — tracking mode (EF-14)", () => {
 describe("spell update — manifest retrofit wizard", () => {
   let tmpDir: string;
 
+  // The retrofit wizard is interactive, and update.ts now skips it entirely
+  // without a TTY -- otherwise @inquirer throws ExitPromptError on closed
+  // stdin, crashing an upgrade after files are copied but before the manifest
+  // is written. Vitest has no TTY, so simulate one for the tests that exercise
+  // the wizard, and restore it afterwards.
+  let realIsTTY: boolean | undefined;
+
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "hub-update-test-"));
+    realIsTTY = process.stdin.isTTY;
+    process.stdin.isTTY = true;
     inspectGitRepositoryMock.mockResolvedValue({ status: "ready", uncommittedChanges: 0 });
     confirmMock.mockReset();
     confirmMock.mockResolvedValue(true);
@@ -218,6 +227,7 @@ describe("spell update — manifest retrofit wizard", () => {
   });
 
   afterEach(async () => {
+    process.stdin.isTTY = realIsTTY;
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
@@ -378,5 +388,52 @@ describe("offerRegistryScaffold", () => {
     await offerRegistryScaffold(tmpDir, "ventures");
 
     await expect(fs.access(join(tmpDir, "ventures", "registry.json"))).rejects.toThrow();
+  });
+});
+
+describe("spell update without a TTY", () => {
+  let tmpDir: string;
+  let realIsTTY: boolean | undefined;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(join(tmpdir(), "no-tty-test-"));
+    realIsTTY = process.stdin.isTTY;
+    process.stdin.isTTY = undefined;
+    inspectGitRepositoryMock.mockResolvedValue({ status: "ready", uncommittedChanges: 0 });
+    confirmMock.mockReset();
+    confirmMock.mockResolvedValue(true);
+    resetSelectMock();
+  });
+
+  afterEach(async () => {
+    process.stdin.isTTY = realIsTTY;
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  // Regression: @inquirer throws ExitPromptError on closed stdin. That crashed
+  // `update` AFTER files were copied but BEFORE the manifest was written,
+  // leaving new files recorded under the old version. Every existing install
+  // hits at least one pending retrofit on its first upgrade, so CI and scripted
+  // upgrades would all have failed.
+  it("skips retrofit questions instead of crashing", async () => {
+    await writeManifest(tmpDir); // predates role, tracking_mode, content_sensitivity
+
+    await expect(runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION)).resolves.toBeUndefined();
+
+    expect(confirmMock).not.toHaveBeenCalled();
+    expect(selectMock).not.toHaveBeenCalled();
+  });
+
+  it("still writes the manifest, so files and recorded version stay in step", async () => {
+    await writeManifest(tmpDir);
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.version).toBe(PACKAGE_VERSION);
+    // Unanswered fields stay unset and are asked on the next interactive run --
+    // the same way a scripted `init` already behaves.
+    expect(manifest.role).toBeUndefined();
+    expect(manifest.content_sensitivity).toBeUndefined();
   });
 });

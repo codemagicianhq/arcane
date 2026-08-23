@@ -102,7 +102,9 @@ ends here, always.
 ## Phase 3 — Apply (only after explicit approval, and only with `--apply`)
 
 Apply in the order below. Each step states its rollback *before* it runs, and
-each step is a separate commit so any one of them can be reverted alone.
+each step is a separate commit. Revert them in reverse order — reverting an
+earlier phase while a later one still stands will conflict, because the later
+phase built on the paths the earlier one created.
 
 1. **Write `subject_root` to `.arcane.json`** (if it changes).
    *Rollback: revert the commit; no files moved yet.*

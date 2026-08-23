@@ -74,7 +74,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 ## Sensitive Repositories
 
-16. **Reference, don't transcribe, when the repository is marked sensitive.** If
+21. **Reference, don't transcribe, when the repository is marked sensitive.** If
     `.arcane.json` has `content_sensitivity: "sensitive"`, the repository's own
     documents are the sensitive material — not just credentials inside them. In
     that mode:
