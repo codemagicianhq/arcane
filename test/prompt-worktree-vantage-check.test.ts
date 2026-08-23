@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
@@ -57,7 +57,10 @@ function blockContaining(text: string, needle: string): string {
     const line = lines[i]!;
     if (line.trim() === "") break;
     // Stop at the next sibling bullet, so a block cannot absorb its neighbour.
-    if (/^\s*[-*]\s|^\s*\d+\.\s/.test(line)) break;
+    // Table rows, headings and code fences terminate it too: without them a
+    // block could silently swallow the NEXT table row, and an assertion would
+    // then pass on a match belonging to a different row entirely.
+    if (/^\s*[-*]\s|^\s*\d+\.\s|^\s*\||^\s*#|^\s*```/.test(line)) break;
     block.push(line);
   }
   return block.join(" ");
@@ -177,21 +180,45 @@ describe("branch-deletion sites reference the check, attached to the actual comm
     // The counterpart assertion, so the split cannot silently lose either half:
     // from a worktree the command FAILS, and the prompt must say so rather than
     // leaving an agent to discover it and reach for `-D`.
-    const line = lineContaining(closeSession, "**Do not run `git branch -d <branch>`.**");
+    const line = lineContaining(
+      closeSession,
+      "**Do not run `git branch -d <branch>` while this worktree is attached to it.**",
+    );
     expect(line).toContain("cannot delete branch");
-    expect(line).toMatch(/never reach for `-D`|never reach for `-D`, `--force`/);
+    expect(line).toContain("never reach for `-D`");
+    // -D does not bypass an attachment refusal; implying it would is worse
+    // than silence, because it invites the destructive attempt.
+    expect(line).toContain("`-D` does not bypass this either");
   });
 
   it("spell-close-session forbids checking out trunk from a linked worktree (ARC-028 R8)", () => {
-    const line = lineContaining(closeSession, "**Do not run `git switch <trunk>`.**");
+    const line = lineContaining(
+      closeSession,
+      "**If a working tree holds `<trunk>`, do not run `git switch <trunk>`.**",
+    );
     expect(line).toContain("already used by worktree");
+  });
+
+  it("spell-close-session conditions the refusal on a working tree actually holding trunk", () => {
+    // A bare repository with worktrees attached — a common agent-fleet layout —
+    // usually has NO checkout holding trunk, and there both commands succeed.
+    // Stating the failure unconditionally sent the agent down a path whose
+    // stated reason was false and whose cleanup was assigned to a "primary
+    // checkout" that does not exist.
+    const line = lineContaining(closeSession, "First establish whether any working tree currently holds");
+    expect(line).toContain("bare");
+    expect(line).toContain("both succeed normally");
   });
 
   it("spell-close-session detects the primitive rather than assuming it", () => {
     // The fork is only safe if it is derived from real repository state; a
     // handoff claim is not evidence, and the session may have moved.
-    expect(closeSession).toContain("git rev-parse --git-common-dir");
-    expect(closeSession).toContain("git rev-parse --git-dir");
+    expect(closeSession).toContain("git rev-parse --path-format=absolute --git-common-dir");
+    expect(closeSession).toContain("git rev-parse --path-format=absolute --git-dir");
+    // --path-format=absolute is load-bearing: without it --git-dir is absolute
+    // and --git-common-dir is relative from any subdirectory, so every primary
+    // checkout reads as a linked worktree.
+    expect(closeSession).toContain("is required, not decorative");
   });
 
   it("spell-ship's git branch -d line is directly annotated with the check", () => {
@@ -356,5 +383,78 @@ describe("threat-model stops claiming credential exposure is mitigated (EF-35)",
     // Guards against the correction over-reaching into a claim that was true.
     const line = lineContaining(threatModel, "| Token/credential exposure (at rest) |");
     expect(line).toContain("**Mitigated**");
+  });
+});
+
+/**
+ * The EXHAUSTIVE guard (ARC-028 R8).
+ *
+ * Every other test in this file is a positive assertion about a file the
+ * scoping pass touched — which is precisely why the pass shipped green while
+ * three spells still carried an unconditional `git checkout main`. Review found
+ * them by searching; the suite could not, because nothing here asked "is there
+ * anywhere else?".
+ *
+ * This test asks. It scans every distributed prompt and governance document for
+ * a trunk checkout and fails unless each one is scoped — so the next pass that
+ * misses a site fails here rather than in a consuming repository.
+ */
+describe("no distributed instruction checks out trunk unconditionally (ARC-028 R8)", () => {
+  const TRUNK_CHECKOUT = /git (checkout|switch) (main|master|<trunk>|\$\{?trunk)/;
+
+  /**
+   * Phrases that scope a trunk checkout to a primitive. Deliberately about
+   * PRIMITIVE, not merely mentioning worktrees: "run this in a worktree too"
+   * would contain the word and still be wrong.
+   */
+  const SCOPING = [
+    "primary checkout",
+    "primary-checkout",
+    "PRIMARY CHECKOUT ONLY",
+    "linked worktree, do not",
+    "in a linked worktree, do not",
+    "ARC-028 R1",
+    "ARC-028 R8",
+    "already used by worktree",
+  ];
+
+  async function distributedDocs(): Promise<{ file: string; text: string }[]> {
+    const dirs = [PROMPTS, GOVERNANCE];
+    const out: { file: string; text: string }[] = [];
+    for (const dir of dirs) {
+      for (const name of await readdir(dir)) {
+        if (!name.endsWith(".md")) continue;
+        out.push({ file: `${dir}/${name}`, text: await readFile(join(dir, name), "utf8") });
+      }
+    }
+    return out;
+  }
+
+  it("every trunk checkout sits within scoping context", async () => {
+    const unscoped: string[] = [];
+
+    for (const { file, text } of await distributedDocs()) {
+      const lines = text.split("\n");
+      lines.forEach((line, index) => {
+        if (!TRUNK_CHECKOUT.test(line)) return;
+        // A window rather than the bare line: these are code blocks, so the
+        // scoping sentence necessarily sits in the surrounding prose.
+        const window = lines.slice(Math.max(0, index - 12), index + 12).join("\n");
+        if (!SCOPING.some((phrase) => window.includes(phrase))) {
+          unscoped.push(`${file}:${index + 1}: ${line.trim()}`);
+        }
+      });
+    }
+
+    expect(unscoped, `Unscoped trunk checkout(s):\n${unscoped.join("\n")}`).toEqual([]);
+  });
+
+  it("the guard is capable of failing", async () => {
+    // A negative test that cannot fail is worse than none — it reports safety
+    // it never checked. Prove the matcher fires on the exact shape it hunts.
+    const bait = "0. Sync workspace:\n   git checkout main && git pull --ff-only\n";
+    const line = bait.split("\n")[1]!;
+    expect(TRUNK_CHECKOUT.test(line)).toBe(true);
+    expect(SCOPING.some((phrase) => bait.includes(phrase))).toBe(false);
   });
 });

@@ -107,6 +107,12 @@ Execute the `spell-implement` workflow:
    git checkout main && git pull --ff-only
    ```
    If `pull --ff-only` fails, halt and report — manual rebase is needed.
+
+   **In a linked worktree, do not run the `checkout main` line** (ARC-028 R1/R8). It fails with `fatal: 'main' is already used by worktree at '<path>'` when another working tree holds `main`, and the halt instruction above only covers a `pull` failure — so an agent that runs it there has no branch to take. This matters especially here: the R4 rule below sends genuinely disjoint epics into parallel worktrees, so this pipeline reaches that state by design. Sync the remote-tracking ref instead:
+   ```bash
+   git fetch --prune origin        # origin/main is now current
+   ```
+   and branch from `origin/main` in step 1. Check which primitive you are in with `git rev-parse --path-format=absolute --git-common-dir` vs `--git-dir` — equal means primary checkout. `--path-format=absolute` is required, or every primary checkout looks like a worktree from any subdirectory.
 1. Create the topic branch from `stories.json.branchName` (format: `{agent}/type/description`).
 2. Loop:
    a. Pick the next story where `passes: false`, ordered by priority.

@@ -268,7 +268,7 @@ The agent slug prefix makes branch ownership obvious in `git branch -r` output a
    git branch -d docs/my-topic
    git push origin --delete docs/my-topic
    ```
-5. **If ff-only fails** (someone else merged first), rebase and retry:
+5. **If ff-only fails** (someone else merged first), rebase and retry — **primary checkout only**, same as step 4:
    ```bash
    git checkout docs/my-topic
    git rebase main
@@ -360,7 +360,7 @@ Commit execution rights depend on the interaction context:
 
 ### Post-Merge Cleanup
 
-After every PR merge or local fast-forward merge, **always return to main and prune the branch**. Failing to do this leaves you on a stale branch where new work gets committed to the wrong place or stays unpushed.
+After every PR merge or local fast-forward merge, **from the primary checkout, always return to main and prune the branch** (ARC-028 R8 — the worktree procedure is below, and differs). Failing to do this leaves you on a stale branch where new work gets committed to the wrong place or stays unpushed.
 
 ```bash
 # After PR merges on remote — from the primary checkout:
@@ -448,7 +448,9 @@ az repos pr reviewer list --id <PR_ID> --org https://dev.azure.com/<org>
 # Allowed merge strategies: Merge (no fast forward) or Rebase+fast-forward
 az repos pr update --id <PR_ID> --org https://dev.azure.com/<org> --status completed --delete-source-branch true --squash false
 
-# 8. Pull merge commit and clean up (worktree-safe)
+# 8. Pull merge commit and clean up — PRIMARY CHECKOUT ONLY (ARC-028 R8).
+#    From a linked worktree, `git checkout main` fails first and the rest of
+#    this block never runs; see Post-Merge Cleanup for the worktree procedure.
 git checkout main
 git pull origin main
 git branch -d <branch>                    # delete local branch (skip if branch is attached to an active worktree)

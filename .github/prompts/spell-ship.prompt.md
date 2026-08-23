@@ -91,6 +91,7 @@ Workflow:
    - Tag release if applicable.
 
 9. **Post-merge branch cleanup** (after the PR merges) — the merge was the human gate, so cleanup is automatic:
+   - **First, which primitive are you in?** `git rev-parse --path-format=absolute --git-common-dir` vs `--git-dir` — equal means primary checkout, different means linked worktree. (`--path-format=absolute` is required; without it the two differ from any subdirectory and every primary checkout reads as a worktree.) **In a linked worktree, skip the two steps below** (ARC-028 R1/R8): `git checkout main` fails when another working tree holds `main`, and it fails *first*, so the rest of this cleanup block never runs and the remote branch deletion below is left half-done. Report the worktree path for removal from another vantage point instead, and go straight to the remote-branch and prune steps.
    - Switch to the main branch (e.g. `git checkout main`).
    - Pull the latest (e.g. `git pull`).
    - Delete the merged topic branch locally (e.g. `git branch -d <branch>`) — if the repository or its linked worktrees might be reached through more than one filesystem view, run the same-vantage-point check first (EF-33 / ARC-028 R7, [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Same-Vantage-Point Check section).

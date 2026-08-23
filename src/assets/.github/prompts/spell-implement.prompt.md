@@ -33,6 +33,13 @@ Workflow (loop until all stories pass):
    ```
    If `pull --ff-only` fails, halt and report — manual rebase is needed.
 
+   **In a linked worktree, do not run the `checkout main` line** (ARC-028 R1/R8). It fails with `fatal: 'main' is already used by worktree at '<path>'` when another working tree holds `main`, and the halt instruction above only covers a `pull` failure — so an agent that runs it there has no branch to take. Sync the remote-tracking ref instead, which is all this step actually needs:
+   ```bash
+   git fetch --prune origin        # origin/main is now current
+   git rebase origin/main          # or branch from origin/main directly in step 1
+   ```
+   Check with `git rev-parse --path-format=absolute --git-common-dir` vs `--git-dir`: equal means primary checkout, different means linked worktree. `--path-format=absolute` is required — without it the two differ from any subdirectory and every primary checkout looks like a worktree.
+
 1. **Load stories.json** — locate the feature folder from the current branch:
    ```bash
    # Derive feature folder from branch name (works for lafayette/feat/541-phase-2a or lafayette/feat/phase-2a)
