@@ -14,7 +14,8 @@
  * Only combining both bypasses in one command gets through, which is squarely
  * the determined-operator case this does not claim to stop.
  */
-import { mkdir, readFile, writeFile, chmod } from "node:fs/promises";
+import { mkdir, readFile, writeFile, chmod, access } from "node:fs/promises";
+import { constants } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileExists } from "./copier.js";
 import { runGit } from "./git.js";
@@ -231,7 +232,19 @@ async function hookBodyMatches(cwd: string): Promise<boolean> {
   const hookPath = hookFilePath(cwd);
   if (!(await fileExists(hookPath))) return false;
   try {
-    return (await readFile(hookPath, "utf-8")) === HOOK_BODY;
+    if ((await readFile(hookPath, "utf-8")) !== HOOK_BODY) return false;
+  } catch {
+    return false;
+  }
+
+  // On POSIX, git silently skips a hook that is not executable, so the right
+  // body in a non-executable file is still not enforcement. Git for Windows
+  // does not consult the bit, and chmod there is largely advisory, so checking
+  // it would produce a false "not enforced" for a hook that demonstrably fires.
+  if (process.platform === "win32") return true;
+  try {
+    await access(hookPath, constants.X_OK);
+    return true;
   } catch {
     return false;
   }

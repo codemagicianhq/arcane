@@ -457,6 +457,24 @@ describe("a neutered hook is not enforcement", () => {
     expect(tryPush(work, [elsewhere, "main"]).ok).toBe(true);
   });
 
+  it.skipIf(process.platform === "win32")(
+    "reports not-enforced for a correct hook body that is not executable",
+    async () => {
+      // Git silently skips a non-executable hook on POSIX, so the right content
+      // in a non-executable file is a declaration, not enforcement. Skipped on
+      // Windows, where git does not consult the bit and chmod is advisory --
+      // asserting there would be the vacuous-test failure mode, not coverage.
+      const { work } = await repoWithRemote();
+      await installPrePushHook(work);
+      expect(await isHookEnforced(work)).toBe(true);
+
+      await fs.chmod(hookFilePath(work), 0o644);
+
+      expect(await isHookEnforced(work)).toBe(false);
+      expect(tryPush(work).ok).toBe(true);
+    },
+  );
+
   it("reports not-enforced for a zero-byte hook file", async () => {
     const { work } = await repoWithRemote();
     await installPrePushHook(work);
