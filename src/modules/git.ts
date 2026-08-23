@@ -323,12 +323,22 @@ export async function correctUnbornMasterDefault(cwd: string): Promise<UnbornBra
   // either one behind a bare catch reads "this branch is broken" as "this
   // branch does not exist" and repoints HEAD onto real history anyway.
   //
-  // `for-each-ref` separates all three states cleanly (it exits 0 throughout):
+  // `for-each-ref` usually exits 0 and reports the state through its streams:
   //   healthy  -> stdout = the object id,  stderr empty
   //   corrupt  -> stdout empty,            stderr "warning: ignoring broken ref ..."
   //   absent   -> stdout empty,            stderr empty
-  // Only the third is safe to treat as absence.
-  const mainRef = await runGit(cwd, ["for-each-ref", "--format=%(objectname)", "refs/heads/main"]);
+  // Only the third is safe to treat as absence, and even it needs a second
+  // probe (see the symref check below). The stderr test is on emptiness, not
+  // on git's English wording, so a translated locale can't defeat it.
+  let mainRef: { stdout: string; stderr: string };
+  try {
+    mainRef = await runGit(cwd, ["for-each-ref", "--format=%(objectname)", "refs/heads/main"]);
+  } catch {
+    // for-each-ref itself failed -- a corrupt .git/packed-refs exits 128, and
+    // a timeout rejects too. Either way we learned nothing about whether main
+    // exists, so absence is not a conclusion we're entitled to draw.
+    return { corrected: false, to: "main", blockedReason: "target-unreadable" };
+  }
 
   if (mainRef.stdout.trim() !== "") {
     return { corrected: false, to: "main" }; // main already exists -- don't touch it
@@ -338,6 +348,22 @@ export async function correctUnbornMasterDefault(cwd: string): Promise<UnbornBra
     // Broken ref: it may still hold real history we cannot see. Fail closed
     // -- decline the correction, and tell the caller why so it can warn.
     return { corrected: false, to: "main", blockedReason: "target-unreadable" };
+  }
+
+  // Empty/empty is still ambiguous: a DANGLING SYMREF (refs/heads/main is
+  // `ref: refs/heads/<missing>`) reports exactly the same shape as an absent
+  // ref. Repointing onto it would leave HEAD on the symref's target while
+  // reporting "repointed to main" -- untrue, even though nothing is spliced.
+  // `symbolic-ref -q` is the discriminator: 0 = main exists as a symref,
+  // 1 = genuinely absent. Anything else is another unreadable state.
+  try {
+    await runGit(cwd, ["symbolic-ref", "-q", "refs/heads/main"]);
+    return { corrected: false, to: "main", blockedReason: "target-unreadable" };
+  } catch (error) {
+    if ((error as { code?: unknown }).code !== 1) {
+      return { corrected: false, to: "main", blockedReason: "target-unreadable" };
+    }
+    // Exit 1 -- refs/heads/main genuinely does not exist. Safe to target it.
   }
 
   await runGit(cwd, ["symbolic-ref", "HEAD", "refs/heads/main"]);

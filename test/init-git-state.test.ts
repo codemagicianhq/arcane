@@ -159,6 +159,27 @@ describe("correctUnbornMasterDefault (EF-05, R2/R3)", () => {
     expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("master");
   });
 
+  it("declines when refs/heads/main is a dangling symref, not an absent ref", async () => {
+    // Found in adversarial review: a symref pointing at a missing target
+    // reports EXACTLY the same shape as an absent ref through for-each-ref
+    // (empty stdout, empty stderr). Repointing onto it left HEAD on the
+    // symref's target while init reported "repointed to main" -- no splice,
+    // but a false statement about where HEAD ended up.
+    const dir = await createTempDir();
+    fixtureGit(dir, ["init"]);
+    fixtureGit(dir, ["symbolic-ref", "HEAD", "refs/heads/master"]);
+    await fs.writeFile(join(dir, ".git", "refs", "heads", "main"), "ref: refs/heads/nope\n");
+
+    const result = await correctUnbornMasterDefault(dir);
+
+    expect(result).toEqual({
+      corrected: false,
+      to: "main",
+      blockedReason: "target-unreadable",
+    });
+    expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("master");
+  });
+
   it("distinguishes an unreadable target from a genuinely absent one", async () => {
     // The control for the test above: with no refs/heads/main at all, the
     // correction must still go through. If this and the corrupt case ever

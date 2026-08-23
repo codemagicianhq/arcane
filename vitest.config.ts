@@ -11,7 +11,10 @@ export default defineConfig({
     // checkout discovers and runs every test file a second time (once per
     // live worktree), roughly doubling suite runtime and creating spurious
     // load-related flakes.
-    exclude: [...defaultExclude, "**/.claude/**"],
+    // Scoped to worktrees specifically rather than all of `.claude/`:
+    // `src/assets/.claude/` is tracked, distributable content, and a blanket
+    // exclusion would silently skip any test fixture added there later.
+    exclude: [...defaultExclude, "**/.claude/worktrees/**"],
     passWithNoTests: true,
     reporters: ["default", "junit"],
     outputFile: {
