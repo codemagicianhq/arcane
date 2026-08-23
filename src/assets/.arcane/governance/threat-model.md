@@ -49,7 +49,8 @@ See also: [Hardening Checklist](hardening-checklist.md), [Authentication Strateg
 | Network exposure on the agent host | **Mitigated** | Gateway bound to loopback only. An encrypted tunnel/VPN is the only remote-access path. No ports open on the LAN. |
 | Supply chain (package installs) | **Mitigated** | Global package installs use a user-owned directory, not a system directory. No `sudo` during install. |
 | Inter-machine communication | **Mitigated** | Encrypted mesh tunnel/VPN. No direct unencrypted LAN communication. |
-| Token/credential exposure | **Mitigated** | Token stored as an env var in a `.env` file. Config uses a secret reference, not plaintext. State directory is mode `700`. |
+| Token/credential exposure (at rest) | **Mitigated** | Token stored as an env var in a `.env` file. Config uses a secret reference, not plaintext. State directory is mode `700`. |
+| Credential committed to version control | **Not mitigated** | Storage conventions are documented (secret references, `.gitignore` entries for `.env`/`*.pem`/`*.key`) but **no detection exists** — no scanner runs on the commit path, the push path, or in CI, and nothing verifies the conventions were followed. `spell-security-review`'s secrets step is an on-demand agent read, not a control. Treat every credential that reaches a commit as compromised and rotate it — history, existing clones, and remote backups all survive deleting the file (EF-35). |
 
 ---
 

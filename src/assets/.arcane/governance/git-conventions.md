@@ -204,7 +204,7 @@ type/short-description
 sessions/YYYY-MM-DD-topic-slug
 ```
 
-Create the session branch as the **first action** of any session, before any file edits or commits. All session commits land on this branch. At close, push and open a PR. After merge, return to `main`.
+Create the session branch as the **first action** of any session, before any file edits or commits. All session commits land on this branch. At close, push and open a PR. After merge, return to `main` — **in the primary checkout only** (ARC-028 R8). A session running in a linked worktree ends with push → PR → worktree removal instead; it must not check out `main`, because the primary checkout already holds it and Git will refuse the second checkout.
 
 **Examples:**
 
@@ -257,7 +257,9 @@ The agent slug prefix makes branch ownership obvious in `git branch -r` output a
    ```bash
    git push origin docs/my-topic
    ```
-4. **Merge to main via fast-forward** when done:
+4. **Merge to main via fast-forward** when done. **This step is primary-checkout work** (ARC-028 R1)
+   — it checks out `main`, which a linked worktree cannot do while the primary holds it. From a
+   worktree or a clone, open a PR and merge through the platform instead:
    ```bash
    git checkout main
    git pull origin main
@@ -295,7 +297,11 @@ The agent slug prefix makes branch ownership obvious in `git branch -r` output a
    stale divergence. Resolve conflicts locally — never push a branch with known merge conflicts.
 4. **Push the branch to origin** (after rebase).
 5. **Merge or queue for review** based on power level:
-   - **Magus+ agents:** self-merge via `git merge --ff-only`, then push main
+   - **Magus+ agents, working in the primary checkout:** self-merge via `git merge --ff-only`, then push main
+   - **Magus+ agents, working in a linked worktree or a clone:** self-merge through the platform's PR
+     merge instead (ARC-028 R1). The authority is the same; only the mechanism changes, because a
+     local ff-merge requires checking out `main` and the primary checkout already holds it. Power
+     level decides *whether* you may merge without review; the isolation primitive decides *how*.
    - **Below Magus:** push the branch, report branch name, and queue for human merge
 6. **Delete the branch** after merge.
 
@@ -357,12 +363,31 @@ Commit execution rights depend on the interaction context:
 After every PR merge or local fast-forward merge, **always return to main and prune the branch**. Failing to do this leaves you on a stale branch where new work gets committed to the wrong place or stays unpushed.
 
 ```bash
-# After PR merges on remote:
+# After PR merges on remote — from the primary checkout:
 git checkout main
 git pull origin main
 git branch -d type/old-topic            # delete local branch
 git push origin --delete type/old-topic  # delete remote branch (safety net; ignore 'does not exist' errors if already auto-deleted)
 ```
+
+**From a linked worktree, do not run the block above** (ARC-028 R8). `git checkout main` fails with
+`fatal: 'main' is already used by worktree at <path>` when the primary checkout holds it, and
+`git branch -d` fails with `error: cannot delete branch '<branch>' used by worktree at <path>` for
+any branch still attached to a worktree — including your own, from inside it. Those are the exact
+messages; recognising them is the point, because neither is a malfunction. A worktree session cleans
+up like this instead:
+
+```bash
+# From the worktree: push and let the PR merge land.
+git push origin type/old-topic
+# Then, from the PRIMARY checkout (R7 — a worktree cannot remove itself safely):
+git worktree remove <path>               # after the same-vantage-point check below
+git fetch --prune origin                 # drops the remote-tracking ref
+git push origin --delete type/old-topic  # if the platform did not auto-delete
+```
+
+Neither failure is an obstacle to work around: Git refusing to double-check-out a branch, and
+refusing to delete a worktree-attached one, are the enforcement ARC-028 R3/R7 rely on.
 
 This applies to all actors — humans, interactive tools (Copilot, Claude), and autonomous agents. The `spell-commit-work` and `spell-close-session` prompts enforce this check.
 
