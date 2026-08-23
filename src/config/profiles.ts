@@ -40,6 +40,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "spells-session",
       "spells-capture",
       "spells-delivery",
+      "spells-review",
       "spells-planning",
       "spells-build",
       "spells-venture",
@@ -59,6 +60,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "spells-session",
       "spells-capture",
       "spells-delivery",
+      "spells-review",
       "spells-planning",
       "spells-build",
       "spells-venture",
@@ -79,12 +81,16 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
     displayName: "Docs / Records",
     description: "Documentation and records repositories — no code, test, or deployment workflows",
     components: [
-      // Deliberate exclusion: "spells-build" (implementation, tests, stack
-      // experts, release, deployment, PRD enchantment) and "spells-venture"
-      // (hub-only). Per docs-mode PRD MH-01, every retained spell must
-      // complete its core workflow without source code, tests, CI, or an
-      // external tracker. Asserted in test/registry.test.ts, exclusions
-      // included -- MH-01 requires the exclusions themselves be tested.
+      // Deliberate exclusions, per docs-mode PRD MH-01: "spells-build"
+      // (implementation, tests, stack experts, release, deployment, PRD
+      // enchantment, asset tooling), "spells-review" (adversarial CODE review
+      // -- its own workflow validates test coverage against source, which a
+      // docs repo has neither of), and "spells-venture" (hub-only).
+      //
+      // MH-01 requires every retained spell to complete its core workflow
+      // without source code, tests, CI, or an external tracker. Asserted --
+      // exclusions included, which MH-01 requires explicitly -- in
+      // test/docs-profile-registry-split.test.ts.
       "spells-session",
       "spells-capture",
       "spells-delivery",
@@ -92,6 +98,9 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "spells-meta",
       "agent-output-instructions",
       "git-conventions",
+      // Four retained docs spells link to agent-policies; it carries no code
+      // implication, so shipping it closes a dangling reference cheaply.
+      "agent-policies",
       "framework-decisions",
       "session-continuity",
       "decision-documentation-standard",

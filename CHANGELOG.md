@@ -9,11 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **`docs` profile** ([EF-04](docs/intake/batch-001/EF-04.md), docs-mode PRD MH-01) — a fifth installable profile for documentation and records repositories. Installs session, capture, PR-delivery, planning and meta spells plus core governance; deliberately excludes implementation, test-coverage, stack-expert, deployment, PRD-enchantment and hub-venture workflows. Every retained spell completes its core workflow without source code, tests, CI, or an external tracker. `tracking_mode` defaults silently to `internal` for this profile, alongside `governance-only` and `methodology`.
+- **`docs` profile** ([EF-04](docs/intake/batch-001/EF-04.md), docs-mode PRD MH-01) — a fifth installable profile for documentation and records repositories. Installs session, capture, PR-delivery, planning and meta spells plus core governance; deliberately excludes implementation, test-coverage, stack-expert, deployment, PRD-enchantment, adversarial code review, asset tooling and hub-venture workflows. `tracking_mode` defaults silently to `internal` for this profile, alongside `governance-only` and `methodology`.
+
+  Retained spells complete their core workflow without source code, tests, CI, or an external tracker. Two carry a known caveat, stated rather than glossed: `spell-architect` and `spell-scope` each produce a complete document on their own, but their downstream consumer (`spell-implement`) is not installed here, so a docs repo uses them as design-note tools rather than as the front of a build chain.
 
 ### Changed
 
-- **Spell components are now capability-scoped.** The monolithic `spell-prompts` (34 spells) and `claude-commands` (34 wrappers) components were split into seven groups — `spells-session`, `spells-capture`, `spells-delivery`, `spells-planning`, `spells-build`, `spells-venture`, `spells-meta` — so a profile can select spells by capability. **No spell file was renamed or moved**; grouping lives in the registry only, and every file stays flat in `.github/prompts/` and `.claude/commands/`.
+- **Spell components are now capability-scoped.** The monolithic `spell-prompts` (34 spells) and `claude-commands` (34 wrappers) components were split into eight groups — `spells-session`, `spells-capture`, `spells-delivery`, `spells-review`, `spells-planning`, `spells-build`, `spells-venture`, `spells-meta` — so a profile can select spells by capability. **No spell file was renamed or moved**; grouping lives in the registry only, and every file stays flat in `.github/prompts/` and `.claude/commands/`.
 
   Each component now carries *both* client formats of the same spell. The two were never independently selectable (every profile that took one took the other), and pairing them makes it structurally impossible for a spell's Copilot prompt and Claude wrapper to diverge across profiles.
 

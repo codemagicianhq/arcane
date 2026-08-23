@@ -1,5 +1,24 @@
 import { describe, it, expect } from "vitest";
 import { getProfile, listProfiles, SPELL_COMPONENT_NAMES } from "../src/modules/registry.js";
+
+/**
+ * What the retired monolith used to install, written out by hand.
+ *
+ * Deliberately NOT `SPELL_COMPONENT_NAMES`: asserting the migration equals the
+ * live derived list would be self-referential -- adding a new `spells-*` group
+ * later would change the migration's behaviour AND the expectation together,
+ * so the test could never fail. Adversarial review caught exactly this.
+ */
+const MONOLITH_REPLACEMENTS = [
+  "spells-session",
+  "spells-capture",
+  "spells-delivery",
+  "spells-review",
+  "spells-planning",
+  "spells-build",
+  "spells-venture",
+  "spells-meta",
+];
 import { migrateLegacyComponents } from "../src/commands/update.js";
 import type { InstalledComponent } from "../src/types.js";
 
@@ -77,6 +96,7 @@ describe("docs profile (EF-04 / MH-01)", () => {
     const names = getProfile("docs").map((c) => c.name);
     expect(names).not.toContain("spells-build");
     expect(names).not.toContain("spells-venture");
+    expect(names).not.toContain("spells-review");
   });
 
   it("ships none of the spells MH-01 names as excluded", () => {
@@ -88,6 +108,12 @@ describe("docs profile (EF-04 / MH-01)", () => {
       "spell-test", // test coverage
       "spell-ship", // deployment
       "spell-enchant", // PRD enchantment
+      // Not named in MH-01's list, but caught by its third criterion: this
+      // spell's own workflow validates that "new code has corresponding
+      // tests" against testing-standards.md -- source and tests a docs repo
+      // has neither of.
+      "spell-review",
+      "spell-generate-bot-icons", // Teams bot asset tooling, not docs work
     ]) {
       expect(files.some((f) => f.includes(excluded))).toBe(false);
     }
@@ -116,14 +142,14 @@ describe("legacy manifest migration", () => {
 
   it("expands a legacy spell-prompts entry into the capability components", () => {
     const out = migrateLegacyComponents([legacy("spell-prompts")]);
-    expect(out.map((c) => c.name)).toEqual(SPELL_COMPONENT_NAMES);
+    expect(out.map((c) => c.name)).toEqual(MONOLITH_REPLACEMENTS);
   });
 
   it("dedupes when a manifest lists BOTH legacy names (the common case)", () => {
     // Every profile that shipped one shipped the other, so real manifests in
     // the wild contain both -- they must converge, not double up.
     const out = migrateLegacyComponents([legacy("spell-prompts"), legacy("claude-commands")]);
-    expect(out.map((c) => c.name)).toEqual(SPELL_COMPONENT_NAMES);
+    expect(out.map((c) => c.name)).toEqual(MONOLITH_REPLACEMENTS);
   });
 
   it("preserves non-legacy entries and their order", () => {
@@ -135,7 +161,7 @@ describe("legacy manifest migration", () => {
     const names = out.map((c) => c.name);
     expect(names[0]).toBe("git-conventions");
     expect(names[names.length - 1]).toBe("testing-standards");
-    expect(names).toEqual(expect.arrayContaining(SPELL_COMPONENT_NAMES));
+    expect(names).toEqual(expect.arrayContaining(MONOLITH_REPLACEMENTS));
   });
 
   it("is idempotent — an already-migrated manifest passes through unchanged", () => {
@@ -156,5 +182,41 @@ describe("legacy manifest migration", () => {
     for (const c of out) {
       expect(c.installedVersion).toBe("0.16.0");
     }
+  });
+});
+
+describe("legacy migration is frozen against future spell groups", () => {
+  it("does not hand a legacy install any group added after the split", () => {
+    // Today these coincide. When WP-C2 adds spells-docs, SPELL_COMPONENT_NAMES
+    // grows and this assertion starts failing -- which is the point: adding a
+    // group must be a deliberate decision about whether legacy installs get
+    // it, not a silent consequence of the name prefix.
+    const migrated = migrateLegacyComponents([
+      { name: "spell-prompts", files: [], installedVersion: "0.16.0" },
+    ]).map((c) => c.name);
+    for (const name of migrated) {
+      expect(SPELL_COMPONENT_NAMES).toContain(name);
+    }
+    expect(migrated).toEqual(MONOLITH_REPLACEMENTS);
+  });
+});
+
+describe("backwards compatibility of the split", () => {
+  // Regression: adding an eighth group (spells-review) without adding it to the
+  // profiles that previously took the whole monolith silently dropped 2 of 34
+  // spells from lite and methodology. Caught by an end-to-end install, not by
+  // any unit test -- so here is the unit test.
+  it.each(["full", "lite", "methodology"] as const)(
+    "%s still ships all 34 spells in both client formats",
+    (profileId) => {
+      const files = getProfile(profileId).flatMap((c) => c.files);
+      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(34);
+      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(34);
+    },
+  );
+
+  it("governance-only still ships no spells at all", () => {
+    const files = getProfile("governance-only").flatMap((c) => c.files);
+    expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(0);
   });
 });
