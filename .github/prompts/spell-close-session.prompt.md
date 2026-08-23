@@ -102,6 +102,10 @@ Rules:
    - If screenshots were provided during the session, reference them in troubleshooting or journal entries.
 
 7. **Process screenshots** (if provided during the session).
+   - **First check `content_sensitivity` in `.arcane.json`.** If it is
+     `"sensitive"`, retain no screenshots of repository contents and transcribe
+     nothing from them into the journal — record the document path instead. See
+     universal-agent-rules.md, "Sensitive Repositories".
    - Screenshots should already be saved to `assets/screenshots/YYYY-MM-DD/` — agents must save them immediately when the user pastes them (see global screenshot rule in `copilot-instructions.md`).
    - At close-session time, review all screenshots saved during the session.
    - Keep only screenshots that provide durable evidence for journal/runbook documentation.

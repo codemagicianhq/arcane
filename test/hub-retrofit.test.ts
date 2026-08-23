@@ -33,6 +33,8 @@ function resetSelectMock(trackingAnswer: "internal" | "external" = "internal", p
     if (opts.message.includes("installation profile")) return "lite";
     if (opts.message.includes("How will work be tracked")) return trackingAnswer;
     if (opts.message.includes("Which external tracker")) return providerAnswer;
+    if (opts.message.includes("treat this repository's contents")) return "standard";
+    if (opts.message.includes("What does this repository hold")) return "portfolio";
     return "lite";
   });
 }
@@ -269,7 +271,12 @@ describe("spell update — manifest retrofit wizard", () => {
     await writeManifest(tmpDir, { profile: "governance-only", role: "consumer" });
     await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
-    expect(selectMock).not.toHaveBeenCalled();
+    // Field-specific: the content_sensitivity retrofit legitimately asks on
+    // every profile, so a blanket "select was never called" would assert the
+    // wrong thing. What matters is that TRACKING was defaulted silently.
+    expect(selectMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("How will work be tracked") }),
+    );
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("internal");
     expect(manifest.external_provider).toBeNull();

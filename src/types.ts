@@ -32,9 +32,39 @@ export interface ArcaneManifest {
    * "ventures" when `role` is "hub" and this is unset.
    */
   business_root?: string;
+  /**
+   * Directory holding this repository's own subject matter, when the repo IS
+   * one subject rather than a portfolio of ventures (EF-07). Independent of
+   * `business_root` and may coexist with it; where both apply to a shared
+   * document, the subject root wins.
+   *
+   * `"."` is a supported value meaning the repository root itself is the
+   * subject tree — documents sit alongside Arcane's own files rather than
+   * under a wrapper directory. That matters for adoption: an existing archive
+   * can come under governance without being restructured first.
+   *
+   * `null` means "asked, and this repo has no single subject root" (a
+   * portfolio) — distinct from `undefined`, which means the question has
+   * never been put to the operator. Same asked-but-none semantics
+   * `external_provider: null` already carries.
+   */
+  subject_root?: string | null;
+  /**
+   * Whether this repository's contents are sensitive by default (EF-12).
+   * `"sensitive"` switches agents to reference-not-transcribe behaviour: cite
+   * document paths rather than copying contents into journals, decisions, or
+   * commit messages, and retain no screenshots of them.
+   *
+   * Declared once for the whole repository rather than inferred per file —
+   * content-based sensitivity detection is unreliable for general documents
+   * (see the docs-mode PRD's rejection of scanning as a primary mechanism).
+   */
+  content_sensitivity?: ContentSensitivity;
 }
 
 export type HubRole = "hub" | "consumer";
+
+export type ContentSensitivity = "standard" | "sensitive";
 
 export type TrackingMode = "internal" | "external";
 /**
@@ -60,6 +90,18 @@ export interface RegistryComponent {
    * created on first init but never overwritten on re-init or update.
    */
   skipExisting?: boolean;
+  /**
+   * Maps an installed path (as it appears in `files`, and therefore in the
+   * manifest) to a different path under the assets root to copy it FROM.
+   *
+   * Needed for files whose installed name is a dotfile that must not exist as
+   * a dotfile inside the package itself: a nested `.gitignore` shipped in an
+   * npm tarball can silently exclude sibling files from the published package,
+   * and a nested `.gitattributes` would apply its rules to Arcane's own source
+   * tree. Storing the target path in `files` keeps uninstall correct, since
+   * the manifest records what actually landed in the repository.
+   */
+  sourceOverrides?: Record<string, string>;
 }
 
 export type Profile = "full" | "lite" | "governance-only" | "methodology" | "docs";

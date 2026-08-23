@@ -312,7 +312,14 @@ When working across machines, topic branches are the coordination mechanism:
 
 | Repo Type      | Examples                           | Merge Method | PR Required? |
 | -------------- | ---------------------------------- | ------------ | ------------ |
-| **Docs repos** | docs hub, prototypes               | PR           | Yes          |
+| **Docs repos** | docs hub, prototypes               | PR or local ff-only | No — see note |
+
+> **Docs-only repositories.** A PR is *not* required. `cicd-standards.md` records
+> the docs-only exception (ADR-048): branch discipline still applies — branch,
+> work, then fast-forward merge — but a review gate is optional where there is no
+> build to validate. This table previously said "PR required: Yes", contradicting
+> that; the exception governs. Repositories that produce artifacts keep the PR
+> requirement in full.
 | **Code repos** | application, API, storefront repos | PR           | Yes          |
 
 - **All repos have main branch protection.** Direct pushes to main are rejected. All changes must go through a PR.

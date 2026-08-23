@@ -1,0 +1,107 @@
+{
+  "feature": "docs-mode",
+  "branchName": "claude/feat/docs-mode-content",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "DM-1",
+      "title": "Capability-scoped spell components + docs profile (WP-C1)",
+      "description": "Split the monolithic spell-prompts/claude-commands pair into capability groups so a profile can select spells by capability; add profile: docs as a fifth preset. No spell file renamed or moved.",
+      "acceptanceCriteria": [
+        "Every spell on disk is registered exactly once, in both client formats, in the same component",
+        "spell init lists and accepts the docs profile",
+        "Existing profiles (full/lite/methodology/governance-only) resolve to exactly the files they did before"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "Shipped in PR #61 (0.18.0). Registry integrity derived from disk rather than hardcoded. Backwards compatibility verified three ways (pre/post file-set diff, runtime getProfile, end-to-end install) -- and a real regression was caught when adding the eighth group left lite/methodology at 32 of 34 spells; that gap is now a unit test."
+    },
+    {
+      "id": "DM-2",
+      "title": "Legacy manifest migration on spell update",
+      "description": "update.ts preserves-and-skips components that left the registry, so without migration a 0.17.x install would hit ComponentNotFoundError and silently never update its spells again. migrateLegacyComponents rewrites those entries before the update loop.",
+      "acceptanceCriteria": [
+        "Deterministic, order-preserving, idempotent, and deduped across both legacy names",
+        "Frozen to a literal list so future spell groups do not ride into legacy installs",
+        "User-owned (skipExisting) files are never clobbered by the migration"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "Shipped in PR #61. Verified end-to-end against a hand-written 0.16.0 manifest: migrates to eight components, refreshes a stale spell file, preserves user-owned TODO.md, reports 'already up to date' with zero duplicates on a clean second run. Review independently confirmed dry-run parity and order-robustness. The frozen-list guard is proven live by DM-6: spells-docs exists and legacy installs correctly do not receive it."
+    },
+    {
+      "id": "DM-3",
+      "title": "subject_root manifest field (EF-07 / MH-02)",
+      "description": "Independent of business_root, may coexist with it; '.' supported so an existing archive is adopted in place; null records asked-but-no-single-subject distinctly from never-asked.",
+      "acceptanceCriteria": [
+        "'.' and normal relative paths accepted; absolute, drive-relative, UNC, parent-traversal and empty values rejected",
+        "null accepted and distinguishable from undefined",
+        "Asked at init for the docs profile only; retrofitted once for existing docs installs"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/manifest.test.ts accepts '.', 'docs', 'records/2026', 'a/b/c' and null; rejects empty, whitespace-only, absolute POSIX, Windows drive-relative, parent traversal, embedded traversal, and UNC paths. Validation is shape-based because the value is resolved against the repo root and handed to spells -- an escaping value would point agents outside the project entirely."
+    },
+    {
+      "id": "DM-4",
+      "title": "content_sensitivity field and agent rails (EF-12)",
+      "description": "Repository-wide declaration driving reference-not-transcribe behaviour, since per-file detection of general documents has no reliable signature. Rails live in universal-agent-rules.md and gate spell-close-session's screenshot step.",
+      "acceptanceCriteria": [
+        "Enum validated on read; absent means today's behaviour exactly",
+        "Asked on every interactive install (a code repo can hold sensitive records too), default standard",
+        "Rails state that this constrains what agents write down, not what they may read -- it is not an access control"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/manifest.test.ts covers both valid values, an invalid value, and absence. The rails deliberately invert the existing 'when ambiguous, save it' screenshot heuristic for sensitive repositories, and permit sanitized summaries only where they carry no recoverable detail."
+    },
+    {
+      "id": "DM-5",
+      "title": "records-conventions.md and the docs baseline (EF-11, EF-10, EF-17 residue)",
+      "description": "Tombstone-in-place supersession convention with no archive directory and no shipped retention schedule; .gitattributes/.gitignore baseline emitted as user-owned skipExisting files with source-renamed dotfile targets.",
+      "acceptanceCriteria": [
+        "Superseded documents keep their path and gain a header naming their replacement",
+        "Deletion is a separate explicit decision, with prohibitions enumerated",
+        "Baseline sources are not dotfiles inside the package, and never overwrite an existing operator policy"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "RegistryComponent.sourceOverrides was added specifically because a nested .gitignore in an npm tarball can exclude sibling files from the published package, and a nested .gitattributes would apply its rules to Arcane's own source tree. The registry's file-integrity test was taught to resolve overrides -- it caught the mapping the moment it was introduced."
+    },
+    {
+      "id": "DM-6",
+      "title": "spell-adopt-docs (EF-03 / MH-04)",
+      "description": "Dry-run-first adoption of an existing document tree: inventory, propose a mapping, get approval, apply in separately-revertable phases. Re-derived from MH-04's acceptance criteria under explicit operator authorisation, since the referenced draft could not be located.",
+      "acceptanceCriteria": [
+        "Inventory precedes any move, rename, or deletion",
+        "The operator approves a specific written mapping before mutation",
+        "Sensitive contents are referenced by path, never transcribed",
+        "Failure and rollback behaviour are explicit for every mutating phase"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "Each mutating phase is its own commit and states its rollback before running; the spell never deletes a document and stops at the first collision rather than attempting partial recovery. Deviation from MH-04 is disclosed in architecture.md: this is not the original draft, which was unrecoverable."
+    },
+    {
+      "id": "DM-7",
+      "title": "ARC-033, EF flips, and the docs-repo PR contradiction",
+      "description": "New ADR amending ARC-020 for the third time; git-conventions.md's docs-repo PR requirement corrected toward cicd-standards.md's ADR-048 exception (PRD acceptance criterion L156).",
+      "acceptanceCriteria": [
+        "ARC-033 Accepted with Amends: ARC-020; ARC-020 stays Proposed and gains a third Amended-by backlink",
+        "EF-03/04/07/10/11/12 flip to shipped",
+        "The two governance documents no longer contradict each other on docs-repo PR requirements"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "check:adr-references passes. ARC-020's own Status remains Proposed -- its broader scope (operator identity, provider coordinates, repository lists) is genuinely still open, and three slices now show the storage model follows the shape of the data rather than one blanket answer."
+    }
+  ]
+}

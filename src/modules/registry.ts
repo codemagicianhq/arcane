@@ -122,6 +122,25 @@ const COMPONENTS: RegistryComponent[] = [
     description: "Copilot enforcement rules: PR link format, merge strategy, and branch naming",
     files: [".github/instructions/agent-output.instructions.md"],
   },
+  // Repository baseline files (EF-10 + EF-17). skipExisting: these are
+  // user-owned once written -- a repo with its own .gitattributes has an
+  // intentional policy Arcane must not overwrite. Sources are stored under a
+  // non-dotfile path and mapped via sourceOverrides; see RegistryComponent.
+  {
+    name: "docs-baseline",
+    description: "Line-ending and binary-format baseline for document repositories (.gitattributes/.gitignore)",
+    files: [".gitattributes", ".gitignore"],
+    sourceOverrides: {
+      ".gitattributes": "docs-baseline/gitattributes",
+      ".gitignore": "docs-baseline/gitignore",
+    },
+    skipExisting: true,
+  },
+  {
+    name: "records-conventions",
+    description: "Supersession, tombstone, and retention conventions for records repositories",
+    files: [".arcane/governance/records-conventions.md"],
+  },
   // ─── Spells ────────────────────────────────────────────────────────────────
   // Split from the former monolithic `spell-prompts` + `claude-commands` pair
   // so a profile can select spells by capability (see ARC-0NN). Grouping lives
@@ -227,6 +246,14 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-enchant.md",
       ".github/prompts/spell-generate-bot-icons.prompt.md",
       ".claude/commands/spell-generate-bot-icons.md",
+    ],
+  },
+  {
+    name: "spells-docs",
+    description: "Documentation and records workflows — adopt an existing document tree",
+    files: [
+      ".github/prompts/spell-adopt-docs.prompt.md",
+      ".claude/commands/spell-adopt-docs.md",
     ],
   },
   {

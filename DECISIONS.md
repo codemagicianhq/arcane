@@ -51,6 +51,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion)         | Venture Idea Lifecycle: Hub Role, Registry, and `spell-manifest` Promotion      | 2026-08-21 | Accepted   |
 | [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate)       | Fictional Venture Names for Examples, and a Repository-Wide Privacy Gate       | 2026-08-22 | Accepted   |
 | [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) | Persisted Tracking Configuration: tracking_mode and external_provider in the Manifest | 2026-08-22 | Accepted   |
+| [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) | Docs Mode: Subject Root, Content Sensitivity, and Capability-Scoped Spell Components | 2026-08-23 | Accepted   |
 
 ---
 
@@ -810,7 +811,7 @@ The single-layer model does not yet let an operator override a shipped standard 
 **Date:** 2026-07-31
 **Status:** Proposed
 **Intake:** [EF-14](docs/intake/batch-001/EF-14.md)
-**Amended by:** [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (resolved inline-vs-separate-file for venture/portfolio data -- chose separate, `{business_root}/registry.json`), [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (resolved the same question for `tracking_mode`/`external_provider` -- chose inline, matching `profile`). The broader schema (operator identity, provider coordinates, repository lists) remains open below.
+**Amended by:** [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (resolved inline-vs-separate-file for venture/portfolio data -- chose separate, `{business_root}/registry.json`), [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (resolved the same question for `tracking_mode`/`external_provider` -- chose inline, matching `profile`), [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) (resolved it again for `subject_root`/`content_sensitivity` -- inline, same contract). The broader schema (operator identity, provider coordinates, repository lists) remains open below.
 
 **Context:**
 
@@ -1341,3 +1342,57 @@ storage model depends on what the data actually looks like, not a single blanket
 - **A single combined question merging profile and tracking-mode selection (EF-04's proposal)** —
   rejected as out of scope here: EF-04 is docs-mode work, not yet actioned. This decision keeps
   the two as sequential, separate questions and leaves EF-04's deeper UX unification for later.
+
+---
+
+## ARC-033 — Docs Mode: Subject Root, Content Sensitivity, and Capability-Scoped Spell Components
+
+**Date:** 2026-08-23
+**Status:** Accepted
+**Amends:** [ARC-020](#arc-020--canonical-repository-configuration-schema) (third slice — see Relationship to ARC-020)
+**Related:** [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion), [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (the persist-once contract this reuses), [ARC-019](#arc-019--repository-document-ownership-and-path-model) (document ownership)
+**Intake:** [EF-03](docs/intake/batch-001/EF-03.md), [EF-04](docs/intake/batch-001/EF-04.md), [EF-07](docs/intake/batch-001/EF-07.md), [EF-10](docs/intake/batch-001/EF-10.md), [EF-11](docs/intake/batch-001/EF-11.md), [EF-12](docs/intake/batch-001/EF-12.md)
+
+**Context:**
+
+Arcane's governance has acknowledged documentation-only repositories since ADR-048 (`cicd-standards.md` carries a docs-only branch-policy exception), but nothing executable expressed that: there was no docs profile, no way to describe a repository that IS one subject rather than a portfolio of ventures, no records conventions, no line-ending baseline for consuming repositories, and no instruction telling agents to reference rather than transcribe sensitive documents. Six batch-001 findings describe facets of the same gap; the accepted docs-mode PRD unified them, and this record captures the decisions that PRD deferred to implementation.
+
+One structural obstacle blocked all of it: every spell shipped inside a single `spell-prompts` component (plus `claude-commands` for the Claude wrappers). Because a profile selects whole components, "session and planning spells without implementation and deployment spells" was inexpressible.
+
+**Decision:**
+
+1. **Spell components are capability-scoped.** Split into `spells-session`, `spells-capture`, `spells-delivery`, `spells-review`, `spells-planning`, `spells-build`, `spells-venture`, `spells-meta`, `spells-docs`. Grouping lives in the registry only — **no spell file is renamed or moved**, and every file stays flat in `.github/prompts/` and `.claude/commands/`.
+
+2. **Each component carries both client formats of its spells.** The Copilot prompt and the Claude wrapper for one spell are never independently selectable — every profile that took one always took the other — and pairing them makes divergence across profiles structurally impossible.
+
+3. **Legacy manifests migrate deterministically, against a frozen list.** `spell-prompts`/`claude-commands` map to the eight groups that reconstitute what the monolith held, written as a literal — *not* derived from the live set of `spells-*` components. A derived list would silently hand every future group to legacy installs, and a test asserting migration-equals-derived-list could never fail.
+
+4. **`profile: docs` is a fifth preset**, not a composition UX. Named presets stay the single init question; composition lives in the registry and in `spell add`.
+
+5. **`subject_root` describes a single-subject repository.** Independent of `business_root` and may coexist with it; where both apply to a shared document, the subject root wins. **`"."` is supported** and means the repository root itself is the subject tree — the decision that lets an existing archive come under governance without being restructured first. `null` records "asked, no single subject root" distinctly from `undefined` ("never asked"), the same asked-but-none semantics `external_provider: null` already carries.
+
+6. **`content_sensitivity` is declared once per repository**, not inferred per file. `"sensitive"` switches agents to reference-not-transcribe: cite paths, never contents, in journals, decisions, commits and PRs; retain no screenshots of repository contents; sanitized summaries are permitted only where they carry no recoverable detail. This is a governance default constraining what agents *write down* — not an access control, and not a substitute for repository permissions.
+
+7. **Superseded records stay in place with a tombstone**, rather than moving to an archive directory. Moving breaks every existing link, and the reader most likely to arrive at an outdated document is exactly the one who must be told where to go instead. Deletion is a separate explicit decision from supersession, and Arcane ships **no retention schedule** — periods are jurisdiction- and contract-specific, and a framework default would be guesswork wearing the costume of a standard.
+
+8. **The docs profile emits a line-ending and binary-format baseline** (`.gitattributes`/`.gitignore`) as `skipExisting` user-owned files: a repository with its own already has an intentional policy. `spell update` reports a missing baseline and never renormalizes an existing repository, because renormalization produces a large intentional diff that must be an operator's choice. Git LFS is documented as an opt-in decision, not configured by default.
+
+9. **The docs-repo PR contradiction resolves toward the docs-only exception.** `git-conventions.md`'s policy table said docs repos require a PR while `cicd-standards.md` recorded ADR-048's exception; the exception governs, and the table is corrected.
+
+**Relationship to ARC-020:** this is the third slice, following the pattern ARC-030 and ARC-032 established. ARC-020 (still Proposed) left open whether user-owned configuration lives inside `.arcane.json` or in a separate file. `subject_root` and `content_sensitivity` are the same shape as `profile` and `tracking_mode` — small, session-independent scalar choices — so they go inline, on the identical ask-once/retrofit/never-overwrite contract. ARC-020's broader scope (operator identity, provider coordinates, repository lists) remains open; three data points now show that the right storage model follows the shape of the data rather than one blanket answer.
+
+**Reasoning:**
+
+- Capability grouping was the minimum change that made a docs profile expressible. File-level subtraction would have added a second, subtractive selection mechanism to reason about; full composition would have turned "what profile is this repo?" from a one-word answer into a set, rippling through every downstream branch that reads it.
+- Root-as-subject is what makes adoption non-destructive. Requiring a named subdirectory would force exactly the repositories docs mode exists to welcome into a history-churning restructure before they could adopt anything.
+- Declaring sensitivity per repository rather than detecting it per file follows the reasoning ARC-022 applied to CI path filters: content-based classification of general documents has no reliable signature, so it degrades into a hand-maintained list that fails silently.
+- Retaining superseded documents in place is the same principle as never breaking a published URL. The tombstone is for the reader who arrives by a stale link — the one person a move guarantees you cannot reach.
+
+**Rejected alternatives:**
+
+- **Profile composition as the init UX** — rejected: it needs the same registry split underneath, but the manifest field becomes a set and every profile-branching consumer must handle combinations. Presets keep the simple front door; `spell add` already covers unusual mixes.
+- **A universal archive directory for superseded records** — rejected: breaks inbound links, splits file history across a rename, and imposes a layout on subjects whose organisation is determined elsewhere.
+- **Shipping a default retention schedule** — rejected as guesswork presented as a standard. Absence of a known period is recorded as "unknown, therefore do not delete", not as "no obligation".
+- **Deriving the legacy migration list from the live `spells-*` set** — rejected after adversarial review: future groups would ride into legacy installs silently, behind a self-referential test that could not detect it.
+- **Storing the `.gitattributes`/`.gitignore` sources as real dotfiles inside the package** — rejected: a nested `.gitignore` in an npm tarball can exclude sibling files from the published package, and a nested `.gitattributes` would apply its rules to Arcane's own source tree. Sources are stored under a plain path and mapped to their installed dotfile name.
+- **Keeping `spell-review` in the docs profile** — rejected during review: its own workflow validates that new code has corresponding tests, which a docs repository has neither of. Code review became its own component rather than being quietly retained.

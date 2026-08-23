@@ -96,6 +96,9 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "spells-delivery",
       "spells-planning",
       "spells-meta",
+      "spells-docs",
+      "docs-baseline",
+      "records-conventions",
       "agent-output-instructions",
       "git-conventions",
       // Four retained docs spells link to agent-policies; it carries no code

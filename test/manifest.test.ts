@@ -406,3 +406,79 @@ describe("manifest", () => {
     });
   });
 });
+
+describe("docs-mode manifest fields (EF-07 / EF-12)", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(join(tmpdir(), "manifest-docsmode-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  async function write(extra: Record<string, unknown>): Promise<void> {
+    await fs.writeFile(
+      join(tempDir, ".arcane.json"),
+      JSON.stringify({
+        version: "1.0.0",
+        profile: "docs",
+        installedAt: "x",
+        components: [],
+        ...extra,
+      }),
+    );
+  }
+
+  it.each(["standard", "sensitive"])("accepts content_sensitivity: %s", async (value) => {
+    await write({ content_sensitivity: value });
+    const m = await readManifest(tempDir);
+    expect(m.content_sensitivity).toBe(value);
+  });
+
+  it("rejects an unsupported content_sensitivity", async () => {
+    await write({ content_sensitivity: "secret" });
+    await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+  });
+
+  // "." is the whole point of EF-07's root-as-subject decision: an existing
+  // archive comes under governance without being restructured first.
+  it.each([".", "docs", "records/2026", "a/b/c"])(
+    "accepts subject_root: %s",
+    async (value) => {
+      await write({ subject_root: value });
+      const m = await readManifest(tempDir);
+      expect(m.subject_root).toBe(value);
+    },
+  );
+
+  it("accepts subject_root: null, meaning asked-but-no-single-subject", async () => {
+    await write({ subject_root: null });
+    const m = await readManifest(tempDir);
+    expect(m.subject_root).toBeNull();
+  });
+
+  // subject_root is resolved against the repo root and handed to spells, so a
+  // value that escapes the repository would point agents outside the project.
+  it.each([
+    ["", "empty"],
+    ["   ", "whitespace only"],
+    ["/etc/passwd", "absolute posix"],
+    ["C:\\Windows", "windows drive"],
+    ["../outside", "parent traversal"],
+    ["docs/../../etc", "embedded traversal"],
+    ["docs\\..\\..\\etc", "windows-separator traversal"],
+    ["\\\\server\\share", "UNC path"],
+  ])("rejects subject_root %s (%s)", async (value) => {
+    await write({ subject_root: value });
+    await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+  });
+
+  it("accepts both new fields absent (existing installs are untouched)", async () => {
+    await write({});
+    const m = await readManifest(tempDir);
+    expect(m.subject_root).toBeUndefined();
+    expect(m.content_sensitivity).toBeUndefined();
+  });
+});

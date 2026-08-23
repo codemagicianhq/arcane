@@ -15,8 +15,19 @@ import type { ArcaneManifest } from "../src/types.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 // vitest hoists vi.mock() to avoid real stdin interaction in tests
+// Message-branching rather than a blanket return: init now asks several
+// select() questions (profile, tracking mode, content sensitivity, subject
+// shape) and answering them all with "lite" would write invalid enum values
+// into the manifest -- which readManifest rightly rejects.
 vi.mock("@inquirer/prompts", () => ({
-  select: vi.fn().mockResolvedValue("lite"),
+  select: vi.fn(async (opts: { message: string }) => {
+    if (opts.message.includes("installation profile")) return "lite";
+    if (opts.message.includes("How will work be tracked")) return "internal";
+    if (opts.message.includes("Which external tracker")) return "ado";
+    if (opts.message.includes("treat this repository's contents")) return "standard";
+    if (opts.message.includes("What does this repository hold")) return "portfolio";
+    return "lite";
+  }),
   confirm: vi.fn().mockResolvedValue(true),
   checkbox: vi.fn().mockResolvedValue([]),
   input: vi.fn().mockResolvedValue("Agent"),
@@ -116,7 +127,12 @@ describe("spell init — handler", () => {
 
     await runInit({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
-    expect(vi.mocked(select)).toHaveBeenCalledOnce();
+    // Assert the PROFILE question specifically -- init legitimately asks
+    // several select() questions now, so a bare call-count would be testing
+    // the wrong thing.
+    expect(vi.mocked(select)).toHaveBeenCalledWith(
+      expect.objectContaining({ message: expect.stringContaining("installation profile") }),
+    );
 
     const manifest = JSON.parse(
       await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8"),

@@ -72,6 +72,32 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 ---
 
+## Sensitive Repositories
+
+16. **Reference, don't transcribe, when the repository is marked sensitive.** If
+    `.arcane.json` has `content_sensitivity: "sensitive"`, the repository's own
+    documents are the sensitive material — not just credentials inside them. In
+    that mode:
+    - **Cite paths, never contents.** Write "see `records/2024/lease.md`", not a
+      quotation, summary-with-details, or paraphrase of what it says. This
+      applies to journal entries, decision records, commit messages, PR
+      descriptions, and TODO items alike — every one of those is a durable,
+      often-published artifact that outlives the session.
+    - **Retain no screenshots of repository contents.** Read them, act on them,
+      then do not save them. The screenshot-curation heuristics above are
+      superseded here: "when ambiguous, save it" inverts to "when ambiguous,
+      don't."
+    - **A sanitized summary is still permitted where it carries no recoverable
+      detail** — "three lease agreements, one expiring this quarter" is fine;
+      naming the parties, addresses, sums, or dates is not.
+    - This is a governance default, not an access control. It constrains what
+      agents *write down*; it does not restrict what they may read, and it is
+      not a substitute for repository permissions or the push-safety controls in
+      `git-conventions.md`.
+    - Absent or `"standard"` means normal behaviour — this rule adds nothing.
+
+---
+
 ## Naming Conventions
 
 16. **Three naming tiers — never mix them:**

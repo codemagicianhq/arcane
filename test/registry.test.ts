@@ -191,11 +191,15 @@ describe("registry", () => {
 
     for (const component of nonExternal) {
       for (const file of component.files) {
+        // A file's SOURCE path can differ from its installed path -- see
+        // RegistryComponent.sourceOverrides, used for dotfiles that must not
+        // exist as dotfiles inside the published package.
+        const source = component.sourceOverrides?.[file] ?? file;
         it(`${component.name}: ${file}`, () => {
-          const fullPath = join(ASSETS_ROOT, file);
+          const fullPath = join(ASSETS_ROOT, source);
           expect(
             existsSync(fullPath),
-            `Missing asset: src/assets/${file} (registered in component "${component.name}")`,
+            `Missing asset: src/assets/${source} (installed as "${file}" by component "${component.name}")`,
           ).toBe(true);
         });
       }

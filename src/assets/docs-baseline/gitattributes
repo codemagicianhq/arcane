@@ -1,0 +1,53 @@
+# Line-ending baseline (EF-17). Text normalizes to LF in the repository and
+# checks out per-platform; binary formats are marked so Git never rewrites or
+# diffs them as text.
+* text=auto eol=lf
+
+# Documents — binary. Office formats are ZIP containers: a line-ending rewrite
+# corrupts them, and a textual diff is noise either way.
+*.pdf   binary
+*.docx  binary
+*.doc   binary
+*.xlsx  binary
+*.xls   binary
+*.pptx  binary
+*.ppt   binary
+*.odt   binary
+*.ods   binary
+*.odp   binary
+*.rtf   binary
+
+# Images
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.bmp   binary
+*.tif   binary
+*.tiff  binary
+*.webp  binary
+*.ico   binary
+*.heic  binary
+
+# Scans and audio/video attachments commonly filed with records
+*.mp3   binary
+*.mp4   binary
+*.mov   binary
+*.wav   binary
+
+# Archives
+*.zip   binary
+*.7z    binary
+*.gz    binary
+*.tar   binary
+
+# Fonts
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+
+# Git LFS is deliberately NOT configured here. It requires server-side support
+# and changes clone behaviour for everyone, so it is an opt-in decision rather
+# than a default. Consider it when a binary is large or changes often; see
+# records-conventions.md.

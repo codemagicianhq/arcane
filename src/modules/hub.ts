@@ -1,8 +1,14 @@
-import { confirm, select } from "@inquirer/prompts";
+import { confirm, select, input } from "@inquirer/prompts";
 import { readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "./copier.js";
-import type { ArcaneManifest, ExternalProvider, HubRole, TrackingMode } from "../types.js";
+import type {
+  ArcaneManifest,
+  ContentSensitivity,
+  ExternalProvider,
+  HubRole,
+  TrackingMode,
+} from "../types.js";
 
 /**
  * A manifest-field retrofit: a schema question `spell update` asks exactly
@@ -71,6 +77,66 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
         return { tracking_mode, external_provider };
       }
       return { tracking_mode, external_provider: null };
+    },
+  },
+  {
+    field: "content_sensitivity",
+    needsRetrofit: (m) => m.content_sensitivity === undefined,
+    // EF-12. Asked for every profile -- a code repo can hold sensitive records
+    // too -- and defaults to "standard", so an operator who just presses enter
+    // keeps today's behaviour exactly.
+    ask: async () => {
+      const content_sensitivity = (await select({
+        message: "How should agents treat this repository's contents?",
+        choices: [
+          {
+            value: "standard",
+            name: "Standard — agents may quote contents in journals and decisions",
+          },
+          {
+            value: "sensitive",
+            name: "Sensitive — agents reference documents by path, never transcribe them",
+          },
+        ],
+        default: "standard",
+      })) as ContentSensitivity;
+      return { content_sensitivity };
+    },
+  },
+  {
+    field: "subject_root",
+    // EF-07. Only the docs profile is asked: other profiles describe code or a
+    // venture portfolio, where "what is this repo about" is already answered.
+    // A docs install that legitimately holds several subjects answers
+    // "portfolio" and stays unset -- so this retrofit deliberately does NOT
+    // re-ask on every update. It is gated on the field being absent AND the
+    // profile being docs, and once answered (either way) it never fires again,
+    // because "portfolio" writes an explicit empty marker.
+    needsRetrofit: (m) => m.profile === "docs" && m.subject_root === undefined,
+    ask: async () => {
+      const shape = await select({
+        message: "What does this repository hold?",
+        choices: [
+          {
+            value: "root",
+            name: "One subject, at the repository root (documents sit alongside Arcane's files)",
+          },
+          { value: "subdir", name: "One subject, in its own directory" },
+          { value: "portfolio", name: "Several subjects or ventures" },
+        ],
+      });
+      if (shape === "root") return { subject_root: "." };
+      if (shape === "subdir") {
+        const answer = await input({
+          message: "Directory holding the subject's documents:",
+          default: "docs",
+        });
+        return { subject_root: answer.trim() || "docs" };
+      }
+      // Portfolio: business_root covers this shape. Recorded as an explicit
+      // null rather than left unset, so the question isn't re-asked on every
+      // future update.
+      return { subject_root: null };
     },
   },
 ];

@@ -38,7 +38,18 @@ vi.mock("../src/modules/version-check.js", () => ({
 // stdin.
 vi.mock("@inquirer/prompts", () => ({
   confirm: vi.fn().mockResolvedValue(true),
-  select: vi.fn().mockResolvedValue("internal"),
+  // Message-branching: init/update ask several distinct select() questions,
+  // and answering them all with "internal" wrote an invalid content_sensitivity
+  // that readManifest then rejected -- surfacing three chained failures over in
+  // the uninstall step.
+  select: vi.fn(async (opts: { message: string }) => {
+    if (opts.message.includes("installation profile")) return "lite";
+    if (opts.message.includes("How will work be tracked")) return "internal";
+    if (opts.message.includes("Which external tracker")) return "ado";
+    if (opts.message.includes("treat this repository's contents")) return "standard";
+    if (opts.message.includes("What does this repository hold")) return "portfolio";
+    return "internal";
+  }),
 }));
 
 // Import handlers AFTER vi.mock() so the hoisted mock is in place.

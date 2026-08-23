@@ -66,7 +66,7 @@ export async function runAdd(
   let fileCount = 0;
   const installedFiles: string[] = [];
   for (const file of component.files) {
-    const srcPath = join(assetsDir, file);
+    const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
     if (options.dryRun) {
       console.log(`  [dry-run] Would copy: ${file}`);
     } else {
