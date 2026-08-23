@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.2] - 2026-08-23
+
+More push-safety fixes, from a review that attacked the shipped `0.20.1` rather than reading it. **Two of these let a single ordinary command deliver the full history while `spell doctor` reported the repository blocked.** If you use `push_policy: "blocked"`, upgrade and re-run `spell doctor`.
+
+### Fixed
+
+- **The pre-push hook did not exist in any linked worktree.** `core.hooksPath` was written as the relative literal `.arcane/hooks`, and git resolves a relative hooks path against *each worktree's own top level* — but the hook file is untracked and exists only in the checkout that created it. So every linked worktree inherited the config and had no hook, meaning `git push <url>` (the bypass only the hook covers) succeeded in one ordinary command, no `--no-verify` needed. This was not an edge case: Arcane's own methodology (ARC-028 R3) sends concurrent sessions into linked worktrees, so the control was absent exactly where the tool tells you to work. `core.hooksPath` is now absolute and anchored on the common git directory, so every worktree resolves to the one real hook.
+- **`spell init` in a subdirectory installed the hook where git never looks.** `--is-inside-work-tree` is true from anywhere in a repository, so initialising inside a monorepo package wrote the hook under that package while pointing repository-wide `core.hooksPath` at a path git resolves from the root. The hook layer was absent throughout the repository, `doctor` reported it in place, and the repository's own `.git/hooks` stopped firing as collateral. The hook is now always installed at the repository root.
+- **Taking `core.hooksPath` silently disabled hooks in git's default directory.** The R7 collision guard only looked for a competing `core.hooksPath`, so a repository with ordinary `.git/hooks/*` — no hook manager, no config key to collide with — had every one of them switched off without warning. That is the exact harm R7 exists to prevent, reached by the one route it was not watching. Installation now refuses and names the hooks it would have displaced (git's inert `.sample` templates are ignored).
+- **A push URL contributed by an `include`d config file defeated the block and was reported as covered.** Git labels such a value as `local` scope, so the outer-scope refusal never fired and `--replace-all` could not remove it. Rather than enumerate another special case, applying the block now **re-reads what git actually resolves afterwards** and fails unless the result is exactly the sentinel.
+- **A partial unblock closed its own retry path.** `spell unblock-push` returned early on `push_policy: "open"`, which is precisely what a partial lift had already written — so the failed attempt made the command refuse to finish the job. It now gates on whether the controls are actually in force.
+- **A stale marker could delete a genuine push URL.** `git config --unset-all` exits 5 for an absent key; letting that throw skipped the bookkeeping cleanup, and a surviving "there was no push URL here" marker made the next block record nothing and the restore after that remove a real URL while reporting success.
+- **`core.hooksPath` set at worktree scope is now removable**, and a push URL at worktree scope is treated as overridable rather than foreign — a repository can write both itself.
+- **The remedy string for an unparseable scope no longer suggests `git config --unknown`**, which is not a command.
+
 ## [0.20.1] - 2026-08-23
 
 Fixes defects in `0.20.0`'s push-safety controls, found by a verification review that exercised them against real repositories rather than reading the code. **If you set `push_policy: "blocked"` on `0.20.0`, re-run `spell doctor` after upgrading** — it will tell you whether that repository is actually covered.

@@ -23,6 +23,7 @@ import {
   installPrePushHook,
   disablePushUrls,
   describeConfigScope,
+  ARCANE_HOOKS_DIR,
 } from "../modules/push-safety.js";
 import {
   correctUnbornMasterDefault,
@@ -510,6 +511,17 @@ export async function runInit(
               "(unreadable config, or a git too old for `--show-scope`). Installing without knowing " +
               "whether another hook manager owns that setting could silently disable it. Fix the " +
               "config and run `spell doctor`.",
+          );
+        } else if (hook.status === "refused-default-hooks") {
+          // Same harm as a foreign core.hooksPath, reached by the route the R7
+          // guard wasn't watching: this repository's hooks live in git's
+          // default directory and have no config key to collide with, so
+          // taking the slot would switch every one of them off silently.
+          printWarning(
+            `Did not install the pre-push hook: this repository has hooks in git's default ` +
+              `directory (${hook.hooks.join(", ")}). Setting core.hooksPath would silently stop ` +
+              `them running. Move them under \`${ARCANE_HOOKS_DIR}\` yourself and re-run, or add ` +
+              "the push guard to your existing pre-push hook.",
           );
         } else if (hook.status === "refused-foreign-hooks-path") {
           // R7: core.hooksPath is one exclusive slot, at local OR global
