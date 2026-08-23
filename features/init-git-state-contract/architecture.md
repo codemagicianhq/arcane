@@ -29,7 +29,7 @@ whether a repo is born or unborn, so `correctUnbornMasterDefault` additionally v
 `symbolic-ref HEAD refs/heads/main` on a born repo would detach HEAD from `master`'s commit
 history without moving any commits. **A third check, added after adversarial review found the
 first version missing it:** confirming the source is unborn is not sufficient on its own — the
-function also verifies `rev-parse --verify refs/heads/main` fails before writing. `refs/heads/*`
+function must also confirm the *target* doesn't already exist before writing. `refs/heads/*`
 is shared across git worktrees while `HEAD` is per-worktree, so an unborn `master` HEAD in one
 worktree can coexist with a fully born `main` from another (or from an earlier abandoned attempt
 in the same repo); without this check, repointing HEAD onto an already-born `main` silently
@@ -38,6 +38,22 @@ a later `git commit` would make permanent. Review reproduced this empirically be
 landed. All three checks together make the function safe to call directly (as the test suite
 does) rather than correct only by accident of `init.ts`'s current call site being gated on
 `no-commits`.
+
+**Corrected 2026-08-23 (`0.17.1`) — how that third check is performed.** It originally used
+`rev-parse --verify refs/heads/main` behind a bare `catch`, which is unsound: `rev-parse` exits
+`128` for an *unreadable* ref exactly as it does for an *absent* one, so a corrupt `main` that
+still held real history read as "absent" and HEAD was repointed onto it — the very splice the
+check exists to prevent, reachable through the check itself. `show-ref --verify --quiet` was
+evaluated as the replacement and rejected for the same reason: direct testing showed it returns
+`1` for both states. Neither exit code carries the distinction. The check now uses
+`for-each-ref --format=%(objectname) refs/heads/main`, which reports state through its streams
+(healthy → stdout is the object id; corrupt → stdout empty, stderr carries a broken-ref warning;
+absent → both empty), plus a `symbolic-ref -q` probe to separate a *dangling symref* from a
+genuinely absent ref, since those two share the empty/empty shape. Every non-absent outcome —
+including a `for-each-ref` failure such as corrupt `packed-refs`, and any timeout — fails closed:
+the correction is declined and `blockedReason: "target-unreadable"` is returned so `init.ts` can
+warn rather than silently doing nothing. Emptiness, not git's English wording, is what's tested,
+so a translated locale cannot defeat it.
 
 **D3 — `pull.rebase`: distinguish "unset locally" from "explicitly false locally" via `git config
 --local --get`, never the effective/inherited value; normalize boolean spellings via git's own
