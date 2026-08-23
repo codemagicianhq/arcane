@@ -240,3 +240,30 @@ describe("backwards compatibility of the split", () => {
     expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(0);
   });
 });
+
+describe("baseline files are never claimed from the operator", () => {
+  // Regression: `update` recorded every skipExisting file into the manifest,
+  // including ones it had merely declined to overwrite. Since `uninstall`
+  // deletes everything the manifest lists, an operator's own .gitignore --
+  // which Arcane never wrote -- would be destroyed by an uninstall.
+  it("docs-baseline is skipExisting AND initOnly", () => {
+    const comp = getProfile("docs").find((c) => c.name === "docs-baseline");
+    expect(comp).toBeDefined();
+    expect(comp!.skipExisting).toBe(true);
+    // initOnly: `update` must never CREATE these, because their appearance
+    // alone triggers a repository-wide renormalization (EF-17).
+    expect(comp!.initOnly).toBe(true);
+  });
+
+  it("stores its sources as non-dotfiles, mapped to dotfile targets", () => {
+    const comp = getProfile("docs").find((c) => c.name === "docs-baseline")!;
+    // A nested .gitignore inside the published npm tarball can exclude its own
+    // siblings from the package -- verified empirically during review -- so the
+    // sources must not be dotfiles.
+    for (const target of comp.files) {
+      const source = comp.sourceOverrides?.[target];
+      expect(source, `${target} needs a non-dotfile source`).toBeDefined();
+      expect(source!.startsWith(".")).toBe(false);
+    }
+  });
+});

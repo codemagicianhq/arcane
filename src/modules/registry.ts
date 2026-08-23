@@ -135,6 +135,7 @@ const COMPONENTS: RegistryComponent[] = [
       ".gitignore": "docs-baseline/gitignore",
     },
     skipExisting: true,
+    initOnly: true,
   },
   {
     name: "records-conventions",

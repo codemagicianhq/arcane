@@ -52,7 +52,12 @@ const VALID_CONTENT_SENSITIVITY: ContentSensitivity[] = ["standard", "sensitive"
  * would point agents at files outside the project entirely. "." is explicitly
  * legal: it means the repository root IS the subject tree (EF-07).
  */
-function validateSubjectRoot(value: string, filePath: string): void {
+/**
+ * True when a subject_root value is safe to store. Exported so the interactive
+ * prompt can reject a bad value in place rather than writing it and failing on
+ * every subsequent command until the operator hand-edits .arcane.json.
+ */
+export function isValidSubjectRoot(value: string): boolean {
   const invalid =
     value.trim() === "" ||
     path.isAbsolute(value) ||
@@ -60,8 +65,15 @@ function validateSubjectRoot(value: string, filePath: string): void {
     /^[a-zA-Z]:/.test(value) ||
     value.startsWith("\\\\") ||
     value.startsWith("\\") ||
-    value.split(/[\\/]/).includes("..");
-  if (invalid) {
+    value.split(/[\\/]/).includes("..") ||
+    // A stored subject_root is interpolated into agent prompts downstream, so
+    // keep it a single path-shaped token rather than a multi-line payload.
+    /[\r\n\0]/.test(value);
+  return !invalid;
+}
+
+function validateSubjectRoot(value: string, filePath: string): void {
+  if (!isValidSubjectRoot(value)) {
     throw new ManifestInvalidFieldError(filePath, "subject_root", value);
   }
 }
