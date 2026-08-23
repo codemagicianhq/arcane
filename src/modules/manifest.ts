@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
   ArcaneManifest,
+  ContentSensitivity,
   ExternalProvider,
   InstalledComponent,
   Profile,
@@ -42,6 +43,28 @@ const MANIFEST_FILE = ".arcane.json";
 
 const VALID_TRACKING_MODES: TrackingMode[] = ["internal", "external"];
 const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "jira", "other"];
+const VALID_CONTENT_SENSITIVITY: ContentSensitivity[] = ["standard", "sensitive"];
+
+/**
+ * `subject_root` is a free-form relative path, so it gets shape rules rather
+ * than an enum. It is resolved against the repository root and handed to
+ * spells, so a value that escapes the repo (absolute, or containing `..`)
+ * would point agents at files outside the project entirely. "." is explicitly
+ * legal: it means the repository root IS the subject tree (EF-07).
+ */
+function validateSubjectRoot(value: string, filePath: string): void {
+  const invalid =
+    value.trim() === "" ||
+    path.isAbsolute(value) ||
+    // Windows drive-relative ("C:docs") and UNC-ish values also escape.
+    /^[a-zA-Z]:/.test(value) ||
+    value.startsWith("\\\\") ||
+    value.startsWith("\\") ||
+    value.split(/[\\/]/).includes("..");
+  if (invalid) {
+    throw new ManifestInvalidFieldError(filePath, "subject_root", value);
+  }
+}
 
 function manifestPath(targetDir: string): string {
   return path.join(targetDir, MANIFEST_FILE);
@@ -60,6 +83,22 @@ function validateTrackingFields(manifest: ArcaneManifest, filePath: string): voi
     !VALID_EXTERNAL_PROVIDERS.includes(manifest.external_provider)
   ) {
     throw new ManifestInvalidFieldError(filePath, "external_provider", manifest.external_provider);
+  }
+  if (
+    manifest.content_sensitivity !== undefined &&
+    !VALID_CONTENT_SENSITIVITY.includes(manifest.content_sensitivity)
+  ) {
+    throw new ManifestInvalidFieldError(
+      filePath,
+      "content_sensitivity",
+      manifest.content_sensitivity,
+    );
+  }
+  if (manifest.subject_root !== undefined && manifest.subject_root !== null) {
+    if (typeof manifest.subject_root !== "string") {
+      throw new ManifestInvalidFieldError(filePath, "subject_root", manifest.subject_root);
+    }
+    validateSubjectRoot(manifest.subject_root, filePath);
   }
 }
 

@@ -21,6 +21,17 @@ const MONOLITH_REPLACEMENTS = [
 ];
 import { migrateLegacyComponents } from "../src/commands/update.js";
 import type { InstalledComponent } from "../src/types.js";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+
+/**
+ * Derived from disk, not hardcoded: adding a spell is a normal event and must
+ * not require editing a count in an unrelated assertion. What matters is that
+ * every spell on disk is registered exactly once, whatever the total is.
+ */
+const SPELLS_ON_DISK = readdirSync(join(process.cwd(), "src/assets/.github/prompts")).filter((f) =>
+  f.endsWith(".prompt.md"),
+).length;
 
 /**
  * WP-C1: the monolithic `spell-prompts` + `claude-commands` pair was split into
@@ -46,8 +57,8 @@ describe("spell component split (registry integrity)", () => {
       .flatMap((c) => c.files)
       .filter((f) => f.startsWith(".github/prompts/"));
 
-    expect(promptFiles).toHaveLength(34);
-    expect(new Set(promptFiles).size).toBe(34);
+    expect(promptFiles).toHaveLength(SPELLS_ON_DISK);
+    expect(new Set(promptFiles).size).toBe(SPELLS_ON_DISK);
   });
 
   it("every spell ships both client formats, paired in the same component", () => {
@@ -206,8 +217,17 @@ describe("backwards compatibility of the split", () => {
   // profiles that previously took the whole monolith silently dropped 2 of 34
   // spells from lite and methodology. Caught by an end-to-end install, not by
   // any unit test -- so here is the unit test.
-  it.each(["full", "lite", "methodology"] as const)(
-    "%s still ships all 34 spells in both client formats",
+  it("full ships every spell that exists on disk", () => {
+    const files = getProfile("full").flatMap((c) => c.files);
+    expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(SPELLS_ON_DISK);
+    expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(SPELLS_ON_DISK);
+  });
+
+  // lite/methodology took the whole monolith before the split, so they must
+  // still ship exactly what it held -- not everything that exists now.
+  // spells-docs is new capability, not something these profiles ever had.
+  it.each(["lite", "methodology"] as const)(
+    "%s still ships the 34 spells the monolith held, in both formats",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
       expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(34);

@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-08-23
+
+Completes docs mode. Records the decisions in [ARC-033](DECISIONS.md#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components), which amends ARC-020 for the third time — ARC-020 itself stays Proposed, since its broader scope is genuinely still open. Closes [EF-03](docs/intake/batch-001/EF-03.md), [EF-04](docs/intake/batch-001/EF-04.md), [EF-07](docs/intake/batch-001/EF-07.md), [EF-10](docs/intake/batch-001/EF-10.md), [EF-11](docs/intake/batch-001/EF-11.md), [EF-12](docs/intake/batch-001/EF-12.md).
+
+### Added
+
+- **`subject_root`** — describes a repository that *is* one subject rather than a portfolio of ventures. Independent of `business_root` and may coexist with it. **`"."` is supported**, meaning the repository root itself is the subject tree: an existing archive can come under governance without being restructured first. `null` records "asked, no single subject root", distinct from never having been asked. Validated by shape, since the value is resolved against the repo root and handed to spells — absolute, drive-relative, UNC and `..`-traversal values are rejected.
+- **`content_sensitivity`** — `standard` (default, today's behaviour) or `sensitive`. In sensitive repositories agents cite document paths rather than contents in journals, decisions, commits and PRs, and retain no screenshots of repository contents. Declared once per repository, because content-based classification of general documents has no reliable signature. This constrains what agents *write down*; it is not an access control.
+- **`spell-adopt-docs`** — dry-run-first adoption of an existing document tree: inventory, propose a written mapping, get approval, then apply in separately-revertable phases. Never deletes a document, never overwrites a file, and stops at the first collision rather than attempting partial recovery.
+- **`records-conventions.md`** — superseded documents keep their path and gain a tombstone header naming their replacement. No archive directory (moving breaks every inbound link, and the reader arriving by a stale link is exactly the one you need to redirect) and no shipped retention schedule (periods are jurisdiction- and contract-specific; absence of a known period is recorded as "unknown, therefore do not delete").
+- **Repository baseline** — the docs profile emits a `.gitattributes`/`.gitignore` pair covering LF normalization and binary document formats, as user-owned `skipExisting` files. A repository with its own already has an intentional policy. Git LFS is documented as an opt-in decision, not configured by default.
+- `RegistryComponent.sourceOverrides` — lets an installed dotfile be stored under a plain source path. A nested `.gitignore` inside an npm tarball can exclude sibling files from the published package, and a nested `.gitattributes` would apply its rules to Arcane's own source tree.
+
+### Fixed
+
+- `git-conventions.md` said docs repositories require a pull request while `cicd-standards.md` recorded ADR-048's docs-only exception. The exception governs; the policy table is corrected.
+
 ## [0.18.0] - 2026-08-23
 
 ### Added

@@ -1,4 +1,4 @@
-import { select, confirm } from "@inquirer/prompts";
+import { select, confirm, input } from "@inquirer/prompts";
 import { join } from "node:path";
 import chalk from "chalk";
 import { copyFile, copyDirectory } from "../modules/copier.js";
@@ -25,6 +25,7 @@ import {
 } from "../modules/git.js";
 import type {
   ArcaneManifest,
+  ContentSensitivity,
   ExternalProvider,
   HubRole,
   InstalledComponent,
@@ -276,7 +277,7 @@ export async function runInit(
     const installedFiles: string[] = [];
 
     for (const file of component.files) {
-      const srcPath = join(assetsDir, file);
+      const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
       if (options.dryRun) {
         printDryRun(`Would copy: ${file}`);
       } else {
@@ -388,6 +389,65 @@ export async function runInit(
     }
   }
 
+  // ── Step 5c: Subject shape (EF-07) ──────────────────────────────────────
+  // Asked for the docs profile only. Other profiles describe code or a
+  // venture portfolio, where "what is this repo about" is already answered by
+  // business_root or by the code itself; a docs/records repo is the case where
+  // the repository IS one subject and nothing currently expresses that.
+  // Interactive only, like every other manifest question.
+  let subject_root: string | null | undefined;
+  if (profile === "docs" && !options.profile) {
+    console.log();
+    const shape = await select({
+      message: "What does this repository hold?",
+      choices: [
+        {
+          value: "root",
+          name: "One subject, at the repository root (documents sit alongside Arcane's files)",
+        },
+        { value: "subdir", name: "One subject, in its own directory" },
+        { value: "portfolio", name: "Several subjects or ventures (decide per-document later)" },
+      ],
+    });
+    if (shape === "root") {
+      // "." is deliberate, not a placeholder: it lets an existing archive come
+      // under governance without being restructured first (EF-07 / MH-02).
+      subject_root = ".";
+    } else if (shape === "subdir") {
+      const answer = await input({
+        message: "Directory holding the subject's documents:",
+        default: "docs",
+      });
+      subject_root = answer.trim() || "docs";
+    }
+    else if (shape === "portfolio") {
+      // Explicit null, not unset: records that the question was asked and
+      // answered, so spell update's retrofit doesn't put it again every run.
+      subject_root = null;
+    }
+  }
+
+  // ── Step 5d: Content sensitivity (EF-12) ────────────────────────────────
+  // Asked on every interactive install, not just docs: a code repo can hold
+  // sensitive records too. Declared once for the whole repository -- per-file
+  // detection is unreliable for general documents, which is why the docs-mode
+  // PRD rejects scanning as a primary mechanism.
+  let content_sensitivity: ContentSensitivity | undefined;
+  if (!options.profile) {
+    console.log();
+    content_sensitivity = (await select({
+      message: "How should agents treat this repository's contents?",
+      choices: [
+        { value: "standard", name: "Standard — agents may quote contents in journals and decisions" },
+        {
+          value: "sensitive",
+          name: "Sensitive — agents reference documents by path, never transcribe them",
+        },
+      ],
+      default: "standard",
+    })) as ContentSensitivity;
+  }
+
   // ── Step 6: Write manifest ─────────────────────────────────────────────
   const manifest: ArcaneManifest = {
     version: packageVersion,
@@ -396,6 +456,8 @@ export async function runInit(
     components: installedComponents,
     ...(role ? { role } : {}),
     ...(tracking_mode ? { tracking_mode, external_provider } : {}),
+    ...(subject_root !== undefined ? { subject_root } : {}),
+    ...(content_sensitivity ? { content_sensitivity } : {}),
   };
   await writeManifest(targetDir, manifest);
 

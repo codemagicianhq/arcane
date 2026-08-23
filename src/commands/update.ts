@@ -151,7 +151,7 @@ export async function runUpdate(
     // Copy files using current registry paths (handles path changes between versions)
     const updatedFiles: string[] = [];
     for (const file of component.files) {
-      const srcPath = join(assetsDir, file);
+      const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
       const preserveExisting = component.skipExisting
         && await fileExists(join(targetDir, file));
       if (preserveExisting) {

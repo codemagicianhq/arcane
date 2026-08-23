@@ -1,0 +1,15 @@
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+.*.swp
+
+# Office lock/temp files — these appear whenever a document is open and must
+# never be committed.
+~$*
+*.tmp
+
+# Local-only working area. Anything here is yours and is never installed,
+# updated, or read by Arcane.
+.local/
