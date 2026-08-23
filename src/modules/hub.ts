@@ -45,7 +45,11 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
     // Mirrors init.ts's Step 5b branching exactly (EF-14 D5): docs-only
     // profiles get a silent default, full/lite get asked.
     ask: async (manifest) => {
-      if (manifest.profile === "governance-only" || manifest.profile === "methodology") {
+      if (
+        manifest.profile === "governance-only" ||
+        manifest.profile === "methodology" ||
+        manifest.profile === "docs"
+      ) {
         return { tracking_mode: "internal" as TrackingMode, external_provider: null };
       }
       const tracking_mode = (await select({

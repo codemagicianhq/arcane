@@ -34,7 +34,19 @@ import type {
   TrackingMode,
 } from "../types.js";
 
-const VALID_PROFILES: Profile[] = ["full", "lite", "governance-only", "methodology"];
+const VALID_PROFILES: Profile[] = ["full", "lite", "governance-only", "methodology", "docs"];
+
+/** Menu glyph per profile. Falls back to 📋 for any profile not listed. */
+const PROFILE_ICONS: Partial<Record<Profile, string>> = {
+  full: "🧙",
+  lite: "⚡",
+  docs: "📖",
+};
+
+/** True for the capability-scoped spell components (see registry.ts). */
+function isSpellComponent(name: string): boolean {
+  return name.startsWith("spells-");
+}
 
 // ─── Category labels for preview ─────────────────────────────────────────────
 
@@ -47,28 +59,24 @@ interface ComponentGroup {
 function categorizeComponents(components: RegistryComponent[]): ComponentGroup[] {
   const groups: ComponentGroup[] = [];
 
-  const prompts = components.find((c) => c.name === "spell-prompts");
-  if (prompts) {
-    groups.push({
-      icon: "✨",
-      label: "Copilot Spells",
-      count: prompts.files.length,
-    });
+  // Spells now arrive as several capability components rather than one
+  // monolith, and each carries both client formats of the same spell, so
+  // count by file destination rather than by component.
+  const spellFiles = components.filter((c) => isSpellComponent(c.name)).flatMap((c) => c.files);
+
+  const promptCount = spellFiles.filter((f) => f.startsWith(".github/prompts/")).length;
+  if (promptCount > 0) {
+    groups.push({ icon: "✨", label: "Copilot Spells", count: promptCount });
   }
 
-  const claude = components.find((c) => c.name === "claude-commands");
-  if (claude) {
-    groups.push({
-      icon: "⚡",
-      label: "Claude Spells",
-      count: claude.files.length,
-    });
+  const claudeCount = spellFiles.filter((f) => f.startsWith(".claude/commands/")).length;
+  if (claudeCount > 0) {
+    groups.push({ icon: "⚡", label: "Claude Spells", count: claudeCount });
   }
 
   const governance = components.filter(
     (c) =>
-      c.name !== "spell-prompts" &&
-      c.name !== "claude-commands" &&
+      !isSpellComponent(c.name) &&
       c.name !== "venture-template" &&
       c.name !== "agent-definitions" &&
       c.files.some((f) => f.startsWith(".arcane/governance/")),
@@ -217,7 +225,7 @@ export async function runInit(
         const profileComponents = getProfile(p.id);
         return {
           value: p.id,
-          name: `${p.id === "full" ? "🧙" : p.id === "lite" ? "⚡" : "📋"}  ${p.displayName} — ${p.description}`,
+          name: `${PROFILE_ICONS[p.id] ?? "📋"}  ${p.displayName} — ${p.description}`,
           description: buildProfileDescription(profileComponents, p.id),
         };
       }),
@@ -354,7 +362,7 @@ export async function runInit(
   // this unset, resolved later by spell update's retrofit wizard.
   let tracking_mode: TrackingMode | undefined;
   let external_provider: ExternalProvider | null | undefined;
-  if (profile === "governance-only" || profile === "methodology") {
+  if (profile === "governance-only" || profile === "methodology" || profile === "docs") {
     tracking_mode = "internal";
     external_provider = null;
   } else if (!options.profile) {

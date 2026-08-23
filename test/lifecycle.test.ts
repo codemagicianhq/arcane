@@ -47,6 +47,7 @@ const { runAdd } = await import("../src/commands/add.js");
 const { runUpdate } = await import("../src/commands/update.js");
 const { runStatus } = await import("../src/commands/status.js");
 const { runUninstall } = await import("../src/commands/uninstall.js");
+const { getProfile } = await import("../src/modules/registry.js");
 
 // Assets dir points to src/assets/ (vitest runs source directly, not dist/)
 const ASSETS_DIR = join(process.cwd(), "src/assets");
@@ -54,6 +55,8 @@ const PACKAGE_VERSION = "0.1.0";
 
 // A component not in the lite profile, used to exercise `spell add`
 const EXTRA_COMPONENT = "decision-documentation-standard";
+/** Component count of the lite profile, read from the registry rather than fixed. */
+const LITE_COMPONENT_COUNT = getProfile("lite").length;
 const EXTRA_FILE = ".arcane/governance/decision-documentation-standard.md";
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
@@ -78,11 +81,14 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       const manifest = JSON.parse(raw) as ArcaneManifest;
 
       expect(manifest.version).toBe(PACKAGE_VERSION);
-      expect(manifest.components).toHaveLength(7);
+      // Derived, not hardcoded: profile membership changes (e.g. the 2026-08
+      // split of the monolithic spell component into capability groups) should
+      // not require editing an unrelated lifecycle assertion.
+      expect(manifest.components).toHaveLength(LITE_COMPONENT_COUNT);
 
       const names = manifest.components.map((c) => c.name);
-      expect(names).toContain("spell-prompts");
-      expect(names).toContain("claude-commands");
+      expect(names).toContain("spells-session");
+      expect(names).toContain("spells-build");
       expect(names).toContain("agent-output-instructions");
       expect(names).toContain("git-conventions");
       expect(names).toContain("testing-standards");
@@ -131,7 +137,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       const raw = await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8");
       const manifest = JSON.parse(raw) as ArcaneManifest;
 
-      expect(manifest.components).toHaveLength(8); // 7 lite + 1 extra
+      expect(manifest.components).toHaveLength(LITE_COMPONENT_COUNT + 1);
       expect(manifest.components.map((c) => c.name)).toContain(EXTRA_COMPONENT);
     });
 
@@ -142,10 +148,10 @@ describe("lifecycle — full spell loop (init → add → status → update → 
         runAdd("git-conventions", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION),
       ).resolves.toBeUndefined();
 
-      // Manifest should still have exactly 8 components (no duplicate)
+      // Manifest should still have the same count (no duplicate)
       const raw = await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8");
       const manifest = JSON.parse(raw) as ArcaneManifest;
-      expect(manifest.components).toHaveLength(8);
+      expect(manifest.components).toHaveLength(LITE_COMPONENT_COUNT + 1);
     });
   });
 

@@ -205,11 +205,11 @@ describe("spell add — handler", () => {
 
     const consoleSpy = vi.spyOn(console, "log");
 
-    // Use "spell-prompts" which has many files
-    await runAdd("spell-prompts", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    // Use "spells-build" which has many files (9 spells x 2 client formats)
+    await runAdd("spells-build", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     const manifest = await readManifestFile(tmpDir);
-    const installed = manifest.components.find((c) => c.name === "spell-prompts");
+    const installed = manifest.components.find((c) => c.name === "spells-build");
     expect(installed).toBeDefined();
     expect(installed!.files.length).toBeGreaterThan(1);
 

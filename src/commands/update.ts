@@ -6,7 +6,11 @@ import {
   ManifestNotFoundError,
 } from "../modules/manifest.js";
 import { inspectGitRepository } from "../modules/git.js";
-import { getComponent, ComponentNotFoundError } from "../modules/registry.js";
+import {
+  getComponent,
+  ComponentNotFoundError,
+  LEGACY_COMPONENT_MIGRATIONS,
+} from "../modules/registry.js";
 import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from "../modules/hub.js";
 import type { ArcaneManifest, InstalledComponent, SpellUpdateOptions } from "../types.js";
 
@@ -24,6 +28,44 @@ import type { ArcaneManifest, InstalledComponent, SpellUpdateOptions } from "../
  * @param assetsDir  Path to the bundled assets root
  * @param packageVersion  Current package version string
  */
+/**
+ * Rewrites manifest entries whose component was split or renamed in a later
+ * release, so `update` can refresh their files instead of skipping them.
+ *
+ * Deterministic and idempotent: an already-migrated manifest contains no
+ * legacy names, so this returns it unchanged. Entry order is preserved, with
+ * each legacy entry's replacements expanded in place. Replacements inherit the
+ * legacy entry's `installedVersion` and an empty file list -- the caller
+ * immediately re-derives both from the registry, which is the source of truth
+ * for what a component contains.
+ *
+ * Both legacy spell components map to the same replacement set, so a manifest
+ * listing both (the common case) is deduped rather than producing doubles.
+ */
+export function migrateLegacyComponents(
+  components: InstalledComponent[],
+): InstalledComponent[] {
+  const out: InstalledComponent[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of components) {
+    const replacements = LEGACY_COMPONENT_MIGRATIONS[entry.name];
+    if (!replacements) {
+      if (seen.has(entry.name)) continue;
+      seen.add(entry.name);
+      out.push(entry);
+      continue;
+    }
+    for (const name of replacements) {
+      if (seen.has(name)) continue;
+      seen.add(name);
+      out.push({ name, files: [], installedVersion: entry.installedVersion });
+    }
+  }
+
+  return out;
+}
+
 export async function runUpdate(
   options: SpellUpdateOptions,
   targetDir: string,
@@ -89,7 +131,9 @@ export async function runUpdate(
   let fileCount = 0;
   const updatedComponents: InstalledComponent[] = [];
 
-  for (const installed of manifest.components) {
+  const componentsToUpdate = migrateLegacyComponents(manifest.components);
+
+  for (const installed of componentsToUpdate) {
     // Look up the current registry definition (source of truth for file paths)
     let component;
     try {
