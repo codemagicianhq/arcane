@@ -275,8 +275,9 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 4. **Push the branch** to origin (after rebase).
 
-5. **Merge or queue** based on your power level:
-   - **Magus+ power level:** self-merge via `git merge --ff-only`, push main, delete branch.
+5. **Merge or queue** based on your power level — and merge by the mechanism your isolation primitive allows (ARC-028 R1):
+   - **Magus+ power level, in the primary checkout:** self-merge via `git merge --ff-only`, push main, delete branch.
+   - **Magus+ power level, in a linked worktree or a clone:** self-merge through the platform's PR merge instead. The authority is identical; only the mechanism changes, because a local ff-merge requires checking out `main` and another working tree already holds it. Power level decides *whether* you may merge without review; the isolation primitive decides *how*.
    - **Below Magus:** push the branch, report the branch name, and queue for human merge.
 
 6. **Delete the branch** (local and remote) after merge.
@@ -286,7 +287,7 @@ If an agent encounters a situation outside its defined parameters, it should:
 - The agent-slug prefix makes ownership obvious and prevents naming collisions.
 - Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc.
 
-**What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry:
+**What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry — **from the primary checkout**, since this block checks out `main`:
 
 ```bash
 git fetch origin
@@ -294,6 +295,8 @@ git rebase origin/main
 git checkout main
 git merge --ff-only {your-slug}/type/short-description
 ```
+
+From a linked worktree or a clone, stop after the rebase and merge through the platform's PR instead (ARC-028 R1). `git checkout main` there fails with `fatal: 'main' is already used by worktree at '<path>'`.
 
 ### Multi-Agent Concurrency Rules
 

@@ -151,7 +151,14 @@ Rules:
    - Skip this entire step for local-only and read-only sessions.
    - Resolve `<remote>` and `<trunk>` from observed Git/provider state: use the usable authenticated remote selected in step 9 and the merged PR's target branch (falling back to that remote's default branch). Never assume `origin` or `main`.
    - Verify through the detected provider that the PR is merged before changing branches.
-   - **Determine the isolation primitive first (ARC-028 R8).** Run `git rev-parse --git-common-dir` and `git rev-parse --git-dir`: if they differ, this session is in a **linked worktree** and the two paths below diverge. `spell-open-session` should already have named the primitive; re-derive it here rather than trusting the handoff, because the session may have moved.
+   - **Determine the isolation primitive first (ARC-028 R8).** Run both of these and compare:
+     ```bash
+     git rev-parse --path-format=absolute --git-common-dir
+     git rev-parse --path-format=absolute --git-dir
+     ```
+     Equal → **primary checkout**. Different → **linked worktree**, and the two paths below diverge. `spell-open-session` should already have named the primitive; re-derive it here rather than trusting the handoff, because the session may have moved.
+
+     **`--path-format=absolute` is required, not decorative.** Without it, `--git-dir` returns an absolute path while `--git-common-dir` stays relative whenever the current directory is *below* the repository root — so a plain comparison reports the primary checkout as a linked worktree from any subdirectory, which is most of the time. If your git predates `--path-format` (2.31), use `git rev-parse --git-dir` and test whether the result contains `/worktrees/` instead.
 
    **Primary checkout (the default path):**
    - Run `git switch <trunk>` followed by `git pull --ff-only <remote> <trunk>`. Do not end a remote-backed session on a topic branch.
@@ -159,9 +166,11 @@ Rules:
    - Verify `git log --oneline -3` shows the merged change at HEAD.
 
    **Linked worktree:**
-   - **Do not run `git switch <trunk>`.** It will fail — the primary checkout holds `<trunk>` and Git refuses to check out one branch in two worktrees (`fatal: '<trunk>' is already used by worktree at ...`). Ending on the session branch is correct here, not a lapse; the branch is already merged and the worktree is about to be removed.
-   - **Do not run `git branch -d <branch>`.** It will also fail (`error: cannot delete branch '<branch>' used by worktree at ...`), from inside the worktree and from the primary alike, because the branch is still attached. Both refusals are the guardrail ARC-028 R3/R7 leans on, not an obstacle to work around — never reach for `-D`, `--force`, or manual deletion of `.git/worktrees/<name>` to get past them.
-   - Report the worktree path and the branch name, and state plainly that removal is **primary-checkout work** (R1/R7) that this session is not performing: `git worktree remove <path>` then `git fetch --prune <remote>`, run from the primary vantage point after the same-vantage-point check. A worktree cannot safely remove itself.
+   - First establish whether any working tree currently holds `<trunk>`: run `git worktree list` and look for `[<trunk>]`. That, not the mere fact of being in a worktree, is what determines the two rules below — a **bare** repository with worktrees attached (a common agent-fleet layout: one bare clone, one worktree per agent) usually has no checkout holding `<trunk>` at all, and there `git switch <trunk>` and `git branch -d` both succeed normally. Verified: they do.
+   - **If a working tree holds `<trunk>`, do not run `git switch <trunk>`.** It will fail — Git refuses to check out one branch in two worktrees (`fatal: '<trunk>' is already used by worktree at '<path>'`). Ending on the session branch is correct here, not a lapse; the branch is already merged and the worktree is about to be removed.
+   - **Do not run `git branch -d <branch>` while this worktree is attached to it.** It will fail (`error: cannot delete branch '<branch>' used by worktree at '<path>'`), from inside the worktree and from the primary alike. Both refusals are the guardrail ARC-028 R3/R7 leans on, not an obstacle to work around — never reach for `-D`, `--force`, or manual deletion of `.git/worktrees/<name>` to get past them. (`-D` does not bypass this either; the refusal is about attachment, not about merge state.)
+   - Report the worktree path and the branch name, and name **where** removal must happen: `git worktree remove <path>` then `git fetch --prune <remote>`, run after the same-vantage-point check from a checkout that is not this one. A worktree cannot safely remove itself. If `git worktree list` shows a working tree holding `<trunk>`, that is the vantage point; if the repository is **bare**, run it from the bare repository itself (`git -C <bare> worktree remove <path>`) — do not report the work as belonging to a "primary checkout" that does not exist.
+   - If this worktree was created with `--detach` there is no branch to name; report the path and the detached HEAD sha instead.
    - Verify the merge landed with `git log --oneline -3 <remote>/<trunk>` (the remote-tracking ref), since local `<trunk>` is not checked out here to fast-forward.
 
    - Common to both: if stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
