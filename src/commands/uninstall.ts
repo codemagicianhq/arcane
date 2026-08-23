@@ -6,6 +6,7 @@ import {
   ManifestNotFoundError,
 } from "../modules/manifest.js";
 import { stripMarkerSection } from "../modules/merger.js";
+import { isHookEnforced, blockedRemotes } from "../modules/push-safety.js";
 
 /**
  * Runs the `spell uninstall` command.
@@ -46,10 +47,23 @@ export async function runUninstall(
   // makes lifting the block a deliberate, interactive, separately-confirmed act,
   // and quietly doing it as a side effect of `uninstall --yes` would hand any
   // script exactly the bypass that command exists to deny.
+  // Keyed on what the repository ACTUALLY has, not only on what the manifest
+  // declares. A manifest-only check is the same declaration-versus-enforcement
+  // confusion this feature exists to remove, and it is reachable without anyone
+  // hand-editing: a partially-failed `unblock-push` writes push_policy "open"
+  // while remotes stay blocked, after which uninstall would strand the repo
+  // exactly as before.
   const policy = manifest.push_policy ?? "open";
-  if (policy === "blocked" && !options.dryRun) {
+  const controlsInForce =
+    (await isHookEnforced(targetDir)) || (await blockedRemotes(targetDir)).length > 0;
+  if ((policy === "blocked" || controlsInForce) && !options.dryRun) {
+    const why =
+      policy === "blocked"
+        ? `this repository's push_policy is "blocked"`
+        : `this repository still has Arcane's push block in force (the manifest says "${policy}", ` +
+          "but the controls are actually installed)";
     console.error(
-      `Refusing to uninstall: this repository's push_policy is "blocked".\n` +
+      `Refusing to uninstall: ${why}.\n` +
         "Uninstalling now would delete .arcane.json while leaving the pre-push hook and the\n" +
         "disabled push URLs in place — the repository could not push, and `spell unblock-push`\n" +
         "would no longer recognise it.\n\n" +
@@ -75,9 +89,9 @@ export async function runUninstall(
     console.log(`[dry-run] Would remove: .arcane/agents.yaml`);
     console.log(`[dry-run] Would strip arcane sections from: CLAUDE.md, AGENTS.md, copilot-instructions.md`);
     console.log(`\n[dry-run] ${totalFiles} file(s) + manifest + agent outputs would be removed.`);
-    if ((manifest.push_policy ?? "open") === "blocked") {
+    if (policy === "blocked" || controlsInForce) {
       console.log(
-        `[dry-run] BUT the real run would refuse: push_policy is "blocked". Run \`spell unblock-push\` first.`,
+        `[dry-run] BUT the real run would refuse: Arcane's push block is in force. Run \`spell unblock-push\` first.`,
       );
     }
     return;

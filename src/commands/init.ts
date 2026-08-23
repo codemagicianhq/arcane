@@ -502,7 +502,16 @@ export async function runInit(
     try {
       if (push_policy === "blocked") {
         const hook = await installPrePushHook(targetDir);
-        if (hook.status === "refused-foreign-hooks-path") {
+        if (hook.status === "refused-unreadable-config") {
+          // Fail closed: we could not determine whether another hook manager
+          // owns core.hooksPath, and installing on a guess could disable it.
+          printWarning(
+            "Did not install the pre-push hook: git could not report the current core.hooksPath " +
+              "(unreadable config, or a git too old for `--show-scope`). Installing without knowing " +
+              "whether another hook manager owns that setting could silently disable it. Fix the " +
+              "config and run `spell doctor`.",
+          );
+        } else if (hook.status === "refused-foreign-hooks-path") {
           // R7: core.hooksPath is one exclusive slot, at local OR global
           // scope, so pointing it at Arcane would silently disable whatever
           // hook manager already owns it.

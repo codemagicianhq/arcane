@@ -1,7 +1,12 @@
 import { basename, resolve } from "node:path";
 import { input } from "@inquirer/prompts";
 import { readManifest, writeManifest, ManifestNotFoundError } from "../modules/manifest.js";
-import { removePrePushHook, restorePushUrls, blockedRemotes } from "../modules/push-safety.js";
+import {
+  removePrePushHook,
+  restorePushUrls,
+  blockedRemotes,
+  isHookEnforced,
+} from "../modules/push-safety.js";
 import { printInfo, printSuccess, printWarning } from "../modules/banner.js";
 import type { ArcaneManifest } from "../types.js";
 
@@ -97,9 +102,30 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   };
   await writeManifest(targetDir, updated);
 
-  printSuccess(`Push unblocked for "${repoName}".`);
+  // Check the hook too, not just the URLs: `removePrePushHook` declines to touch
+  // a foreign or unreadable core.hooksPath, so it can legitimately do nothing.
+  const hookStillOn = await isHookEnforced(targetDir);
+  const fullyLifted = failed.length === 0 && stillBlocked.length === 0 && !hookStillOn;
+
+  // Never let a partial result read as a clean one. Reporting success first and
+  // appending warnings underneath is exactly the shape this feature refuses to
+  // accept elsewhere.
+  if (fullyLifted) {
+    printSuccess(`Push unblocked for "${repoName}".`);
+  } else {
+    printWarning(
+      `Push only PARTIALLY unblocked for "${repoName}". The manifest now says open; the ` +
+        "repository is not fully open yet. Details below.",
+    );
+  }
   if (restored.length > 0) {
     printInfo(`Restored push URL for: ${restored.join(", ")}.`);
+  }
+  if (hookStillOn) {
+    printWarning(
+      "The pre-push hook is still in force. Arcane did not remove it because `core.hooksPath` is " +
+        "not one it owns, or could not be read. Check `git config --show-scope --get core.hooksPath`.",
+    );
   }
   if (failed.length > 0) {
     printWarning(

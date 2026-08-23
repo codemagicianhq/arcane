@@ -14,7 +14,7 @@
  * Only combining both bypasses in one command gets through, which is squarely
  * the determined-operator case this does not claim to stop.
  */
-import { mkdir, readFile, writeFile, chmod, access } from "node:fs/promises";
+import { mkdir, readFile, writeFile, chmod, access, rm } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileExists } from "./copier.js";
@@ -32,12 +32,16 @@ import { runGit } from "./git.js";
 export const DISABLED_PUSH_URL = "arcane-push-blocked-run-spell-unblock-push://this-repository";
 
 /**
- * Recorded instead of a URL when a remote had NO local `pushurl` key before the
- * block. Restoring must then *remove* the key rather than write the fetch URL
- * into it -- otherwise a later `git remote set-url` would change fetch only and
- * pushes would silently keep going to the old location.
+ * Marks that a remote had NO `pushurl` key before the block. Restoring must then
+ * *remove* the key rather than write the fetch URL into it -- otherwise a later
+ * `git remote set-url` would change fetch only and pushes would silently keep
+ * going to the old location.
+ *
+ * A separate boolean key rather than a magic value stored in the URL slot: a
+ * remote whose genuine push URL happened to equal that magic string would
+ * otherwise be recorded as "there was no key" and lose its original on restore.
  */
-const NO_LOCAL_PUSH_URL = "arcane:no-local-pushurl";
+const NO_PUSH_URL_MARKER = (remote: string): string => `remote.${remote}.arcaneHadNoPushUrl`;
 
 /** Directory Arcane points `core.hooksPath` at when it owns the hooks. */
 export const ARCANE_HOOKS_DIR = ".arcane/hooks";
@@ -55,12 +59,15 @@ export interface HooksPathInfo {
   value: string;
   /** Where it is set, as reported by git rather than inferred. */
   scope: ConfigScope;
+  /** Git could not be asked. Callers must fail closed, never assume "unset". */
+  unreadable?: boolean;
 }
 
 export type HookInstallOutcome =
   | { status: "installed"; path: string }
   | { status: "already-ours" }
-  | { status: "refused-foreign-hooks-path"; existing: string; scope: ConfigScope };
+  | { status: "refused-foreign-hooks-path"; existing: string; scope: ConfigScope }
+  | { status: "refused-unreadable-config" };
 
 /**
  * Reads the EFFECTIVE `core.hooksPath` — not just the repository-local one.
@@ -80,9 +87,16 @@ export async function readHooksPath(cwd: string): Promise<HooksPathInfo | undefi
     // a genuinely repository-scoped setting was reported as inherited.
     const { stdout } = await runGit(cwd, ["config", "--show-scope", "--get", "core.hooksPath"]);
     raw = stdout.trim();
-  } catch {
-    // Exit 1 means "not set anywhere". An unreadable config lands here too;
-    // both are treated as "no claim", which is the fail-safe reading.
+  } catch (error) {
+    // ONLY exit 1 means "not set anywhere". Anything else -- an unparseable
+    // config file, a permission error, an older git that rejects --show-scope --
+    // means we could not determine whether someone else owns core.hooksPath.
+    // Treating that as "no claim" made the R7 collision guard fail OPEN, which
+    // is the one direction it must never fail: it would install over an org hook
+    // manager it simply failed to see.
+    if ((error as { code?: unknown }).code !== 1) {
+      return { value: "", scope: "unknown", unreadable: true };
+    }
     return undefined;
   }
   if (raw === "") return undefined;
@@ -114,10 +128,15 @@ function isArcaneHooksPath(cwd: string, value: string): boolean {
   // Case folding only where the filesystem actually folds case. On POSIX,
   // `.arcane/HOOKS` is a genuinely different directory, and treating it as ours
   // would make the R7 guard fail OPEN -- installing over someone else's hooks.
-  const fold = process.platform === "win32";
+  // Backslash-to-slash folding is Windows-only for the same reason as case
+  // folding: on POSIX a backslash is a legal filename character, so a directory
+  // genuinely named `.arcane\hooks` would normalise onto ours and the R7 guard
+  // would fail OPEN -- installing over someone else's hooks.
+  const windows = process.platform === "win32";
   const normalize = (p: string): string => {
-    const slashed = resolve(cwd, p.replace(/\\/g, "/")).replace(/\\/g, "/").replace(/\/+$/, "");
-    return fold ? slashed.toLowerCase() : slashed;
+    const separated = windows ? p.replace(/\\/g, "/") : p;
+    const absolute = resolve(cwd, separated).replace(/\\/g, "/").replace(/\/+$/, "");
+    return windows ? absolute.toLowerCase() : absolute;
   };
   return normalize(value) === normalize(ARCANE_HOOKS_DIR);
 }
@@ -183,6 +202,8 @@ export function hookFilePath(cwd: string): string {
  */
 export async function installPrePushHook(cwd: string): Promise<HookInstallOutcome> {
   const existing = await readHooksPath(cwd);
+
+  if (existing?.unreadable === true) return { status: "refused-unreadable-config" };
 
   if (existing !== undefined && !isArcaneHooksPath(cwd, existing.value)) {
     return {
@@ -253,12 +274,27 @@ async function hookBodyMatches(cwd: string): Promise<boolean> {
 /** Removes the hook wiring. Leaves a foreign `core.hooksPath` untouched. */
 export async function removePrePushHook(cwd: string): Promise<void> {
   const existing = await readHooksPath(cwd);
-  if (existing === undefined || !isArcaneHooksPath(cwd, existing.value)) return;
+  if (existing === undefined || existing.unreadable === true) return;
+  if (!isArcaneHooksPath(cwd, existing.value)) return;
   if (existing.scope !== "local" && existing.scope !== "worktree") return;
+
+  // Unset at the scope the value actually lives in. `--local` cannot touch a
+  // per-worktree `config.worktree` value, so accepting worktree scope above and
+  // then unsetting locally left the hook fully in force while `unblock-push`
+  // printed "Push unblocked".
+  const scopeFlag = existing.scope === "worktree" ? "--worktree" : "--local";
   try {
-    await runGit(cwd, ["config", "--local", "--unset", "core.hooksPath"]);
+    await runGit(cwd, ["config", scopeFlag, "--unset", "core.hooksPath"]);
   } catch {
     // Already unset; nothing to undo.
+  }
+
+  // Remove the hook file too. Leaving it behind means a later `spell init` that
+  // re-points core.hooksPath silently re-arms a block the operator lifted.
+  try {
+    await rm(hookFilePath(cwd), { force: true });
+  } catch {
+    // Non-fatal: with core.hooksPath unset, git no longer reads this directory.
   }
 }
 
@@ -355,6 +391,43 @@ async function readLocalAll(cwd: string, key: string): Promise<string[]> {
 }
 
 /**
+ * Every value of a multivalued key, WITH the scope each came from.
+ *
+ * `remote.<name>.pushurl` is multivalued and git collects values across system,
+ * global and local scope. Reading only `--local` was a silent hole: a pushurl
+ * configured globally stayed invisible, a local `--replace-all` *appended* the
+ * sentinel instead of replacing the live URL, and because the global value sorts
+ * first git delivered the push to it and only then failed on the sentinel. The
+ * exit code was 128 and the history was already gone -- with `doctor` reporting
+ * the repository fully covered.
+ */
+async function readScopedAll(cwd: string, key: string): Promise<{ scope: string; value: string }[]> {
+  let stdout: string;
+  try {
+    ({ stdout } = await runGit(cwd, ["config", "--show-scope", "--get-all", key]));
+  } catch {
+    return [];
+  }
+  return stdout
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter(Boolean)
+    .map((line) => {
+      // `<scope>\t<value>`; the value may itself contain tabs, so split once.
+      const separator = line.indexOf("\t");
+      if (separator === -1) return { scope: "unknown", value: line.trim() };
+      return { scope: line.slice(0, separator).trim(), value: line.slice(separator + 1).trim() };
+    })
+    .filter((entry) => entry.value !== "");
+}
+
+/** Push URLs git would actually use for a remote, across every config scope. */
+async function effectivePushUrls(cwd: string, remote: string): Promise<string[]> {
+  const scoped = await readScopedAll(cwd, `remote.${remote}.pushurl`);
+  return scoped.map((entry) => entry.value);
+}
+
+/**
  * Points every remote's PUSH url at a sentinel, so `git push` fails at the
  * transport layer. Fetch is unaffected: fetch URLs are left alone, so a blocked
  * repository can still pull.
@@ -385,7 +458,28 @@ export async function disablePushUrls(cwd: string): Promise<PushUrlResult[]> {
 }
 
 async function disableOneRemote(cwd: string, remote: string): Promise<PushUrlResult> {
-  const currentPushUrls = await readLocalAll(cwd, `remote.${remote}.pushurl`);
+  const scoped = await readScopedAll(cwd, `remote.${remote}.pushurl`);
+
+  // A pushurl set outside this repository cannot be neutralised from inside it.
+  // Config is additive for multivalued keys: a local write ADDS to git's list,
+  // it cannot subtract the outside value, and the outside value sorts first --
+  // so the push is delivered and only then fails on the sentinel. Refuse and say
+  // so, rather than writing a sentinel that makes the repository look covered
+  // while the history walks out the front door.
+  const foreign = scoped.filter((entry) => entry.scope !== "local" && entry.value !== DISABLED_PUSH_URL);
+  if (foreign.length > 0) {
+    const where = [...new Set(foreign.map((entry) => entry.scope))].join(", ");
+    return {
+      remote,
+      status: "failed",
+      reason:
+        `a push URL for this remote is configured at ${where} scope, which this repository cannot ` +
+        `override — git would still deliver the push there. Remove it with ` +
+        `\`git config --${where.split(", ")[0]} --unset-all remote.${remote}.pushurl\` and re-apply.`,
+    };
+  }
+
+  const currentPushUrls = scoped.map((entry) => entry.value);
   if (currentPushUrls.length === 1 && currentPushUrls[0] === DISABLED_PUSH_URL) {
     return { remote, status: "already-disabled" };
   }
@@ -394,14 +488,18 @@ async function disableOneRemote(cwd: string, remote: string): Promise<PushUrlRes
   // Record what was there BEFORE overwriting, and only if we have not already
   // recorded it -- otherwise a second disable would enshrine the sentinel as the
   // "original" and make restore impossible.
-  if ((await readLocalAll(cwd, key)).length === 0) {
-    // A remote with no local pushurl key pushes to its fetch URL. Record that
-    // fact rather than the resolved URL, so restore removes the key instead of
-    // pinning one that was never there.
-    const toRecord = currentPushUrls.length > 0 ? currentPushUrls : [NO_LOCAL_PUSH_URL];
-    await runGit(cwd, ["config", "--local", "--replace-all", key, toRecord[0]!]);
-    for (const extra of toRecord.slice(1)) {
-      await runGit(cwd, ["config", "--local", "--add", key, extra]);
+  if ((await readLocalAll(cwd, key)).length === 0 && !(await hadNoPushUrl(cwd, remote))) {
+    if (currentPushUrls.length > 0) {
+      await runGit(cwd, ["config", "--local", "--replace-all", key, currentPushUrls[0]!]);
+      for (const extra of currentPushUrls.slice(1)) {
+        await runGit(cwd, ["config", "--local", "--add", key, extra]);
+      }
+    } else {
+      // A remote with no pushurl key pushes to its fetch URL. Record that as a
+      // separate marker rather than a magic URL value, so restore removes the
+      // key instead of pinning one that was never there -- and so a remote whose
+      // genuine URL happened to equal the marker cannot be misread as "none".
+      await runGit(cwd, ["config", "--local", NO_PUSH_URL_MARKER(remote), "true"]);
     }
   }
 
@@ -427,7 +525,10 @@ async function disableOneRemote(cwd: string, remote: string): Promise<PushUrlRes
 export async function undisabledRemotes(cwd: string): Promise<string[]> {
   const open: string[] = [];
   for (const remote of await listRemotes(cwd)) {
-    const urls = await readLocalAll(cwd, `remote.${remote}.pushurl`);
+    // Effective, not local: a pushurl inherited from global or system scope is
+    // a live delivery path, and reading only local scope reported such a remote
+    // as covered while `--no-verify` alone still delivered the history.
+    const urls = await effectivePushUrls(cwd, remote);
     if (urls.length === 0 || urls.some((url) => url !== DISABLED_PUSH_URL)) open.push(remote);
   }
   return open;
@@ -444,8 +545,8 @@ export async function undisabledRemotes(cwd: string): Promise<string[]> {
 export async function blockedRemotes(cwd: string): Promise<string[]> {
   const blocked: string[] = [];
   for (const remote of await listRemotes(cwd)) {
-    const urls = await readLocalAll(cwd, `remote.${remote}.pushurl`);
-    if (urls.length > 0 && urls.some((url) => url === DISABLED_PUSH_URL)) blocked.push(remote);
+    const urls = await effectivePushUrls(cwd, remote);
+    if (urls.some((url) => url === DISABLED_PUSH_URL)) blocked.push(remote);
   }
   return blocked;
 }
@@ -466,15 +567,16 @@ export async function restorePushUrls(cwd: string): Promise<PushUrlResult[]> {
 async function restoreOneRemote(cwd: string, remote: string): Promise<PushUrlResult> {
   const key = originalPushUrlKey(remote);
   let recorded = await readLocalAll(cwd, key);
+  let hadNone = await hadNoPushUrl(cwd, remote);
 
-  if (recorded.length === 0) {
-    // Fall back to the pre-release flat key so a repository blocked by an
-    // earlier build of this feature is still recoverable.
-    recorded = await readLocalAll(cwd, `arcane.originalPushUrl.${remote}`);
-    if (recorded.length === 0) return { remote, status: "nothing-recorded" };
+  if (recorded.length === 0 && !hadNone) {
+    const legacy = await readLegacyRecord(cwd, remote);
+    if (legacy.status !== "usable") return { remote, status: legacy.status, reason: legacy.reason };
+    recorded = legacy.values;
+    hadNone = false;
   }
 
-  if (recorded.length === 1 && recorded[0] === NO_LOCAL_PUSH_URL) {
+  if (hadNone) {
     await runGit(cwd, ["config", "--local", "--unset-all", `remote.${remote}.pushurl`]);
   } else {
     await runGit(cwd, [
@@ -489,7 +591,7 @@ async function restoreOneRemote(cwd: string, remote: string): Promise<PushUrlRes
     }
   }
 
-  for (const staleKey of [key, `arcane.originalPushUrl.${remote}`]) {
+  for (const staleKey of [key, NO_PUSH_URL_MARKER(remote), `arcane.originalPushUrl.${remote}`]) {
     try {
       await runGit(cwd, ["config", "--local", "--unset-all", staleKey]);
     } catch {
@@ -497,6 +599,69 @@ async function restoreOneRemote(cwd: string, remote: string): Promise<PushUrlRes
     }
   }
   return { remote, status: "restored" };
+}
+
+async function hadNoPushUrl(cwd: string, remote: string): Promise<boolean> {
+  return (await readLocalAll(cwd, NO_PUSH_URL_MARKER(remote)))[0] === "true";
+}
+
+/**
+ * Reads a record left by the released `0.20.0`, which stored originals in a flat
+ * `arcane.originalPushUrl.<remote>` key -- and only applies it when it can be
+ * trusted.
+ *
+ * Applying it unconditionally reintroduced, for exactly the population told to
+ * upgrade, the wrong-remote push this release fixes. Two ways, both reproduced:
+ *
+ *   - Trailing config-key segments are case-insensitive, so `0.20.0` wrote one
+ *     key for both `origin` and `Origin` and only the last writer survived.
+ *     Restoring it points one remote at the OTHER remote's URL, reported as a
+ *     clean success.
+ *   - Unlike a `remote.<name>.*` key, the flat key survives `git remote remove`.
+ *     A remote deleted and re-added to a different URL gets silently restored to
+ *     the old target.
+ *
+ * So the record is used only when the remote is still carrying OUR sentinel
+ * (which a re-added remote is not) and no two remote names collide
+ * case-insensitively. Otherwise the value is reported for the operator to apply
+ * by hand: a restore that might pick the wrong remote is worse than none.
+ */
+async function readLegacyRecord(
+  cwd: string,
+  remote: string,
+): Promise<
+  | { status: "usable"; values: string[] }
+  | { status: "nothing-recorded" | "failed"; reason?: string }
+> {
+  const values = await readLocalAll(cwd, `arcane.originalPushUrl.${remote}`);
+  if (values.length === 0) return { status: "nothing-recorded" };
+
+  const current = await effectivePushUrls(cwd, remote);
+  if (!current.includes(DISABLED_PUSH_URL)) {
+    return {
+      status: "failed",
+      reason:
+        `found a push URL recorded by 0.20.0 ("${values.join(", ")}") but this remote is not ` +
+        "currently blocked by Arcane, so the record may belong to a different remote of the same " +
+        "name. Not applying it — set the URL yourself if it is correct.",
+    };
+  }
+
+  const names = await listRemotes(cwd);
+  const collides = names.some(
+    (other) => other !== remote && other.toLowerCase() === remote.toLowerCase(),
+  );
+  if (collides) {
+    return {
+      status: "failed",
+      reason:
+        `this repository has remotes whose names differ only by case, and 0.20.0 stored their ` +
+        `original push URLs under one shared key, so the recorded value ("${values.join(", ")}") ` +
+        "cannot be attributed to a specific remote. Not applying it — set the URLs yourself.",
+    };
+  }
+
+  return { status: "usable", values };
 }
 
 function describeError(error: unknown): string {
