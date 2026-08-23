@@ -8,6 +8,7 @@ import type {
   ContentSensitivity,
   ExternalProvider,
   HubRole,
+  PushPolicy,
   TrackingMode,
 } from "../types.js";
 
@@ -141,6 +142,27 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
       // null rather than left unset, so the question isn't re-asked on every
       // future update.
       return { subject_root: null };
+    },
+  },
+  {
+    field: "push_policy",
+    needsRetrofit: (m) => m.push_policy === undefined,
+    // EF-09. Defaults to "open", so an operator who just presses enter keeps
+    // today's behaviour exactly. NOTE: this only records the choice -- unlike
+    // init, the retrofit does not install the hook or disable the push URL,
+    // because an update should not silently start blocking pushes in a repo
+    // someone is mid-workflow in. doctor reports the gap instead.
+    ask: async () => {
+      const push_policy = (await select({
+        message: "Should this repository be allowed to push to a remote?",
+        choices: [
+          { value: "open", name: "Yes — normal repository" },
+          { value: "guarded", name: "Sensitive, but keep push working — remind me instead" },
+          { value: "blocked", name: "No — block pushes" },
+        ],
+        default: "open",
+      })) as PushPolicy;
+      return { push_policy };
     },
   },
 ];

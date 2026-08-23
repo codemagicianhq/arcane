@@ -60,11 +60,34 @@ export interface ArcaneManifest {
    * (see the docs-mode PRD's rejection of scanning as a primary mechanism).
    */
   content_sensitivity?: ContentSensitivity;
+  /**
+   * Whether this repository may push to a remote (EF-09).
+   *
+   * - `"open"` (default, and the value every existing install behaves as)
+   *   — no change from today.
+   * - `"guarded"` — no technical control installed, but the operator is
+   *   reminded that this repository was flagged as sensitive.
+   * - `"blocked"` — a pre-push hook and a disabled push URL, so an accidental
+   *   `git push` fails. Not tamper-proof by design: the threat modelled is an
+   *   accidental push, not a determined operator (see features/push-safety/PRD.md).
+   *
+   * Reversed only by `spell unblock-push`, never as a side effect of another
+   * command.
+   */
+  push_policy?: PushPolicy;
+  /**
+   * ISO timestamp of the last `spell unblock-push`. Present only if a block
+   * was ever lifted -- the PRD requires the change be a visible, recorded
+   * event rather than a silent flag flip.
+   */
+  push_policy_unblocked_at?: string;
 }
 
 export type HubRole = "hub" | "consumer";
 
 export type ContentSensitivity = "standard" | "sensitive";
+
+export type PushPolicy = "open" | "guarded" | "blocked";
 
 export type TrackingMode = "internal" | "external";
 /**

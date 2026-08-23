@@ -8,6 +8,7 @@ import { runUpdate } from "./commands/update.js";
 import { runStatus } from "./commands/status.js";
 import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
+import { runUnblockPush } from "./commands/unblock-push.js";
 import { runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import type { Profile, AgentInitOptions, AgentProfileId, NamingStrategy, AgentSyncOptions } from "./types.js";
@@ -106,6 +107,13 @@ program
   .option("--dry-run", "Preview what would be removed without deleting files")
   .action(async (opts: { yes?: boolean; dryRun?: boolean }) => {
     await runUninstall({ yes: opts.yes, dryRun: opts.dryRun }, process.cwd());
+  });
+
+program
+  .command("unblock-push")
+  .description("Lift this repository's push block (interactive terminal only)")
+  .action(async () => {
+    await runUnblockPush(process.cwd());
   });
 
 program

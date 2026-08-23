@@ -5,6 +5,22 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-08-23
+
+Implements the push-safety design accepted in [EF-09](docs/intake/batch-001/EF-09.md), recorded as [ARC-034](DECISIONS.md#arc-034--push-safety-for-sensitive-repositories).
+
+### Added
+
+- **`push_policy`** — `open` (default), `guarded`, or `blocked`. Strictly additive: every existing repository behaves exactly as before. Asked once at `spell init`, backfilled by `spell update`'s retrofit.
+- **`blocked` installs two layered controls** — a `pre-push` hook *and* a sentinel push URL. Both are needed: `git push --no-verify` skips hooks entirely, so the hook alone is defeated by one extra flag. The fetch URL is untouched, so a blocked repository can still pull.
+- **A hook-manager collision guard.** `core.hooksPath` is a single exclusive slot — Git reads one hooks directory, never several — so installation refuses rather than silently disabling an existing Husky, Lefthook, or pre-commit setup. (Arcane's own repository uses `.husky/_` for lint, typecheck and the test suite; a naive install would have turned that off while appearing to add protection.)
+- **`spell unblock-push`** — the only way to lift a block. Interactive terminal only, requires the repository name typed back, records the change with a timestamp, and offers no "just this once" mode.
+- **A `doctor` check that verifies enforcement, not just declaration.** A manifest claiming `blocked` while the controls are absent is reported as such — a protection that is only asserted is worse than none, because it gets trusted. For `guarded` repositories the reminder fires regardless of remote state, rather than going silent the moment any remote (possibly the wrong one) is configured.
+
+### What this deliberately does not claim
+
+The controls resist an **accidental** push — wrong remote, muscle memory, an unsupervised agent — not a determined operator, and `core.hooksPath` does not travel to a fresh clone. ARC-034 states the limits plainly rather than implying a guarantee, because a control believed to be stronger than it is produces exactly the carelessness it was meant to prevent.
+
 ## [0.19.0] - 2026-08-23
 
 Completes docs mode. Records the decisions in [ARC-033](DECISIONS.md#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components), which amends ARC-020 for the third time — ARC-020 itself stays Proposed, since its broader scope is genuinely still open. Closes [EF-03](docs/intake/batch-001/EF-03.md), [EF-04](docs/intake/batch-001/EF-04.md), [EF-07](docs/intake/batch-001/EF-07.md), [EF-10](docs/intake/batch-001/EF-10.md), [EF-11](docs/intake/batch-001/EF-11.md), [EF-12](docs/intake/batch-001/EF-12.md).

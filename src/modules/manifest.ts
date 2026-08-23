@@ -6,6 +6,7 @@ import type {
   ExternalProvider,
   InstalledComponent,
   Profile,
+  PushPolicy,
   TrackingMode,
 } from "../types.js";
 
@@ -44,6 +45,7 @@ const MANIFEST_FILE = ".arcane.json";
 const VALID_TRACKING_MODES: TrackingMode[] = ["internal", "external"];
 const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "jira", "other"];
 const VALID_CONTENT_SENSITIVITY: ContentSensitivity[] = ["standard", "sensitive"];
+const VALID_PUSH_POLICIES: PushPolicy[] = ["open", "guarded", "blocked"];
 
 /**
  * `subject_root` is a free-form relative path, so it gets shape rules rather
@@ -105,6 +107,12 @@ function validateTrackingFields(manifest: ArcaneManifest, filePath: string): voi
       "content_sensitivity",
       manifest.content_sensitivity,
     );
+  }
+  if (
+    manifest.push_policy !== undefined &&
+    !VALID_PUSH_POLICIES.includes(manifest.push_policy)
+  ) {
+    throw new ManifestInvalidFieldError(filePath, "push_policy", manifest.push_policy);
   }
   if (manifest.subject_root !== undefined && manifest.subject_root !== null) {
     if (typeof manifest.subject_root !== "string") {
