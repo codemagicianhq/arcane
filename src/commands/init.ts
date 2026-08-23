@@ -19,7 +19,11 @@ import {
   printWarning,
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
-import { installPrePushHook, disablePushUrls } from "../modules/push-safety.js";
+import {
+  installPrePushHook,
+  disablePushUrls,
+  describeConfigScope,
+} from "../modules/push-safety.js";
 import {
   correctUnbornMasterDefault,
   ensureLocalPullRebase,
@@ -504,15 +508,25 @@ export async function runInit(
           // hook manager already owns it.
           printWarning(
             `Did not install the pre-push hook: core.hooksPath is already "${hook.existing}" ` +
-              `(set ${hook.scope === "local" ? "for this repository" : "globally"}), so another hook ` +
-              "manager owns it. Overwriting would silently disable those hooks. Chain an Arcane " +
-              "pre-push guard into that directory yourself, or unset core.hooksPath first.",
+              `(${describeConfigScope(hook.scope)}), so another hook manager owns it. Overwriting ` +
+              "would silently disable those hooks. Chain an Arcane pre-push guard into that " +
+              "directory yourself, or unset core.hooksPath first.",
           );
         } else {
           printInfo("Installed a pre-push hook that blocks pushes from this repository.");
         }
 
         const urls = await disablePushUrls(targetDir);
+        const unprotected = urls.filter((u) => u.status === "failed");
+        if (unprotected.length > 0) {
+          // Never let a partial application read as a full one.
+          printWarning(
+            `Could not disable the push URL for: ${unprotected
+              .map((u) => `${u.remote} (${u.reason ?? "unknown error"})`)
+              .join("; ")}. Those remotes are still pushable with \`--no-verify\`. ` +
+              "Run `spell doctor` — it lists exactly which remotes are still live.",
+          );
+        }
         if (urls.length === 0) {
           // Be precise: nothing is protecting a remote added later, because
           // this only disables remotes that exist right now. Claiming
@@ -523,9 +537,10 @@ export async function runInit(
               "would succeed. Run `spell doctor` after adding one — it reports this gap.",
           );
         } else {
-          printInfo(
-            `Disabled the push URL for: ${urls.map((u) => u.remote).join(", ")} (fetch still works).`,
-          );
+          const covered = urls.filter((u) => u.status !== "failed").map((u) => u.remote);
+          if (covered.length > 0) {
+            printInfo(`Disabled the push URL for: ${covered.join(", ")} (fetch still works).`);
+          }
         }
         printInfo("Run `spell unblock-push` from a terminal to undo this.");
       } else {

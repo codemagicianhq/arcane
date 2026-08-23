@@ -10,6 +10,7 @@ import {
   isHookEnforced,
   listRemotes,
   undisabledRemotes,
+  pushTargets,
 } from "../modules/push-safety.js";
 
 const execFileAsync = promisify(execFile);
@@ -287,8 +288,15 @@ export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
   }
 
   if (policy === "guarded") {
-    const remotes = await listRemotes(targetDir);
-    const where = remotes.length === 0 ? "none configured" : remotes.join(", ");
+    // Name AND URL: the reminder's whole job is catching a wrong remote, and the
+    // name alone reveals nothing about where it points.
+    const targets = await pushTargets(targetDir);
+    const where =
+      targets.length === 0
+        ? "none configured"
+        : targets
+            .map(({ remote, urls }) => `${remote} → ${urls.length > 0 ? urls.join(", ") : "unknown"}`)
+            .join("; ");
     return {
       name,
       passed: false,

@@ -1,7 +1,7 @@
 import { basename, resolve } from "node:path";
 import { input } from "@inquirer/prompts";
 import { readManifest, writeManifest, ManifestNotFoundError } from "../modules/manifest.js";
-import { removePrePushHook, restorePushUrls } from "../modules/push-safety.js";
+import { removePrePushHook, restorePushUrls, blockedRemotes } from "../modules/push-safety.js";
 import { printInfo, printSuccess, printWarning } from "../modules/banner.js";
 import type { ArcaneManifest } from "../types.js";
 
@@ -80,7 +80,13 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   }
 
   await removePrePushHook(targetDir);
-  const restored = await restorePushUrls(targetDir);
+  const results = await restorePushUrls(targetDir);
+  const restored = results.filter((r) => r.status === "restored").map((r) => r.remote);
+  const failed = results.filter((r) => r.status === "failed");
+  // A remote still carrying the sentinel after we claimed to have unblocked it
+  // is the manifest-lies-about-posture failure in the opposite direction, so it
+  // is checked directly rather than inferred from what we think we did.
+  const stillBlocked = await blockedRemotes(targetDir);
 
   // No "just this once" mode: the manifest must never claim a protection the
   // repository no longer has.
@@ -94,6 +100,22 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   printSuccess(`Push unblocked for "${repoName}".`);
   if (restored.length > 0) {
     printInfo(`Restored push URL for: ${restored.join(", ")}.`);
+  }
+  if (failed.length > 0) {
+    printWarning(
+      `Could not restore the push URL for: ${failed
+        .map((r) => `${r.remote} (${r.reason ?? "unknown error"})`)
+        .join("; ")}.`,
+    );
+  }
+  if (stillBlocked.length > 0) {
+    // Most likely cause: the remote was renamed while blocked, so the recorded
+    // original moved with it but a *different* remote now carries the sentinel.
+    printWarning(
+      `These remotes still have a blocked push URL and no recorded original: ${stillBlocked.join(", ")}. ` +
+        "Set them yourself with `git remote set-url --push <name> <url>` — until then, pushing to " +
+        "them will fail even though the manifest now says open.",
+    );
   }
   printInfo(
     "Recorded in .arcane.json as push_policy: open, with the time it was lifted. " +

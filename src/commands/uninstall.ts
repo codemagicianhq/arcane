@@ -34,6 +34,31 @@ export async function runUninstall(
     throw err;
   }
 
+  // A push-blocked repository must not be uninstalled while the block stands.
+  //
+  // Uninstall deletes .arcane.json but has no idea about core.hooksPath or the
+  // sentinel push URLs, so the repo was left unable to push while `spell
+  // unblock-push` -- the only supported way out -- refused to run because the
+  // manifest it reads was gone. The operator was told "Uninstalled" and handed
+  // a repository whose recovery required hand-editing git config.
+  //
+  // Refusing is the right shape rather than silently unblocking: ARC-034 R5
+  // makes lifting the block a deliberate, interactive, separately-confirmed act,
+  // and quietly doing it as a side effect of `uninstall --yes` would hand any
+  // script exactly the bypass that command exists to deny.
+  const policy = manifest.push_policy ?? "open";
+  if (policy === "blocked" && !options.dryRun) {
+    console.error(
+      `Refusing to uninstall: this repository's push_policy is "blocked".\n` +
+        "Uninstalling now would delete .arcane.json while leaving the pre-push hook and the\n" +
+        "disabled push URLs in place — the repository could not push, and `spell unblock-push`\n" +
+        "would no longer recognise it.\n\n" +
+        "Run `spell unblock-push` first (interactive), then uninstall.",
+    );
+    process.exit(1);
+    return; // guard: process.exit is mocked in tests
+  }
+
   // Count total tracked files
   const allFiles = manifest.components.flatMap((c) => c.files);
   const totalFiles = allFiles.length;
@@ -50,6 +75,11 @@ export async function runUninstall(
     console.log(`[dry-run] Would remove: .arcane/agents.yaml`);
     console.log(`[dry-run] Would strip arcane sections from: CLAUDE.md, AGENTS.md, copilot-instructions.md`);
     console.log(`\n[dry-run] ${totalFiles} file(s) + manifest + agent outputs would be removed.`);
+    if ((manifest.push_policy ?? "open") === "blocked") {
+      console.log(
+        `[dry-run] BUT the real run would refuse: push_policy is "blocked". Run \`spell unblock-push\` first.`,
+      );
+    }
     return;
   }
 
