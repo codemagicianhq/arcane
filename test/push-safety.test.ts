@@ -329,6 +329,32 @@ describe("hook-manager collision guard (R7)", () => {
     expect(tryPush(work).ok).toBe(false);
   });
 
+  it("removes a hooks path set at WORKTREE scope, not just local", async () => {
+    // `--local` cannot unset a `config.worktree` value, so accepting worktree
+    // scope and then unsetting locally left the hook fully in force while
+    // `unblock-push` printed "Push unblocked".
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    fixtureGit(work, ["config", "extensions.worktreeConfig", "true"]);
+    fixtureGit(work, ["config", "--local", "--unset", "core.hooksPath"]);
+    fixtureGit(work, ["config", "--worktree", "core.hooksPath", ARCANE_HOOKS_DIR]);
+    expect((await readHooksPath(work))?.scope).toBe("worktree");
+    expect(await isHookEnforced(work)).toBe(true);
+
+    await removePrePushHook(work);
+
+    expect(await readHooksPath(work)).toBeUndefined();
+    expect(await isHookEnforced(work)).toBe(false);
+    expect(tryPush(work).ok).toBe(true);
+  });
+
+  it("deletes the hook file when removing, so a later init cannot re-arm it", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    await removePrePushHook(work);
+    await expect(fs.access(hookFilePath(work))).rejects.toThrow();
+  });
+
   it("leaves a foreign hooks path alone when removing", async () => {
     const { work } = await repoWithRemote();
     fixtureGit(work, ["config", "--local", "core.hooksPath", ".husky/_"]);
@@ -437,6 +463,105 @@ describe("awkward but legal remote configurations", () => {
     expect(fixtureGit(work, ["remote", "get-url", "--push", "origin"]).replace(/\\/g, "/")).toBe(
       bare.replace(/\\/g, "/"),
     );
+  });
+});
+
+describe("push URLs configured outside this repository", () => {
+  it("refuses rather than pretending to cover a globally-configured push URL", async () => {
+    // The worst shape available, and it shipped in 0.20.0: `remote.<r>.pushurl`
+    // is multivalued and git collects values across scopes, so a local
+    // --replace-all APPENDS the sentinel rather than replacing the live URL.
+    // The outside value sorts first, git delivers the push to it and only then
+    // fails on the sentinel -- exit 128, history already gone, doctor green.
+    const { work, bare } = await repoWithRemote();
+    await setScopedConfig(globalConfig, "remote.origin.pushurl", bare);
+
+    try {
+      const results = await disablePushUrls(work);
+      expect(results[0]?.status).toBe("failed");
+      expect(results[0]?.reason).toContain("global");
+      // And doctor must not claim coverage.
+      expect(await undisabledRemotes(work)).toEqual(["origin"]);
+    } finally {
+      await clearScopedConfig(globalConfig);
+    }
+  });
+
+  it("reports a remote as open when only a local sentinel sits under an outside URL", async () => {
+    // Guards the reporting half independently: even if a sentinel is present
+    // locally, an outside URL means the remote is still a live delivery path.
+    const { work, bare } = await repoWithRemote();
+    fixtureGit(work, ["config", "--local", "--replace-all", "remote.origin.pushurl", DISABLED_PUSH_URL]);
+    await setScopedConfig(globalConfig, "remote.origin.pushurl", bare);
+
+    try {
+      expect(await undisabledRemotes(work)).toEqual(["origin"]);
+      // Prove the consequence rather than trusting the report.
+      expect(tryPush(work, ["--no-verify", "origin", "main"]).ok).toBe(false);
+      expect(fixtureGit(bare, ["log", "--oneline", "-1", "main"])).toContain("test: seed");
+    } finally {
+      await clearScopedConfig(globalConfig);
+    }
+  });
+});
+
+describe("records left by the released 0.20.0", () => {
+  it("does not apply a legacy record when remote names collide case-insensitively", async () => {
+    // 0.20.0 stored originals under a flat, case-INSENSITIVE key, so `origin`
+    // and `Origin` shared one entry and only the last writer survived. Applying
+    // it points one remote at the other's URL and reports a clean success --
+    // the wrong-remote push this release exists to fix, handed to exactly the
+    // population the release note tells to upgrade.
+    const { work } = await repoWithRemote();
+    const upper = await createFixtureDir("push-safety-legacy-upper-");
+    fixtureGit(upper, ["init", "--bare", "-b", "main"]);
+    fixtureGit(work, ["remote", "add", "Origin", upper]);
+
+    // Replay 0.20.0's state: sentinel in place, one shared flat key.
+    for (const remote of ["origin", "Origin"]) {
+      fixtureGit(work, ["config", "--local", "--replace-all", `remote.${remote}.pushurl`, DISABLED_PUSH_URL]);
+    }
+    fixtureGit(work, ["config", "--local", "arcane.originalPushUrl.origin", "/wherever/lower.git"]);
+
+    const results = await restorePushUrls(work);
+
+    expect(results.every((r) => r.status === "failed")).toBe(true);
+    expect(results[0]?.reason).toContain("differ only by case");
+    // Nothing was applied, so neither remote was pointed at the other's URL.
+    for (const remote of ["origin", "Origin"]) {
+      expect(fixtureGit(work, ["config", "--get", `remote.${remote}.pushurl`])).toBe(DISABLED_PUSH_URL);
+    }
+  });
+
+  it("does not apply a legacy record to a remote that is not actually blocked", async () => {
+    // The flat key survives `git remote remove`, unlike a remote.<name>.* key.
+    // A remote deleted and re-pointed while blocked would be restored to the
+    // OLD target — silently sending history somewhere the operator moved away
+    // from.
+    const { work } = await repoWithRemote();
+    const elsewhere = await createFixtureDir("push-safety-legacy-new-");
+    fixtureGit(elsewhere, ["init", "--bare", "-b", "main"]);
+    fixtureGit(work, ["remote", "remove", "origin"]);
+    fixtureGit(work, ["remote", "add", "origin", elsewhere]);
+    fixtureGit(work, ["config", "--local", "arcane.originalPushUrl.origin", "/wherever/secret.git"]);
+
+    const results = await restorePushUrls(work);
+
+    expect(results[0]?.status).toBe("failed");
+    expect(results[0]?.reason).toContain("not currently blocked");
+    expect(configValues(work, "remote.origin.pushurl")).toEqual([]);
+  });
+
+  it("does apply an unambiguous legacy record", async () => {
+    // The fallback must still work for the ordinary single-remote case, or
+    // 0.20.0 users are stranded.
+    const { work } = await repoWithRemote();
+    fixtureGit(work, ["config", "--local", "--replace-all", "remote.origin.pushurl", DISABLED_PUSH_URL]);
+    fixtureGit(work, ["config", "--local", "arcane.originalPushUrl.origin", "/wherever/real.git"]);
+
+    expect(await restorePushUrls(work)).toEqual([{ remote: "origin", status: "restored" }]);
+    expect(fixtureGit(work, ["config", "--get", "remote.origin.pushurl"])).toBe("/wherever/real.git");
+    expect(configValues(work, "arcane.originalPushUrl.origin")).toEqual([]);
   });
 });
 
