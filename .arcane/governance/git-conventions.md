@@ -190,6 +190,12 @@ This applies to:
 - Autonomous agents working independently
 - Interactive AI tools (Copilot, Claude Code, Codex, or any other client)
 
+### Where Work Runs — Session Workspaces
+
+Every unit of work runs in exactly one **session workspace**: one instance of one isolation primitive — the **primary checkout**, a **linked worktree**, or a **full clone** (ARC-028 R1–R5). One session workspace holds one session's work, and it is the unit a control center renders as a tile. Which primitive a session takes is decided by ARC-028 R1–R5; `spell-open-session` states the choice before it writes anything.
+
+`session workspace` is the **product-level noun only**. The git terms in this document are unchanged: `worktree`, `primary checkout` and `clone` remain correct in every command, path and error message. Shorten to `workspace` only where the surrounding context is unambiguously about sessions — the bare word already means an agent's approved filesystem root in `agent-approved-paths.md` and an OpenClaw config field (`openclaw.workspace_root`), and neither of those is this.
+
 ### Branch Naming
 
 **Humans:**
