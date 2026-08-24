@@ -140,6 +140,8 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "rca-process-standard",
       "universal-agent-rules",
       "spell-authoring-standards",
+      "external-verification-standards",
+      "web-discoverability-standards",
     ],
   },
 ];

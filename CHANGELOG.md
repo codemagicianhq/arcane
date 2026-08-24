@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-08-24
+
+Adds web discoverability and external-verification governance, plus a spell that applies them.
+
+### Added
+
+- **`web-discoverability-standards`** — how a web property becomes retrievable by search-engine crawlers and by the AI assistants that answer from a search index. 15 rules (`WD-01`–`WD-15`): server-rendered per-route metadata over both a full SSR pipeline and a client-side head library; a real not-found status instead of an always-200 catch-all; runtime-resolved environment values, never build-time; never routing crawler traffic through user-traffic side effects; a sitemap that reuses the app's own visibility rule; a robots-exclusion allow-rule that must be declared to escape a broader disallow; crawl control and index control as two mechanisms that close different gaps; DNS-apex registration, instant-notification coverage, and why search-index presence is the real AI-retrieval lever; two independent escaping treatments for untrusted metadata; and why an image generator can't reproduce exact type or logos.
+- **`external-verification-standards`** — rules for confirming a write actually took effect in a system you don't control: a console, a pipeline, a DNS zone, any third-party API. 6 rules (`EV-01`–`EV-06`): persisted state is proved only by re-reading it, never by the interface that accepted the write; a green pipeline exit proves the pipeline ran, not that the live system reflects the change; when a system's own readout disagrees with intent, escalate rather than retry blind; comparison-critical values must never carry embedded commentary; enumerate before writing to shared external state, and prefer additive over replace; rule out real causes before attributing a fresh "not found" to propagation lag.
+- **`spell-make-discoverable`** — audits and fixes a web property's discoverability against both standards docs above, citing rule IDs rather than restating them. Read-only by default; every outward-facing action (a DNS write, a console submission, a crawl-notification ping) is confirmed individually with current state printed first, and nothing is written without an explicit approval gate. Joins the `spells-build` component group.
+
 ## [0.21.1] - 2026-08-24
 
 Names ARC-028's central concept and moves the record to **Accepted**, closing the last open item from the 2026-08-15 concurrency spike.

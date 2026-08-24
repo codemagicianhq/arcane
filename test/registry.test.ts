@@ -106,7 +106,9 @@ describe("registry", () => {
       expect(names).toContain("universal-agent-rules");
       expect(names).toContain("spell-authoring-standards");
       expect(names).toContain("framework-decisions");
-      expect(names).toHaveLength(21);
+      expect(names).toContain("external-verification-standards");
+      expect(names).toContain("web-discoverability-standards");
+      expect(names).toHaveLength(23);
     });
   });
 

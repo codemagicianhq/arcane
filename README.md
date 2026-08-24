@@ -30,7 +30,7 @@ npm install -g arcane-cli   #  then:  spell init
 
 <div align="center">
 
-**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 34 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 19 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
+**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 36 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 23 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
 
 </div>
 
@@ -131,9 +131,9 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 </details>
 
 <details>
-<summary><b>⚖️ The governance standards (19)</b></summary>
+<summary><b>⚖️ The governance standards (23)</b></summary>
 
-`universal-agent-rules` · `development-methodology` · `git-conventions` · `testing-standards` · `cicd-standards` · `decision-documentation-standard` · `naming-conventions` · `agent-policies` · `agent-approved-paths` · `agent-work-queue-model` · `threat-model` · `hardening-checklist` · `authentication-strategy` · `product-excellence-standards` · `rca-process-standard` · `poc-management-pattern` · `spell-authoring-standards` · `new-business-setup` · `portable-bootstrap`
+`universal-agent-rules` · `development-methodology` · `git-conventions` · `testing-standards` · `cicd-standards` · `decision-documentation-standard` · `naming-conventions` · `agent-policies` · `agent-approved-paths` · `agent-work-queue-model` · `threat-model` · `hardening-checklist` · `authentication-strategy` · `product-excellence-standards` · `rca-process-standard` · `poc-management-pattern` · `spell-authoring-standards` · `new-business-setup` · `portable-bootstrap` · `framework-decisions` · `records-conventions` · `external-verification-standards` · `web-discoverability-standards`
 
 </details>
 

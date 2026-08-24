@@ -142,6 +142,16 @@ const COMPONENTS: RegistryComponent[] = [
     description: "Supersession, tombstone, and retention conventions for records repositories",
     files: [".arcane/governance/records-conventions.md"],
   },
+  {
+    name: "external-verification-standards",
+    description: "Rules for confirming a write took effect in a system you don't control — consoles, pipelines, DNS, deployed endpoints",
+    files: [".arcane/governance/external-verification-standards.md"],
+  },
+  {
+    name: "web-discoverability-standards",
+    description: "Search-engine and AI-assistant discoverability rules for web properties",
+    files: [".arcane/governance/web-discoverability-standards.md"],
+  },
   // ─── Spells ────────────────────────────────────────────────────────────────
   // Split from the former monolithic `spell-prompts` + `claude-commands` pair
   // so a profile can select spells by capability (see ARC-0NN). Grouping lives
@@ -247,6 +257,8 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-enchant.md",
       ".github/prompts/spell-generate-bot-icons.prompt.md",
       ".claude/commands/spell-generate-bot-icons.md",
+      ".github/prompts/spell-make-discoverable.prompt.md",
+      ".claude/commands/spell-make-discoverable.md",
     ],
   },
   {

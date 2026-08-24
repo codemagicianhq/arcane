@@ -226,12 +226,16 @@ describe("backwards compatibility of the split", () => {
   // lite/methodology took the whole monolith before the split, so they must
   // still ship exactly what it held -- not everything that exists now.
   // spells-docs is new capability, not something these profiles ever had.
+  // A member of an EXISTING group (spells-build) growing is intended to reach
+  // both profiles automatically -- that's what putting a spell there means --
+  // so this literal is bumped deliberately alongside the group, not derived.
+  // 35: spell-make-discoverable joined spells-build (web discoverability).
   it.each(["lite", "methodology"] as const)(
-    "%s still ships the 34 spells the monolith held, in both formats",
+    "%s still ships the 35 spells the monolith + spells-build growth hold, in both formats",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
-      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(34);
-      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(34);
+      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(35);
+      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(35);
     },
   );
 
