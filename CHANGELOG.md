@@ -5,6 +5,21 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.1] - 2026-08-24
+
+Names ARC-028's central concept and moves the record to **Accepted**, closing the last open item from the 2026-08-15 concurrency spike.
+
+### Changed
+
+- **[ARC-028](DECISIONS.md#arc-028--concurrency-and-isolation-model-for-parallel-work) is Accepted.** Its container concept is a **session workspace** — one session workspace = one instance of one isolation primitive (primary checkout · linked worktree · full clone), and the unit a control center renders as a tile. Every implementation item this repository owns was already shipped in `0.21.0`; the record was held at `Proposed` solely for the name.
+- **The name was resolved by the Naming Test, not the four-check.** `naming-conventions.md` holds that a universe name must be *earned by the absence of an established industry term*. No such absence exists: four independent tools already call this a workspace (git worktree · VS Code workspace · Codespaces · OpenClaw workspace), and that convergence is evidence the word is right rather than evidence it is taken. The concept takes **no lore word** — the first ARC naming decision to land that way. The vetted candidates (Grotto, Cloister, Vestry, Oratory) stay on the record unused.
+- **`git-conventions.md` gains "Where Work Runs — Session Workspaces"** under Branch Discipline, defining the noun at the point a reader first meets the primitives. Mechanical git vocabulary is deliberately unchanged — `worktree`, `primary checkout` and `clone` remain correct in every command, path and error message, per ARC-028 item 10's own rule that the product noun never replaces git terms in technical payloads.
+
+### Notes
+
+- **The term is qualified because the bare word was already taken — internally.** A check at pick time found `workspace` load-bearing in two other Arcane senses: the agent sandbox root (`workspace-{agent}` in `agent-approved-paths.md` and `agent-policies.md`) and the shipped, validated schema fields `openclaw.workspace_root` / `workspace_prefix` (`src/types.ts`, `src/modules/agent-schema.ts`) that consumers already set. The second is sharper than it looks: Arcane ships one of the four colliding meanings the ADR set out to disambiguate. Taking the bare word would have used one noun for three things — the internal-collision class that flagged **Cabinet** against DMC's File Cabinet — so `session workspace` was adopted instead, with no rename and no schema change.
+- **Four-check disposition, recorded rather than skipped:** a generic industry term cannot be appropriated from a coiner, so checks 1–3 do not bind and the trademark caveat is moot. Check 4 (first association) does bind, and its answer — the overloaded set itself — is exactly why the qualifier is mandatory rather than stylistic.
+
 ## [0.21.0] - 2026-08-23
 
 Completes every [ARC-028](DECISIONS.md#arc-028--concurrency-and-isolation-model-for-parallel-work) follow-up this repository owns, and files one new intake finding.
