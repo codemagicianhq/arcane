@@ -44,7 +44,7 @@ Applied to all code repositories (not docs-only repos per ADR-048):
 | **Build validation** | CI pipeline must pass | No merging broken code |
 | **Work item linking** | Required (when ticketing active) | Traceability |
 | **Comment resolution** | All comments must be resolved | No ignored feedback |
-| **Merge type** | Squash merge or rebase (no merge commits) | Clean linear history |
+| **Merge type** | Merge (no fast-forward) or Rebase and fast-forward — Squash disallowed | Preserves per-commit attribution trailers (ARC-009 §7); see [[git-conventions#Azure DevOps PR Merge Type]] |
 
 For docs-only repos (Arcane):
 - PR not required (ADR-048 allows local ff-only merge for docs)
