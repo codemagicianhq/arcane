@@ -53,6 +53,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) | Persisted Tracking Configuration: tracking_mode and external_provider in the Manifest | 2026-08-22 | Accepted   |
 | [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) | Docs Mode: Subject Root, Content Sensitivity, and Capability-Scoped Spell Components | 2026-08-23 | Accepted   |
 | [ARC-034](#arc-034--push-safety-for-sensitive-repositories)                                        | Push Safety for Sensitive Repositories                                        | 2026-08-23 | Accepted   |
+| [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round)                                      | Auto-Merge Requires a Clear Review Round                                       | 2026-08-25 | Accepted   |
 
 ---
 
@@ -934,6 +935,7 @@ Colocating mode and rule prevents a second source of truth. The advisory mode pr
 **Date:** 2026-07-31
 **Status:** Accepted — 2026-08-01
 **Intake:** [EF-30](docs/intake/batch-001/EF-30.md)
+**Related:** [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round) (adjacent, not superseded — this is a queue gate over filed, severity-tagged records; ARC-035 is a merge-time gate over in-flight review state that never touches the incident queue)
 
 **Context:**
 
@@ -1484,3 +1486,54 @@ The typed-repository-name confirmation is scoped honestly for the same reason: i
 - **Content scanning to decide what may be pushed** — rejected for the reason ARC-022 rejected it for CI filters: general documents have no reliable signature, so it degrades into a hand-maintained list that fails silently.
 - **A "just this once" override** — rejected: it would leave the manifest asserting `"blocked"` while a push went through, which is precisely the false-confidence failure this ADR exists to avoid.
 - **Blocking on the retrofit path too** — rejected: an upgrade should not begin blocking pushes in a repository someone is mid-workflow in.
+
+---
+
+## ARC-035 — Auto-Merge Requires a Clear Review Round
+
+**Date:** 2026-08-25
+**Status:** Accepted
+**Related:** [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) (the enforcement-mode taxonomy this decision's rules are classified against), [ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences) (adjacent, not superseded — a filed-severity release gate vs. this decision's in-flight-review merge gate), [ARC-034](#arc-034--push-safety-for-sensitive-repositories) (the pre-push hook this extends), [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy) (the merge-strategy ruleset this shares)
+**Intake:** [EF-36](docs/intake/batch-001/EF-36.md)
+
+**Context:**
+
+Auto-merge is enabled on the sole condition "CI is green," which says nothing about whether a review round is still open on the same PR. This is not hypothetical: it fired once, closing a PR mid-round, and the fix for the finding that round had just surfaced landed on the now-dead branch and never reached `main` — `0.20.0` shipped to npm with a HIGH defect live (PR #63, 2026-08-23).
+
+Verified live against the actual platform state on 2026-08-25, not assumed: the `protect main` ruleset (`gh api repos/codemagicianhq/arcane/rulesets/18841659`) has `required_approving_review_count: 0` and `required_reviewers: []`. Separately, a grep across every `.github/prompts/*.prompt.md` and `.arcane/governance/*.md` file found zero uses of `gh pr review`, `REQUEST_CHANGES`, or `reviewDecision` — no spell in this repository (`spell-review`, `code-review`, `spell-create-pull-request`) ever posts a formal review or vote. `code-review --comment` posts inline PR comments, which do not participate in GitHub's mergeability calculation. So the actual gap is stronger than "auto-merge ignores an open round": **there is currently no review-state signal reaching the platform's merge logic at all** — nothing to ignore.
+
+[ARC-024](#arc-024--confirmed-severity-must-have-operational-consequences) does not cover this, checked against the implementation rather than the decision text: `src/modules/incident-gate.ts` gates on records in the incident queue that already carry a `severity` field. A finding raised inside an open review round, before anyone has filed it, does not exist in that queue yet.
+
+**Decision:**
+
+1. **Auto-merge is narrowed, not removed.** `allow_auto_merge` stays available — the skip-and-continue property it was chosen for (D8, 2026-08-23) is real and worth keeping for routine changes. What changes is eligibility: CI-green is necessary but no longer sufficient. **Enforcement: verified external platform policy** (ARC-023 mode 3) — a new required status check, added to the `protect main` ruleset's `required_status_checks` alongside the two that already exist (`Lint, typecheck, test, build`; `PR branch is rebased on target`).
+
+2. **The new check (`Review round clear`, `scripts/check-review-round.ts`, matching the `check-*.ts` naming already used for `check-distributed-adr-references.ts`/`check-version-bump.ts`) reads PR review state, not approval count.** It fails only while the PR has an outstanding `CHANGES_REQUESTED` review that has not been superseded or dismissed; a PR with no reviews at all passes, preserving today's zero-friction path for changes nobody reviews formally. **Deliberately not `required_approving_review_count`.** GitHub does not let a PR author approve their own pull request, and in this repository the author and the only available human reviewer are routinely the same identity — there is no second GitHub account in play. Requiring an approval would make every PR permanently unmergeable without an admin bypass, and this ruleset already has `current_user_can_bypass: "never"`. Gating on the *absence of an active objection* rather than *presence of an approval* avoids that trap while still closing the gap PR #63 exposed. **Enforcement: executable check** (ARC-023 mode 1).
+
+3. **`spell-review` and `code-review`'s adversarial-round conclusion must post that formal state**, not only a chat summary: `gh pr review --request-changes` when the round ends with a confirmed blocker still outstanding; the reviewing pass explicitly dismisses or supersedes that review once the blocker is fixed and re-verified, rather than leaving it stale (`dismiss_stale_reviews_on_push` is `false` on this ruleset, so a later push does not clear it automatically — closing the round is a deliberate step, matching the discipline this repository already applies to closing everything else). ADO's equivalent (`az repos pr set-vote --vote reject`) is not new machinery — it is the same primitive `spell-commit-work.prompt.md`'s self-approval step already uses for the *author* side; this extends it to the *reviewer* side. **Enforcement: structured spell gate** (ARC-023 mode 2) for the posting behavior, backed by the executable check in (2) for the merge-time consequence.
+
+4. **The silent stranded-commit mode is made loud by extending [ARC-034](#arc-034--push-safety-for-sensitive-repositories)'s existing pre-push hook**, not by adding a second, competing hook: before accepting a push, check whether the current branch's associated PR (`gh pr view --json state`) is already `CLOSED` or `MERGED`, and warn — loudly, not blocking, since pushing to a branch behind a closed PR is sometimes intentional — rather than accepting the push into a void with no error at all, which is what turned this from a process gap into a shipped defect the first time. **Enforcement: executable check** (ARC-023 mode 1).
+
+5. **Unchanged: the authorization gate in `spell-create-pull-request.prompt.md:40`.** That gate decides whether an *agent* is permitted to request auto-merge at a given power level. This decision governs a different question — whether the *platform* honors that request once made — and the two compose: an agent still needs power-level authorization to ask for auto-merge, and the platform now additionally withholds it while a round is open, regardless of who asked.
+
+6. **A new record (ARC-035), not an amendment to ARC-024.** The mechanisms do not overlap: ARC-024 is a queue gate over filed, severity-tagged records; this is a merge-time gate over review state that never touches the incident queue. `Related:` link added in both directions.
+
+**Reasoning:**
+
+This is the third confirmed instance, on this repository alone, of governance declared in prose with nothing checking whether the platform actually enforces it — the ADO branch-policy gap (2026-08-21) and this same ruleset's `allowed_merge_methods`/`required_linear_history` contradiction (2026-08-24/25) are the first two, both recorded under `TODO.md`'s `doctor`/`ward` item. `required_approving_review_count: 0` with zero spells ever posting a review is a fourth data point for the same pattern, found by this ADR's own verification pass rather than assumed from the finding's original framing.
+
+Binding the check continuously (a required status check re-evaluated on every push and review event) rather than only at the moment auto-merge is requested matters because of how PR #63 actually failed: the round opened *after* the PR had already looked clean, not before. A merge-time-only check would have passed at request time and missed the same failure.
+
+**Open questions (unresolved, carried forward for implementation):**
+
+- **Needs empirical verification before implementation, not assumed:** whether GitHub allows a PR author to submit `--request-changes` on their own pull request. The restriction I'm confident about is narrower and specific — authors cannot `--approve` their own PR — but this design never asks for an approval, only for the ability to request changes, which is believed unrestricted for authors but has not been tested against a live PR.
+- Exact dismissal/supersession mechanics when a round clears — who or what calls `gh pr review --dismiss`, and how the reviewing pass confirms the fix it's approving is the fix that was actually requested — needs to be spec'd during implementation.
+- ADO-side equivalent of the new required check (a build-validation policy reading vote state) is unspecified here; the GitHub half is concrete, the ADO half needs its own pass before this is portable in practice, not just in principle.
+- Whether an ad-hoc, human-run round that never goes through `spell-review`/`code-review` (a quick pairing session, a comment-only look) should have any way to signal "hold off" without posting a formal review — currently out of scope; falls back to no signal, same as today.
+
+**Rejected alternatives:**
+
+- **`required_approving_review_count: 1`** — rejected: GitHub blocks self-approval, this is a solo-operator repository where author and reviewer are usually the same identity, and the ruleset's `current_user_can_bypass: "never"` removes the admin-override escape hatch. Would make every PR unmergeable, not safer.
+- **An Arcane-owned label convention** (`review:open`/`review:clear`, gating a required check that reads the label instead of review state) — considered as the portable, self-controlled alternative EF-36's own open questions raised. Rejected as primary: it invents and has to maintain new machinery when a real, established provider primitive (PR review state) already exists and needs only a required-check wrapper, not a whole new signal. Noted rather than dismissed, since it may still be the right answer for the ad-hoc-round gap above.
+- **Removing auto-merge entirely** — rejected: throws away the skip-and-continue property D8 was chosen for, over-correcting a gap that a narrower, still-automatic-when-safe control closes without reintroducing manual-merge friction for routine changes.
+- **Binding the check only at the moment auto-merge is requested** — rejected: does not cover PR #63's actual failure shape, where the round opened after the PR already looked mergeable.
