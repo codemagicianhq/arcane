@@ -71,14 +71,14 @@ axis B = `installed-cli` vs `main`'s head (fix: upgrade the global CLI). The two
 | R6 | Inline enforcement (ARC-023) | New `test/prompt-diagram-emission.test.ts` string-asserts template + guard presence in both prompts, following the `test/prompt-pending-verification.test.ts` pattern |
 | R7 | Release mechanics honored | Implementation PR carries the version bump, `npm run fix:self-host-parity`, and green org-token lint; the maintainer-internal exemption (spell-authoring-standards) is cited for `arcane-cli`/registry references |
 
-### Should Have — Tier 2: CLI parity + computed-state adopters
+### Should Have — Tiers 2–3: CLI parity, computed-state adopters, harmonization
 
 | # | Requirement | Acceptance Criteria |
 |---|---|---|
 | R8 | CLI parity: `spell status` renders the same diagram and closes the axis-A gap | `status.ts` compares `manifest.version` vs `packageVersion` (missing today); a `src/modules` pure generator (sibling to `version-check.ts`) emits the R2 shape; TTY behavior per Open Question 2 |
 | R9 | Branch/PR topology `gitGraph` in `spell-commit-work` + `spell-create-pull-request` (zero prior art) | Derived only from git state the spells already read; guard skips trivial single-branch/no-remote states |
-| R10 | Topology/state adopters: `spell-review-batch` (multi-PR/repo + GO/NO-GO), `spell-manifest` (7-way routing + multi-repo), `spell-full-cycle` (pipeline state machine), `spell-security-review` (trust boundaries/data flow), `spell-close-session` (session timeline) | Each emits from data already gathered; each references the convention, never restates it |
-| R11 | Tier-3 harmonization | `spell-explain-concept`/`spell-architect`/`spell-scope` prescriptions repointed to the one convention; explain-concept's "Don't use diagrams for simple definitions" retained verbatim as the guard's origin |
+| R10 | Topology/state adopters: `spell-review-batch` (multi-PR/repo + GO/NO-GO), `spell-manifest` (7-way routing + multi-repo), `spell-full-cycle` (pipeline state machine), `spell-close-session` (session timeline) | Each emits from data already gathered; each references the convention, never restates it |
+| R11 | Tier-3 harmonization | `spell-explain-concept`/`spell-architect`/`spell-scope` prescriptions repointed to the one convention; explain-concept's "Don't use diagrams for simple definitions" retained verbatim as the guard's origin; `spell-security-review`'s trust-boundary/data-flow diagram joins here as agent-authored analysis under rule 8 (post-review reclassification — analysis output, not recorded state) |
 
 ### Won't Have (this iteration)
 
