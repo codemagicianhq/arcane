@@ -54,6 +54,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) | Docs Mode: Subject Root, Content Sensitivity, and Capability-Scoped Spell Components | 2026-08-23 | Accepted   |
 | [ARC-034](#arc-034--push-safety-for-sensitive-repositories)                                        | Push Safety for Sensitive Repositories                                        | 2026-08-23 | Accepted   |
 | [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round)                                      | Auto-Merge Requires a Clear Review Round                                       | 2026-08-25 | Accepted   |
+| [ARC-036](#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)       | Generated State Diagrams: Deterministic Mermaid for Computed Spell State       | 2026-08-30 | Accepted   |
 
 ---
 
@@ -1537,3 +1538,31 @@ Binding the check continuously (a required status check re-evaluated on every pu
 - **An Arcane-owned label convention** (`review:open`/`review:clear`, gating a required check that reads the label instead of review state) — considered as the portable, self-controlled alternative EF-36's own open questions raised. Rejected as primary: it invents and has to maintain new machinery when a real, established provider primitive (PR review state) already exists and needs only a required-check wrapper, not a whole new signal. Noted rather than dismissed, since it may still be the right answer for the ad-hoc-round gap above.
 - **Removing auto-merge entirely** — rejected: throws away the skip-and-continue property D8 was chosen for, over-correcting a gap that a narrower, still-automatic-when-safe control closes without reintroducing manual-merge friction for routine changes.
 - **Binding the check only at the moment auto-merge is requested** — rejected: does not cover PR #63's actual failure shape, where the round opened after the PR already looked mergeable.
+
+---
+
+## ARC-036 — Generated State Diagrams: Deterministic Mermaid for Computed Spell State
+
+**Date:** 2026-08-30
+**Status:** Accepted
+**Verified:** [journal/2026-08-30-generated-state-diagrams.md](journal/2026-08-30-generated-state-diagrams.md)
+**Related:** [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) (enforcement mode for the prompt-template rules), [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (the `external_provider` key that tracker-aware fencing reads)
+**PRD:** [features/generated-state-diagrams/PRD.md](features/generated-state-diagrams/PRD.md)
+
+**Context:** Spells already compute state — version-drift readings, branch/PR topology, pipeline stage — and report it as prose. Rule 8 (`universal-agent-rules.md:36`) mandates Mermaid only for explanatory flow/architecture/sequence diagrams; nothing covers machine-derived state, so each spell would invent its own shape or none: the two-axis version check emits prose warnings, and `spell status` never compares the manifest version to the CLI's at all.
+
+**Decision:** Spell output describing computed state emits a deterministic, data-derived Mermaid diagram under one named convention — **generated state diagrams** — an additive extension of rule 8, with an applicability guard keeping one-line, speed-rule, and single-reading outputs diagram-free.
+
+**Reasoning:**
+
+- The values are already computed — a string template adds no model judgment and no new failure mode.
+- Markdown-native: renders in VS Code chat, GitHub, and Obsidian; degrades to readable fenced source in terminals; ADO wikis take the `:::mermaid` fence, keyed to `external_provider` (ARC-032).
+- One referenced convention beats per-spell prescriptions (spell-authoring-standards D8); the guard preserves `spell-explain-concept`'s "don't use diagrams for simple definitions" restraint.
+- Differentiator: no other AI dev framework auto-visualizes its own governance, version, or session state.
+
+**Naming impact:** "generated state diagrams" — repo grep clean: no prior use of the phrase, no spell or doc collision, and clearly distinct from rule 8's explanatory-diagram mandate.
+
+**Rejected alternatives:**
+
+- Model-authored diagrams per spell — non-deterministic, drift-prone, and restates rule 8 across 36 files instead of referencing one convention.
+- Rendered images/SVG or a rendering service — breaks the markdown-native, no-lock-in pillar.
