@@ -317,7 +317,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 4 — Feature epics (serial `chain` builds)
 
-- [ ] **BC-14 — ARC-036 generated state diagrams.** Sources: TODO.md:179 (T27) ·
+- [x] **BC-14 — ARC-036 generated state diagrams.** Sources: TODO.md:179 (T27) ·
   `features/generated-state-diagrams/PRD.md` (draft; R1-R11). Route: chain (PRD exists —
   `spell-architect` onward; promote PRD `draft`→`accepted` citing ARC-036). Size L, **four
   sequential PRs** per the PRD's own route: (1) Tier 1 R1-R7 (rule-8 extension, canonical `gitGraph`
@@ -345,9 +345,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
       merged via rebase (`3f7af9d`), `v0.22.10`. `spell-review-batch` (flowchart), `spell-manifest`
       (flowchart), `spell-full-cycle` (stateDiagram-v2), `spell-close-session` (gitGraph — `timeline`
       rejected as Mermaid-experimental).
-  - PR (4) Tier 3 R11: **not started.**
-  - Leave this checkbox unticked until PR (4) merges — 5 of 6 total PRs (including the precursor)
-    done.
+  - PR (4) Tier 3 R11: **done** — [PR #123](https://github.com/codemagicianhq/arcane/pull/123) merged
+    via rebase (`864bfae`), `v0.22.11`. `spell-explain-concept`/`spell-architect`/`spell-scope`
+    repointed to rule 8 (not ARC-036 — classified as agent-authored design/planning output);
+    `spell-security-review` gained a new trust-boundary/data-flow diagram under the same rule-8
+    classification (none existed previously — a scope finding, disclosed in the PR).
+  - **Epic complete** — all 6 of 6 total PRs (including the precursor) done.
 - [ ] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
   Route: chain. Size M. Bump: yes. Prompt-only by its own constraints; must not shift the bold-colon
   anchors `test/prompt-pending-verification.test.ts` keys on; adds
