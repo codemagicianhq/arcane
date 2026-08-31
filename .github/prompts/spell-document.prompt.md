@@ -25,8 +25,8 @@ The user's input describes what to capture and where. If no argument was provide
 Identify:
 
 - **Topics** — what conversation insights to extract (e.g., "naming analysis", "architecture comparison").
-- **Target paths** — where to write (e.g., `docs/...`, `.arcane/governance/...`). If the user gives only topics, propose sensible paths from the project structure.
-- **Document type** — reference doc, decision record, analysis report, inventory, or guide.
+- **Target paths** — where to write (e.g., `docs/...`, `.arcane/governance/...`). If the user gives only topics, propose sensible paths from the project structure. For a research report specifically (cited investigation, competitive analysis, feasibility study), default to `docs/research/<topic-slug>.md` per `portable-bootstrap.md`'s Research Reports convention.
+- **Document type** — reference doc, decision record, analysis report, research report, inventory, or guide.
 
 ## Step 2 — Extract from Conversation
 

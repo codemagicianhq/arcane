@@ -468,9 +468,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   guess:** actual scope never touches `src/assets/`, `registry.ts`, or `profiles.ts` — confirmed by
   `check:version-bump` — and ships no consumer-facing capability, so no bump. Full detail in
   TODO.md's own closure note on this item.
-- [ ] **BC-24 — Research-doc capability.** Sources: TODO.md:165-175 (T25). Route: chain. Size M.
-  Bump: yes. Canonical storage convention (a) + `spell-todo` routing (c); optional `spell-research`
-  (b) only if (a) proves insufficient alone.
+- [x] **BC-24 — Research-doc capability.** Sources: TODO.md:293-303 (T25, corrected — "165-175" had
+  drifted). Route: chain. Size M. Bump: yes.
+  **Done 2026-08-31:** PRD at [features/research-doc-capability/PRD.md](../../../features/research-doc-capability/PRD.md).
+  Canonical storage convention (a) — `docs/research/<topic-slug>.md`, declared in
+  `portable-bootstrap.md`'s new "Research Reports" section — plus `spell-todo` routing (c). Optional
+  `spell-research` (b) skipped: `spell-document` was already sufficient once the location existed and
+  was named, matching this entry's own gate. Full detail in TODO.md's closure note on the T25 item.
 - [ ] **BC-25 — `spell-eas-store-deploy`.** Sources: TODO.md:51-84 (T8). Route: chain. Size L.
   Bump: yes. One prompt, shared EAS preamble + two store-console sections; placeholders for
   app-specific values; cite `EV-01`-`EV-06` in `external-verification-standards.md` by ID (the
