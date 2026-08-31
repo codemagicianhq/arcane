@@ -64,7 +64,22 @@ For each selected entry, in list order, resolve the venture it belongs to (`hub`
 
 If the venture has no registered repo (`repos: []`, e.g. an idea-stage venture), only (e), (f), (g) are offered. Typing `same` for any entry after the first repeats the previous entry's destination.
 
-Once every selected entry has a destination, print one consolidated plan and ask `Proceed? (go / edit / cancel)`. This confirmation covers ordinary destinations only — it never authorizes a disclosure; see Step 5.
+Once every selected entry has a destination, print one consolidated plan — per the generated state
+diagrams convention (rule 8, ARC-036), built only from the routing already decided in this step; skip
+entirely (the applicability guard) for a single selected entry going to a single destination — routing
+a lone entry has no topology to visualize:
+
+```mermaid
+flowchart LR
+   E1["#1 dark-mode toggle"] --> A["(a) repo IDEAS.md"]
+   E2["#2 cart snapshot"] --> Eroute["(e) demote to TODO"]
+   A --> Ordovica[ordovica]
+```
+
+One node per selected entry (its list number + a short title fragment), pointing to its chosen
+destination letter; where the destination names a specific venture or repo, a further node names it,
+matching the batch's actual routing rather than a fixed shape. Then ask `Proceed? (go / edit / cancel)`.
+This confirmation covers ordinary destinations only — it never authorizes a disclosure; see Step 5.
 
 ## Step 5 — Disclosure Gate
 

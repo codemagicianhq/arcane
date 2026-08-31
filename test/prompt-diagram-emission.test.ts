@@ -10,14 +10,32 @@ let openSession: string;
 let arcaneVersion: string;
 let commitWork: string;
 let createPullRequest: string;
+let reviewBatch: string;
+let manifest: string;
+let fullCycle: string;
+let closeSession: string;
 
 beforeAll(async () => {
-  [universalRules, openSession, arcaneVersion, commitWork, createPullRequest] = await Promise.all([
+  [
+    universalRules,
+    openSession,
+    arcaneVersion,
+    commitWork,
+    createPullRequest,
+    reviewBatch,
+    manifest,
+    fullCycle,
+    closeSession,
+  ] = await Promise.all([
     readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8"),
     readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-arcane-version.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-create-pull-request.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-review-batch.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-manifest.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
   ]);
 });
 
@@ -142,5 +160,51 @@ describe("spell-commit-work and spell-create-pull-request emit branch/PR topolog
   it("both derive the diagram only from already-gathered data, not a new git command", () => {
     expect(commitWork).toContain("data Step 1/9 already gathered");
     expect(createPullRequest).toContain("Step 1's already-gathered branch name and commit list");
+  });
+});
+
+describe("R10 adopters each reference the convention and derive only from already-gathered data", () => {
+  it("spell-review-batch emits a GO/NO-GO gate flowchart from already-computed verdicts", () => {
+    expect(reviewBatch).toContain("per the generated state diagrams convention (rule 8, ARC-036), built only from");
+    expect(reviewBatch).toContain("flowchart LR");
+    expect(reviewBatch).toContain("Gate{Gate}");
+    expect(reviewBatch).toContain("skip entirely (the applicability guard) for a batch of one");
+  });
+
+  it("spell-review-batch warns against the lowercase 'end' flowchart footgun", () => {
+    expect(reviewBatch).toContain("the bare lowercase word `end` as a node label");
+  });
+
+  it("spell-manifest emits a 7-way routing flowchart from already-decided destinations", () => {
+    expect(manifest).toContain("diagrams convention (rule 8, ARC-036), built only from the routing already decided");
+    expect(manifest).toContain("flowchart LR");
+    expect(manifest).toContain("repo IDEAS.md");
+    expect(manifest).toContain("entirely (the applicability guard) for a single selected entry");
+  });
+
+  it("spell-full-cycle emits a pipeline stateDiagram-v2 from already-tracked phase status", () => {
+    expect(fullCycle).toContain("per the generated state diagrams convention (rule 8, ARC-036), built only");
+    expect(fullCycle).toContain("stateDiagram-v2");
+    expect(fullCycle).toContain("[*] --> Plan");
+    expect(fullCycle).toContain("Ship --> [*]");
+    expect(fullCycle).toContain("skip entirely (the applicability guard) after Phase");
+  });
+
+  it("spell-full-cycle marks exactly one phase as current and handles optional Enchant", () => {
+    expect(fullCycle).toContain("(current)");
+    expect(fullCycle).toContain("`Enchant` from the diagram entirely when Phase 1.5 was skipped");
+  });
+
+  it("spell-close-session reuses gitGraph for its commit record, not the experimental timeline type", () => {
+    expect(closeSession).toContain("generated state diagrams convention (rule 8, ARC-036)");
+    expect(closeSession).toContain("gitGraph");
+    expect(closeSession).not.toContain("mermaid\ntimeline");
+    expect(closeSession).toContain("Mermaid's `timeline` diagram");
+    expect(closeSession).toContain("marked experimental in Mermaid's own docs");
+  });
+
+  it("spell-close-session ties each commit's diagram label to step 1b's real classification, never an assumed success", () => {
+    expect(closeSession).toContain("step 1b's succeeded/pending/failed classification");
+    expect(closeSession).toContain("never claim `succeeded` for anything step 1b did not confirm");
   });
 });

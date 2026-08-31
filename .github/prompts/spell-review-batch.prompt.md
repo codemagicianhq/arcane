@@ -80,6 +80,23 @@ Build one report:
 
 The overall gate is **NO-GO** if any reviewed PR has an unresolved HIGH finding, **or** if any requested PR was skipped (an un-reviewed PR can't be cleared) — otherwise **GO**. `HIGH` is the top severity in the `spell-review` ladder; do not invent a "Critical" tier the engine never emits.
 
+**Gate flowchart** — per the generated state diagrams convention (rule 8, ARC-036), built only from
+the verdict already computed per PR above; skip entirely (the applicability guard) for a batch of one
+PR — there is nothing to aggregate:
+
+```mermaid
+flowchart LR
+   PR1["PR #n<br/>approve"] --> Gate{Gate}
+   PR2["PR #n<br/>request-changes"] --> Gate
+   Gate --> Verdict[GO]
+```
+
+One node per PR in the batch, labeled with its number and verdict exactly as computed in the table
+above (including `SKIPPED`); the gate node's outcome is the same GO/NO-GO already derived. Never use
+the bare lowercase word `end` as a node label — Mermaid's flowchart parser reserves it and will fail
+to render (verified against Mermaid's own flowchart syntax docs; none of this batch's real labels
+collide, but a PR title inserted verbatim as a label could).
+
 ## Step 4 — Output
 
 1. Write the consolidated markdown report to a sensible path (e.g. `reviews/batch-review-{date}.md`).
