@@ -12,10 +12,17 @@ for v in $(env | grep '^GIT_' | cut -d= -f1); do unset "$v"; done
 # nobody was watching. Degrades silently without `gh`, or when it can't
 # resolve a PR for this branch (no error either way) -- this must never
 # block a push on a machine without `gh`, or on a branch that never had one.
+#
+# Husky runs this script with `sh -e` (.husky/_/h), so every `|| true` below
+# is load-bearing, not decorative: `git symbolic-ref` fails in detached HEAD,
+# and `gh pr view` fails whenever the branch has no PR yet -- both routine,
+# both would otherwise abort this ENTIRE hook under errexit before `npm test`
+# ever ran. Caught by testing a real `git push`, not just running this file
+# directly with plain `sh` (which does not enable -e and hid the bug).
 if command -v gh >/dev/null 2>&1; then
-  branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null) || true
   if [ -n "$branch" ]; then
-    pr_state=$(gh pr view "$branch" --json state --jq .state 2>/dev/null)
+    pr_state=$(gh pr view "$branch" --json state --jq .state 2>/dev/null) || true
     if [ "$pr_state" = "CLOSED" ] || [ "$pr_state" = "MERGED" ]; then
       echo "⚠ arcane: this branch's PR is already $pr_state. New commits pushed here will not reach main automatically -- open a new PR if this work still needs to land." >&2
     fi
