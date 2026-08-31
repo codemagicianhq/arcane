@@ -500,7 +500,14 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     existing Content-Verified Branch Deletion section as the same discipline already applied to
     branches, generalized. 3 new tests, including a dynamic check that the cited wiki-link anchor
     actually resolves to a real heading (caught and fixed a wrong anchor slug while drafting it).
-  - [ ] (b) I1, (c) I7, (d) I3 — remaining.
+  - [x] **(b) I1 — done 2026-08-31.** `ward`'s `--terms` is a generic denylist, so the fix is guidance
+    at the point of use, not new detection logic (code can't infer an operator's own username/machine
+    name/handle). Broadened the CLI's `ward` description and `--terms` help text in `index.ts`, and
+    `src/modules/ward.ts`'s module doc comment, to explicitly name personal identifiers alongside org
+    names and cite the motivating incident. `ARCANE_ORG_TOKENS`/`org-token-lint.ts` untouched —
+    confirmed that env var is this repo's own CI-only build gate, not the consumer-facing mechanism
+    I1's report actually targets. 2 new tests.
+  - [ ] (c) I7, (d) I3 — remaining.
 - [ ] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size
   M. Run the two named smoke tests (MCP prompts; Claude Code plugin) and write a findings doc;
   go/no-go on each channel is an operator decision → OPERATOR-QUEUE.
