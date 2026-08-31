@@ -416,11 +416,16 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   This very section above now references that file rather than restating it — migrated in the same
   commit that added the record, so this loop's own standing authority was never ambiguous even
   transiently. 11 new tests.
-- [ ] **BC-20 — Full-cycle cross-epic coordination.** Sources: TODO.md:160-161 (T23). Route: direct
+- [x] **BC-20 — Full-cycle cross-epic coordination.** Sources: TODO.md:160-161 (T23). Route: direct
   (prompt/governance edits + tests). Size M. Bump: yes. Ship the three fix ideas (migration-number
   re-derivation at write time; real-data migration gate guidance; serialize-migrations doc) plus the
   2026-07-22 sub-findings: multi-item PR strategy defined; delegation-is-roleplay documented
   honestly (no `.claude/agents/` ships); the two prompt patterns codified.
+  **Done 2026-08-31:** [PR #135](https://github.com/codemagicianhq/arcane/pull/135) merged via rebase
+  (`d6689f0`), `v0.24.1` (patch — fix/extension to an existing spell). **Scope finding:** the
+  serialize-migrations fix idea (3) was already shipped via ARC-028 (2026-08-15), predating this
+  plan — verified fresh before implementing rather than assumed from this summary's own wording; only
+  fix ideas (1)/(2) and the four sub-findings needed shipping. 11 new tests.
 - [ ] **BC-21 — `ward` + `scry` spells.** Sources: TODO.md:151 (T18). Route: chain. Size L. Bump:
   yes. `ward` (leak scan, vendor-identifier denylist mandatory) + `scry` (name clearance: outward
   four-check **and** the inward repo-local collision pass ARC-028 proved necessary). Soft-depends on
