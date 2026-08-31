@@ -198,7 +198,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 2 — Ledger, status & doc-link hygiene
 
-- [ ] **BC-05 — Ledger & status reconciliation.** Sources: TODO.md:35 (T2), :181 (T28, the two
+- [x] **BC-05 — Ledger & status reconciliation.** Sources: TODO.md:35 (T2), :181 (T28, the two
   non-shipped citers) · stale statuses found 2026-08-30. Route: direct. Size S. Bump: no (root docs +
   scripts only). Fix in one PR: (a) backfill EF-24/30/31 closure entries with PR/version refs;
   (b) `features/push-safety/PRD.md:2` `proposed` → `shipped` and correct the false "nothing has been
@@ -211,13 +211,14 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `scripts/check-version-bump.ts:7,115` and annotate `docs/intake/batch-001/EF-31.md:17` →
   `project.md:56-58` (the `spell-bump.prompt.md:12` citer moves to BC-06's bump PR); (g) add a TODO
   entry tracking ARC-029 (Proposed since EF-34, currently tracked nowhere).
-  **In progress 2026-08-31:** all seven shipped. (a) found real PR references via `gh pr list
-  --search <sha>` against actual merge commits (PR #19/#20/#21) rather than inventing them — a prior
-  session had explicitly declined to guess here; also found EF-24's "shipped" status means the ADR
-  text shipped, not that ARC-023's own retroactive-classification completion bar is met (it isn't —
-  that's BC-29). (b) corrected; the four follow-on questions are new TODO items. (c)/(d) corrected.
-  (e) re-pointed rather than fabricated an intake stub for a citation with no genuine record. (f)/(g)
-  done. Bump: no, confirmed by `check:version-bump`.
+  **Done:** [PR #96](https://github.com/codemagicianhq/arcane/pull/96) merged 2026-08-31 via rebase
+  (`f99e49c`). All seven shipped. (a) found real PR references via `gh pr list --search <sha>`
+  against actual merge commits (PR #19/#20/#21) rather than inventing them — a prior session had
+  explicitly declined to guess here; also found EF-24's "shipped" status means the ADR text shipped,
+  not that ARC-023's own retroactive-classification completion bar is met (it isn't — that's BC-29).
+  (b) corrected; the four follow-on questions are new TODO items. (c)/(d) corrected. (e) re-pointed
+  rather than fabricated an intake stub for a citation with no genuine record. (f)/(g) done.
+  Bump: no, confirmed by `check:version-bump`.
 - [ ] **BC-06 — Doc-ID link integrity.** Sources: IDEAS.md:17 (I9), :18 (I10), :19 (I11), :25 (I16)
   + T28's `src/assets` citer. Route: direct. Size M. Bump: **yes**. Extend the
   `check:adr-references` gate to every ID class (ARC/EF/journal — I10); adopt the doc-ID link rule in
