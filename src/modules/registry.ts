@@ -261,6 +261,8 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-generate-bot-icons.md",
       ".github/prompts/spell-make-discoverable.prompt.md",
       ".claude/commands/spell-make-discoverable.md",
+      ".github/prompts/spell-scry.prompt.md",
+      ".claude/commands/spell-scry.md",
     ],
   },
   {
