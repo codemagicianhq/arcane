@@ -305,7 +305,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   corrected: verified all 36 `.claude/commands/` files are already thin `@`-include shims, so the real
   gap was narrower than described (stub generation, not body-drift de-duplication). All three
   ADR-drafting epics (BC-10/BC-11/BC-12) are now done. Bump: n/a, no `src/assets` changes.
-- [ ] **BC-13 — ARC-029 acceptance packet.** Sources: DECISIONS.md:1150 (Proposed, untracked).
+- [x] **BC-13 — ARC-029 acceptance packet.** Sources: DECISIONS.md:1150 (Proposed, untracked).
+  **Done:** [PR #112](https://github.com/codemagicianhq/arcane/pull/112) merged 2026-08-31 via rebase
+  (`feaca4a`). Full acceptance brief now at OPERATOR-QUEUE.md Q-004, replacing its placeholder.
+  Verified the motivating incident directly against EF-34's own intake file rather than relaying
+  ARC-029's compressed account, and found/disclosed that no epic in this plan implements ARC-029's own
+  decision 5 follow-up — accepting it doesn't schedule that work by itself. Bump: n/a, no `src/assets`
+  changes.
   Route: process. Size S. Prepare a one-page accept/revise/reject brief; append to OPERATOR-QUEUE.
   (Tracking entry added by BC-05.)
 
