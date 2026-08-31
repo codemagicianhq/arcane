@@ -241,4 +241,27 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Preconditions:** none — independent of BC-10/BC-11's ADRs.
 - **Status:** ready for your accept/revise/reject call.
 
-<!-- The loop appends Q-009+ below this line. -->
+## Q-009 — Point `arcane-website` at the new `docs/spell-catalog.json` artifact
+
+- **What:** `arcane-website`'s spell catalogue page is (per TODO.md's T15 item) hand-authored site
+  data that has already drifted from this repo's actual registry once (the "elevate" miss). This
+  repo now generates and commits a machine-readable catalog at
+  [`docs/spell-catalog.json`](../../spell-catalog.json) — 38 spells, grouped by the same `spells-*`
+  components `spell init`/`spell add` install by, with each spell's real `name`/`description` read
+  live from its own `.prompt.md` frontmatter. A CI gate (`check:spell-catalog`) now fails this
+  repo's own build if that file (or README's matching block) ever drifts from `registry.ts` again.
+- **Why:** wiring the website repo to fetch and render this file (e.g. via the raw GitHub URL for
+  a tagged release, or by vendoring it at the website's own build time) is a cross-repo change —
+  outside this repo's grant and outside this session's working directory entirely.
+- **Exact artifact:** `https://raw.githubusercontent.com/codemagicianhq/arcane/main/docs/spell-catalog.json`
+  (or pin to a release tag instead of `main`, operator's call). Shape: `{ totalSpells: number,
+  groups: [{ component, label, spells: [{ id, shortName, name, description }] }] }`.
+- **Not yet known:** whether this exact JSON shape is sufficient for the website's actual rendering
+  needs (e.g. it carries no icon/ordering-priority/URL-slug fields) — this repo has no visibility
+  into `arcane-website`'s data model. Treat the shape as a first draft; extending
+  `scripts/spell-catalog.ts`'s `SpellCatalogEntry`/`SpellCatalogGroup` types to add fields the
+  website actually needs is a small, low-risk follow-up once that's known.
+- **Preconditions:** none — the artifact already exists and is gated as of BC-23.
+- **Status:** ready for you to wire up (or delegate) on the `arcane-website` side.
+
+<!-- The loop appends Q-010+ below this line. -->

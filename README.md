@@ -30,7 +30,7 @@ npm install -g arcane-cli   #  then:  spell init
 
 <div align="center">
 
-**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 36 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 23 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
+**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 38 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 23 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
 
 </div>
 
@@ -113,22 +113,27 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 
 | Layer | What you get |
 | --- | --- |
-| 📜 **Spells** | **34** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
-| ⚖️ **Governance** | **19** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
+| 📜 **Spells** | **38** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
+| ⚖️ **Governance** | **23** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
 | 🤖 **Agents** | **12** ready-made agent personas with roles, clusters, and a gamified autonomy model — assign work and power levels per repo. |
 | 🛠️ **CLI** | `spell init / add / update / status / uninstall` — install by profile or à la carte, and keep everything in sync as new versions ship. |
 
+<!-- arcane:start -->
 <details>
-<summary><b>📜 The full spell catalogue (34)</b></summary>
+<summary><b>📜 The full spell catalogue (38)</b></summary>
 
-**Core Spell Loop** — `plan` · `enchant` · `scope` · `architect` · `implement` · `test` · `review` · `ship`
-**Session** — `open-session` · `close-session` · `status`
-**Operational & Git** — `commit-work` · `todo` · `check-drift` · `bug` · `create-pull-request` · `address-review` · `bump`
-**Specialized** — `full-cycle` · `review-batch` · `security-review` · `dotnet-expert` · `product-review` · `suggest-feature`
-**Knowledge & Docs** — `document` · `explain-concept` · `feedback` · `save-idea` · `manifest`
-**Business & Admin** — `summon-venture` · `brainstorm` · `generate-bot-icons` · `present-arcane` · `arcane-version`
+**Session** — `open-session` · `close-session` · `commit-work` · `status` · `arcane-version`
+**Capture** — `save-idea` · `todo` · `feedback` · `suggest-feature` · `document` · `brainstorm` · `explain-concept`
+**Delivery** — `create-pull-request` · `sync-pull-request` · `address-review`
+**Review** — `review` · `review-batch`
+**Planning** — `plan` · `architect` · `scope` · `product-review`
+**Build** — `implement` · `test` · `full-cycle` · `bug` · `bump` · `dotnet-expert` · `security-review` · `ship` · `enchant` · `generate-bot-icons` · `make-discoverable` · `scry`
+**Docs** — `adopt-docs`
+**Venture** — `summon-venture` · `manifest`
+**Meta** — `present-arcane` · `check-drift`
 
 </details>
+<!-- arcane:end -->
 
 <details>
 <summary><b>⚖️ The governance standards (23)</b></summary>

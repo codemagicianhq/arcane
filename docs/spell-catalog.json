@@ -1,0 +1,287 @@
+{
+  "totalSpells": 38,
+  "groups": [
+    {
+      "component": "spells-session",
+      "label": "Session",
+      "spells": [
+        {
+          "id": "spell-open-session",
+          "shortName": "open-session",
+          "name": "Spell — Open Session",
+          "description": "Open an Arcane session in a new chat by rebuilding context, identifying highest-priority unfinished work, and proposing concrete next actions."
+        },
+        {
+          "id": "spell-close-session",
+          "shortName": "close-session",
+          "name": "Spell — Close Session",
+          "description": "End a work session by logging outcomes in today's journal and pruning completed TODO items with verifiable evidence."
+        },
+        {
+          "id": "spell-commit-work",
+          "shortName": "commit-work",
+          "name": "Spell — Commit Work",
+          "description": "Generate Conventional Commits message with agent attribution and commit current work during an active session"
+        },
+        {
+          "id": "spell-status",
+          "shortName": "status",
+          "name": "Spell — Status",
+          "description": "Show a fast, read-only snapshot of the current session — branch, git working state, open TODO count, decision count, and last journal date. Text or JSON."
+        },
+        {
+          "id": "spell-arcane-version",
+          "shortName": "arcane-version",
+          "name": "Spell — Arcane Version",
+          "description": "Report the version of Arcane installed in this repository, the active profile, installed components, and whether an update is available."
+        }
+      ]
+    },
+    {
+      "component": "spells-capture",
+      "label": "Capture",
+      "spells": [
+        {
+          "id": "spell-save-idea",
+          "shortName": "save-idea",
+          "name": "Spell — Save Idea",
+          "description": "Quickly capture a fleeting idea into the repo's idea inbox so it is not lost. Low ceremony, no approval gate, optimized for voice and speed. In a hub repo, optionally target a venture's own idea book."
+        },
+        {
+          "id": "spell-todo",
+          "shortName": "todo",
+          "name": "Spell — Todo",
+          "description": "Elaborate a raw idea into one or more well-scoped TODO items and place them in the right document(s). In a hub repo, optionally target a venture's own TODO book, or sweep every book's open-item counts."
+        },
+        {
+          "id": "spell-feedback",
+          "shortName": "feedback",
+          "name": "Spell — Feedback",
+          "description": "Collect structured feedback on AI-assistance quality and workflow friction, and append it to FEEDBACK.md for continuous improvement. Framework-shaped items can route upstream to arcane's public GitHub issues."
+        },
+        {
+          "id": "spell-suggest-feature",
+          "shortName": "suggest-feature",
+          "name": "Spell — Suggest Feature",
+          "description": "Capture a feature suggestion from smoke testing or usage — assesses impact, files a tracker item (provider-aware), and adds to backlog"
+        },
+        {
+          "id": "spell-document",
+          "shortName": "document",
+          "name": "Spell — Document",
+          "description": "Formalize valuable insights, analysis, or decisions from the current conversation into polished, permanent reference documents."
+        },
+        {
+          "id": "spell-brainstorm",
+          "shortName": "brainstorm",
+          "name": "Spell — Brainstorm",
+          "description": "Divergent ideation — explore multiple solutions to a problem space before committing to a plan"
+        },
+        {
+          "id": "spell-explain-concept",
+          "shortName": "explain-concept",
+          "name": "Spell — Explain Concept",
+          "description": "Explain a technical concept, architecture, or system behavior in a balanced way: enough technical depth to be accurate, enough plain language to be accessible. Use when: confused about how something works, need to understand a system before making decisions, want a 'teach me' breakdown."
+        }
+      ]
+    },
+    {
+      "component": "spells-delivery",
+      "label": "Delivery",
+      "spells": [
+        {
+          "id": "spell-create-pull-request",
+          "shortName": "create-pull-request",
+          "name": "Spell — Create Pull Request",
+          "description": "Open a pull request for the current branch with an auto-generated title and description from commit history. Provider-agnostic (GitHub or Azure DevOps)."
+        },
+        {
+          "id": "spell-sync-pull-request",
+          "shortName": "sync-pull-request",
+          "name": "Spell — Sync Pull Request",
+          "description": "Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical-vs-ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points."
+        },
+        {
+          "id": "spell-address-review",
+          "shortName": "address-review",
+          "name": "Spell — Address Review",
+          "description": "Respond to code-review feedback on a pull request — fetch comment threads, triage each, implement fixes or reply with rationale, and resolve every thread."
+        }
+      ]
+    },
+    {
+      "component": "spells-review",
+      "label": "Review",
+      "spells": [
+        {
+          "id": "spell-review",
+          "shortName": "review",
+          "name": "Spell — Review",
+          "description": "Adversarial code review — must find issues, validate architecture compliance, and check security"
+        },
+        {
+          "id": "spell-review-batch",
+          "shortName": "review-batch",
+          "name": "Spell — Review Batch",
+          "description": "Adversarially review many pull requests in one run and emit per-PR verdicts plus a consolidated go/no-go readiness gate report. Provider-agnostic."
+        }
+      ]
+    },
+    {
+      "component": "spells-planning",
+      "label": "Planning",
+      "spells": [
+        {
+          "id": "spell-plan",
+          "shortName": "plan",
+          "name": "Spell — Plan",
+          "description": "Generate a Product Requirements Document (PRD) from a feature description using structured planning"
+        },
+        {
+          "id": "spell-architect",
+          "shortName": "architect",
+          "name": "Spell — Architect",
+          "description": "Generate architecture decisions and story breakdown from a PRD, producing architecture.md and stories.json"
+        },
+        {
+          "id": "spell-scope",
+          "shortName": "scope",
+          "name": "Spell — Scope",
+          "description": "Analyze a large PRD — scope it, split into epics, check architecture and security implications, estimate effort, and produce an execution plan with agent assignments"
+        },
+        {
+          "id": "spell-product-review",
+          "shortName": "product-review",
+          "name": "Spell — Product Review",
+          "description": "Build/Measure/Analyze/Decide cycle — evaluate feature performance and recommend next actions"
+        }
+      ]
+    },
+    {
+      "component": "spells-build",
+      "label": "Build",
+      "spells": [
+        {
+          "id": "spell-implement",
+          "shortName": "implement",
+          "name": "Spell — Implement",
+          "description": "Autonomous implementation loop — pick a story from stories.json, build it, test it, commit it, repeat until all stories pass"
+        },
+        {
+          "id": "spell-test",
+          "shortName": "test",
+          "name": "Spell — Test",
+          "description": "Run tests, validate coverage thresholds, and generate test evidence for a completed story or feature"
+        },
+        {
+          "id": "spell-full-cycle",
+          "shortName": "full-cycle",
+          "name": "Spell — Full Cycle",
+          "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time"
+        },
+        {
+          "id": "spell-bug",
+          "shortName": "bug",
+          "name": "Spell — Bug",
+          "description": "Document, diagnose, and fix a bug — files a tracker work item (per tracking_mode), traces root cause, implements fix, verifies, and commits"
+        },
+        {
+          "id": "spell-bump",
+          "shortName": "bump",
+          "name": "Spell — Bump Version",
+          "description": "Determine the correct semver bump type for the current change and apply it to package.json"
+        },
+        {
+          "id": "spell-dotnet-expert",
+          "shortName": "dotnet-expert",
+          "name": "Spell — .NET Expert",
+          "description": "Load .NET best practices and patterns for any development agent working on .NET projects"
+        },
+        {
+          "id": "spell-security-review",
+          "shortName": "security-review",
+          "name": "Spell — Security Review",
+          "description": "OWASP Top 10 and AI/agent (LLM) security audit plus dependency vulnerability check for any project"
+        },
+        {
+          "id": "spell-ship",
+          "shortName": "ship",
+          "name": "Spell — Ship",
+          "description": "Pre-deploy checklist, merge approval workflow, and deployment gate verification"
+        },
+        {
+          "id": "spell-enchant",
+          "shortName": "enchant",
+          "name": "Spell — Enchant",
+          "description": "Enchant a PRD from functional to exceptional — proactively enhance features, UX, accessibility, security, and performance using a research lens and a marketing/brand lens"
+        },
+        {
+          "id": "spell-generate-bot-icons",
+          "shortName": "generate-bot-icons",
+          "name": "Spell — Generate Bot Icons",
+          "description": "Generate a bot avatar concept with an image-capable agent, then normalize it into Teams-ready color and outline icons."
+        },
+        {
+          "id": "spell-make-discoverable",
+          "shortName": "make-discoverable",
+          "name": "Spell — Make Discoverable",
+          "description": "Audit and fix a web property's search and AI-assistant discoverability — per-route share metadata, robots and sitemap policy, non-production noindexing, and search-engine registration. Read-only by default."
+        },
+        {
+          "id": "spell-scry",
+          "shortName": "scry",
+          "name": "Spell — Scry",
+          "description": "Clear a candidate name before it ships — four outward checks (who coined it, estate still trading, same-audience giants, first-association salience) plus a mandatory inward repo-local collision pass. Use when naming anything new (a spell, a field, a product, an internal concept) before committing to it."
+        }
+      ]
+    },
+    {
+      "component": "spells-docs",
+      "label": "Docs",
+      "spells": [
+        {
+          "id": "spell-adopt-docs",
+          "shortName": "adopt-docs",
+          "name": "Spell — Adopt Docs",
+          "description": "Bring an existing document tree under Arcane governance without moving anything first — inventory, propose a mapping, get approval, then apply in reversible steps. Dry-run by default."
+        }
+      ]
+    },
+    {
+      "component": "spells-venture",
+      "label": "Venture",
+      "spells": [
+        {
+          "id": "spell-summon-venture",
+          "shortName": "summon-venture",
+          "name": "Spell — Summon Venture",
+          "description": "Create a new venture in a hub repo — folder, overview/config/legal docs, idea and todo books, and a registry entry — in one hub-gated move."
+        },
+        {
+          "id": "spell-manifest",
+          "shortName": "manifest",
+          "name": "Spell — Manifest",
+          "description": "Hub-gated interactive triage that promotes idea-book and todo-book entries downstream — to a consumer repo, a PRD scaffold, a tracker item, public disclosure, or another venture's book."
+        }
+      ]
+    },
+    {
+      "component": "spells-meta",
+      "label": "Meta",
+      "spells": [
+        {
+          "id": "spell-present-arcane",
+          "shortName": "present-arcane",
+          "name": "Spell — Present Arcane",
+          "description": "Present Arcane in one of three modes — a full 1-hour talk (default), a live-state executive summary document, or a deck-builder meta-prompt sized to a slide count or duration."
+        },
+        {
+          "id": "spell-check-drift",
+          "shortName": "check-drift",
+          "name": "Spell — Check Doc Drift",
+          "description": "Detect contradictions and stale statements across core Arcane docs and report severity-graded findings (report-only by default; opt-in --fix applies safe mechanical fixes)."
+        }
+      ]
+    }
+  ]
+}
