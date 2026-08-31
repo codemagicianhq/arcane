@@ -380,12 +380,20 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   roster and the generator path never runs here. **Process note:** the implementation commit briefly
   landed on `main` before being caught and moved to this session branch pre-push — disclosed in
   PR #127's own description; no content was lost and `main` was never pushed in that state.
-- [ ] **BC-17 — `doctor` platform-policy verification.** Sources: TODO.md:90 (T11, absorbing T12c).
+- [x] **BC-17 — `doctor` platform-policy verification.** Sources: TODO.md:90 (T11, absorbing T12c).
   Route: chain. Size M. Verify live branch/merge policy against the declared ladder on both
   providers; must read GitHub **Rulesets** (the classic `/branches/main/protection` endpoint
   false-negatives — proven 2026-08-24) including cross-rule interactions
   (`allowed_merge_methods` × `required_linear_history`), and ADO "Limit merge types". Report-only in
   `doctor`; never auto-mutate (grant exclusion).
+  **Done 2026-08-31:** [PR #129](https://github.com/codemagicianhq/arcane/pull/129) merged via rebase
+  (`5566ec1`), `v0.22.14` (bumped by judgment call, not required by `check:version-bump` — no
+  `src/assets/` touched). New `src/modules/platform-policy.ts`; GitHub path live-verified against
+  this repo's own real Rulesets (both the current healthy shape and, as a fixture, the historical
+  2026-08-24/25 drifted shape); ADO path implemented from documented API shape only, **not
+  live-verified** (no ADO remote exists to test against) — disclosed in the PRD and TODO.md. 22 new
+  tests. TODO.md's T11 item stays open: its title also names `ward`, which doesn't exist as a shipped
+  spell yet (T18/BC-21) — only the `doctor` half, this epic's actual scope, is done.
 - [ ] **BC-18 — `spell-sync-pull-request`.** Sources: TODO.md:49 (T7; explicit route). Route: chain
   (`spell-plan` → `spell-architect` → implement). Size L. Bump: yes. Fixtures: clean sync,
   conflicting rebase, stale lease rejection, ambiguous-conflict handoff, GitHub/ADO post-push
