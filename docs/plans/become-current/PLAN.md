@@ -482,9 +482,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   existing home, cited by ID from the new `spell-eas-store-deploy` (joined `spells-build`) alongside
   `EV-01`/`EV-02`/`EV-03`/`EV-06` from `external-verification-standards.md` — never restated. Minor
   version bump (new spell). Full detail in TODO.md's closure note on the T8 item.
-- [ ] **BC-26 — Compliance standards + spell.** Sources: TODO.md:177 (T26). Route: chain. Size L.
-  Bump: yes. `compliance-standards.md` (GDPR + CCPA baseline, SOC 2 optional tier) +
-  `spell-compliance` self-assessment runnable on any consuming repo.
+- [x] **BC-26 — Compliance standards + spell.** Sources: TODO.md:354 (T26, corrected — "177" had
+  drifted). Route: chain. Size L. Bump: yes.
+  **Done 2026-08-31:** PRD at [features/compliance-standards/PRD.md](../../../features/compliance-standards/PRD.md).
+  New `compliance-standards.md` (`CS-01`-`CS-12`: GDPR, CCPA, shared obligations, SOC 2, HIPAA, tiered
+  applicability — explicit not-legal-advice framing) + new `spell-compliance` (joined `spells-build`),
+  a read-only self-assessment with no apply/fix phase — citing `CS-nn` by ID, never restating. Minor
+  version bump (new spell). Full detail in TODO.md's closure note on the T26 item.
 - [ ] **BC-27 — Governance tail batch.** Sources: IDEAS.md:9 (I1), :11 (I3), :12 (I4), :15 (I7).
   Route: direct, one PR per sub-item where they touch different trees. Size M. (a) I4 dedup rule:
   diff before deleting "duplicates" — governance edit. (b) I1 org-token gate seeds operator-identity

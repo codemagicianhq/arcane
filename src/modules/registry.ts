@@ -166,6 +166,11 @@ const COMPONENTS: RegistryComponent[] = [
     description: "Durable App Store / Google Play console and release-track facts consumed by spell-eas-store-deploy",
     files: [".arcane/governance/mobile-release-standards.md"],
   },
+  {
+    name: "compliance-standards",
+    description: "GDPR/CCPA/SOC 2/HIPAA obligations and a tiered applicability guide, consumed by spell-compliance",
+    files: [".arcane/governance/compliance-standards.md"],
+  },
   // ─── Spells ────────────────────────────────────────────────────────────────
   // Split from the former monolithic `spell-prompts` + `claude-commands` pair
   // so a profile can select spells by capability (see ARC-0NN). Grouping lives
@@ -279,6 +284,8 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-scry.md",
       ".github/prompts/spell-eas-store-deploy.prompt.md",
       ".claude/commands/spell-eas-store-deploy.md",
+      ".github/prompts/spell-compliance.prompt.md",
+      ".claude/commands/spell-compliance.md",
     ],
   },
   {

@@ -109,7 +109,8 @@ describe("registry", () => {
       expect(names).toContain("external-verification-standards");
       expect(names).toContain("web-discoverability-standards");
       expect(names).toContain("mobile-release-standards");
-      expect(names).toHaveLength(24);
+      expect(names).toContain("compliance-standards");
+      expect(names).toHaveLength(25);
     });
   });
 
