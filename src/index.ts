@@ -33,6 +33,25 @@ program
   .description("Arcane framework CLI — scaffold and manage governance files")
   .version(pkg.version)
   .action(async () => {
+    // Commander routes an unrecognized subcommand here too (no root
+    // `.arguments()` is declared, so it doesn't emit `command:*`) — the only
+    // way to tell "no subcommand" from "an unrecognized one" is the leftover
+    // positional args.
+    if (program.args.length > 0) {
+      const [attempted] = program.args;
+      console.error(`spell: unrecognized command '${attempted}'`);
+      console.error();
+      console.error(
+        `Spells are prompts, not CLI commands — run /spell-${attempted} in your agent client.`,
+      );
+      console.error();
+      console.error("Real CLI commands:");
+      for (const cmd of program.commands) {
+        console.error(`  ${cmd.name().padEnd(14)} ${cmd.description()}`);
+      }
+      process.exitCode = 1;
+      return;
+    }
     // Bare `spell` with no subcommand — show the welcome (banner + real repo
     // state + Spell Loop), then the command reference.
     await printWelcome(pkg.version, process.cwd());
