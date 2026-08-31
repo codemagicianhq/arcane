@@ -149,10 +149,14 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (the check reporting green on a live PR) is satisfied; ruleset-wiring payload prepared in
   `docs/plans/become-current/q-001-ruleset-{before,after}.json`, application still queued to the
   operator (platform-settings mutation, outside the delegation grant).
-- [ ] **BC-02 — `dist/assets` pruning.** Sources: TODO.md:86 (T9). Route: direct. Size S. Bump: no.
+- [ ] **BC-02 — `dist/assets` pruning.** Sources: TODO.md:88 (T9, line renumbered by BC-01's edits —
+  corrected here). Route: direct. Size S. Bump: no.
   Prune `dist/assets/` before copy (or temp-dir-and-swap) in `scripts/copy-assets.ts` (`copyDir`
   at :94-130 never deletes); regression test: file removed from `src/assets/` disappears from
   `dist/assets/` on next build. Kills the live `spell-eas-ios-deploy.prompt.md` orphan.
+  **In progress 2026-08-31:** implemented as `copyAssets()` + `test/copy-assets.test.ts`; a second,
+  more serious import-safety bug (unconditional `main()` at module scope) found and fixed in the
+  same change — see the TODO.md entry for the full detail. Tick on merge, not before.
 - [ ] **BC-03 — Branch hygiene: content-verified sweep.** Sources: TODO.md:92-99 (T12 a+b; c → BC-17).
   Route: direct. Size M. Bump: yes (close-session prompt). Implement content-level verification
   (`git cherry` + diff, never ancestry alone) as an idempotent close-session sweep step. Then run it:
