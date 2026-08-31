@@ -366,11 +366,20 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   BC-05e's own scope (the dangling `EF-37` intake citation) was already resolved by BC-05 itself; this
   PR's own missing-work-item-ID open question was the separate, still-open half, closed here by filing
   a `TODO.md` entry (internal tracking mode) in the same PR.
-- [ ] **BC-16 — Spell routing layer (R1-R3).** Sources: TODO.md:163 (T24). Route: chain. Size L.
+- [x] **BC-16 — Spell routing layer (R1-R3).** Sources: TODO.md:163 (T24). Route: chain. Size L.
   Bump: yes. R1 routing table injected via `agent-generator.ts` marker merge into all three L1
   surfaces; R2 frontmatter `description:` with proactive triggers on every
   `.claude/commands/spell-*.md`; R3 universal-agent-rules lifecycle rule. R4 (PreToolUse hook)
   deliberately deferred — leave a TODO note keyed on observed drift after R1-R3.
+  **Done 2026-08-31:** [PR #127](https://github.com/codemagicianhq/arcane/pull/127) merged via rebase
+  (`586af84`), `v0.22.13`. R1-R3 all shipped in one PR; R4 intentionally out of this epic's scope
+  (TODO.md's T24 stays open, tracking R4 separately). New rule 22 in `universal-agent-rules.md` —
+  appended, not inserted, since renumbering would have broken rule 8's live ARC-036 citations across
+  8+ shipped prompt files from BC-14. This repo's own root `CLAUDE.md`/`AGENTS.md`/`.github/copilot-
+  instructions.md` updated by hand alongside the code fix, since this repo has no installed agent
+  roster and the generator path never runs here. **Process note:** the implementation commit briefly
+  landed on `main` before being caught and moved to this session branch pre-push — disclosed in
+  PR #127's own description; no content was lost and `main` was never pushed in that state.
 - [ ] **BC-17 — `doctor` platform-policy verification.** Sources: TODO.md:90 (T11, absorbing T12c).
   Route: chain. Size M. Verify live branch/merge policy against the declared ladder on both
   providers; must read GitHub **Rulesets** (the classic `/branches/main/protection` endpoint
