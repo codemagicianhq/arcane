@@ -227,9 +227,10 @@
   `src/modules/diagram-generator.ts`, `spell status` now compares `manifest.version` to
   `packageVersion` (the verified axis-A gap), `v0.22.8`.
   **R9 shipped 2026-08-31:** [PR #119](https://github.com/codemagicianhq/arcane/pull/119) — branch/PR
-  topology `gitGraph` in `spell-commit-work` + `spell-create-pull-request`, `v0.22.9`. R10's four
-  adopters (each needing a distinct diagram type for its own data shape, found while scoping this PR)
-  and Tier 3 harmonization remain — each its own future PR; item stays open.
+  topology `gitGraph` in `spell-commit-work` + `spell-create-pull-request`, `v0.22.9`.
+  **R10 shipped 2026-08-31:** [PR #121](https://github.com/codemagicianhq/arcane/pull/121) — four
+  adopters, four different diagram types (flowchart, flowchart, stateDiagram-v2, gitGraph), `v0.22.10`.
+  Tier 3 harmonization (R11) remains — this epic's final PR; item stays open.
 
 - [x] **Tech-debt: re-point version-bump-rule citations from CLAUDE.md to `project.md`.** `scripts/check-version-bump.ts:7,115` and `docs/intake/batch-001/EF-31.md:17` cite CLAUDE.md as the home of the "version bump required for any change to `src/assets/`" rule, but root CLAUDE.md now carries only the 13-line working protocol — the rule's live prose home is `project.md:56-58`. `spell-bump.prompt.md:12` is a third stale citer ("It enforces the rule from CLAUDE.md") — and a shipped one, so its fix is implementation-PR work (touches `src/assets/` → version bump). Update the script's comment and error-message pointer, add a bracketed correction note to the EF file (historical record — don't rewrite its claim), and fold the spell-bump line into the next version-bumped PR. Found 2026-08-30 while planning generated-state-diagrams; scope corrected post-review same day.
   **Partially completed 2026-08-31 (BC-05):** `scripts/check-version-bump.ts`'s comment and error-message pointer updated to `project.md`; `EF-31.md:17` annotated with a bracketed correction note (historical claim left intact). **`spell-bump.prompt.md:12` deliberately left open** — it's shipped, distributable content, so fixing it requires its own `src/assets/` version-bump PR, per this item's own original scope note. Fold into BC-06 or the next spell-bump-touching PR, whichever comes first.
