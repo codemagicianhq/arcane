@@ -54,7 +54,7 @@ If the input is an external work item ID:
 
 Resolve tracking settings from PRD frontmatter (preferred) or ask:
 - `tracking_mode: internal | external`
-- `external_provider: ado | jira | other`
+- `external_provider: ado | github | jira | other`
 
 If unset and ADO context already exists, default to `external` + `ado` for backward compatibility.
 
@@ -118,7 +118,7 @@ For each epic, define:
 
 Only applies when `tracking_mode=external`. Skip entirely for internal mode.
 
-Do **not** inline the work-item-type fallback order or the parent/child linkage rules here — they are the single source of truth in [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) → **Process-Template-Aware ADO Hierarchy Rules**. Detect the provider from `external_provider`, then apply those rules. *Fallback: if that doc is missing, record the tracker mapping as an Open Question and proceed without item-type assignment.*
+Do **not** inline the work-item-type fallback order or the parent/child linkage rules here — they are the single source of truth in [governance/development-methodology.md](../../.arcane/governance/development-methodology.md), under **Process-Template-Aware ADO Hierarchy Rules** (`external_provider=ado`) or **GitHub Issues Conventions** (`external_provider=github`). Detect the provider from `external_provider`, then apply the matching section's rules. *Fallback: if that doc is missing, record the tracker mapping as an Open Question and proceed without item-type assignment.*
 
 Scope-specific delta (the only thing this spell adds on top of those rules): each split **epic** maps to the **Epic-level** logical level — use the `Epic` work item type whenever the resolved provider/template offers it, and record the selected type per epic in `execution-plan.md`. All lower-level and linkage decisions defer to the governance rules above.
 

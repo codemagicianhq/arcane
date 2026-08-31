@@ -92,10 +92,15 @@ export type PushPolicy = "open" | "guarded" | "blocked";
 export type TrackingMode = "internal" | "external";
 /**
  * ARC-011's already-shipped vocabulary (spell-open-session.prompt.md,
- * spell-plan.prompt.md). Not "azure-devops"/"github"/"gitlab" -- those were
- * never used anywhere; "ado" is the literal value both prompts read/write.
+ * spell-plan.prompt.md) plus `"github"` (ARC-032 implementation note,
+ * 2026-08-31, BC-09). Not "azure-devops"/"gitlab" -- those were never used
+ * anywhere. `"github"` was also removed once before, by ARC-032 itself, for
+ * that same reason -- but this addition is not a reversion of that fix:
+ * ARC-032 dropped it because nothing read or wrote it; this one exists
+ * because `spell-bug`/`spell-plan`/`spell-scope`/`spell-suggest-feature`/
+ * `spell-full-cycle` now have a real, working `gh issue` branch that does.
  */
-export type ExternalProvider = "ado" | "jira" | "other";
+export type ExternalProvider = "ado" | "github" | "jira" | "other";
 
 export interface RegistryComponent {
   name: string;

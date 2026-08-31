@@ -1366,6 +1366,29 @@ storage model depends on what the data actually looks like, not a single blanket
   rejected as out of scope here: EF-04 is docs-mode work, not yet actioned. This decision keeps
   the two as sequential, separate questions and leaves EF-04's deeper UX unification for later.
 
+**Implementation note (2026-08-31, BC-09):**
+
+- **`ExternalProvider` extended to `"ado" | "github" | "jira" | "other"`, adding back a value
+  decision 4 above deliberately removed.** This is not a reversion of that correction. Decision 4
+  dropped `"github"` (along with `"azure-devops"`/`"gitlab"`) because nothing in the codebase read
+  or wrote it — a value sitting in the type with zero consuming code path, exactly the drift the
+  correction existed to close. This addition is different in kind: `spell-bug`, `spell-plan`,
+  `spell-scope`, `spell-suggest-feature`, and `spell-full-cycle` now have a real `gh issue`
+  branch — creation, fetch, and close-out commands, verified against the live `gh` CLI's actual
+  flags before being written into shipped prompts rather than assumed — so `external_provider:
+  github` has genuine, working behavior behind it from the moment it ships, not a placeholder
+  value waiting for a future implementation the way the removed `"github"` always had been.
+- **`readManifest`'s rejection behavior (decision 5) is unchanged in shape, only in its accepted
+  set:** `VALID_EXTERNAL_PROVIDERS` in `src/modules/manifest.ts` gained `"github"`; an unsupported
+  value still throws `ManifestInvalidFieldError`, not silently accepted, exactly as decision 5
+  specified — this extension adds one more valid value, it does not loosen the validation itself.
+- **GitHub Issues has no configurable work-item-type hierarchy the way ADO's process templates
+  do**, so its governance treatment (`development-methodology.md` → GitHub Issues Conventions) is
+  necessarily a different shape from the ADO section it sits beside: labels substitute for types,
+  and a body task-list substitutes for native parent/child linkage — documented as a substitute,
+  not represented as equivalent, so a reader doesn't mistake the checkbox convention for something
+  the platform itself enforces.
+
 ---
 
 ## ARC-033 — Docs Mode: Subject Root, Content Sensitivity, and Capability-Scoped Spell Components

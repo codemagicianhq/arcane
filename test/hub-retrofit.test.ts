@@ -27,7 +27,7 @@ vi.mock("@inquirer/prompts", () => ({
 // don't care about tracking-mode answers still get a valid default (not the
 // old blanket "lite" for every select call, which would have written an
 // invalid tracking_mode value once EF-14's question was added).
-function resetSelectMock(trackingAnswer: "internal" | "external" = "internal", providerAnswer: "ado" | "jira" | "other" = "ado") {
+function resetSelectMock(trackingAnswer: "internal" | "external" = "internal", providerAnswer: "ado" | "github" | "jira" | "other" = "ado") {
   selectMock.mockReset();
   selectMock.mockImplementation(async (opts: { message: string }) => {
     if (opts.message.includes("installation profile")) return "lite";
@@ -204,6 +204,15 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("external");
     expect(manifest.external_provider).toBe("jira");
+  });
+
+  it("lite profile interactive: accepts github as a chosen provider (BC-09)", async () => {
+    resetSelectMock("external", "github");
+    await runInit({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    const manifest = await readManifest(tmpDir);
+    expect(manifest.tracking_mode).toBe("external");
+    expect(manifest.external_provider).toBe("github");
   });
 });
 

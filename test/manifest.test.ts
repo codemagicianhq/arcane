@@ -170,7 +170,7 @@ describe("manifest", () => {
       },
     );
 
-    it.each(["ado", "jira", "other"] as const)(
+    it.each(["ado", "github", "jira", "other"] as const)(
       "accepts external_provider: %s",
       async (provider) => {
         await fs.writeFile(

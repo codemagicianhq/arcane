@@ -43,7 +43,7 @@ export class ManifestInvalidFieldError extends Error {
 const MANIFEST_FILE = ".arcane.json";
 
 const VALID_TRACKING_MODES: TrackingMode[] = ["internal", "external"];
-const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "jira", "other"];
+const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "github", "jira", "other"];
 const VALID_CONTENT_SENSITIVITY: ContentSensitivity[] = ["standard", "sensitive"];
 const VALID_PUSH_POLICIES: PushPolicy[] = ["open", "guarded", "blocked"];
 

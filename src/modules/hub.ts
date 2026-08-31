@@ -64,7 +64,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
         message: "How will work be tracked in this repo?",
         choices: [
           { value: "internal", name: "Track work in this repo (TODO.md / PRDs)" },
-          { value: "external", name: "Track work in an external tracker (Azure DevOps / Jira / other)" },
+          { value: "external", name: "Track work in an external tracker (Azure DevOps / GitHub / Jira / other)" },
         ],
       })) as TrackingMode;
       if (tracking_mode === "external") {
@@ -72,6 +72,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
           message: "Which external tracker?",
           choices: [
             { value: "ado", name: "Azure DevOps" },
+            { value: "github", name: "GitHub Issues" },
             { value: "jira", name: "Jira" },
             { value: "other", name: "Other" },
           ],

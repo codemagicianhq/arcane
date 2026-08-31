@@ -55,7 +55,7 @@ Workflow:
    - Read `tracking_mode` / `external_provider` from `.arcane.json` or the active PRD frontmatter if available.
    - If missing, ask the user:
      - `tracking_mode: internal | external`
-     - `external_provider: ado | jira | other` (required only for external mode)
+     - `external_provider: ado | github | jira | other` (required only for external mode)
    - If ADO context is already active and no explicit choice is provided, default to `external` + `ado` for backward compatibility.
 
 5. **Create tracker item (conditional)**:
@@ -70,9 +70,17 @@ Workflow:
        --output json
      ```
      Extract the work item ID from the response.
+   - If `tracking_mode=external` and `external_provider=github`, create an issue:
+     ```bash
+     gh issue create \
+       --title "{title}" \
+       --body "{formatted user story + impact assessment}" \
+       --label enhancement
+     ```
+     `gh issue create` prints the created issue's URL; extract the trailing number as the issue ID. `--label` names must exist in the repo already (`gh label list`) — omit it rather than guessing a label that isn't there.
    - If `tracking_mode=internal`, skip external item creation and track in `TODO.md` only.
    - If `external_provider=jira` or `other`, add a TODO note for provider-specific automation and continue with `TODO.md` tracking.
-   - The ADO command above is illustrative; for the authoritative per-provider creation steps and field mappings, see [[.arcane/governance/development-methodology|Development Methodology]].
+   - The ADO and GitHub commands above are illustrative; for the authoritative per-provider creation steps and field mappings, see [[.arcane/governance/development-methodology|Development Methodology]].
 
 6. **Update backlog** — add a line to `TODO.md`:
    ```markdown
