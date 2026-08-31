@@ -4,8 +4,11 @@
  *
  * CI gate: fails if distributable content changed without a version bump.
  *
- * Rule (from CLAUDE.md): "Version bump required for any change to src/assets/ or
- * any change to registry.ts / profiles.ts that affects what gets distributed."
+ * Rule (from project.md's Constraints section): "Version bump required for any
+ * change to src/assets/ or any change to registry.ts / profiles.ts that affects
+ * what gets distributed." (Re-pointed 2026-08-31 -- root CLAUDE.md now carries
+ * only the 13-line working protocol; the rule's live prose home moved to
+ * project.md:56-58.)
  *
  * How it works:
  *   1. Diffs HEAD against the merge-base with origin/main (i.e. the PR diff).
@@ -112,7 +115,7 @@ if (currentVersion === mainVersion) {
     "\n✗ Version bump required!\n" +
       "  Distributable files changed but package.json version is unchanged.\n" +
       "  Run: npm version patch|minor|major --no-git-tag-version\n" +
-      "  See: CLAUDE.md → Development Rules #2",
+      "  See: project.md → Constraints → Self-hosting",
   );
   process.exit(1);
 }

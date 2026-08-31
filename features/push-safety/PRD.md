@@ -1,15 +1,31 @@
 ---
-status: proposed
+status: shipped
 tracking_mode: internal
 source_intake: batch-001 (EF-09)
 ---
 
 # PRD - Push-Safety Model for Sensitive-Document Repositories
 
-**This is a design document for operator review, not an implementation.** EF-09 is
-route:prd -- the deliverable is this PRD. Nothing in this document has been built.
-EF-09.md stays `deferred`, with a note pointing here; its status flips only when an
-operator accepts a design from this document and a follow-up implementation WP ships.
+**Corrected 2026-08-31 (BC-05) — this design was accepted and built.** The sections
+below (Problem, Threat model, Compared mechanisms, Recommended design) are the
+historical design record as authored, kept intact rather than rewritten into
+after-the-fact retrospective tense. What actually shipped: the operator accepted this
+recommended design (M1+M2, layered) as [ARC-034](../../DECISIONS.md#arc-034--push-safety-for-sensitive-repositories)
+(Accepted 2026-08-23), implemented across `0.20.0` and `0.20.1` (fixes found by
+adversarial review) in `src/modules/push-safety.ts` — `push_policy: "blocked" |
+"guarded" | "open"` persists on the `.arcane.json` manifest exactly as R1 specifies,
+`spell unblock-push` implements the R5 recovery contract, and R6's real-remote fixture
+coverage lives in `test/push-safety.test.ts` (confirmed live 2026-08-31: 44 tests
+against genuine local bare-repo remotes, not mocks). `EF-09.md` already correctly reads
+`status: shipped` (checked, not assumed from this PRD's own now-stale claim below that
+it "stays `deferred`") — only this PRD's own frontmatter and preamble were behind.
+The "Re-verified against current HEAD" line further
+down and the Requirements table's "not built by this PRD" framing describe the state
+*at the time this PRD was authored* — accurate then, stale now if read as describing
+today's `src/`. The four follow-on questions this research surfaced (per-directory
+`push_policy` granularity, a possible fourth policy state, non-CLI-client hook honor,
+and interactive-TTY-gate sufficiency against an unsupervised agent) were never filed
+anywhere; added to `TODO.md` in the same change that made this correction.
 
 ## Problem
 
