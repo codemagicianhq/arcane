@@ -10,7 +10,7 @@ agent: agent
 - This prompt chains all Spell Loop phases into a single autonomous pipeline.
 - Includes optional PRD enchantment (spell-enchant) between Plan and Architect for quality enhancement.
 - Only one human touchpoint: approving the PR at ship time.
-- Delegates each phase to the appropriate specialized agent role (research, architecture, build, QA, marketing review). Resolve concrete personas from [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); if neither is present, proceed with role names directly.
+- Delegates each phase to the appropriate specialized agent role (research, architecture, build, QA, marketing review) — **in practice, a single agent switches hats per phase** unless a real per-tool subagent registry is configured (e.g. `.claude/agents/` for Claude Code); this framework ships no such registry by default, so "delegates" names the intended role model, not a literal handoff between separately running agents (2026-07-22 dogfooding finding). Resolve concrete personas from [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); if neither is present, proceed with role names directly.
 - If any phase fails, the pipeline halts and reports the blocker — no silent failures.
 
 ---
@@ -58,8 +58,9 @@ Execute the `spell-plan` workflow:
 
 1. Gather requirements from the feature description.
 2. Check existing ADRs and business docs for constraints.
-3. Produce `PRD.md` with requirements, acceptance criteria, constraints, and tracking configuration (`tracking_mode`, optional `external_provider`, optional `adoWorkItemId`/`githubIssueId`).
-4. **Gate:** Validate every requirement has at least one testable acceptance criterion. If scope is too large for one sprint, halt and recommend splitting.
+3. **If the feature description hands in a pre-diagnosed root cause** (a specific file/line/mechanism already named as the cause of a bug), re-verify it against current source before accepting it — a handed-in diagnosis can be stale (2026-07-22 dogfooding finding: a filed root-cause lead was already fixed and the real causes were elsewhere). Do not carry a stale diagnosis into the PRD or stories unexamined.
+4. Produce `PRD.md` with requirements, acceptance criteria, constraints, and tracking configuration (`tracking_mode`, optional `external_provider`, optional `adoWorkItemId`/`githubIssueId`).
+5. **Gate:** Validate every requirement has at least one testable acceptance criterion. If scope is too large for one sprint, halt and recommend splitting.
 
 Store the PRD in the working directory. Proceed automatically to Phase 1.5.
 
@@ -118,6 +119,7 @@ Execute the `spell-implement` workflow:
 2. Loop:
    a. Pick the next story where `passes: false`, ordered by priority.
    b. Implement the story — minimum code to satisfy acceptance criteria.
+   b1. **DB migration guard.** If `architecture.md`/the PRD did not name a database migration as part of this feature's scope, but implementing this story is about to produce one anyway, **halt and flag it** — do not write the migration file silently (2026-07-22 dogfooding finding: this is a scoped hard guard, not a blanket ban). If a migration genuinely is in scope, **re-derive its sequence number from a fresh `git pull --ff-only` of the target branch immediately before writing the file** — not once at branch-creation time in step 0 — so a concurrent epic that landed a migration in the meantime is reflected. This is the concrete fix for a real incident: two epics run in parallel worktrees each independently claimed the same migration sequence number, invisible until human merge review.
    c. Write tests per `governance/testing-standards.md`.
    d. Run tests. If passing:
       - In `external/ado` mode, commit with `#{adoWorkItemId} type(scope): description` and agent attribution trailers (`Agent`, `Model`, `Provider`).
@@ -136,8 +138,9 @@ Execute the `spell-test` workflow:
 1. Run the full test suite (not just per-story — full regression).
 2. Validate coverage: 80% line minimum, 95% critical path.
 3. Map each acceptance criterion from the PRD to a specific passing test.
-4. Update `stories.json` with consolidated test evidence.
-5. **Gate:** If coverage is below threshold or any acceptance criterion lacks a test, loop back to Phase 3 to add missing tests. Maximum 2 coverage-fix loops before halting.
+4. **If this run produced a database migration:** a fresh/empty test database is not sufficient evidence by itself — this is a real incident's root cause (a unique index conflicted with legitimate duplicate rows the target app allows by design; every test passed against an empty DB, then broke the consumer's actual deploy). If the execution sandbox has access to a snapshot or copy of the target environment's real data, replay the migration against it and report the result. **If it does not** (the common case for an isolated sandbox), do not silently proceed as if this were validated — name the gap explicitly in the ship report's disclosure (see below) so a human reviews the migration against real data before it ships.
+5. Update `stories.json` with consolidated test evidence.
+6. **Gate:** If coverage is below threshold or any acceptance criterion lacks a test, loop back to Phase 3 to add missing tests. Maximum 2 coverage-fix loops before halting.
 
 Proceed automatically to Phase 5.
 
@@ -159,12 +162,24 @@ Proceed automatically to Phase 6.
 Execute the `spell-ship` workflow:
 
 1. Verify all prior phases passed (PRD, architecture, all stories, tests, review).
+1a. **PR strategy: one branch, one PR, per invocation.** This is the default and it is not optional to
+   restate per run — a 2026-07-22 dogfooding finding found this pattern had to be imposed by the
+   operator each time because the spell never stated it. If a later invocation would touch files an
+   earlier, still-open PR from a prior invocation already changed, do not open a second, conflicting PR
+   — rebase this branch onto the earlier PR's branch (or wait for it to merge, per this spell's own
+   multi-epic serialization default in the Rules section) before opening this one.
 2. Run pre-deploy checklist:
    - No merge conflicts with target branch.
    - No secrets or credentials in the diff.
    - DECISIONS.md updated if new ADRs were created.
    - Documentation updated for user-facing changes.
 3. Generate the ship report (phase status table, test evidence, review findings, recommendation).
+   **Mandatory disclosure section:** explicitly list anything this run could not verify in its own
+   execution sandbox — a real-data migration replay Phase 4 couldn't attempt, an external integration
+   it couldn't reach, a manual step it couldn't perform — never omit this section just because nothing
+   applies (state "Nothing withheld" in that case). Fold it into the consumer repo's own QA checklist
+   so a human reviewer sees exactly what still needs a human look, not just what passed (2026-07-22
+   dogfooding finding: honest disclosure of sandbox limits, not just of failures).
 4. Create the PR:
    - `external/ado` mode: `az repos pr create --repository {repo} --source-branch {branch} --target-branch main --title "{feature}" --work-items {adoWorkItemId}`
    - `internal` mode (or provider TODO mode): create PR without `--work-items`.
