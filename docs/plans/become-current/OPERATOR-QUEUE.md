@@ -113,11 +113,20 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Preconditions:** BC-13 appends a one-page decision brief here.
 - **Status:** waiting on BC-13.
 
-## Q-005 — Accept/revise/reject ADR: ARC-020 broad schema (folded into BC-11)
+## Q-005 — ARC-020 broad schema: still open, NOT subsumed by BC-11 (correcting this entry's own prior assumption)
 
-- **What:** the customization/vendor-neutrality ADR from BC-11 will subsume or close ARC-020's
-  open remainder ("operator identity, provider coordinates, repository lists").
-- **Status:** waiting on BC-11's draft PR.
+- **What:** this entry originally assumed BC-11's customization/vendor-neutrality ADR would "subsume
+  or close ARC-020's open remainder." Checked directly while drafting that ADR
+  ([ARC-038](../../../DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content),
+  decision 4): it doesn't. ARC-020's remainder (`operator identity`, `provider coordinates`,
+  `repository lists`) is manifest **data fields**; ARC-038 is about governance-**content** update
+  safety and vendor-neutrality — a different axis. Leaving this entry as originally written would
+  have implied ARC-020 got resolved when nothing in ARC-038 touches it.
+- **Status:** ARC-020 remains `Proposed` with its full remainder open, no ADR currently drafted
+  against it. Recommend closing it incrementally the same way ARC-030/032/033 already did — one
+  scoped amendment per field group, attached to whichever future epic actually needs one of those
+  fields — rather than waiting for a single ADR to cover all three at once. Not blocking anything in
+  this plan; no action needed from you unless you want to prioritize drafting that amendment sooner.
 
 ## Q-006 — Accept/revise/reject ADR: ARC-037 (Secret and Org-Leak Detection)
 
@@ -144,4 +153,33 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Preconditions:** none — this ADR can be accepted independently of BC-11/BC-12's ADRs.
 - **Status:** ready for your accept/revise/reject call.
 
-<!-- The loop appends Q-007+ below this line. -->
+## Q-007 — Accept/revise/reject ADR: ARC-038 (Content-Preserving Updates and Vendor-Neutral Governance Content)
+
+- **What:** [ARC-038](../../../DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content)
+  is `Proposed`, drafted 2026-08-31 (BC-11) from the 2026-07-14 customization/vendor-neutrality
+  backlog item and ARC-019's own "Open follow-up" note. Implementation is BC-31, gated on your
+  acceptance here.
+- **The shape, briefly:** per-file content hashes on `InstalledComponent` let `spell update`
+  distinguish "never touched" (safe to overwrite) from "operator edited" (attempt a three-way merge
+  using the exact previously-installed version, fetched from npm's own registry, as the merge base —
+  writing conflict markers on genuine collisions, same shape as `copier`'s regenerate/diff/merge
+  approach); `cicd-standards.md` splits into a vendor-neutral core plus an Azure-DevOps-specific
+  profile, reusing the same core/per-provider pattern this repo already ships twice over
+  (`external_provider`, ARC-011/032; `development-methodology.md`'s ADO/GitHub sections, BC-09) rather
+  than inventing a new one; no new "vendor-specific standards directory" — the split itself is the
+  mechanism, applicable wherever a future doc risks the same coupling.
+- **Two things this ADR found and corrected while researching, not just proposed:** the 2026-07-14
+  item's own premise about `naming-conventions.md` carrying Azure-specific content doesn't hold today
+  — checked directly, that file is agent/persona naming only, no cloud-vendor content anywhere in it —
+  while the *real* current instance of the exact problem it described turned out to be
+  `cicd-standards.md` instead (full Azure DevOps pipeline templates, branch-policy section, and an
+  ADO-scoped deployment checklist). Separately, **Q-005 above has been corrected**: this ADR does
+  *not* subsume ARC-020's remainder, despite that having been the working assumption recorded there
+  before this PR — the two are different axes (data fields vs. content architecture).
+- **Open questions the ADR deliberately leaves to BC-31**: exact hash algorithm, conflict-marker UX
+  (stop-and-report vs. complete-and-list), whether the npm-registry merge-base fetch should be cached,
+  and the exact new file names for `cicd-standards.md`'s split.
+- **Preconditions:** none — independent of BC-10/BC-12's ADRs.
+- **Status:** ready for your accept/revise/reject call.
+
+<!-- The loop appends Q-008+ below this line. -->

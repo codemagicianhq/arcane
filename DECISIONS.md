@@ -56,6 +56,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round)                                      | Auto-Merge Requires a Clear Review Round                                       | 2026-08-25 | Accepted   |
 | [ARC-036](#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)       | Generated State Diagrams: Deterministic Mermaid for Computed Spell State       | 2026-08-30 | Accepted   |
 | [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) | Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop | 2026-08-31 | Proposed   |
+| [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) | Content-Preserving Updates and Vendor-Neutral Governance Content | 2026-08-31 | Proposed   |
 
 ---
 
@@ -1746,3 +1747,145 @@ typecheck` only (confirmed directly, not inferred).
   rejected: once detection is continuous (pre-commit + CI), a separate on-demand command duplicates
   coverage the hook already provides for the common case; the genuinely different use case (auditing
   content already committed, outside the commit path) fits `spell doctor` better than a new verb.
+
+---
+
+## ARC-038 — Content-Preserving Updates and Vendor-Neutral Governance Content
+
+**Date:** 2026-08-31
+**Status:** Proposed
+**Related:** [ARC-019](#arc-019--repository-document-ownership-and-path-model) (its own "Open follow-up" section names the override-model gap this ADR closes), [ARC-020](#arc-020--canonical-repository-configuration-schema) (examined as a candidate to subsume — see Decision 4: it is not), [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping)/[ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (the `external_provider` pattern this ADR's vendor-neutral-content decision reuses, not reinvents)
+**Sources:** TODO.md's vendor-neutral-customization backlog item (filed 2026-07-14) — a research spike per that item's own instruction, not a straight-to-implementation route
+
+**Context:**
+
+This item bundles three related but distinct asks, filed together on 2026-07-14: (a) an override/
+customization model for shipped governance content that survives `spell update`; (b) a vendor-neutral
+core for `naming-conventions.md` plus pluggable vendor profiles (Azure/AWS/GCP/Netlify/Vercel); (c) a
+structural home for vendor-specific standards distinct from that neutral core.
+
+**(a) is real and current, checked directly against `src/commands/update.ts`.** Every file in an
+installed component is either fully preserved (`component.skipExisting: true` — used today only for
+`.gitattributes`/`.gitignore`, a deliberate whole-file, install-once model) or unconditionally
+overwritten via `copyFile(..., { force: true })`. There is no per-file record of what shipped versus
+what an operator later edited, so editing even one line of, say, `.arcane/governance/git-conventions.md`
+and later running `spell update` silently discards that edit with no distinction from a file nobody
+ever touched. This is exactly the gap [ARC-019](#arc-019--repository-document-ownership-and-path-model)'s
+own "Open follow-up" section named and left open: "The single-layer model does not yet let an operator
+override a shipped standard safely... must define precedence and update-safe ownership before Arcane
+claims managed standards are customizable."
+
+**(b)'s specific premise does not hold today, checked directly rather than assumed.** A full-text
+search of `src/assets/.arcane/governance/naming-conventions.md` for `Azure`, `CAF`, `GoDaddy`, or any
+cloud-resource-naming term returns nothing. The file's actual scope, confirmed by its section headings,
+is agent/persona naming (Machines, AI Agents, the Arcanos roster, Power Levels) — unrelated to cloud
+resource naming entirely. Either this content was removed during the repository's public-readiness
+passes sometime after 2026-07-14 (ARC-016's org-leak gate, ARC-031's privacy gate, and the fictional-
+venture-name convention are the likely vehicles, all landing well after this item was filed), or the
+original filing simply named the wrong file. Either way, treating `naming-conventions.md` as needing a
+vendor-neutral/pluggable split today would be solving a problem that no longer exists there.
+
+**The underlying concern in (b) is not stale — it just lives somewhere else, confirmed by search.**
+`src/assets/.arcane/governance/cicd-standards.md` is thoroughly Azure-DevOps-specific: a section titled
+literally "Branch Policies (Azure DevOps)", three full `azure-pipelines*.yml` templates, Azure
+Pipelines' own skip-CI syntax (`[skip azurepipelines]` etc.) documented as platform knowledge, and an
+operational checklist scoped explicitly to "Azure DevOps organizations" and "Azure Functions, App
+Service" deployments. This is real, current, substantial vendor lock-in in shipped governance — just
+in a CI/CD standards file, not a naming-conventions file.
+
+**Decision:**
+
+1. **Override model: per-file content hashing plus an npm-history-backed three-way merge**, generalizing
+   `skipExisting`'s existing binary, component-level flag into a precise, per-file, content-aware one.
+   `ArcaneManifest`'s `InstalledComponent` gains a hash (SHA-256, algorithm to be pinned at
+   implementation) recorded per file at the point it is written. On `spell update`, for each file:
+   compare its current on-disk hash to the recorded one.
+   - **Match (untouched since install):** overwrite unconditionally, exactly like today — this is the
+     common case and should stay as cheap as it is now.
+   - **Differ (operator has edited it):** do not silently discard the edit. Fetch the exact
+     previously-installed version's content — `manifest.version` already records which published
+     version was last installed, and that exact `src/assets/` tree is permanently retrievable from the
+     npm registry (`npm view arcane-cli@<version>` / a registry tarball fetch) — as the three-way
+     merge's common ancestor: old-vendor-version vs. operator's-current-content vs. new-vendor-version.
+     Auto-merge non-overlapping changes; write standard conflict markers into the file for genuine
+     collisions, the same shape `copier`'s regenerate-old/diff/regenerate-new/merge approach uses (see
+     the prior-art research this spike drew on), reusing npm's own permanent version history instead of
+     vendoring a second copy of every past release.
+   - `skipExisting` components (`.gitattributes`/`.gitignore`) keep their current, simpler whole-file
+     behavior unchanged — they are meant to be the operator's from the moment they are written, never
+     re-templated, and do not need merge machinery.
+2. **Vendor-neutral CI/CD standards, applying an already-proven pattern rather than inventing one.**
+   Split `cicd-standards.md` into a vendor-neutral core (branch-policy principles, PR requirements,
+   the *concept* of CI-skip semantics) and a provider-specific profile carrying today's Azure DevOps
+   content (pipeline YAML templates, ADO's specific skip-CI syntax, the ADO-scoped operational
+   checklist). This is not a new architecture: it is the identical shape `development-methodology.md`
+   already uses successfully for tracking providers (Process-Template-Aware ADO Hierarchy Rules
+   alongside GitHub Issues Conventions, from BC-09/ARC-032) and the identical shape `ExternalProvider`
+   itself already resolves through (ARC-011, ARC-032, BC-09). A future GitHub-Actions- or
+   GitLab-CI-specific profile can be added the same way, without touching the core.
+   **`naming-conventions.md` needs no change under this decision** — see Context; the premise that
+   motivated naming it does not hold today.
+3. **Home for vendor-specific standards: no new mechanism — apply spell-authoring-standards.md's
+   existing D2 gate to vendor coupling, not only org coupling.** D2 ("Distributability / no
+   org-coupling") already forbids baking a specific organization into shipped content; this decision
+   extends that same bar, and the same remediation shape (a neutral core + resolved-per-provider
+   detail), to a specific *vendor/platform* the way decision 2 demonstrates concretely for CI/CD. No
+   separate "vendor-specific standards directory" is introduced — the pattern is the split itself,
+   applied wherever a future governance doc risks the same coupling.
+4. **ARC-020's remainder is not subsumed by this ADR — correcting an assumption already on record.**
+   OPERATOR-QUEUE.md's Q-005 anticipated that this ADR "will subsume or close ARC-020's open
+   remainder (operator identity, provider coordinates, repository lists)." Checked directly: those
+   three items are manifest **data fields** (what values `.arcane.json` stores for a given operator/
+   repo), while this ADR's decisions 1–3 are about **governance-content architecture** (how shipped
+   docs avoid vendor lock-in and survive updates without clobbering edits) — a different axis, not a
+   subset or superset relationship. This ADR closes ARC-019's follow-up and the real half of the
+   2026-07-14 backlog item; it does not touch operator identity, provider coordinates, or repository
+   lists at all. ARC-020's remainder should be closed the same way ARC-030/032/033 already closed
+   their own pieces of it — one more scoped amendment per field group, when a concrete epic needs one,
+   not by waiting for this ADR to have covered it by accident. Q-005 is updated to reflect this rather
+   than left to imply a closure that did not happen.
+
+**Open questions (deferred to BC-31's implementation, not blocking acceptance of the shape above):**
+
+- Exact hash algorithm and manifest field shape for per-file content hashes (this ADR specifies the
+  mechanism, not the byte format).
+- Conflict-marker UX when the three-way merge finds a genuine collision: does `spell update` stop and
+  report the file, or complete the update and list conflicted files at the end?
+- Whether the npm-registry fetch for the merge base should be cached locally (repeat updates across
+  many repos re-fetching the same historical version) and where that cache would live.
+- Exact split point and file names for `cicd-standards.md`'s core/profile division — this ADR settles
+  that a split happens and mirrors an existing pattern, not the specific new file names.
+
+**Reasoning:**
+
+- A per-file hash is the minimum information needed to distinguish "never touched" from "customized,"
+  and is the stated prerequisite IDEAS.md's own prior-art research (I14) already identified for either
+  a merge path or honest drift detection — this decision follows that research rather than
+  re-deriving it.
+- Using npm's own registry as the historical-version store avoids inventing new vendoring
+  infrastructure: every past release is already a permanent, fetchable artifact there, which is
+  exactly what a three-way merge's common ancestor needs.
+- Reusing the `external_provider`/per-provider-section pattern for CI/CD content (decision 2) is
+  smaller and more consistent than a bespoke plugin system: it is the same shape this repository has
+  now shipped twice (ARC-011/032 for tracking, BC-09 for issue tracking) and proven to work.
+- Verifying (b)'s premise before acting on it — rather than trusting a six-week-old backlog item's
+  file citation — surfaced that the real instance had moved; fixing the *name* the backlog item still
+  used instead of the *actual* current violation would have looked like progress while leaving the
+  substantial, real Azure lock-in in `cicd-standards.md` completely untouched.
+
+**Rejected alternatives:**
+
+- **Angular `ng update`-style versioned migration schematics** instead of a hash-detect-plus-merge
+  approach — rejected: requires hand-authoring an imperative transform for every future change to
+  every governed file, an ongoing authoring burden with no natural end, versus a generic diff/merge
+  mechanism that works unchanged as new versions ship.
+- **Treat `naming-conventions.md` as still needing the vendor-neutral split**, per the original 2026-07-14
+  filing — rejected after direct verification found no vendor-specific content there today; acting on
+  a stale citation without checking it would have been effort spent on an already-solved problem.
+- **Vendor a second, permanent copy of every past `src/assets/` release** for the merge base — rejected:
+  npm's registry already is that permanent store; duplicating it adds storage and a second source of
+  truth for no benefit over fetching on demand.
+- **Accept Q-005's pre-written assumption that this ADR subsumes ARC-020's remainder** without checking
+  it — rejected once decision 4's direct comparison showed the two scopes don't actually overlap;
+  presenting a false subsumption would have left `operator identity`/`provider coordinates`/`repository
+  lists` looking resolved when nothing in this ADR touches them.
