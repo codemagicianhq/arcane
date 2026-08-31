@@ -112,5 +112,5 @@ Workflow:
 Rules:
 - Stories must be right-sized per the methodology doc (not "build the entire dashboard").
 - Architecture decisions must reference existing ADRs when relevant.
-- Use Mermaid for all diagrams.
+- Use Mermaid for all diagrams, per rule 8 (`.arcane/governance/universal-agent-rules.md`) — this spell's component/data-flow diagrams are agent-authored design output, not the generated-state-diagrams sub-convention ARC-036 covers.
 - If PRD scope is too large, recommend splitting before proceeding.

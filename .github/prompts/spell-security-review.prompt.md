@@ -30,6 +30,25 @@ Workflow:
    - Full project audit
    - Particular area of concern (auth, payments, data handling)
 
+1a. **Map trust boundaries and data flow** — before running the checklists below, sketch how data crosses trust zones (external actors, the auth boundary, internal services, data stores). This is agent-authored analysis under rule 8 (`.arcane/governance/universal-agent-rules.md`), not the generated-state-diagrams sub-convention ARC-036 covers — there is no already-computed trust-boundary state to read back, only the agent's own reasoning about the code. Use a Mermaid flowchart with a subgraph per trust zone:
+
+   ```mermaid
+   flowchart LR
+       subgraph External [Untrusted]
+           User[User / Client]
+       end
+       subgraph Boundary [Trust Boundary: Auth]
+           API[API Layer]
+       end
+       subgraph Internal [Trusted]
+           DB[(Data Store)]
+       end
+       User -->|request| API
+       API -->|authenticated query| DB
+   ```
+
+   Skip this step when the review scope doesn't cross any trust boundary — a single internal utility with no new external interaction, no new data store, and no new auth flow has nothing to diagram.
+
 2. **OWASP Top 10 checklist** — check each category:
 
    | #   | Category                  | Check                                                                                       |
@@ -80,6 +99,9 @@ Workflow:
    **Reviewer:** [Agent name]
    **Date:** [timestamp]
    **Scope:** [What was reviewed]
+
+   ### Trust Boundary / Data Flow
+   [Mermaid flowchart from step 1a — omit this section entirely if step 1a was skipped]
 
    ### OWASP Top 10 Results
    | Category                  | Status    | Findings  |

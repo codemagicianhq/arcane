@@ -175,7 +175,7 @@ Flag any epics that need **multiple roles** (e.g., a full-stack feature = backen
 
 ### 7. Dependency Graph
 
-Produce a Mermaid diagram showing epic execution order:
+Produce a Mermaid diagram (per rule 8) showing epic execution order — an agent-authored planning diagram, not the generated-state-diagrams sub-convention ARC-036 covers, since the ordering is this spell's own design output rather than already-computed state:
 
 ```mermaid
 flowchart LR
