@@ -266,12 +266,20 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 3 — ADR drafts (draft → PR → park acceptance → continue)
 
-- [ ] **BC-10 — Secret-detection ADR (EF-35).** Sources: TODO.md:37 (T4) · EF-35 · ARC-016 gaps
+- [x] **BC-10 — Secret-detection ADR (EF-35).** Sources: TODO.md:37 (T4) · EF-35 · ARC-016 gaps
   (audit: `spell check-leaks` command and pre-commit leak hook were mandated, never built). Route:
   adr. Size M. Must settle: bind point (pre-commit = free remediation vs. extending ARC-034's
   pre-push), shipped-vs-self-host parity, false-positive posture (`org-token-lint.test.ts` fixtures
   construct fake tokens that naive push protection would flag), and whether ARC-016's unbuilt pieces
   are absorbed or retired. Implementation = BC-30.
+  **Done:** [PR #106](https://github.com/codemagicianhq/arcane/pull/106) merged 2026-08-31 via
+  rebase (`f019d83`). [ARC-037](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop)
+  drafted `Proposed`; acceptance requested at OPERATOR-QUEUE.md Q-006. Corrected two premises while
+  researching: EF-35's "no scanner exists anywhere" is wrong (a homegrown one has run at build time
+  since the first public commit, just scoped to `src/assets/` only); ARC-016's CI-gate deliverable is
+  already shipped, not still unbuilt as this line above implied. The false-positive fixture is
+  `test/copy-assets.test.ts:74`, not `org-token-lint.test.ts` as this line above also named —
+  corrected in the ADR itself. Bump: n/a, no `src/assets` changes.
 - [ ] **BC-11 — Customization & vendor-neutrality spike + ADR.** Sources: TODO.md:158 (T22) ·
   ARC-020 (Proposed; broad schema open) · IDEAS.md:22 (I14 prior art: copier 3-way merge,
   `ng update` schematics; per-file content hashes prerequisite). Route: adr (research spike first,
