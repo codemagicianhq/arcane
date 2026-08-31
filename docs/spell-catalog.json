@@ -1,5 +1,5 @@
 {
-  "totalSpells": 38,
+  "totalSpells": 39,
   "groups": [
     {
       "component": "spells-session",
@@ -232,6 +232,12 @@
           "shortName": "scry",
           "name": "Spell — Scry",
           "description": "Clear a candidate name before it ships — four outward checks (who coined it, estate still trading, same-audience giants, first-association salience) plus a mandatory inward repo-local collision pass. Use when naming anything new (a spell, a field, a product, an internal concept) before committing to it."
+        },
+        {
+          "id": "spell-eas-store-deploy",
+          "shortName": "eas-store-deploy",
+          "name": "Spell — EAS Store Deploy",
+          "description": "Deploy an Expo app to the Apple App Store and Google Play via EAS Build + EAS Submit — one-time setup, repeat deployments, and the known pitfalls hit dogfooding both flows for real."
         }
       ]
     },

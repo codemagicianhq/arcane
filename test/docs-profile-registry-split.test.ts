@@ -233,12 +233,14 @@ describe("backwards compatibility of the split", () => {
   // 36: spell-sync-pull-request joined spells-delivery (BC-18, PR sync/conflict repair).
   // 37: spell-scry joined spells-build (BC-21, candidate-name clearance; ward is the CLI
   //     counterpart of the same concern but is not a registry component -- no spell count change from it).
+  // 38: spell-eas-store-deploy joined spells-build (BC-25, EAS Build + EAS Submit deployment guide for
+  //     the Apple App Store and Google Play).
   it.each(["lite", "methodology"] as const)(
-    "%s still ships the 37 spells the monolith + spells-build/spells-delivery growth hold, in both formats",
+    "%s still ships the 38 spells the monolith + spells-build/spells-delivery growth hold, in both formats",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
-      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(37);
-      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(37);
+      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(38);
+      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(38);
     },
   );
 

@@ -161,6 +161,11 @@ const COMPONENTS: RegistryComponent[] = [
     description: "Search-engine and AI-assistant discoverability rules for web properties",
     files: [".arcane/governance/web-discoverability-standards.md"],
   },
+  {
+    name: "mobile-release-standards",
+    description: "Durable App Store / Google Play console and release-track facts consumed by spell-eas-store-deploy",
+    files: [".arcane/governance/mobile-release-standards.md"],
+  },
   // ─── Spells ────────────────────────────────────────────────────────────────
   // Split from the former monolithic `spell-prompts` + `claude-commands` pair
   // so a profile can select spells by capability (see ARC-0NN). Grouping lives
@@ -272,6 +277,8 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-make-discoverable.md",
       ".github/prompts/spell-scry.prompt.md",
       ".claude/commands/spell-scry.md",
+      ".github/prompts/spell-eas-store-deploy.prompt.md",
+      ".claude/commands/spell-eas-store-deploy.md",
     ],
   },
   {

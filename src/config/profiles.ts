@@ -142,6 +142,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "spell-authoring-standards",
       "external-verification-standards",
       "web-discoverability-standards",
+      "mobile-release-standards",
     ],
   },
 ];

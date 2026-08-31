@@ -120,14 +120,14 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 
 <!-- arcane:start -->
 <details>
-<summary><b>📜 The full spell catalogue (38)</b></summary>
+<summary><b>📜 The full spell catalogue (39)</b></summary>
 
 **Session** — `open-session` · `close-session` · `commit-work` · `status` · `arcane-version`
 **Capture** — `save-idea` · `todo` · `feedback` · `suggest-feature` · `document` · `brainstorm` · `explain-concept`
 **Delivery** — `create-pull-request` · `sync-pull-request` · `address-review`
 **Review** — `review` · `review-batch`
 **Planning** — `plan` · `architect` · `scope` · `product-review`
-**Build** — `implement` · `test` · `full-cycle` · `bug` · `bump` · `dotnet-expert` · `security-review` · `ship` · `enchant` · `generate-bot-icons` · `make-discoverable` · `scry`
+**Build** — `implement` · `test` · `full-cycle` · `bug` · `bump` · `dotnet-expert` · `security-review` · `ship` · `enchant` · `generate-bot-icons` · `make-discoverable` · `scry` · `eas-store-deploy`
 **Docs** — `adopt-docs`
 **Venture** — `summon-venture` · `manifest`
 **Meta** — `present-arcane` · `check-drift`
