@@ -34,6 +34,29 @@ jobs:
             exit 1
           fi
 
+  review-round:
+    name: Review round clear
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify review round is clear
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: npm run check:review-round
+
   build-test:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
