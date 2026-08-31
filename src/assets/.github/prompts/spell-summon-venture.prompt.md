@@ -11,7 +11,7 @@ agent: agent
 - **Hub-gated:** requires `role: "hub"` in `.arcane.json`. Refuses cleanly in a consumer repo, pointing at the right place to capture the idea instead.
 - Use this when starting a new venture (business, product, or personal project) that the hub should track.
 - Input format is: `Venture Name | Venture Type | Description` — prompt will ask for missing fields.
-- Renamed from `spell-bootstrap-business` — venture books and the registry didn't exist when that spell was named. Clean rename, no compatibility alias, per [[DECISIONS#ARC-008|ARC-008]]'s precedent.
+- Renamed from `spell-bootstrap-business` — venture books and the registry didn't exist when that spell was named. Clean rename, no compatibility alias, per [ARC-008](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-008--clean-break-for-spell-assess-removal-no-compatibility-alias)'s precedent (full canonical URL, not a same-repo wiki-link — this file ships, and `DECISIONS.md` doesn't; corrected 2026-08-31, BC-06).
 
 ---
 

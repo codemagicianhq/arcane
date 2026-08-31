@@ -92,3 +92,74 @@ describe("distributed ADR reference gate", () => {
         expect(workflow).toContain("run: npm run check:adr-references");
     });
 });
+
+describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
+    it("flags a wiki-link to this repo's own DECISIONS.md citing a specific ARC id", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "See [[DECISIONS#ARC-035|ARC-035]] for the decision.\n",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("ARC-035 (cross-repo-hazard)");
+    });
+
+    it("flags a relative (non-https) markdown link to DECISIONS.md citing a specific ARC id", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "See [ARC-035](../../DECISIONS.md#arc-035) for the decision.\n",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("ARC-035 (cross-repo-hazard)");
+    });
+
+    it("flags the same hazard shape for a specific EF id", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "See [[DECISIONS#EF-36|EF-36]] for the finding.\n",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("EF-36 (cross-repo-hazard)");
+    });
+
+    it("accepts a full https canonical-repo URL citing a specific ARC id", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "See [ARC-035](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-035) for the decision.\n",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(0);
+    });
+
+    it("accepts a bare, unlinked ARC-NNN mention as safe plain text (the rule's own fallback)", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "This behavior is governed by ARC-035, Arcane's own framework decision.\n",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(0);
+    });
+
+    it("does not flag a placeholder ARC-NNN/EF-NN used to illustrate the rule itself", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "Use a wiki-link like `[[DECISIONS#ARC-NNN|ARC-NNN]]` inside this repo's own docs.\n",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(0);
+    });
+});

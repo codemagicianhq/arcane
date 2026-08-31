@@ -9,7 +9,10 @@ agent: agent
 
 - This spell determines whether a version bump is required and applies the correct semver type.
 - Use it whenever you've changed `src/assets/`, `registry.ts`, or `profiles.ts` in the arcane repo.
-- It enforces the rule from CLAUDE.md: "Version bump required for any change to `src/assets/`."
+- It enforces the rule from `project.md` → Constraints → Self-hosting: "Anything touching
+  `src/assets/` requires a version bump." (Corrected 2026-08-31, BC-06 — this previously cited
+  CLAUDE.md, which now carries only the working protocol; the rule's live prose home moved to
+  `project.md:56-58`.)
 
 ---
 
