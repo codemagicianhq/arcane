@@ -247,8 +247,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   search targeted the wrong text shape and nearly reported the example as removed). Full narrative in
   [journal/2026-08-31-bc07-fresh-session-probe.md](../../../journal/2026-08-31-bc07-fresh-session-probe.md).
   New IDEAS.md idea filed for the generalizable line-number-citation-drift problem, not fixed here.
-- [ ] **BC-08 — CLI unknown-command guidance.** Sources: IDEAS.md:14 (I6). Route: direct. Size S.
-  Bump: no. `spell <unrecognized>` prints guidance + the real CLI commands instead of failing silent.
+- [x] **BC-08 — CLI unknown-command guidance.** Sources: IDEAS.md:14 (I6). Route: direct. Size S.
+  Bump: no. **Done:** [PR #102](https://github.com/codemagicianhq/arcane/pull/102) merged 2026-08-31
+  via rebase (`eab0a3f`). `spell <unrecognized>` now prints guidance + exits 1 instead of silently
+  falling through to the welcome screen at exit 0 (confirmed live before the fix). Command list
+  generated from `program.commands` rather than the idea's hardcoded "6" — already stale by the time
+  this ran (8 real commands today; `unblock-push`/`agents` shipped after that count was written).
 - [ ] **BC-09 — GitHub as first-class `external_provider`.** Sources: IDEAS.md:10 (I2). Route:
   direct. Size M. Bump: yes (type union + init wording + spell guidance). Extends the ARC-032 union;
   keep `readManifest` rejection behavior consistent.
