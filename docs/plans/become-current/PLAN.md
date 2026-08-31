@@ -351,11 +351,21 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     `spell-security-review` gained a new trust-boundary/data-flow diagram under the same rule-8
     classification (none existed previously — a scope finding, disclosed in the PR).
   - **Epic complete** — all 6 of 6 total PRs (including the precursor) done.
-- [ ] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
+- [x] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
   Route: chain. Size M. Bump: yes. Prompt-only by its own constraints; must not shift the bold-colon
   anchors `test/prompt-pending-verification.test.ts` keys on; adds
   `test/prompt-handoff-durability.test.ts`; includes ARC-005 amendment (R7) and filing its missing
   work-item ID (coordinates with BC-05e).
+  **Done 2026-08-31:** [PR #125](https://github.com/codemagicianhq/arcane/pull/125) merged via rebase
+  (`630e67f`), `v0.22.12`. All eight requirements shipped in one PR — PRD promoted `draft`→`accepted`;
+  step 4b (durable registration) + field pointers + `Notes` pointer-only rule in `spell-close-session`;
+  Durability check + three-field surfacing in `spell-open-session`; fresh-install scaffold fixed to
+  ship pre-consumed (a real bug: its old format satisfied open-session's own live-handoff detection
+  trigger); ARC-005 amended by new **ARC-040** (used this file's real `**Amended by:**`/`**Amends:**`
+  convention — the PRD said "blockquote", which isn't this file's actual pattern; disclosed in the PR).
+  BC-05e's own scope (the dangling `EF-37` intake citation) was already resolved by BC-05 itself; this
+  PR's own missing-work-item-ID open question was the separate, still-open half, closed here by filing
+  a `TODO.md` entry (internal tracking mode) in the same PR.
 - [ ] **BC-16 — Spell routing layer (R1-R3).** Sources: TODO.md:163 (T24). Route: chain. Size L.
   Bump: yes. R1 routing table injected via `agent-generator.ts` marker merge into all three L1
   surfaces; R2 frontmatter `description:` with proactive triggers on every
