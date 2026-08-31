@@ -3,6 +3,7 @@ import { join, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
+import type { DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { runGit } from "../modules/git.js";
 import { readManifest } from "../modules/manifest.js";
@@ -356,6 +357,53 @@ export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
 }
 
 /**
+ * T13/BC-19. Lists standing-authority delegations recorded in
+ * `.arcane/delegations.json` -- the solo-operator/no-roster counterpart to
+ * agent-policies.md's roster-based power-level matrix. A missing file is a
+ * silent pass, not a warning: a repo with no ad hoc grants has nothing to
+ * report. This check only reports; it never grants, revokes, or validates
+ * authority -- revocation is the git-native act of editing the file itself.
+ */
+export async function checkDelegations(targetDir: string): Promise<CheckResult> {
+  const name = "Standing delegations (T13)";
+  const filePath = join(targetDir, ".arcane", "delegations.json");
+
+  let raw: string;
+  try {
+    raw = await readFile(filePath, "utf8");
+  } catch {
+    return { name, passed: true, blocking: false, message: "no delegations recorded" };
+  }
+
+  let parsed: DelegationsFile;
+  try {
+    parsed = JSON.parse(raw) as DelegationsFile;
+  } catch {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `.arcane/delegations.json exists but contains invalid JSON`,
+    };
+  }
+
+  const active = (parsed.delegations ?? []).filter((d) => d.status === "active");
+  if (active.length === 0) {
+    return { name, passed: true, blocking: false, message: "no active delegations" };
+  }
+
+  const summary = active
+    .map((d) => `${d.id} (scope: ${d.scope}; excludes: ${d.excludedActions.length} action(s))`)
+    .join("; ");
+  return {
+    name,
+    passed: true,
+    blocking: false,
+    message: `${active.length} active: ${summary}`,
+  };
+}
+
+/**
  * T11/BC-17. Verifies the live platform branch/merge policy matches the
  * declared ladder (git-conventions.md: merge + rebase sanctioned, squash
  * never sanctioned). GitHub is checked via Rulesets, never the classic
@@ -427,6 +475,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkPullRebase(targetDir),
     checkPushPolicy(targetDir),
     checkPlatformBranchPolicy(targetDir),
+    checkDelegations(targetDir),
   ]);
 
   // Add session continuity checks

@@ -58,6 +58,48 @@ Assign a default power level per agent × per repo. Human approval and commit go
 
 ---
 
+## Solo-Operator Delegation Records (No Roster)
+
+The Per-Repo Power Level Matrix above assumes an installed agent roster (`.arcane/agents.yaml`) — each
+agent has a slug and a per-repo power level, and that's where standing authority lives. A repo with **no
+roster installed at all** has nowhere in that model to record a delegation, so one tends to get granted
+ad hoc — free prose in whatever document is at hand — and then forgotten, since nothing lists it.
+
+For exactly this case, record the grant explicitly instead, in `.arcane/delegations.json`:
+
+```json
+{
+  "delegations": [
+    {
+      "id": "short-identifier",
+      "grantedBy": "operator (name)",
+      "grantedAt": "YYYY-MM-DD",
+      "scope": "What this delegation covers — be specific, not 'everything'",
+      "permittedActions": ["create-session-branches", "commit", "push", "..."],
+      "excludedActions": ["platform-settings-mutations", "..."],
+      "status": "active",
+      "revocation": "Edit or remove this entry and commit."
+    }
+  ]
+}
+```
+
+- **Explicit:** a structured, git-tracked file — not prose buried in an unrelated document.
+- **Listable:** `spell doctor` reads this file (when present) and reports every active delegation's
+  scope and exclusion list. A missing file is a silent pass — a repo with no ad hoc grants has nothing
+  to report.
+- **Revocable per repo:** revocation is the git-native act of editing or removing the entry and
+  committing — set `status` to `"revoked"` or delete the entry outright.
+- **Grants no new authority.** This mechanism does not permit anything `agent-policies.md` didn't
+  already allow in principle (human execution required absent an explicit grant) — it only makes an
+  existing kind of ad hoc grant explicit and discoverable instead of buried.
+- **No scaffold is shipped.** A delegation record is inherently repo-specific and starts empty for a
+  fresh install — there is nothing generic to seed.
+- **Does not replace the roster-based matrix.** A repo with an installed roster still uses per-agent
+  power levels for standing authority; this is the parallel, lighter-weight path for repos without one.
+
+---
+
 ## Agent-to-Agent Topology
 
 Spawn rights are configured per agent. Use a small number of orchestrators; keep most agents as leaf nodes that cannot spawn subagents.
