@@ -201,10 +201,12 @@ const COMPONENTS: RegistryComponent[] = [
   },
   {
     name: "spells-delivery",
-    description: "Pull-request lifecycle — open a PR, respond to review feedback",
+    description: "Pull-request lifecycle — open a PR, sync a stale one, respond to review feedback",
     files: [
       ".github/prompts/spell-create-pull-request.prompt.md",
       ".claude/commands/spell-create-pull-request.md",
+      ".github/prompts/spell-sync-pull-request.prompt.md",
+      ".claude/commands/spell-sync-pull-request.md",
       ".github/prompts/spell-address-review.prompt.md",
       ".claude/commands/spell-address-review.md",
     ],

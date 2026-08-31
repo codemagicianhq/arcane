@@ -27,6 +27,7 @@ Related spells:
 - `spell-commit-work` — land your work as Conventional-Commits commits before opening the PR.
 - `spell-ship` — the broader release flow that records the PR URL after this spell creates it.
 - `spell-address-review` — resolve reviewer feedback once the PR is open.
+- `spell-sync-pull-request` — the recovery path when Step 0.6's rebase guard hits a conflict.
 
 ## Arguments
 
@@ -60,7 +61,7 @@ Before enabling auto-complete/auto-merge or completing an existing PR, resolve `
 3. **Ensure the branch is on origin (upstream):** if `git rev-parse --abbrev-ref --symbolic-full-name @{u}` fails, the branch was never pushed — run `git push -u origin <branch>`. The provider CLIs can only open a PR for a branch that exists on the remote.
 4. **STOP** if the branch has no commits ahead of the target: `git log origin/<target>..HEAD --oneline` is empty → nothing to PR.
 5. Check for an existing **open** PR for this branch (provider-specific, Step 2). If one exists, print its URL and stop — never create duplicates.
-6. **Mandatory rebase on target (governance guard):** `git fetch origin` then `git rebase origin/<target>`. On clean rebase, `git push --force-with-lease` (only if the branch existed remotely before the rebase). On conflicts: **STOP**, list conflicting files, ask the user to resolve; never push a branch that will produce a merge conflict on the target (see git-conventions "🛑 Agent-mandatory pre-PR guard"). This step is not optional and is not skippable by calling a different PR-creation tool.
+6. **Mandatory rebase on target (governance guard):** `git fetch origin` then `git rebase origin/<target>`. On clean rebase, `git push --force-with-lease` (only if the branch existed remotely before the rebase). On conflicts: **STOP**, list conflicting files, ask the user to resolve **or run `spell-sync-pull-request`** — it draws the same mechanical-vs-ambiguous conflict line this guard doesn't attempt to, with a recoverable ref before it touches anything; never push a branch that will produce a merge conflict on the target (see git-conventions "🛑 Agent-mandatory pre-PR guard"). This step is not optional and is not skippable by calling a different PR-creation tool.
 7. **Auto-suggest `--docs-only`** (only if not already passed): if every changed file vs target is documentation/session files (`*.md`, `TODO.md`, `DECISIONS.md`, `journal/**`, `IDEAS.md`, `FEEDBACK.md`), print a one-line hint suggesting `--docs-only` and proceed with the standard path.
 
 ## Step 1 — Gather context

@@ -35,7 +35,7 @@ Workflow:
 2. **Sync with the target branch** — actually perform the sync, do not just assert it:
    - Run `git fetch origin` to get the latest refs.
    - Merge the target branch into the current branch (e.g. `git merge origin/<target>`).
-   - **On merge conflicts:** STOP and ask the user to resolve them. Do not attempt to auto-resolve.
+   - **On merge conflicts:** STOP and ask the user to resolve them, or run `spell-sync-pull-request` — it handles exactly this case, with a recoverable ref and an explicit mechanical-vs-ambiguous conflict boundary. Do not attempt to auto-resolve here.
    - After a clean merge (or once the user has resolved conflicts), re-run the full test suite and confirm it passes.
    - Push the synced branch (e.g. `git push`).
 
