@@ -341,9 +341,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     re-numbering without a note.
     - PR (3a) R9 branch/PR topology: **done** — [PR #119](https://github.com/codemagicianhq/arcane/pull/119)
       merged via rebase (`61499fb`), `v0.22.9`. `spell-commit-work` + `spell-create-pull-request`.
-    - PR (3b) R10 four adopters: **not started.**
+    - PR (3b) R10 four adopters: **done** — [PR #121](https://github.com/codemagicianhq/arcane/pull/121)
+      merged via rebase (`3f7af9d`), `v0.22.10`. `spell-review-batch` (flowchart), `spell-manifest`
+      (flowchart), `spell-full-cycle` (stateDiagram-v2), `spell-close-session` (gitGraph — `timeline`
+      rejected as Mermaid-experimental).
   - PR (4) Tier 3 R11: **not started.**
-  - Leave this checkbox unticked until PR (4) merges — 4 of 6 total PRs (including the precursor)
+  - Leave this checkbox unticked until PR (4) merges — 5 of 6 total PRs (including the precursor)
     done.
 - [ ] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
   Route: chain. Size M. Bump: yes. Prompt-only by its own constraints; must not shift the bold-colon
