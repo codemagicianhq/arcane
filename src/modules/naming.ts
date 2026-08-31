@@ -48,6 +48,30 @@ const ARCANOS_NAME_MAP: Record<string, string> = {
   "security-ops": "Custodio",
 };
 
+/**
+ * Arcanos epithets (naming-conventions.md's roster table) — bound to the
+ * PERSONA NAME, not the role archetype: "the Archmage" belongs to Merlin,
+ * not to "architecture-lead" itself. Deliberately not a field on the role
+ * YAML (src/assets/agents/*.yaml), which is naming-strategy-agnostic and
+ * reused by generic/random/custom naming — putting it there would force
+ * Arcanos-flavored text onto strategies designed to be epithet-less (the
+ * "generic role labels" option naming-conventions.md documents).
+ */
+const ARCANOS_EPITHET_MAP: Record<string, string> = {
+  "orchestrator": "the Maestro",
+  "architecture-lead": "the Archmage",
+  "fullstack-dev": "the Conjuror",
+  "qa-lead": "the Unmasker",
+  "devops": "the Stormcaller",
+  "frontend-dev": "the Illusionist",
+  "mobile-dev": "the Swift",
+  "research-analyst": "the Man Who Knows",
+  "marketing-strategist": "the Charmweaver",
+  "operations-comms": "the Herald",
+  "collaborator": "the Emissary",
+  "security-ops": "the Warden",
+};
+
 // ─── Random name pool ─────────────────────────────────────────────────────────
 
 /**
@@ -66,6 +90,8 @@ const RANDOM_NAME_POOL: string[] = [
 export interface NamingResult {
   definition: string;
   name: string;
+  /** Present only for the arcanos strategy — other strategies are deliberately epithet-less. */
+  epithet?: string;
 }
 
 /** Assigns short generic labels derived from each role. */
@@ -78,10 +104,11 @@ export function applyGenericNames(roleIds: string[]): NamingResult[] {
 
 /** Assigns Arcanos persona names (Kellar, Merlin, Lafayette, etc.). */
 export function applyArcanosNames(roleIds: string[]): NamingResult[] {
-  return roleIds.map((id) => ({
-    definition: id,
-    name: ARCANOS_NAME_MAP[id] ?? GENERIC_NAME_MAP[id] ?? id,
-  }));
+  return roleIds.map((id) => {
+    const name = ARCANOS_NAME_MAP[id] ?? GENERIC_NAME_MAP[id] ?? id;
+    const epithet = ARCANOS_NAME_MAP[id] ? ARCANOS_EPITHET_MAP[id] : undefined;
+    return epithet ? { definition: id, name, epithet } : { definition: id, name };
+  });
 }
 
 /**

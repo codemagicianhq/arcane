@@ -242,6 +242,8 @@ export interface AgentRosterEntry {
   name: string | null;
   /** OpenClaw agent ID (e.g. "lafayette", "main" for orchestrator) */
   id: string;
+  /** Naming-strategy-bound epithet (e.g. "the Archmage") — present only for arcanos naming. */
+  epithet?: string;
 }
 
 export interface OpenClawAgentConfig {

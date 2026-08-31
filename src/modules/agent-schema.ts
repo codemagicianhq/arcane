@@ -195,6 +195,7 @@ export function validateAgentRoster(value: unknown, source: string): AgentRoster
       requireString(item.definition, `roster[${index}].definition`, issues);
       if (item.name !== null) requireString(item.name, `roster[${index}].name`, issues);
       requireString(item.id, `roster[${index}].id`, issues);
+      if (item.epithet !== undefined) requireString(item.epithet, `roster[${index}].epithet`, issues);
     });
   }
 
