@@ -334,9 +334,16 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   - PR (2) R8 CLI `spell status` parity: **done** — [PR #117](https://github.com/codemagicianhq/arcane/pull/117)
     merged via rebase (`8f9e082`), `v0.22.8`. New `src/modules/diagram-generator.ts` (pure, sibling to
     `version-check.ts`); OQ2 resolved there (aligned text on a TTY, fenced diagram only when piped).
-  - PR (3) Tier 2 R9-R10: **not started.**
+  - PR (3) Tier 2 R9-R10 **split into two PRs** — found while implementing that R10's four adopters
+    (`spell-review-batch`, `spell-manifest`, `spell-full-cycle`, `spell-close-session`) each need a
+    genuinely different Mermaid diagram type for their own data shape, unlike R9's single reused
+    `gitGraph` template. This is now 6 total PRs, not 5; disclosed here rather than silently
+    re-numbering without a note.
+    - PR (3a) R9 branch/PR topology: **done** — [PR #119](https://github.com/codemagicianhq/arcane/pull/119)
+      merged via rebase (`61499fb`), `v0.22.9`. `spell-commit-work` + `spell-create-pull-request`.
+    - PR (3b) R10 four adopters: **not started.**
   - PR (4) Tier 3 R11: **not started.**
-  - Leave this checkbox unticked until PR (4) merges — 3 of 5 total PRs (including the precursor)
+  - Leave this checkbox unticked until PR (4) merges — 4 of 6 total PRs (including the precursor)
     done.
 - [ ] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
   Route: chain. Size M. Bump: yes. Prompt-only by its own constraints; must not shift the bold-colon
