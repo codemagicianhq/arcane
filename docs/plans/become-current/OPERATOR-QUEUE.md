@@ -15,17 +15,28 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   check hard-locks every PR (`current_user_can_bypass: "never"`).
 - **Preconditions (hard):** BC-01 merged; the `Review round clear` job has reported **green on at
   least one live PR** (verify in the PR's checks tab or `gh pr checks`).
-- **Command** (adds to the existing two contexts; verify current state first):
+  **Satisfied 2026-08-31** — both green on [PR #88](https://github.com/codemagicianhq/arcane/pull/88)
+  (`gh pr checks 88`: `Review round clear  pass  17s`) before merge. Still your call to apply —
+  platform-settings mutation is outside the delegation grant regardless of precondition status.
+- **Command** (full-payload PUT — a partial PUT drops the ruleset's other rules, per decision 1):
+
+  ```bash
+  gh api -X PUT repos/codemagicianhq/arcane/rulesets/18841659 \
+    --input docs/plans/become-current/q-001-ruleset-after.json
+  ```
+
+  Verify afterward rather than trusting the PUT response:
 
   ```bash
   gh api repos/codemagicianhq/arcane/rulesets/18841659 --jq '.rules[] | select(.type=="required_status_checks").parameters.required_status_checks'
   ```
 
-  Then apply the PUT the BC-01 session will append here verbatim once the job name is final
-  (it must include ALL rules of the ruleset — a partial PUT drops the others; the session
-  prepares the full JSON payload file).
-- **Rollback:** re-PUT the saved pre-change ruleset JSON (the BC-01 session attaches it here).
-- **Status:** waiting on BC-01.
+  Expect three contexts: `Lint, typecheck, test, build`, `PR branch is rebased on target`,
+  `Review round clear`.
+- **Rollback:** `gh api -X PUT repos/codemagicianhq/arcane/rulesets/18841659 --input docs/plans/become-current/q-001-ruleset-before.json`
+  — the pre-change ruleset, captured live via `gh api repos/codemagicianhq/arcane/rulesets/18841659`
+  on 2026-08-31 before this entry was updated.
+- **Status:** ready — preconditions met. Awaiting your decision to apply.
 
 ## Q-002 — Decide: re-enable `allow_auto_merge`
 
