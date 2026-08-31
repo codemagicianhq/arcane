@@ -14,8 +14,29 @@ export interface AdrReferenceFinding {
     file: string;
     line: number;
     reference: string;
-    reason: "missing" | "malformed";
+    reason: "missing" | "malformed" | "cross-repo-hazard";
 }
+
+/**
+ * ARC-NNN and EF-NN identify records that exist only in THIS repo's own
+ * DECISIONS.md / docs/intake/ -- neither ships. `src/assets/DECISIONS.md`
+ * (what a consumer actually receives via `spell init`) is an empty starter
+ * template for the *consumer's own* decisions, not a copy of Arcane's.
+ * A wiki-link or relative-path link to either from shipped content either
+ * fails to resolve once installed, or worse, silently resolves to the
+ * wrong document (the consumer's own DECISIONS.md) -- confirmed live
+ * 2026-08-31 (BC-06): four real instances found this way, including two
+ * this repository's own spell-review/spell-review-batch prompts had
+ * shipped. A full `https://` canonical-repo URL is the only safe form; a
+ * bare, unlinked mention (no brackets at all) is also safe -- the rule's
+ * own "cite as plain text" fallback -- and is deliberately not flagged.
+ */
+const CROSS_REPO_HAZARD_PATTERNS: RegExp[] = [
+    // Wiki-link to this repo's own DECISIONS.md, e.g. [[DECISIONS#ARC-035|...]]
+    /\[\[DECISIONS#(ARC-\d+|EF-\d+)/g,
+    // Non-https markdown link to DECISIONS.md, e.g. [ARC-035](../../DECISIONS.md#...)
+    /\[(ARC-\d+|EF-\d+)\]\((?!https?:\/\/)[^)]*DECISIONS\.md/g,
+];
 
 async function listFiles(root: string): Promise<string[]> {
     const entries = await readdir(root, { withFileTypes: true });
@@ -47,6 +68,16 @@ export async function checkDistributedAdrReferences(
                     const reason = match[1]!.length === 3 ? "missing" : "malformed";
                     if (reason === "missing" && declared.has(referenceId)) continue;
                     findings.push({ file, line: index + 1, reference: referenceId, reason });
+                }
+                for (const pattern of CROSS_REPO_HAZARD_PATTERNS) {
+                    for (const match of line.matchAll(pattern)) {
+                        findings.push({
+                            file,
+                            line: index + 1,
+                            reference: match[1]!,
+                            reason: "cross-repo-hazard",
+                        });
+                    }
                 }
             }
         }

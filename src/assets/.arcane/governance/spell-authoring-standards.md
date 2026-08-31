@@ -15,7 +15,13 @@ against a consistent bar. This is the spell-prompt analogue of [[product-excelle
 grades PRDs, not prompts). It is an **authoring-time standard** — a checklist for contributors writing
 or reviewing spells. It is **not** meant to be read at runtime by the spells it grades.
 
-See [ARC-014](../../../DECISIONS.md#arc-014) for the decision that established this standard.
+See [ARC-014](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts)
+for the decision that established this standard. **Full canonical URL, not a same-repo
+wiki-link** (corrected 2026-08-31, BC-06) — this file ships to consumer repos, and
+`DECISIONS.md` does not: `src/assets/DECISIONS.md` (what consumers actually receive via
+`spell init`) is an empty starter template for the *consumer's own* decisions, so a
+same-repo wiki-link to a specific ARC id would resolve to the wrong document once
+installed, not simply fail to resolve.
 
 ## The Spell Quality Rubric
 

@@ -567,13 +567,15 @@ See also: [Agent Workflow — Sync with main before opening a PR](#agent-workflo
 | **Description**    | Must include: summary of changes, rationale, verification steps, and a linked work item ID if applicable                                                                                                                                     |
 | **Pre-PR sync**    | **Mandatory rebase on latest `origin/<target>` before pushing.** See [🛑 Agent-mandatory pre-PR guard](#-agent-mandatory-pre-pr-guard) above — this applies even when opening PRs via raw `az repos pr create` / `gh pr create` / MCP tools. |
 | **Branch cleanup** | After merge, delete the source branch (local and remote).                                                                                                                                                                                    |
-| **PR link format** | All PR references in agent output should be clickable markdown links to the PR, not a bare `PR #NNN`.                                                                                                                                        |
+| **PR link format** | All PR references in agent output **must** be clickable markdown links to the PR, not a bare `PR #NNN`.                                                                                                                                     |
+| **Doc-ID link format** | The same rule extends to `ADR-NNN`/`ARC-NNN`/`EF-NN`/journal entries/named governance docs — never a bare ID. See `.github/instructions/agent-output.instructions.md` → Doc-ID Link Format for the full rule and required formats per context. |
 
 ### Agent PR Workflow
 
 1. **Create a work item** (if one doesn't exist) using `spell-suggest-feature` or `spell-bug`.
 2. **Open PR** with proper title, description, and work-item link.
-3. **Notify the human** through your configured channel with: `[PR #{number}] {repo} — {title} (#{workItemId})`.
+3. **Notify the human** through your configured channel with a clickable link, not a bare number:
+   `[PR #{number} — {title}]({url}) — {repo} (#{workItemId})`.
 4. **Address review feedback** if a reviewer requests changes.
 5. **After merge**, delete the branch (local + remote) and confirm cleanup.
 

@@ -113,12 +113,12 @@ See [[agents/installation|Runtime Installation]].
 
 ### Step 3.3 — Agent Git Identity Setup
 
-Every agent that will produce commits for this business must have a registered Git identity **before making its first commit**. See [[governance/git-conventions#agent-attribution-model|Git Conventions — Agent Attribution]].
+Every agent that will produce commits for this business must have a registered Git identity **before making its first commit**. See [[git-conventions#agent-attribution-model|Git Conventions — Agent Attribution]].
 
 For each agent assigned to this business:
 
 1. **Confirm persona name** is registered in [[naming-conventions|Naming Conventions]] agent roster.
-2. **Confirm Git identity** exists in the registered identities table in [[governance/git-conventions#agent-email-convention|Git Conventions]].
+2. **Confirm Git identity** exists in the registered identities table in [[git-conventions#agent-email-convention|Git Conventions]].
 3. **Add agent to `.mailmap`** in every repo the agent will commit to:
    ```
    {AGENT_NAME} <{AGENT_EMAIL}>
