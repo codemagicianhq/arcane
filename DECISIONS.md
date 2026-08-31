@@ -57,6 +57,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-036](#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)       | Generated State Diagrams: Deterministic Mermaid for Computed Spell State       | 2026-08-30 | Accepted   |
 | [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) | Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop | 2026-08-31 | Proposed   |
 | [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) | Content-Preserving Updates and Vendor-Neutral Governance Content | 2026-08-31 | Proposed   |
+| [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Proposed   |
 
 ---
 
@@ -1889,3 +1890,124 @@ in a CI/CD standards file, not a naming-conventions file.
   it — rejected once decision 4's direct comparison showed the two scopes don't actually overlap;
   presenting a false subsumption would have left `operator identity`/`provider coordinates`/`repository
   lists` looking resolved when nothing in this ADR touches them.
+
+---
+
+## ARC-039 — Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments
+
+**Date:** 2026-08-31
+**Status:** Proposed
+**Related:** [ARC-027](#arc-027--registry-driven-self-host-parity-guard) (the parity model this ADR adds a third axis to, not replaces), [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) (EF-24's actually-shipped fix — this ADR is a related but distinct architectural direction for the same underlying problem class, not a re-litigation of EF-24, which is already closed)
+**Sources:** IDEAS.md:13 (I5, 2026-08-02, "spell compiler, not spell runtime") and IDEAS.md:23 (I15, 2026-08-21, dual-copy elimination) — a research-first route, not straight to implementation
+
+**Context:**
+
+I5 proposed that the CLI become a spell *compiler*: `spell render <name>` would print a fully resolved
+prompt to stdout, with `/spell-*` becoming a thin shim, and render-time injection of `.arcane.json`
+config, governance paths, business/subject roots, and validated roster identity structurally
+preventing an agent from fabricating those values. I5 itself named the central risk: `spell-authoring-
+standards.md`'s D2 Gold bar requires a spell to work in a vanilla repo with no Arcane context files
+present, and baking repo-specific runtime values into rendered text cannot satisfy that when the values
+don't exist yet. I15 gave a concrete driver: "66 hand-maintained files" (33 `.claude/commands/spell-
+*.md` + 33 `.github/prompts/spell-*.prompt.md`) that ARC-027's parity guard never compares against each
+other — it keeps each client format in lockstep with its own `src/assets/` source, but does nothing
+about the two client formats drifting from *each other*.
+
+**I15's own premise needs correcting before design starts, checked directly rather than assumed.**
+Every `.claude/commands/spell-*.md` file inspected (all 36 present today, not 33 — the count grew since
+I15 was written) is exactly 9 lines and already a thin shim: a one-line title, two boilerplate sentences
+naming the spell, and a literal Claude Code `@`-file-inclusion directive
+(`@.github/prompts/spell-<name>.prompt.md`) that pulls the real workflow content in at invocation time.
+**These are not two independently-maintained full copies — the body already lives in exactly one place,
+and Claude Code's own include mechanism already prevents body-content drift.** The actual, narrower gap
+is that these 36 near-identical stub files are still individually hand-authored rather than generated,
+so a typo, a stale title after a rename, or an inconsistent pointer path is possible — a real but much
+smaller problem than "66 files can diverge," which described a risk that does not exist for body
+content today.
+
+**Decision:**
+
+1. **Formalize `.github/prompts/spell-*.prompt.md` as each spell's sole authored source, and generate
+   the `.claude/commands/spell-*.md` stub from its frontmatter** (`name`, `description`) via a new
+   `renderClaudeCommandStub()` function — structurally the same pattern `src/modules/agent-generator.ts`
+   already uses successfully for agent definitions (one canonical source, multiple client-specific
+   `render*()` functions: `renderCopilotAgent`, `renderIdentity`, `renderSoul`, `renderTools`), applied
+   to a second content class instead of inventing a new mechanism. Wire this into the existing
+   self-host-parity pipeline as a **new third parity axis** — stub-content-vs-prompt-frontmatter — which
+   ARC-027 explicitly does not check today. This closes I15's actual, verified gap directly.
+2. **Extract genuinely shared prose into named, canonical fragments assembled at build time**, for
+   content already proven to drift when hand-copy-pasted across multiple spell bodies. Concrete,
+   already-experienced instance: the `tracking_mode`/`external_provider` resolution block appears,
+   worded almost identically, in `spell-open-session`, `spell-plan`, `spell-scope`,
+   `spell-suggest-feature`, and `spell-full-cycle` — five files this session's own BC-09 had to edit
+   in lockstep by hand to keep consistent. A small library of named fragments (e.g. under a new
+   `src/assets/.github/prompts/_fragments/` directory, never shipped standalone) gets inlined into each
+   consuming prompt at the same build step decision 1 runs at, the same "compute it, don't restate it"
+   principle IDEAS.md's own 2026-08-02 entry already argued for the compiler, applied without needing
+   runtime resolution at all.
+3. **Explicitly do not pursue runtime operator-config injection — the part of I5's vision this ADR
+   scopes out, not silently drops.** Decisions 1–2 fully address I15's stated drift problem and this
+   session's own directly-experienced cross-file copy-paste pain, using only build-time generation of
+   *static* structure (stub files, shared fragments) — never a repo-specific runtime *value* (a
+   `tracking_mode` setting, a roster identity, a resolved `business_root`) baked into emitted text. That
+   is deliberate: such a value can be absent entirely (I5's own named vanilla-repo case) or can change
+   between whenever a render happened and whenever the spell is actually invoked, and baking it in
+   either breaks D2 Gold or creates exactly the two-sources-of-truth/version-skew risk I5's own text
+   flagged as unresolved. Every rendered prompt keeps saying "resolve X from `.arcane.json`; ask if
+   unset" in prose, exactly as today's hand-written prompts do — nothing about *how* a spell resolves
+   repo state changes under this decision, only how its *boilerplate structure* is produced.
+4. **No `spell render` CLI subcommand, and no client-facing behavior change.** Because decisions 1–2 are
+   build-time generation (the same model `copy-assets.ts`/`self-host-parity.ts` already run at Arcane's
+   own release time), there is no runtime rendering step to expose. `/spell-*` remains exactly what it
+   is today — a real file the client reads directly — for the `.github/prompts/` side, and becomes a
+   *generated* real file (not a live include-at-runtime shim) for the `.claude/commands/` side. Both
+   are ordinary, already-finished files at the point either client ever sees them.
+5. **This does not fully deliver I5's most ambitious claim, and that is disclosed rather than
+   presented as achieved.** I5 hoped render-time injection would structurally defuse EF-02, EF-08,
+   EF-14, EF-19, EF-23, EF-29, and fabricated author/model trailers — those are all cases of an agent
+   getting a *runtime* fact wrong, which only the runtime-injection approach decision 3 rules out could
+   have structurally prevented. This ADR does not claim to close any of those findings; it closes I15's
+   drift finding and generalizes a pattern this repository has now proven three times over (agent
+   definitions via `agent-generator.ts`; tracking providers via `ExternalProvider`/ARC-011/032/BC-09;
+   CI/CD vendor profiles via ARC-038) to a fourth application, while leaving the harder, genuinely
+   unresolved runtime-injection question open for whoever revisits it with a concrete answer to the D2
+   Gold tension I5 itself could not resolve.
+
+**Open questions (deferred to BC-32's implementation, not blocking acceptance of the shape above):**
+
+- Exact fragment syntax for decision 2 (a simple marker comment the generator substitutes, versus a
+  more general include directive) and where the fragment library physically lives.
+- Whether decision 1's stub generator should also validate that the `.claude/commands/` filename and
+  the `.github/prompts/` filename agree (both derived from the same spell name) as a fourth parity
+  check, or whether that is already implied by generating one from the other.
+- Whether a future, separate ADR should revisit runtime operator-config injection specifically for the
+  fabricated-trailer problem I5 named, now that this ADR has settled the build-time half — this ADR
+  takes no position on whether that is worth pursuing, only that it is out of this scope.
+
+**Reasoning:**
+
+- Verifying I15's "66 files" claim against the real files, rather than accepting it, found the actual
+  problem is an order of magnitude smaller than described (36 nine-line stubs, not 36 independently
+  hand-maintained full bodies) — sizing the fix to the real problem instead of the one originally
+  described avoids over-building a rendering system for a drift class that mostly does not exist.
+- Reusing `agent-generator.ts`'s proven one-source/multiple-`render*()` shape for a second content
+  class is smaller and lower-risk than a new "spell render" runtime feature, and inherits a pattern
+  already exercised in production rather than starting from zero.
+- Naming decision 3's exclusion explicitly, rather than letting BC-32 quietly narrow scope during
+  implementation, keeps this ADR honest about what it does and does not solve — matching how ARC-034
+  names its own hook as "deliberately not tamper-proof" instead of overclaiming.
+
+**Rejected alternatives:**
+
+- **Build the full `spell render <name>` runtime-injection compiler as I5 originally envisioned** —
+  rejected for this ADR's scope: the D2 Gold vanilla-repo tension I5 itself named has no resolution
+  that doesn't either violate D2 Gold or accept a real version-skew risk, and the concrete drift
+  problem (I15) does not need it to be solved.
+- **Leave the `.claude/commands/spell-*.md` stubs hand-authored, since they are "only" 9 lines each** —
+  rejected: 36 near-identical hand files is still 36 places a rename or a copy-paste slip can produce a
+  stale title or a broken `@`-include path, and generating them costs little once decision 1's function
+  exists.
+- **Treat commands-vs-prompts drift as already solved and do nothing** — rejected: the `@`-include
+  mechanism prevents *body* drift, but the stub files themselves are still hand-authored and
+  unvalidated; a real, if narrow, gap remains worth closing mechanically rather than by continued
+  manual care.
