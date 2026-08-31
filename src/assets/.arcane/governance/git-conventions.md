@@ -376,6 +376,8 @@ git branch -d type/old-topic            # delete local branch
 git push origin --delete type/old-topic  # delete remote branch (safety net; ignore 'does not exist' errors if already auto-deleted)
 ```
 
+**If `git branch -d` refuses with `error: the branch '<branch>' is not fully merged`, do not assume the branch is genuinely unmerged and do not reach for `-D` on that reading alone** — this repo's own sanctioned Rebase-and-fast-forward strategy (and any pre-ARC-009 squash merge) rewrites commit SHAs, so a fully-landed branch is permanently invisible to `-d`'s ancestry check. See **Content-Verified Branch Deletion** below for the actual procedure.
+
 **From a linked worktree, do not run the block above** (ARC-028 R8). `git checkout main` fails with
 `fatal: 'main' is already used by worktree at <path>` when the primary checkout holds it, and
 `git branch -d` fails with `error: cannot delete branch '<branch>' used by worktree at <path>` for
@@ -397,6 +399,19 @@ refusing to delete a worktree-attached one, are the enforcement ARC-028 R3/R7 re
 
 This applies to all actors — humans, interactive tools (Copilot, Claude), and autonomous agents. The `spell-commit-work` and `spell-close-session` prompts enforce this check.
 
+### Content-Verified Branch Deletion (TODO.md merged-branch-cleanup finding)
+
+Ancestry (`git branch --merged`, plain `git branch -d`) is not a reliable "is this landed?" test on this repo. Two of this repo's own sanctioned states defeat it identically: **Rebase-and-fast-forward** (ARC-009 §7) and any **pre-ARC-009 squash merge** both rewrite commit SHAs, so a fully-landed branch stays permanently invisible to `--merged` and refused by `-d` — not a rare edge case; every branch merged the sanctioned way hits this. Verify by content instead, for any local branch except `<trunk>` and any branch currently attached to another worktree (`git worktree list`):
+
+1. **Fetch first.** `git fetch <remote> --prune` — a stale local `<trunk>` under-counts and produces a false "unmerged" reading.
+2. **Prefer the provider's own record when a PR exists.** `gh pr list --head <branch> --state all` (or `az repos pr list --source-branch <branch> --status all`) — a confirmed `MERGED`/`completed` status is the fastest, most authoritative signal and needs no further check.
+3. **Otherwise, check patch-id equivalence:** `git cherry <remote>/<trunk> <branch>`. Every `-`-prefixed line is patch-id-identical to a commit already on `<trunk>` — safe. A `+`-prefixed line means "no identical patch found," not "definitely unmerged": a squash merge, or independent re-authoring of the same change, produces a *different* patch-id for *identical resulting content*. Before concluding a `+` commit is genuinely unmerged, check whether its actual content already exists on `<trunk>` (search for the added text, or diff the specific file). This is not hypothetical — confirmed live 2026-08-31 (BC-03): two docs-only commits on one branch both showed `+` via `git cherry`, and both were byte-identical to content that had already landed on `<trunk>` through separate, differently-authored commits.
+4. **Delete with `-D`, never plain `-d`**, only branches with **zero** real unmerged content (confirmed by step 2 or step 3) — `-d` will refuse on a rewritten SHA even when the branch is fully landed, which is the whole reason this section exists. Then `git push <remote> --delete <branch>` (ignore "does not exist" if already auto-deleted).
+5. **A branch that fails verification is a finding to surface, not an obstacle.** Report it with a one-line summary of what its unmerged commit(s) actually contain, so a human can decide land vs. abandon. Do not delete it, and do not silently drop it from the report either — in a 2026-08-21 field test, content verification cleared 17 of 18 candidate branches as landed and caught the 1 genuinely unmerged branch a naive `-D` sweep would have destroyed.
+6. **Idempotent by construction:** an already-deleted branch is simply absent from the next sweep's candidate list; a branch that failed verification is safely re-checked (and re-reported if still unresolved) on every run rather than being deleted or forgotten.
+
+Apply the Same-Vantage-Point Check below before any deletion if this repository or its linked worktrees might be reached through more than one filesystem view. `spell-close-session` runs this as an idempotent sweep every session; `spell-open-session`'s stale-branch check uses the same procedure for its read-only candidate list.
+
 ### Same-Vantage-Point Check (EF-33 / ARC-028 R7)
 
 `git worktree list` can **truthfully** report a live, healthy linked worktree as `prunable` when read through a cross-filesystem bridge — a Linux-side mount of a Windows host, a remote-mounted volume, a container bind-mount, any path-translation layer between the reading process and the repository's actual owning environment. The registered absolute path simply doesn't resolve from that vantage point, even though the directory exists and is valid from the machine that owns it. Nothing in Git's own output distinguishes "confirmed absent" from "not resolvable from this process's filesystem view" — both render identically as `prunable`. (A separate, unconditional hazard applies to `git branch --merged` regardless of vantage point — see the note at the end of this section; do not assume that one only matters when a bridge is in play.)
@@ -410,7 +425,7 @@ This applies to all actors — humans, interactive tools (Copilot, Claude), and 
 
 This is documented as a standing operational caution, not a code-level gate: EF-33's own intake report frames the underlying defect as cross-machine/cross-mount filesystem visibility, which no single CI runner can reproduce — the confirmation step above must be followed manually by whichever human or agent is about to run the destructive command. Confirmed as a live near-miss on 2026-08-03: a Linux-side read reported eight healthy linked worktrees `prunable`; the same repository read from Windows (their actual owning environment) showed zero prunable entries, and `git worktree prune -v` there removed nothing.
 
-**Unconditional, vantage-point-independent note on branch deletion:** `git branch --merged` can also report a fully-landed branch as unmerged — or the reverse confusion, a branch never actually reviewed but ancestry-visible — because Git's rebase-and-fast-forward and squash merge strategies (both sanctioned by this repo's own merge-strategy table above) rewrite commit SHAs, defeating ancestry-based detection. This has nothing to do with filesystem bridges — it fires identically on a single machine with no mount involved. See the ancestry-vs-content-verification finding in `TODO.md`'s PR Workflow section for the full mechanism; verify branch content before deleting regardless of what vantage-point confidence steps 1-4 above establish.
+**Unconditional, vantage-point-independent note on branch deletion:** `git branch --merged` can also report a fully-landed branch as unmerged, because Git's rebase-and-fast-forward and squash merge strategies (both sanctioned by this repo's own merge-strategy table above) rewrite commit SHAs, defeating ancestry-based detection. This has nothing to do with filesystem bridges — it fires identically on a single machine with no mount involved. See **Content-Verified Branch Deletion** above for the actual procedure; verify branch content before deleting regardless of what vantage-point confidence steps 1-4 above establish.
 
 ### ADO PR Lifecycle — Complete Command Reference
 
@@ -476,7 +491,8 @@ git push origin --delete <branch>         # delete remote branch (safety net —
 | `gh pr create` not found                                                       | `gh` CLI not installed                | Use `az repos pr create`                                                        |
 | `creatorVoteCounts` is false on branch policy                                  | Vote registers but PR still blocked   | A second human must approve via ADO web UI                                      |
 | `az repos pr update --status completed` returns `status: active` without error | PR silently not merged                | Add `--squash false` to the command; the flag triggers the merge path correctly |
-| `git branch -d <branch>` fails after merge                                     | Branch is attached to a worktree      | Skip local delete; run remote delete + prune                                    |
+| `git branch -d <branch>` fails after merge, `error: cannot delete branch ... used by worktree` | Branch is attached to a worktree      | Skip local delete; run remote delete + prune                                    |
+| `git branch -d <branch>` fails after merge, `error: ... is not fully merged`   | Rebase/squash rewrote the branch's SHAs — see Content-Verified Branch Deletion above | Verify by content (`git cherry` or PR status), then `-D` only what passes        |
 | `git push origin --delete <branch>` fails with missing ref                     | Branch already deleted remotely       | Treat as non-fatal and continue                                                 |
 
 ### Branch Lifecycle

@@ -48,17 +48,64 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Rollback:** same PATCH with `false`.
 - **Status:** waiting on Q-001 + your call.
 
-## Q-003 — Five content-holding local branches: land or abandon
+## Q-003 — Four content-holding local branches: land or abandon
 
-- **What:** decide per branch; each holds commits whose content is NOT on main
-  (`git cherry` verified 2026-08-30):
-  `chore/todo-update-preserve-user-content` (2) · `docs/runnable-fences-selfhosted-agents` (1) ·
-  `docs/session-close-2026-08-01` (2) · `sessions/2026-08-02-provider-neutral-close` (1) ·
-  `sessions/2026-08-15-queue-failfast-doclink-ideas` (2).
+- **What:** decide per branch. Content reports below (BC-03, 2026-08-31, re-verified live against a
+  freshly-fetched `origin/main` — not trusted from the 2026-08-30 list above, which named a fifth
+  branch this report clears; see note at the end).
+
+  **`chore/todo-update-preserve-user-content`** (2 unlanded commits, dated 2026-07-19/20) —
+  **recommend: abandon.** `01c4985` redacts a consumer-repo name and an agent alias from a TODO.md
+  that has since been rewritten many times over; `f977a00` adds a "compliance coverage" backlog
+  item whose exact text is **already present verbatim** in current `TODO.md` (added independently,
+  different commit). The privacy concern is superseded by tooling that didn't exist on 2026-07-19
+  (`org-token-lint.ts` / ARC-031, which now scans the whole repo on every build).
+
+  **`docs/runnable-fences-selfhosted-agents`** (1 unlanded commit, 2026-07-25) —
+  **recommend: land, not abandon.** Adds two genuinely new, well-evidenced governance rules,
+  confirmed absent from current `cicd-standards.md` / `agent-output.instructions.md` (zero hits for
+  "runnable" in either file): a self-hosted-CI-agent incident checklist (sleep disabled, hosted
+  fallback pool, network/tooling parity — cites a real 2026-07-25 deploy incident) and a "Runnable
+  Code Fences Are Commitments" rule (chat UIs render a Run button on shell-tagged fences; reference/
+  undo/cleanup snippets must use a non-runnable fence instead) — cites a real incident where a
+  "revert anytime" runnable fence got clicked and deleted a prod DB firewall rule twice. This is real
+  content sitting on an orphaned branch, not stale duplication.
+
+  **`docs/session-close-2026-08-01`** (2 of 8 commits unlanded; the other 6 already verified
+  patch-id-landed) — **recommend: abandon, low confidence either way.** The 2 unlanded commits are
+  journal-narrative edits to `journal/2026-08-01-intake-batch-001-closure.md`, which already exists
+  on `main` with real content (landed via the branch's other 6 commits or a separate route — not
+  fully traced). Low material value even if landed: a journal is a narrative record, not code or a
+  decision; worth a skim, not worth the archaeology to fully reconcile wording.
+
+  **`sessions/2026-08-02-provider-neutral-close`** (1 unlanded commit) —
+  **recommend: abandon — this is EF-34 contamination, not real work.** The commit's own message,
+  `test: seed main`, is the literal fixture-seeding string `test/version-bump-gate.test.ts`'s own
+  git helper writes (`runGit(dir, ["commit", "-m", "test: seed main"])`). Its diff (7 files
+  including `package.json`, `package-lock.json`, `spell-close-session.prompt.md`, and a new test
+  file) is a snapshot of unrelated in-progress work that a GIT_DIR-leaking fixture run committed to
+  this REAL branch instead of an isolated temp dir — confirmed: `test/prompt-session-branch-gate.test.ts`
+  (the "new" file in this diff) already exists on `main` today via legitimate history. Same date
+  (2026-08-02) and same signature as the five already-quarantined `backup/*` branches from this
+  incident — this is a sixth, previously undocumented instance. Worth a cross-reference note on
+  EF-34's own file, not a TODO item on its own.
+
+  **Cleared without needing your call** (verified fully landed, already deleted by this session):
+  `docs/discoverability-session-journal` (0 unmerged commits) and, from the 2026-08-30 list above,
+  `sessions/2026-08-15-queue-failfast-doclink-ideas` — `git cherry` flagged 2 commits `+`, but both
+  turned out to be byte-identical to content that had *already* landed on `main` through separate,
+  differently-authored commits (a squash/independent-re-authoring patch-id false-negative, not real
+  unmerged content — see `git-conventions.md`'s new Content-Verified Branch Deletion section for the
+  mechanism this surfaced). Also deleted: the remote-only `origin/docs/spell-full-cycle-coordination-gaps`
+  (no local copy existed), confirmed `MERGED` via `gh pr list --head ... --state all` and by content
+  match against current `TODO.md`.
+
+  **Noted, not actionable from here:** `sessions/2026-08-15-ef34-gitdir-contamination` (the branch
+  checked out in the `arcane-arc028` linked worktree) is also fully landed by content (0 unmerged
+  commits) — but ARC-028 R7 means only a session working *in* that worktree may remove it.
+
 - **Why:** deletion of content-holding branches is outside the grant.
-- **Preconditions:** BC-03 will append a per-branch content report (what the commits contain, land
-  recommendation) before you decide. The 5 `backup/*` branches are deliberate and untouched.
-- **Status:** waiting on BC-03's reports, then your per-branch call.
+- **Status:** ready for your land/abandon call on the four branches above.
 
 ## Q-004 — Accept/revise/reject ADR: ARC-029 (Best-Practice-First Solution Selection)
 

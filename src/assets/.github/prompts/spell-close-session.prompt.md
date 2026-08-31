@@ -173,7 +173,7 @@ Rules:
    - If this worktree was created with `--detach` there is no branch to name; report the path and the detached HEAD sha instead.
    - Verify the merge landed with `git log --oneline -3 <remote>/<trunk>` (the remote-tracking ref), since local `<trunk>` is not checked out here to fast-forward.
 
-   - Common to both: if stale local branches exist (merged or older than 7 days), list them and suggest cleanup.
+   - **Common to both: run the idempotent, content-verified branch sweep** (TODO.md's merged-branch-cleanup finding) — not merely a list-and-suggest step. For every local branch except `<trunk>` and any branch attached to another worktree, apply [Content-Verified Branch Deletion](../../.arcane/governance/git-conventions.md#content-verified-branch-deletion-todomd-merged-branch-cleanup-finding) (git-conventions.md): fetch first, prefer a confirmed PR-merged status when one exists, otherwise verify by `git cherry` patch-id equivalence *and* a resulting-content check for `+`-flagged commits (a squash or independently re-authored commit can carry already-landed content under a different patch-id). Actually delete (`-D`, never `-d`) every branch that verifies as fully landed, local and remote. Report — do not delete — any branch with genuine unmerged content; a one-line summary of what it holds is enough for a human to decide land vs. abandon. Apply the Same-Vantage-Point Check (EF-33) before any deletion if the repository or its linked worktrees might be reached through more than one filesystem view. Safe to run every session: an already-clean branch list is simply a no-op.
    - See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Post-Merge Cleanup section.
 
 11. **Return a concise closure report.**
