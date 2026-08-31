@@ -230,6 +230,114 @@ describe("spell status — handler", () => {
     const allOutput = logSpy.mock.calls.map((c) => c[0] as string).join("\n");
     expect(allOutput).not.toContain("spell update available");
   });
+
+  // ─── Version-drift diagram (ARC-036 R8) ────────────────────────────────────
+
+  describe("version-drift diagram", () => {
+    let isTTYDescriptor: PropertyDescriptor | undefined;
+
+    beforeEach(() => {
+      isTTYDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    });
+
+    afterEach(() => {
+      if (isTTYDescriptor) {
+        Object.defineProperty(process.stdout, "isTTY", isTTYDescriptor);
+      } else {
+        delete (process.stdout as { isTTY?: boolean }).isTTY;
+      }
+    });
+
+    function setTTY(value: boolean) {
+      Object.defineProperty(process.stdout, "isTTY", {
+        value,
+        configurable: true,
+      });
+    }
+
+    it("shows no diagram and no drift text when axis A and axis B both match (guard)", async () => {
+      setTTY(true);
+      await writeManifest(tmpDir, {
+        version: PACKAGE_VERSION,
+        components: [{ name: "testing-standards", files: ["x.md"], installedVersion: PACKAGE_VERSION }],
+      });
+      vi.mocked(versionCheck.checkForUpdate).mockResolvedValue({
+        current: PACKAGE_VERSION,
+        latest: PACKAGE_VERSION,
+        updateAvailable: false,
+      });
+
+      await runStatus(tmpDir, PACKAGE_VERSION);
+
+      const allOutput = logSpy.mock.calls.map((c) => c[0] as string).join("\n");
+      expect(allOutput).not.toContain("Version drift");
+      expect(allOutput).not.toContain("gitGraph");
+    });
+
+    it("shows no diagram when the npm check failed (latest is null)", async () => {
+      setTTY(true);
+      await writeManifest(tmpDir, {
+        version: "0.14.0",
+        components: [{ name: "testing-standards", files: ["x.md"], installedVersion: "0.14.0" }],
+      });
+      vi.mocked(versionCheck.checkForUpdate).mockResolvedValue({
+        current: PACKAGE_VERSION,
+        latest: null,
+        updateAvailable: false,
+        error: "Network timeout",
+      });
+
+      await runStatus(tmpDir, PACKAGE_VERSION);
+
+      const allOutput = logSpy.mock.calls.map((c) => c[0] as string).join("\n");
+      expect(allOutput).not.toContain("Version drift");
+      expect(allOutput).not.toContain("gitGraph");
+    });
+
+    it("shows plain aligned text, not a fenced diagram, on a TTY", async () => {
+      setTTY(true);
+      await writeManifest(tmpDir, {
+        version: "0.14.0",
+        components: [{ name: "testing-standards", files: ["x.md"], installedVersion: "0.14.0" }],
+      });
+      vi.mocked(versionCheck.checkForUpdate).mockResolvedValue({
+        current: PACKAGE_VERSION,
+        latest: "0.22.1",
+        updateAvailable: true,
+      });
+
+      await runStatus(tmpDir, PACKAGE_VERSION);
+
+      const allOutput = logSpy.mock.calls.map((c) => c[0] as string).join("\n");
+      expect(allOutput).toContain("Version drift:");
+      expect(allOutput).toContain("repo-files:    0.14.0");
+      expect(allOutput).toContain(`installed-cli: ${PACKAGE_VERSION}`);
+      expect(allOutput).toContain("latest (npm):  0.22.1");
+      expect(allOutput).not.toContain("```mermaid");
+      expect(allOutput).not.toContain("gitGraph");
+    });
+
+    it("shows the fenced gitGraph diagram, not text, when piped (not a TTY)", async () => {
+      setTTY(false);
+      await writeManifest(tmpDir, {
+        version: "0.14.0",
+        components: [{ name: "testing-standards", files: ["x.md"], installedVersion: "0.14.0" }],
+      });
+      vi.mocked(versionCheck.checkForUpdate).mockResolvedValue({
+        current: PACKAGE_VERSION,
+        latest: "0.22.1",
+        updateAvailable: true,
+      });
+
+      await runStatus(tmpDir, PACKAGE_VERSION);
+
+      const allOutput = logSpy.mock.calls.map((c) => c[0] as string).join("\n");
+      expect(allOutput).toContain("```mermaid");
+      expect(allOutput).toContain("gitGraph");
+      expect(allOutput).toContain('commit id: "0.14.0"');
+      expect(allOutput).not.toContain("Version drift:");
+    });
+  });
 });
 
 // ─── Built binary integration tests ──────────────────────────────────────────
