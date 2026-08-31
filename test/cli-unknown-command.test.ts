@@ -18,7 +18,7 @@ describe("spell <unrecognized> — built CLI integration", () => {
   it("lists the real, current CLI commands rather than a hardcoded list", () => {
     const result = spawnSync("node", [BIN, "foobar"], { encoding: "utf8" });
 
-    for (const name of ["init", "add", "update", "status", "uninstall", "unblock-push", "doctor", "agents"]) {
+    for (const name of ["init", "add", "update", "status", "uninstall", "unblock-push", "doctor", "ward", "agents"]) {
       expect(result.stderr).toContain(name);
     }
   });
