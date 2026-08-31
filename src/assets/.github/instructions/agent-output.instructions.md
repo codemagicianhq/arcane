@@ -33,14 +33,27 @@ stale number is invisible until someone tries.
   `DECISIONS.md` cross-referencing itself): a wiki-link (`[[DECISIONS#ARC-NNN|ARC-NNN]]`)
   or a relative markdown link that actually resolves from that file's own location.
 - **Chat or PR output:** a clickable markdown link to the canonical file/anchor.
-- **Cross-repo references, and any reference inside a file this framework *ships*:**
-  the full canonical-repo URL. **This is not optional for shipped assets** — a file
-  under `src/assets/` lives in *this* repo today but ships into every consumer repo's
-  own tree, where a wiki-link or relative path to Arcane's own `DECISIONS.md` either
-  fails to resolve, or worse, silently resolves to the *consumer's own* `DECISIONS.md`
-  (an empty per-consumer starter template, not Arcane's real decision record) — wrong
-  content, not just a dead link. Treat every Arcane-framework decision ID cited from a
-  shipped file as cross-repo, even while editing it from inside this repo.
+- **Governance docs this framework ships** (`.arcane/governance/*.md`): the full
+  canonical-repo URL. A file here lives in *this* repo today but ships into every
+  consumer repo's own tree, where a wiki-link or relative path to Arcane's own
+  `DECISIONS.md` either fails to resolve, or worse, silently resolves to the
+  *consumer's own* `DECISIONS.md` (an empty per-consumer starter template, not
+  Arcane's real decision record) — wrong content, not just a dead link.
+- **Spell prompts and instructions this framework ships**
+  (`.github/prompts/*.prompt.md`, `.github/instructions/*.md`): **plain text only —
+  cite the bare ID, no link at all** (`ARC-035`, not `[ARC-035](...)`). A full
+  canonical URL is *also* unsafe here, not just a same-repo link: it bakes
+  `github.com/codemagicianhq/arcane` — this project's own org and repo name — into
+  content the org-token portability gate (`scripts/org-token-lint.ts`, D2 in
+  `spell-authoring-standards.md`) exists specifically to keep out of distributed
+  spells. **Confirmed live 2026-08-31 (BC-06):** the build's `Org-token lint` failed
+  on exactly this pattern in three prompt files, including two this same correction
+  pass had introduced minutes earlier while fixing the *other* link defect. Known
+  gap: the portability scan today only walks `.github/prompts/`, so a full URL in a
+  `.github/instructions/*.md` file — like this one's own Merge Strategy section, two
+  paragraphs down — ships uncaught; tracked in `TODO.md`.
+- **Cross-repo references from anywhere else** (chat, PR output, another repo
+  entirely): the full canonical-repo URL.
 
 **Never fabricate an unresolvable link.** If you cannot confirm the ID exists and where
 it resolves to, say so and cite the ID as plain text rather than inventing a link that
@@ -49,14 +62,18 @@ looks real but goes nowhere.
 ## Merge Strategy
 
 All PRs must use **Rebase and fast-forward**. Never squash. Never merge commit. See
-[ARC-009](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-009--session-naming-and-pr-lifecycle-reliability-policy)
-§7. **Corrected 2026-08-31 (BC-06), twice over:** this file previously cited `ADR-048`,
-which does exist in the shipped `framework-decisions.md` reference — but its actual
-topic ("Code Versus Docs Branch Policy") has nothing to do with merge strategy, a
-topical miscitation rather than a missing one. The first fix attempt replaced it with a
-same-repo wiki-link to this repo's own `DECISIONS.md`, which is itself the exact
-cross-repo defect this section warns about (`DECISIONS.md` doesn't ship — see above);
-caught before merging and replaced with the full canonical URL.
+ARC-009 §7 (Arcane's own framework decision — cited as plain text, not linked, per
+Doc-ID Link Format above: this file ships). **Corrected 2026-08-31 (BC-06), three
+times over:** this file previously cited `ADR-048`, which does exist in the shipped
+`framework-decisions.md` reference — but its actual topic ("Code Versus Docs Branch
+Policy") has nothing to do with merge strategy, a topical miscitation rather than a
+missing one. The first fix replaced it with a same-repo wiki-link to this repo's own
+`DECISIONS.md` — itself the exact cross-repo defect this section warns about
+(`DECISIONS.md` doesn't ship). The second fix replaced that with a full canonical
+URL, which held up locally but failed the build's org-token portability gate: a
+`github.com/codemagicianhq/arcane` URL bakes this project's own org into a file the
+gate treats as distributed content (see Doc-ID Link Format above). Settled on the
+bare ID — the gate's own documented safe form.
 
 When completing a PR via `az repos pr update`, do **not** pass `--squash true`. The correct command:
 
