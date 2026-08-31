@@ -293,9 +293,18 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   current instance is `cicd-standards.md`) and corrected OPERATOR-QUEUE.md Q-005's standing assumption
   that this ADR would subsume ARC-020's remainder (it doesn't — different axis: data fields vs.
   content architecture). Bump: n/a, no `src/assets` changes.
-- [ ] **BC-12 — Spell-compiler ADR.** Sources: IDEAS.md:13 (I5), :23 (I15 — 66 hand-maintained
+- [x] **BC-12 — Spell-compiler ADR.** Sources: IDEAS.md:13 (I5), :23 (I15 — 66 hand-maintained
   files → 33 + generator; ARC-027 doesn't cover commands-vs-prompts drift). Route: adr. Size M.
   Must resolve the D2 Gold vanilla-repo tension I5 names. Implementation = BC-32.
+  **Done:** [PR #110](https://github.com/codemagicianhq/arcane/pull/110) merged 2026-08-31 via
+  rebase (`68b5893`). [ARC-039](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments)
+  drafted `Proposed`; acceptance requested at OPERATOR-QUEUE.md Q-008. Resolves the D2 Gold tension by
+  scoping the compiler to build-time-only structure generation (client stubs, shared prose fragments) —
+  explicitly does not pursue runtime operator-config injection, since no resolution was found that
+  avoids either violating D2 Gold or accepting version skew. I15's "66 files" premise also checked and
+  corrected: verified all 36 `.claude/commands/` files are already thin `@`-include shims, so the real
+  gap was narrower than described (stub generation, not body-drift de-duplication). All three
+  ADR-drafting epics (BC-10/BC-11/BC-12) are now done. Bump: n/a, no `src/assets` changes.
 - [ ] **BC-13 — ARC-029 acceptance packet.** Sources: DECISIONS.md:1150 (Proposed, untracked).
   Route: process. Size S. Prepare a one-page accept/revise/reject brief; append to OPERATOR-QUEUE.
   (Tracking entry added by BC-05.)
