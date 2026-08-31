@@ -39,10 +39,11 @@ Before proceeding, confirm you have all three:
    - **Tracker work item ID** (e.g., `#507`) in `external` mode — fetch it using the detected provider's CLI/API. For an ADO provider, fetch via `az boards work-item show --id {id} --org https://dev.azure.com/{ADO_ORG} --output json` and extract `System.Title`, `System.Description`, and `Microsoft.VSTS.Common.AcceptanceCriteria`; for other providers, fetch the title, description, and acceptance criteria via that provider's equivalent. If the work item has child items, fetch those too. `{ADO_ORG}` resolves from `.arcane.json` or the PRD/feature frontmatter; ask if unset.
 2. **Tracking configuration** — required before execution:
    - `tracking_mode: internal | external`
-   - `external_provider: ado | jira | other` (required when `tracking_mode=external`)
+   - `external_provider: ado | github | jira | other` (required when `tracking_mode=external`)
    - If omitted and an ADO context is already present, default to `external` + `ado` (backward compatibility).
    - If `tracking_mode=external` and `external_provider=ado`, an `adoWorkItemId` is required for commit/PR linkage.
-   - In ADO mode, resolve available work item types and apply process-template-aware fallback mapping from `governance/development-methodology.md` before creating/linking hierarchy items.
+   - If `tracking_mode=external` and `external_provider=github`, a `githubIssueId` is used for commit/PR linkage when one exists (optional, unlike ADO).
+   - In ADO mode, resolve available work item types and apply process-template-aware fallback mapping from `governance/development-methodology.md` before creating/linking hierarchy items. In GitHub mode, use that same doc's GitHub Issues Conventions (labels, not configurable types).
 3. **Target repo** — which repository and org (e.g., `{REPO_ORG}/{REPO_NAME}`). `{REPO_ORG}`/`{REPO_NAME}` resolve from `.arcane.json` or the PRD/feature frontmatter; if not provided, infer from context or ask.
 
 If `external_provider=jira` or `external_provider=other`, record TODO notes for provider-specific automation and continue with internal artifact flow unless explicit provider commands are supplied.
@@ -57,7 +58,7 @@ Execute the `spell-plan` workflow:
 
 1. Gather requirements from the feature description.
 2. Check existing ADRs and business docs for constraints.
-3. Produce `PRD.md` with requirements, acceptance criteria, constraints, and tracking configuration (`tracking_mode`, optional `external_provider`, optional `adoWorkItemId`).
+3. Produce `PRD.md` with requirements, acceptance criteria, constraints, and tracking configuration (`tracking_mode`, optional `external_provider`, optional `adoWorkItemId`/`githubIssueId`).
 4. **Gate:** Validate every requirement has at least one testable acceptance criterion. If scope is too large for one sprint, halt and recommend splitting.
 
 Store the PRD in the working directory. Proceed automatically to Phase 1.5.

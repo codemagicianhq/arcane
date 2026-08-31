@@ -46,7 +46,7 @@ describe("EF-14: tracking-mode resolution chain (MTC-4)", () => {
 
   it("spell-open-session states concrete question wording, not just raw enum tokens", () => {
     expect(openSession).toContain("Track work in this repo (TODO.md / PRDs)");
-    expect(openSession).toContain("Track work in an external tracker (Azure DevOps / Jira / other)");
+    expect(openSession).toContain("Track work in an external tracker (Azure DevOps / GitHub / Jira / other)");
   });
 
   it("spell-plan reads .arcane.json before falling through to asking (previously absent entirely)", () => {
@@ -60,7 +60,7 @@ describe("EF-14: tracking-mode resolution chain (MTC-4)", () => {
 
   it("spell-plan states the same concrete question wording as spell-open-session", () => {
     expect(plan).toContain("Track work in this repo (TODO.md / PRDs)");
-    expect(plan).toContain("Track work in an external tracker (Azure DevOps / Jira / other)");
+    expect(plan).toContain("Track work in an external tracker (Azure DevOps / GitHub / Jira / other)");
   });
 });
 

@@ -53,6 +53,15 @@ Workflow:
        --output json
      ```
 
+     *GitHub is another — if and only if `.arcane.json` names `external_provider: github` (and the `gh` CLI is authenticated):*
+     ```bash
+     gh issue create \
+       --title "[Bug] {SUMMARY}" \
+       --body "{formatted description with repro steps}" \
+       --label bug
+     ```
+     `gh issue create` prints the created issue's URL on success; extract the trailing number as `{WORK_ITEM_ID}`. Omit `--label` if the repo has no `bug` label (`gh label list`) rather than guessing.
+
    If the configured tooling is unavailable or the user prefers manual tracking, fall back to the `TODO.md` entry above and continue.
 
 3. **Diagnose** — trace the code path to find the root cause:
@@ -97,6 +106,10 @@ Workflow:
        --state Resolved \
        --org https://dev.azure.com/{ADO_ORG} \
        --output json
+     ```
+     For GitHub specifically:
+     ```bash
+     gh issue close {WORK_ITEM_ID} --reason completed --comment "Fixed by {commit SHA or PR URL}"
      ```
      For other providers, follow [governance/development-methodology.md](../../.arcane/governance/development-methodology.md).
 

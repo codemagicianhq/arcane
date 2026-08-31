@@ -89,11 +89,21 @@ Persist tracking configuration in PRD frontmatter (and in `.arcane.json` when av
 ```yaml
 tracking:
   tracking_mode: external # internal | external
-  external_provider: ado  # ado | jira | other
+  external_provider: ado  # ado | github | jira | other
   ado:
     org: "{ADO_ORG}"
     project: "{ADO_PROJECT}"
     process_template: "Agile"
+```
+
+Or, for a GitHub-tracked repo:
+
+```yaml
+tracking:
+  tracking_mode: external
+  external_provider: github
+  github:
+    repo: "{owner}/{repo}"
 ```
 
 ### Process-Template-Aware ADO Hierarchy Rules
@@ -130,6 +140,19 @@ Child linkage rules:
 2. Attempt native ADO parent/child hierarchy links first.
 3. If the selected fallback type combination cannot be linked as parent/child in that process template, use `Related` links and prefix titles with logical level tags (for example: `[EPIC]`, `[FEATURE]`) to preserve intent.
 4. Never silently flatten hierarchy. Document fallback/link decisions in `execution-plan.md` notes.
+
+### GitHub Issues Conventions
+
+When `tracking_mode=external` and `external_provider=github`, resolve `{owner}/{repo}` from `git remote get-url origin` (or `.arcane.json`'s `github.repo` field if set) rather than assuming it matches the working directory name.
+
+GitHub Issues has no configurable work-item-type hierarchy the way Azure DevOps does — there is no process-template discovery step, and no equivalent to `az boards work-item-type list`. Use these substitutes instead:
+
+- **Categorization** — labels, not types. Resolve the repo's actual labels first (`gh label list`) rather than assuming `bug`/`enhancement`/`epic` exist; a fresh repo may have only GitHub's defaults, or none. Apply a label with `--label <name>` on create, or omit it rather than inventing one.
+- **Hierarchy** — GitHub Issues has no native parent/child API field reachable from `gh`. Simulate logical hierarchy with a task-list in the parent issue's body (`- [ ] #43`, `- [ ] #44`) and `Related to #NN` / `Part of #NN` references in child issue bodies. This is a substitute, not true hierarchy — document the simulation in `execution-plan.md` notes the same way an ADO `Related`-link fallback gets documented (see the Child linkage rules above), so a reader doesn't mistake the checkbox list for a first-class relationship the platform enforces.
+- **Creation:** `gh issue create --title "{title}" --body "{body}" [--label <name>]` — prints the issue URL on success; the trailing path segment is the issue number.
+- **Fetching:** `gh issue view {id} --json title,body,labels`.
+- **Closing:** `gh issue close {id} --reason completed [--comment "{note}"]` (`--reason` also accepts `not planned` or `duplicate`).
+- **Commit/PR linkage:** `Fixes #{id}` / `Closes #{id}` in a commit message or PR body auto-closes the issue on merge (GitHub-native behavior, no extra command needed) — prefer this over a manual `gh issue close` call when the fix lands via a PR.
 
 ### External Provider TODOs
 
@@ -252,7 +275,7 @@ For features that should run end-to-end with minimal human intervention, use `sp
 spell-full-cycle = spell-plan → [spell-enchant] → spell-architect → [spell-implement → spell-test → spell-review]* → spell-ship
 ```
 
-The entire pipeline runs autonomously with a single human gate at PR approval. Includes optional PRD enchantment between Plan and Architect (runs automatically if any quality dimension scores Bronze, or if `--enchant` is specified). Requires three inputs: feature description, tracking configuration (`tracking_mode` and optional `external_provider`), and target repo. In ADO mode, include the ADO work item ID. Each phase has built-in quality gates that halt the pipeline on failure rather than producing garbage for downstream phases.
+The entire pipeline runs autonomously with a single human gate at PR approval. Includes optional PRD enchantment between Plan and Architect (runs automatically if any quality dimension scores Bronze, or if `--enchant` is specified). Requires three inputs: feature description, tracking configuration (`tracking_mode` and optional `external_provider`), and target repo. In ADO mode, include the ADO work item ID; in GitHub mode, include the issue number if one already exists. Each phase has built-in quality gates that halt the pipeline on failure rather than producing garbage for downstream phases.
 
 See [.github/prompts/spell-full-cycle.prompt.md](../.github/prompts/spell-full-cycle.prompt.md) for the complete prompt.
 
