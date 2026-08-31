@@ -175,14 +175,24 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   recommendations for the remaining 4 branches appended to
   [OPERATOR-QUEUE.md Q-003](OPERATOR-QUEUE.md#q-003--four-content-holding-local-branches-land-or-abandon),
   including a newly-found 6th instance of EF-34-class fixture contamination.
-- [ ] **BC-04 — Roster integrity batch (incl. ARC-012).** Sources: TODO.md:12 (T1), :103 (T14),
-  :143 (T16), :155 (T20/ARC-012). Route: direct. Size M. Bump: **yes** (one PR, one bump).
+- [ ] **BC-04 — Roster integrity batch (incl. ARC-012).** Sources: TODO.md:12 (T1), :107 (T14),
+  :149 (T16), :161 (T20/ARC-012) — lines renumbered by BC-01/02/03's edits, corrected here.
+  Route: direct. Size M. Bump: **yes** (one PR, one bump).
   (a) `spell agents sync/init` exits non-zero when any rostered role fails to resolve
   (`src/modules/agent-generator.ts:176` currently swallows). (b) ARC-012 parity test: render every
   `src/assets/agents/*.yaml` through the generator and byte-compare against committed
   `src/assets/.github/agents/*.agent.md` (audit confirmed no such test exists; drift class unguarded
   both directions). (c) Add optional `epithet` to schema v2 + roster generation. (d) Document
   `visual_description` in the roster schema docs.
+  **In progress 2026-08-31:** all four shipped. (a) `SyncResult.hasUnresolvedRoles` + non-zero exit
+  in both CLI commands. (b) `test/agent-roster-parity.test.ts` — **found and fixed real, live drift**:
+  `mercurio.agent.md` had shipped the literal `[object Object]` defect since before the mobile-dev
+  bug's own fix (PR #45), invisible until this test existed. (c) `epithet` landed on the roster entry
+  (schema v2), not the agent YAML — a deliberate deviation from this line's own phrasing, since an
+  epithet is naming-strategy-bound ("the Archmage" is Merlin's, not "architecture-lead"'s) and putting
+  it on the definition would leak Arcanos flavor into the deliberately epithet-less `generic` strategy.
+  (d) documented in `naming-conventions.md`'s new Agent Definition Schema section. Tick on merge, not
+  before.
 
 ### Wave 2 — Ledger, status & doc-link hygiene
 

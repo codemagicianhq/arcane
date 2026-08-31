@@ -84,7 +84,7 @@ ${denied}
 `;
 }
 
-function renderCopilotAgent(def: AgentDefinition, name: string): string {
+export function renderCopilotAgent(def: AgentDefinition, name: string): string {
   const firstLine = def.persona.description.split("\n")[0]?.trim() ?? def.role;
   const rules = def.persona.behavioral_rules.map((r) => `- ${r}`).join("\n");
   const personalityBlock = def.persona.personality
@@ -137,6 +137,14 @@ ${rows}
 export interface SyncResult {
   synced: string[];
   skipped: string[];
+  /**
+   * True when a rostered role's definition could not be loaded from either
+   * the project or bundled source (the mobile-dev bug class: a malformed
+   * template silently dropped from the roster with a zero exit code).
+   * Distinct from an openclaw-workspace write failure, which is an I/O
+   * problem, not a role-resolution failure, and does not set this.
+   */
+  hasUnresolvedRoles: boolean;
 }
 
 // ─── Main sync function ───────────────────────────────────────────────────────
@@ -157,6 +165,7 @@ export async function syncAgents(
 ): Promise<SyncResult> {
   const synced: string[] = [];
   const skipped: string[] = [];
+  let hasUnresolvedRoles = false;
 
   // ── Load all definitions ──────────────────────────────────────────────────
   const projectDefs = projectAgentsDir(targetDir);
@@ -174,6 +183,7 @@ export async function syncAgents(
         def = await loadAgentDefinition(bundledDefs, entry.definition);
       } catch {
         skipped.push(`${entry.definition} (definition not found)`);
+        hasUnresolvedRoles = true;
         continue;
       }
     }
@@ -236,6 +246,7 @@ export async function syncAgents(
         id: entry.id,
         identity: {
           name: entry.name ?? entry.definition,
+          ...(entry.epithet ? { epithet: entry.epithet } : {}),
           role: def.role,
         },
       })),
@@ -318,5 +329,5 @@ export async function syncAgents(
     if (codexMerged) synced.push("AGENTS.md (agents section)");
   }
 
-  return { synced, skipped };
+  return { synced, skipped, hasUnresolvedRoles };
 }

@@ -151,10 +151,10 @@ export async function runAgentsInit(
   const named = await applyNamingStrategy(namingStrategy, selectedRoleIds);
 
   // ── Step 4: Build roster ─────────────────────────────────────────────────
-  const rosterEntries: AgentRosterEntry[] = named.map(({ definition, name }) => {
+  const rosterEntries: AgentRosterEntry[] = named.map(({ definition, name, epithet }) => {
     // Orchestrator gets the "main" OpenClaw ID by convention
     const id = definition === "orchestrator" ? "main" : name.toLowerCase().replace(/\s+/g, "-");
-    return { definition, name, id };
+    return epithet ? { definition, name, id, epithet } : { definition, name, id };
   });
 
   const roster: AgentRoster = {
@@ -205,7 +205,7 @@ export async function runAgentsInit(
 
   // ── Step 7: Auto-sync all clients ────────────────────────────────────────
   printStep("Syncing agent definitions to all clients...");
-  const { synced, skipped } = await syncAgents(
+  const { synced, skipped, hasUnresolvedRoles } = await syncAgents(
     targetDir,
     assetsDir,
     roster,
@@ -221,6 +221,13 @@ export async function runAgentsInit(
   console.log();
   console.log(`    💡 Customize: edit .arcane/agents.yaml → spell agents sync`);
   console.log();
+  if (hasUnresolvedRoles) {
+    console.error(
+      "  ✗ One or more rostered roles could not be resolved (see \"Skipped\" above) — " +
+        "a malformed or missing agent template must not pass silently.",
+    );
+    process.exitCode = 1;
+  }
 }
 
 // ─── spell agents sync ────────────────────────────────────────────────────────
@@ -252,7 +259,7 @@ export async function runAgentsSync(
     console.log("\n  Syncing agents...\n");
   }
 
-  const { synced, skipped } = await syncAgents(
+  const { synced, skipped, hasUnresolvedRoles } = await syncAgents(
     targetDir,
     assetsDir,
     roster,
@@ -275,6 +282,13 @@ export async function runAgentsSync(
     }
   }
   console.log();
+  if (hasUnresolvedRoles) {
+    console.error(
+      "  ✗ One or more rostered roles could not be resolved (see \"Skipped\" above) — " +
+        "a malformed or missing agent template must not pass silently.",
+    );
+    process.exitCode = 1;
+  }
 }
 
 // ─── spell agents list ────────────────────────────────────────────────────────

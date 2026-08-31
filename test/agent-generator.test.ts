@@ -301,4 +301,75 @@ describe("syncAgents — missing definitions", () => {
 
     expect(result.skipped.some((s) => s.includes("nonexistent-role"))).toBe(true);
   });
+
+  it("sets hasUnresolvedRoles when a role's definition cannot be found (TODO.md fail-loudly finding)", async () => {
+    const roster: AgentRoster = {
+      ...makeRoster(openclawRoot),
+      roster: [
+        { definition: "orchestrator", name: "Kellar", id: "main" },
+        { definition: "nonexistent-role", name: "Ghost", id: "ghost" },
+      ],
+    };
+
+    const result = await syncAgents(tmpDir, assetsDir, roster, {
+      openclaw: false,
+      copilot: false,
+      claude: false,
+      codex: false,
+    });
+
+    expect(result.hasUnresolvedRoles).toBe(true);
+  });
+
+  it("does not set hasUnresolvedRoles when every role resolves, even if openclaw workspace writes fail", async () => {
+    const roster = makeRoster(openclawRoot);
+
+    const result = await syncAgents(tmpDir, assetsDir, roster, {
+      openclaw: true,
+      copilot: false,
+      claude: false,
+      codex: false,
+    });
+
+    expect(result.hasUnresolvedRoles).toBe(false);
+  });
+});
+
+// ─── epithet (schema v2 optional field) ────────────────────────────────────────
+
+describe("syncAgents — epithet threading (openclaw-roster generation)", () => {
+  it("includes epithet in the openclaw-roster.json patch identity when the roster entry carries one", async () => {
+    const roster: AgentRoster = {
+      ...makeRoster(openclawRoot),
+      roster: [{ definition: "orchestrator", name: "Kellar", id: "main", epithet: "the Maestro" }],
+    };
+
+    await syncAgents(tmpDir, assetsDir, roster, {
+      copilot: false,
+      claude: false,
+      codex: false,
+    });
+
+    const patch = JSON.parse(
+      await readFile(join(tmpDir, ".arcane", "generated", "openclaw-roster.json"), "utf8"),
+    );
+    expect(patch.agents[0].identity.epithet).toBe("the Maestro");
+  });
+
+  it("omits epithet from the patch identity entirely when the roster entry has none (generic/random/custom naming)", async () => {
+    const roster = makeRoster(openclawRoot); // no epithet on either entry
+
+    await syncAgents(tmpDir, assetsDir, roster, {
+      copilot: false,
+      claude: false,
+      codex: false,
+    });
+
+    const patch = JSON.parse(
+      await readFile(join(tmpDir, ".arcane", "generated", "openclaw-roster.json"), "utf8"),
+    );
+    for (const agent of patch.agents) {
+      expect(agent.identity).not.toHaveProperty("epithet");
+    }
+  });
 });

@@ -35,7 +35,7 @@ deliverables; every word in motion.
 - Follow platform guidelines (HIG for iOS, Material Design for Android)
 - App store submissions require a complete release checklist — no shortcuts
 - Performance profiling is required before marking any feature complete
-- [object Object]
+- Backward compatibility: support at least the two previous major OS versions
 
 ## Tools
 

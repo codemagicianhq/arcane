@@ -111,9 +111,9 @@ describe("applyRandomNames", () => {
 // ─── applyArcanosNames ───────────────────────────────────────────────────
 
 describe("applyArcanosNames", () => {
-  it("maps orchestrator to Kellar", () => {
+  it("maps orchestrator to Kellar with its epithet", () => {
     const result = applyArcanosNames(["orchestrator"]);
-    expect(result).toEqual([{ definition: "orchestrator", name: "Kellar" }]);
+    expect(result).toEqual([{ definition: "orchestrator", name: "Kellar", epithet: "the Maestro" }]);
   });
 
   it("maps all 12 standard roles to their persona names", () => {
@@ -158,6 +158,23 @@ describe("applyArcanosNames", () => {
   it("returns an empty array for empty input", () => {
     expect(applyArcanosNames([])).toEqual([]);
   });
+
+  it("gives every one of the 12 standard roles a distinct, non-empty epithet", () => {
+    const roleIds = [
+      "orchestrator", "architecture-lead", "fullstack-dev", "qa-lead", "devops",
+      "frontend-dev", "mobile-dev", "research-analyst", "marketing-strategist",
+      "operations-comms", "collaborator", "security-ops",
+    ];
+    const result = applyArcanosNames(roleIds);
+    const epithets = result.map((r) => r.epithet);
+    expect(epithets.every((e) => typeof e === "string" && e.length > 0)).toBe(true);
+    expect(new Set(epithets).size).toBe(roleIds.length);
+  });
+
+  it("does not attach an epithet to an unknown role falling back to a generic/raw name", () => {
+    const result = applyArcanosNames(["unknown-role-xyz"]);
+    expect(result[0]?.epithet).toBeUndefined();
+  });
 });
 
 // ─── applyNamingStrategy ──────────────────────────────────────────────────────
@@ -179,7 +196,7 @@ describe("applyNamingStrategy", () => {
 
   it("delegates to applyArcanosNames for 'arcanos' strategy", async () => {
     const result = await applyNamingStrategy("arcanos", ["orchestrator"]);
-    expect(result).toEqual([{ definition: "orchestrator", name: "Kellar" }]);
+    expect(result).toEqual([{ definition: "orchestrator", name: "Kellar", epithet: "the Maestro" }]);
   });
 
   it("delegates to promptCustomNames for 'custom' strategy (uses mocked input)", async () => {

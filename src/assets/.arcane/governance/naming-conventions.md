@@ -92,6 +92,19 @@ Arcane ships with twelve default agent personas, organized by functional cluster
 
 Twelve legendary agents — the Arcanos. Every namesake is public domain: golden-age stage magicians (Kellar, Lafayette, Adelaide, Alexander, Bess), myth and classic literature (Merlin, Circe, Iris, Prospero, Mercurio), and coinages from living vocabulary (Lince — *ojo de lince*; Custodio — *ángel custodio*). Lince is never anglicized.
 
+### Agent Definition Schema — Fields for Template/Renderer Authors
+
+The table above is the human-readable roster; agent definitions (`agents/*.yaml`) and the generated roster (`.arcane/agents.yaml`) carry the same data as structured fields. This is where they live, for anyone building a third-party renderer (DMC is renderer #1):
+
+| Field | Lives on | Populated by | Consumed by |
+| --- | --- | --- | --- |
+| `persona.description` / `behavioral_rules` | Agent definition (role-level, naming-strategy-agnostic) | Template author | Every client renderer (Copilot, Claude, Codex, OpenClaw) |
+| `persona.personality` / `persona.voice` / `persona.catchphrases` | Agent definition | Template author | Renderers that want tone/flavor beyond the bare role |
+| `persona.visual_description` | Agent definition | Template author | **Declared, not yet rendered by any client this repo ships.** Kept with the definition rather than a renderer, by design — data belongs with the thing it describes, not with any one consumer. A third-party image/avatar renderer reads this field directly from the YAML; no other wiring is required. |
+| `epithet` (e.g. "the Archmage") | **Roster entry**, not the agent definition — see below | Naming strategy (`arcanos` only; `generic`/`random`/`custom` are deliberately epithet-less) | `.arcane/generated/openclaw-roster.json`'s `identity.epithet`, when present |
+
+**Why `epithet` is schema v2's roster field, not a persona field:** an agent definition YAML (e.g. `architecture-lead.yaml`) is a role archetype reused across every naming strategy — "the Archmage" belongs to the persona *Merlin*, not to the "architecture-lead" role itself. Putting it in the definition would leak Arcanos-specific flavor into naming strategies designed to be epithet-neutral (`generic`'s plain role labels). It is populated during `spell agents init`'s naming step and flows through the roster entry (`.arcane/agents.yaml`) to `openclaw-roster.json` — never guessed or re-derived by a renderer.
+
 **Role consolidation (ADR-031):** Framework-specific dev roles (.NET, Blazor, React, Flutter, MAUI) are consolidated into generic roles (Full-Stack, Frontend, Mobile). The framework/stack is a prompt parameter, not an agent identity. This scales without needing a new agent for every technology.
 
 **Naming policy:** All agent names should be positive characters — beings, not objects — with a clear thematic connection to their role.
