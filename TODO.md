@@ -351,7 +351,30 @@
       rewrote the new section to match that existing style, which fixed both the drift risk and the
       test in the same edit, rather than just loosening the assertions).
 
-- [ ] **Regulatory compliance coverage: `compliance-standards.md` + `spell-compliance`.** Arcane currently has no spell, governance doc, or checklist for any regulatory/privacy framework. Add both: (a) **`compliance-standards.md`** in `.arcane/governance/` — a governance reference covering GDPR, CCPA, SOC 2, and optionally HIPAA: key obligations per framework, how they map to a typical SaaS product (data inventory, consent, retention/deletion, breach notification, access controls, audit logs), and a tiered applicability guide (which frameworks apply at which stage — early MVP vs. public launch vs. enterprise). (b) **`spell-compliance`** — an active spell that runs a compliance self-assessment against the repo: checks for a privacy policy, data inventory doc, retention/deletion policy, consent mechanisms (for consumer apps), audit-log coverage, and flags gaps per framework; outputs a prioritized remediation checklist. Scope: GDPR + CCPA as the mandatory baseline (most consumer SaaS needs both); SOC 2 as an optional enterprise tier. The spell should be runnable on any Arcane-consuming repo, not just Code Magician projects.
+- [x] **Regulatory compliance coverage: `compliance-standards.md` + `spell-compliance`.** Arcane currently has no spell, governance doc, or checklist for any regulatory/privacy framework. Add both: (a) **`compliance-standards.md`** in `.arcane/governance/` — a governance reference covering GDPR, CCPA, SOC 2, and optionally HIPAA: key obligations per framework, how they map to a typical SaaS product (data inventory, consent, retention/deletion, breach notification, access controls, audit logs), and a tiered applicability guide (which frameworks apply at which stage — early MVP vs. public launch vs. enterprise). (b) **`spell-compliance`** — an active spell that runs a compliance self-assessment against the repo: checks for a privacy policy, data inventory doc, retention/deletion policy, consent mechanisms (for consumer apps), audit-log coverage, and flags gaps per framework; outputs a prioritized remediation checklist. Scope: GDPR + CCPA as the mandatory baseline (most consumer SaaS needs both); SOC 2 as an optional enterprise tier. The spell should be runnable on any Arcane-consuming repo, not just Code Magician projects.
+  **Shipped 2026-08-31 (BC-26):** PRD at
+  [features/compliance-standards/PRD.md](features/compliance-standards/PRD.md), via `spell-plan`'s real
+  template. New `.arcane/governance/compliance-standards.md` (`CS-01`-`CS-12`): GDPR (applicability,
+  lawful basis/data-subject rights, 72-hour breach notification), CCPA/CPRA (threshold-based
+  applicability, the real opt-out-mechanism requirement), shared obligations (valid consent, the data
+  inventory as the load-bearing prerequisite, retention/deletion), SOC 2 (Trust Services Criteria,
+  Type I vs. Type II, access-control/audit-log expectations), HIPAA (the narrow covered-entity/business-
+  associate trigger), and the tiered applicability guide (MVP/launch/enterprise) — with an explicit,
+  prominent "this is not legal advice" framing, since a governance reference this consequential needs to
+  say plainly what it is and isn't. New `spell-compliance` (`spells-build`, joining `spell-security-review`
+  as the closest sibling in shape): read-only self-assessment — determines applicable frameworks by
+  asking rather than assuming (per the constraint that a wrong applicability guess has real
+  consequences), inventories existing repo artifacts, audits by citing `CS-nn` IDs only, and outputs a
+  prioritized remediation checklist. **Deliberately no `--apply`/auto-fix mode** — closing a compliance
+  gap (drafting a privacy policy, choosing a retention period) needs business/legal judgment an agent
+  shouldn't manufacture unilaterally; this matches the item's own wording ("outputs a...checklist," not
+  "fixes gaps"). `compliance-standards` joined `governance-only`'s profile alongside its three
+  precedents (`external-verification-standards`, `web-discoverability-standards`,
+  `mobile-release-standards`). New `test/compliance-standards.test.ts` (15 tests, dynamic
+  rule-index/rule-body consistency check, matching BC-25's pattern). `docs/spell-catalog.json`/README
+  regenerated automatically via `fix:spell-catalog` (40 spells). Two hardcoded counts bumped in the same
+  PR (`docs-profile-registry-split.test.ts` 38→39, `registry.test.ts` 24→25). Minor version bump (new
+  spell).
 
 - [x] **Feature: generated state diagrams — spells draw their own computed state as deterministic Mermaid ([ARC-036](DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)).** Accepted 2026-08-30; PRD at [features/generated-state-diagrams/PRD.md](features/generated-state-diagrams/PRD.md), three tiers phased: Tier 1 = the two-axis version-drift `gitGraph` in `spell-open-session`/`spell-arcane-version` (all three readings already computed; pure string template); Tier 2 = CLI `spell status` parity (also closing the missing axis-A comparison in `src/commands/status.ts:91-99` — the CLI never compares `manifest.version` to `packageVersion` today) plus topology/state adopters (`spell-manifest`, `spell-review-batch`, `spell-full-cycle`, `spell-security-review`, `spell-commit-work`/`spell-create-pull-request` branch/PR gitGraph — zero prior art); Tier 3 = harmonize the three existing freehand diagram prescriptions under the one convention + applicability guard. **Execution route:** Tier-1 implementation PR via `spell-implement` (rule-8 additive extension + both prompt templates + `test/prompt-diagram-emission.test.ts`), with `spell-bump` (bump required — touches `src/assets/`; type per the spell-bump table: patch as an existing-asset content update, or minor if the new convention counts as new distributable content) and `fix:self-host-parity`; then the R8 CLI PR; then Tier-2 batches. Origin: arcane-website dogfooding 2026-08-30 — the operator asked why the two-axis drift explanation wasn't a picture.
   **Tier 1 shipped 2026-08-31 (BC-14):** [PR #114](https://github.com/codemagicianhq/arcane/pull/114)

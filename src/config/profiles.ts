@@ -143,6 +143,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "external-verification-standards",
       "web-discoverability-standards",
       "mobile-release-standards",
+      "compliance-standards",
     ],
   },
 ];

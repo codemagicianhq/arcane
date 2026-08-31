@@ -1,5 +1,5 @@
 {
-  "totalSpells": 39,
+  "totalSpells": 40,
   "groups": [
     {
       "component": "spells-session",
@@ -238,6 +238,12 @@
           "shortName": "eas-store-deploy",
           "name": "Spell — EAS Store Deploy",
           "description": "Deploy an Expo app to the Apple App Store and Google Play via EAS Build + EAS Submit — one-time setup, repeat deployments, and the known pitfalls hit dogfooding both flows for real."
+        },
+        {
+          "id": "spell-compliance",
+          "shortName": "compliance",
+          "name": "Spell — Compliance",
+          "description": "Run a regulatory compliance self-assessment against this repo (GDPR, CCPA, SOC 2, HIPAA) and produce a prioritized remediation checklist. Read-only — never drafts policies or fixes gaps automatically."
         }
       ]
     },
