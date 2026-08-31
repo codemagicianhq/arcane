@@ -1,0 +1,100 @@
+import { beforeAll, describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
+const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const AI_CONTEXT = join(process.cwd(), "src", "assets", "ai-context");
+
+let closeSession: string;
+let openSession: string;
+let aiContextTemplate: string;
+
+beforeAll(async () => {
+  [closeSession, openSession, aiContextTemplate] = await Promise.all([
+    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
+    readFile(join(AI_CONTEXT, "system-prompt-context.md"), "utf8"),
+  ]);
+});
+
+describe("spell-close-session step 4b: durable registration (R1, R2)", () => {
+  it("adds step 4b between the TODO.md update and the handoff write", () => {
+    const todoIndex = closeSession.indexOf("**Update [TODO.md]");
+    const step4bIndex = closeSession.indexOf("Register unfinished, task-bearing work on a durable surface");
+    const handoffIndex = closeSession.indexOf("Write the Next Session Handoff block");
+    expect(todoIndex).toBeGreaterThan(-1);
+    expect(step4bIndex).toBeGreaterThan(todoIndex);
+    expect(step4bIndex).toBeLessThan(handoffIndex);
+  });
+
+  it("enumerates the three task-bearing fields in backtick form", () => {
+    expect(closeSession).toContain("an incomplete `Active task`, the `Next concrete action`, and any content that would otherwise live only in `Notes`");
+  });
+
+  it("resolves the durable sink from tracking_mode per ARC-032 (R2)", () => {
+    expect(closeSession).toContain("resolve the sink from `tracking_mode` (per ARC-032)");
+    expect(closeSession).toContain("`internal` → the appropriate `TODO.md`");
+    expect(closeSession).toContain("`external` → a work item via the configured `external_provider`, falling back to `TODO.md`");
+  });
+
+  it("states its own applicability guard", () => {
+    expect(closeSession).toContain("Skip this step entirely when nothing is unfinished");
+  });
+});
+
+describe("spell-close-session handoff fields name their durable home (R3)", () => {
+  it("Active task and Next concrete action point at step 4b's registered location", () => {
+    expect(closeSession).toContain("If incomplete, name where step 4b registered it (e.g. `TODO.md:NNN`).");
+    expect(closeSession).toContain('Never write "continue work." Name where step 4b registered it (e.g. `TODO.md:NNN`).');
+  });
+
+  it("Notes field description states the pointer-only rule inline (R4)", () => {
+    expect(closeSession).toContain("Never the sole carrier of durable content (session handoff durability)");
+  });
+
+  it("the Rules section restates Notes as pointer-only independent of the field description (R4)", () => {
+    expect(closeSession).toContain("`Notes` is a pointer, never the sole carrier of durable content (session handoff durability)");
+  });
+});
+
+describe("spell-open-session Durability check and field surfacing (R5, R6)", () => {
+  it("surfaces Last completed step, Blockers, and Notes verbatim, not just the original three fields", () => {
+    expect(openSession).toContain("include `Last completed step`, `Blockers`, and `Notes` verbatim alongside the rest");
+    expect(openSession).toContain("Picking Up From Last Session");
+  });
+
+  it("runs the Durability check after the Mutation Guard and before the consumed-marker write", () => {
+    const guardIndex = openSession.indexOf("apply the Mutation Guard below, then run the **Durability check**");
+    const markerIndex = openSession.indexOf("Only then append `> ✓ Consumed: YYYY-MM-DD`");
+    expect(guardIndex).toBeGreaterThan(-1);
+    expect(guardIndex).toBeLessThan(markerIndex);
+  });
+
+  it("registers missing durable content before consuming, and leaves the handoff unconsumed if it can't complete", () => {
+    expect(openSession).toContain("register the missing content now — on this session's own branch — before proceeding");
+    expect(openSession).toContain("leave the handoff unconsumed so the next open-session retries the same check idempotently");
+  });
+
+  it("still contains the pre-existing Pending Verification re-check (EF-21), unmodified by this change", () => {
+    expect(openSession).toContain("Pending Verification");
+    expect(openSession).toContain("actively re-check its current status");
+    expect(openSession).toContain("rather than treating the state recorded at close-session time as still current");
+  });
+});
+
+describe("fresh-install scaffold matches step 5b's real format and ships pre-consumed (R8)", () => {
+  it("uses bullet fields, not the old plain bold-colon lines", () => {
+    expect(aiContextTemplate).toContain("- **Active task:** None yet.");
+    expect(aiContextTemplate).toContain("- **Pending Verification:** None.");
+  });
+
+  it("carries the same > header lines the real close-session output uses", () => {
+    expect(aiContextTemplate).toContain("> Auto-generated by spell-close-session. Consumed by spell-open-session. Do not edit manually.");
+    expect(aiContextTemplate).toContain("> Generated: YYYY-MM-DD");
+  });
+
+  it("ships with a consumed marker so a first open-session cannot mistake it for a live handoff", () => {
+    expect(aiContextTemplate).toContain("> ✓ Consumed: YYYY-MM-DD");
+    expect(aiContextTemplate).toContain("scaffold placeholder, not a real session");
+  });
+});

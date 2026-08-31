@@ -1,5 +1,5 @@
 ---
-status: draft
+status: accepted
 tracking_mode: internal
 source_intake: field incident (no formal batch-001 intake filed)
 ---
