@@ -430,6 +430,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   yes. `ward` (leak scan, vendor-identifier denylist mandatory) + `scry` (name clearance: outward
   four-check **and** the inward repo-local collision pass ARC-028 proved necessary). Soft-depends on
   BC-10's accepted ADR to keep scanner boundaries from colliding with secret detection.
+  **Progress (2026-08-31): split into two PRs, disclosed here** (`ward` and `scry` have genuinely
+  different implementation shapes — deterministic CLI code vs. a research-driven prompt spell).
+  - `ward`: **done** — new `spell ward` CLI, reusing `org-token-lint.ts`'s scanning engine (extracted
+    into a new shared `src/modules/denylist-scan.ts`, zero behavior change, verified). 28 new tests.
+  - `scry`: **not started.** Leave this checkbox unticked until `scry` merges.
+  - Soft-dependency respected: `ward` scans identifiers/trademarks only, never secret/credential
+    patterns — that scope stays reserved for BC-10's still-Proposed ARC-037, not implemented here.
 - [ ] **BC-22 — MCP resilience.** Sources: IDEAS.md:16 (I8), :20 (I12). Route: direct. Size M.
   Bump: yes. Fail-fast/fallback governance rule (one abnormal failure marks a server down for the
   session) + `.mcp.json` scaffold with per-server `timeout` via init/doctor.

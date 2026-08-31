@@ -8,6 +8,7 @@ import { runUpdate } from "./commands/update.js";
 import { runStatus } from "./commands/status.js";
 import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
+import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
 import { runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
@@ -141,6 +142,17 @@ program
   .option("--fix", "Automatically create missing session continuity files")
   .action(async (opts: { fix?: boolean }) => {
     await runDoctor(process.cwd(), { fix: opts.fix }, ASSETS_DIR);
+  });
+
+// ─── spell ward ───────────────────────────────────────────────────────────────
+
+program
+  .command("ward")
+  .description("Scan the repo for leaked third-party identifiers and trademarks (T18)")
+  .option("--terms <terms>", "Comma-separated denylist terms, in addition to the built-in vendor-identifier list")
+  .option("--gate", "Exit non-zero if any leak is found (for CI)")
+  .action(async (opts: { terms?: string; gate?: boolean }) => {
+    await runWardCli(process.cwd(), opts);
   });
 
 // ─── spell agents ─────────────────────────────────────────────────────────────
