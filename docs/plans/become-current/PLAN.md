@@ -136,14 +136,19 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 1 — Platform & release integrity
 
-- [ ] **BC-01 — ARC-035 review-round merge gate.** Sources: TODO.md:42 · EF-36 · DECISIONS.md:1493.
+- [x] **BC-01 — ARC-035 review-round merge gate.** Sources: TODO.md:42 · EF-36 · DECISIONS.md:1493.
   Route: direct (the ADR is the spec). Size M. Bump: **yes** (spell prompts). Details below.
-  **In progress:** [PR #88](https://github.com/codemagicianhq/arcane/pull/88), `v0.22.2` — open,
-  awaiting required checks before merge. Tick on merge, not before (KICKOFF.md step 5 runs after
-  step 4's merge, not concurrently with it). Decision 4 shipped only for this repo's own
-  `.husky/pre-push`, not the consumer-facing `HOOK_BODY` path — see the ARC-035 implementation note
-  in DECISIONS.md and the new TODO.md gap item. Empirical test (step 1) ran live: GitHub refuses
-  author self-request-changes, same as self-approval.
+  **Done:** [PR #88](https://github.com/codemagicianhq/arcane/pull/88) merged 2026-08-31 via rebase
+  (`1da490e`, confirmed via `gh pr view --json state,mergedAt,mergeCommit`), `v0.22.2`, published to
+  npm automatically via the version-bump → `release-drift.yml` → `publish.yml` chain. All three
+  required checks (including the new `Review round clear` job itself) reported green before merge.
+  Decision 4 shipped only for this repo's own `.husky/pre-push`, not the consumer-facing `HOOK_BODY`
+  path — see the ARC-035 implementation note in DECISIONS.md and the new TODO.md gap item. Empirical
+  test (step 1) ran live: GitHub refuses author self-request-changes, same as self-approval — folded
+  into `spell-review.prompt.md` step 10 as an expected-failure caveat. Q-001's hard precondition
+  (the check reporting green on a live PR) is satisfied; ruleset-wiring payload prepared in
+  `docs/plans/become-current/q-001-ruleset-{before,after}.json`, application still queued to the
+  operator (platform-settings mutation, outside the delegation grant).
 - [ ] **BC-02 — `dist/assets` pruning.** Sources: TODO.md:86 (T9). Route: direct. Size S. Bump: no.
   Prune `dist/assets/` before copy (or temp-dir-and-swap) in `scripts/copy-assets.ts` (`copyDir`
   at :94-130 never deletes); regression test: file removed from `src/assets/` disappears from
