@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when asked for a quick snapshot of session/repo state — branch, TODOs, decisions, last journal.
+---
+
 # Status
 
 Invoke the Arcane `spell-status` spell workflow.

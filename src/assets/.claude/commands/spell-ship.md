@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY before any deploy, even if the user just says 'ship it'.
+---
+
 # Ship
 
 Invoke the Arcane `spell-ship` spell workflow.

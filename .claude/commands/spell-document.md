@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when conversation content (an analysis, a decision, an investigation) should become a permanent reference doc.
+---
+
 # Document
 
 Invoke the Arcane `spell-document` spell workflow.

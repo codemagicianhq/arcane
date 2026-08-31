@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY once a PRD exists and needs architecture decisions and a story breakdown before implementation starts.
+---
+
 # Architect
 
 Invoke the Arcane `spell-architect` spell workflow.

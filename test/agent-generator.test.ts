@@ -154,6 +154,25 @@ describe("syncAgents — Copilot output", () => {
     expect(instructions).toContain("Kellar");
     expect(instructions).toContain("Lafayette");
   });
+
+  it("merges the spell routing table into .github/copilot-instructions.md, ahead of the roster table", async () => {
+    const roster = makeRoster(openclawRoot);
+    await syncAgents(tmpDir, assetsDir, roster, { openclaw: false });
+
+    const instructions = await readFile(
+      join(tmpDir, ".github", "copilot-instructions.md"),
+      "utf8",
+    );
+    expect(instructions).toContain("## Spell Routing");
+    expect(instructions).toContain("`spell-commit-work`");
+    expect(instructions).toContain(
+      "If a spell exists for the workflow you are about to perform, invoke it",
+    );
+    const routingIndex = instructions.indexOf("## Spell Routing");
+    const rosterIndex = instructions.indexOf("## Agent Roster");
+    expect(routingIndex).toBeGreaterThan(-1);
+    expect(rosterIndex).toBeGreaterThan(routingIndex);
+  });
 });
 
 // ─── Claude output ────────────────────────────────────────────────────────────
@@ -172,6 +191,20 @@ describe("syncAgents — Claude output", () => {
     expect(claudeMd).toContain("Kellar");
     expect(claudeMd).toContain("Product Operations Manager");
   });
+
+  it("merges the spell routing table into CLAUDE.md even when the roster is present", async () => {
+    const roster = makeRoster(openclawRoot);
+    await syncAgents(tmpDir, assetsDir, roster, {
+      openclaw: false,
+      copilot: false,
+      codex: false,
+    });
+
+    const claudeMd = await readFile(join(tmpDir, "CLAUDE.md"), "utf8");
+    expect(claudeMd).toContain("## Spell Routing");
+    expect(claudeMd).toContain("`spell-open-session`");
+    expect(claudeMd).toContain("`spell-full-cycle`");
+  });
 });
 
 // ─── Codex output ────────────────────────────────────────────────────────────
@@ -189,6 +222,40 @@ describe("syncAgents — Codex output", () => {
     expect(agentsMd).toContain(MARKER_START);
     expect(agentsMd).toContain("Lafayette");
     expect(agentsMd).toContain("Full-Stack Developer");
+  });
+
+  it("merges the spell routing table into AGENTS.md even when the roster is present", async () => {
+    const roster = makeRoster(openclawRoot);
+    await syncAgents(tmpDir, assetsDir, roster, {
+      openclaw: false,
+      copilot: false,
+      claude: false,
+    });
+
+    const agentsMd = await readFile(join(tmpDir, "AGENTS.md"), "utf8");
+    expect(agentsMd).toContain("## Spell Routing");
+    expect(agentsMd).toContain("`spell-bug`");
+    expect(agentsMd).toContain("`spell-review`");
+  });
+});
+
+// ─── Spell routing (independent of roster state) ─────────────────────────────
+
+describe("syncAgents — spell routing table", () => {
+  it("injects the routing table into all three L1 surfaces even with an empty roster", async () => {
+    const emptyRoster: AgentRoster = {
+      ...makeRoster(openclawRoot),
+      roster: [],
+    };
+    await syncAgents(tmpDir, assetsDir, emptyRoster, { openclaw: false });
+
+    for (const file of ["CLAUDE.md", "AGENTS.md", join(".github", "copilot-instructions.md")]) {
+      const content = await readFile(join(tmpDir, file), "utf8");
+      expect(content).toContain("## Spell Routing");
+      expect(content).toContain(
+        "If a spell exists for the workflow you are about to perform, invoke it",
+      );
+    }
   });
 });
 

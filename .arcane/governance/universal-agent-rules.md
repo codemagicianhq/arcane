@@ -53,6 +53,12 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 ---
 
+## Spell Lifecycle
+
+22. **Lifecycle operations run through their spell when one is installed.** Committing, opening a PR, opening or closing a session, reviewing code, and shipping each have a dedicated spell (`spell-commit-work`, `spell-create-pull-request`, `spell-open-session`/`spell-close-session`, `spell-review`, `spell-ship`). When the installed component set includes the matching spell, invoke it for that operation rather than improvising the workflow from general knowledge — even when the user does not name the spell explicitly. The intent→spell routing table injected into each client's L1 instruction file (`CLAUDE.md`, `.github/copilot-instructions.md`, `AGENTS.md`) is normative for this mapping, not illustrative.
+
+---
+
 ## Recommendation Guardrails (ADR-034)
 
 15. **Flag actionable recommendations.** Any recommendation that could lead to a purchase, subscription, account creation, or irreversible action must: (a) be flagged explicitly, (b) use verified current information — never assume or fabricate, (c) present free/no-cost alternatives when they exist, (d) state confidence level if based on general knowledge. For >$50 or contracts, require explicit confirmation. See [[agents/agent-policies#actionable-recommendation-policy-adr-034|Full Policy]].

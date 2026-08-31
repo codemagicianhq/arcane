@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when a bot/agent needs a Teams-ready avatar and icon set generated.
+---
+
 # Generate Bot Icons
 
 Invoke the Arcane `spell-generate-bot-icons` spell workflow.

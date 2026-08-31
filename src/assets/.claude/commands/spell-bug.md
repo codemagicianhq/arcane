@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY whenever diagnosing and fixing a bug, even if the user just describes broken behavior.
+---
+
 # Bug
 
 Invoke the Arcane `spell-bug` spell workflow.

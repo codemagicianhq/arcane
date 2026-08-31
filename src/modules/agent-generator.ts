@@ -8,8 +8,11 @@
  *   - Claude:   CLAUDE.md  ← arcane marker merge
  *   - Codex:    AGENTS.md  ← arcane marker merge
  *
- * Generated outputs also merge an agent roster table into
- * .github/copilot-instructions.md (shared with Copilot merge).
+ * Each L1 merge (CLAUDE.md, AGENTS.md, .github/copilot-instructions.md) also
+ * injects a static intent→spell routing table ahead of the roster table,
+ * independent of whether any roster entries resolved — the routing guidance
+ * ("if a spell exists for this workflow, invoke it") applies with or without
+ * agent personas configured.
  *
  * NOTE: openclaw.json is NEVER modified directly — a patch file is generated
  * at .arcane/generated/openclaw-roster.json for the user to apply manually.
@@ -114,6 +117,23 @@ ${rules}
 
 **Allowed:** ${def.tools.allowed.join(", ")}
 **Denied:** ${def.tools.denied.join(", ")}
+`;
+}
+
+function renderSpellRoutingSection(): string {
+  return `## Spell Routing
+
+| When you're about to... | Invoke |
+|---|---|
+| Commit work | \`spell-commit-work\` |
+| Open a session | \`spell-open-session\` |
+| Close a session | \`spell-close-session\` |
+| Open a pull request | \`spell-create-pull-request\` |
+| Ship a feature end-to-end | \`spell-full-cycle\` |
+| Fix a bug | \`spell-bug\` |
+| Review code or a PR | \`spell-review\` |
+
+If a spell exists for the workflow you are about to perform, invoke it — do not improvise the workflow from general knowledge, even when the user doesn't name the spell.
 `;
 }
 
@@ -293,12 +313,12 @@ export async function syncAgents(
       synced.push(`.github/agents/${fileName}`);
     }
 
-    // Merge roster into copilot-instructions.md
-    const rosterSection = renderAgentRosterSection(resolved);
+    // Merge spell routing + roster into copilot-instructions.md
+    const copilotSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
     const copilotMerged = await mergeIntoFile(
       targetDir,
       ".github/copilot-instructions.md",
-      rosterSection,
+      copilotSection,
       { force: true, dryRun: options.dryRun },
     );
     if (copilotMerged)
@@ -307,11 +327,11 @@ export async function syncAgents(
 
   // ── Claude output ────────────────────────────────────────────────────────
   if (options.claude !== false) {
-    const rosterSection = renderAgentRosterSection(resolved);
+    const claudeSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
     const claudeMerged = await mergeIntoFile(
       targetDir,
       "CLAUDE.md",
-      rosterSection,
+      claudeSection,
       { force: true, dryRun: options.dryRun },
     );
     if (claudeMerged) synced.push("CLAUDE.md (agents section)");
@@ -319,11 +339,11 @@ export async function syncAgents(
 
   // ── Codex output ─────────────────────────────────────────────────────────
   if (options.codex !== false) {
-    const rosterSection = renderAgentRosterSection(resolved);
+    const codexSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
     const codexMerged = await mergeIntoFile(
       targetDir,
       "AGENTS.md",
-      rosterSection,
+      codexSection,
       { force: true, dryRun: options.dryRun },
     );
     if (codexMerged) synced.push("AGENTS.md (agents section)");

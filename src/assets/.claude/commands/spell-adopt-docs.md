@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when bringing an existing, ungoverned doc tree under Arcane governance.
+---
+
 # Adopt Docs
 
 Invoke the Arcane `spell-adopt-docs` spell workflow.
