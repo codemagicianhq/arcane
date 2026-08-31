@@ -331,10 +331,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     [PR #114](https://github.com/codemagicianhq/arcane/pull/114), `draft`→`accepted`, no bump.
   - PR (1) Tier 1 R1-R7: **done** — [PR #115](https://github.com/codemagicianhq/arcane/pull/115) merged
     via rebase (`c86300d`), `v0.22.7`.
-  - PR (2) R8 CLI `spell status` parity: **not started.**
+  - PR (2) R8 CLI `spell status` parity: **done** — [PR #117](https://github.com/codemagicianhq/arcane/pull/117)
+    merged via rebase (`8f9e082`), `v0.22.8`. New `src/modules/diagram-generator.ts` (pure, sibling to
+    `version-check.ts`); OQ2 resolved there (aligned text on a TTY, fenced diagram only when piped).
   - PR (3) Tier 2 R9-R10: **not started.**
   - PR (4) Tier 3 R11: **not started.**
-  - Leave this checkbox unticked until PR (4) merges — 2 of 5 total PRs (including the precursor)
+  - Leave this checkbox unticked until PR (4) merges — 3 of 5 total PRs (including the precursor)
     done.
 - [ ] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
   Route: chain. Size M. Bump: yes. Prompt-only by its own constraints; must not shift the bold-colon
