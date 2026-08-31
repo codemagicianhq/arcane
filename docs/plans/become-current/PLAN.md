@@ -160,13 +160,20 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (`main()` called unconditionally at module scope, so importing the new exports for testing
   silently rebuilt this repo's real `dist/assets/` and raced `test/init.test.ts`'s built-CLI
   tests) was found and fixed in the same PR — see the TODO.md entry for the full detail.
-- [ ] **BC-03 — Branch hygiene: content-verified sweep.** Sources: TODO.md:92-99 (T12 a+b; c → BC-17).
-  Route: direct. Size M. Bump: yes (close-session prompt). Implement content-level verification
-  (`git cherry` + diff, never ancestry alone) as an idempotent close-session sweep step. Then run it:
-  delete `docs/discoverability-session-journal` (verified 0 unmerged commits, 2026-08-30) and this
-  session's empty `sessions/2026-08-30-arc035-review-round-check`; produce per-branch content reports
-  for the five content-holding branches and append them to OPERATOR-QUEUE (land vs. abandon is the
-  operator's call). Honor the EF-33 same-vantage-point check before any deletion.
+- [ ] **BC-03 — Branch hygiene: content-verified sweep.** Sources: TODO.md:94-101 (T12 a+b; c → BC-17,
+  line renumbered by BC-01/02's edits — corrected here). Route: direct. Size M. Bump: yes (close-session
+  prompt). Implement content-level verification (`git cherry` + diff, never ancestry alone) as an
+  idempotent close-session sweep step. Then run it. **In progress 2026-08-31:** implemented in
+  `git-conventions.md` (new Content-Verified Branch Deletion section), `spell-open-session.prompt.md`,
+  and `spell-close-session.prompt.md`; ran live — `sessions/2026-08-30-arc035-review-round-check` from
+  this line's original text does not actually exist (stale citation, corrected via live verification,
+  not the 5 originally-listed content-holding branches minus the one this cleared). Deleted 3 branches
+  verified fully landed (`docs/discoverability-session-journal`; `sessions/2026-08-15-queue-failfast-doclink-ideas`,
+  cleared only after a resulting-content check caught a `git cherry` patch-id false-negative; the
+  remote-only `docs/spell-full-cycle-coordination-gaps`). Per-branch content reports with land/abandon
+  recommendations for the remaining 4 branches appended to
+  [OPERATOR-QUEUE.md Q-003](OPERATOR-QUEUE.md#q-003--four-content-holding-local-branches-land-or-abandon),
+  including a newly-found 6th instance of EF-34-class fixture contamination. Tick on merge, not before.
 - [ ] **BC-04 — Roster integrity batch (incl. ARC-012).** Sources: TODO.md:12 (T1), :103 (T14),
   :143 (T16), :155 (T20/ARC-012). Route: direct. Size M. Bump: **yes** (one PR, one bump).
   (a) `spell agents sync/init` exits non-zero when any rostered role fails to resolve

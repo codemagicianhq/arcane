@@ -237,7 +237,8 @@ describe("spell-open-session caveats the reads that can produce false-prunable s
 
   it("the stale-branch line itself points at content-verification, not ancestry alone", () => {
     const line = lineContaining(openSession, "git branch --merged main`");
-    expect(line).toContain("rebase-and-fast-forward merges are invisible to `--merged`");
+    expect(line).toContain("misses every branch landed via this repo's sanctioned rebase-and-fast-forward");
+    expect(line).toContain("Content-Verified Branch Deletion");
     expectNotNegated(line);
   });
 });
