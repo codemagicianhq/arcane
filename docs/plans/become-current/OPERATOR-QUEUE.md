@@ -119,4 +119,29 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   open remainder ("operator identity, provider coordinates, repository lists").
 - **Status:** waiting on BC-11's draft PR.
 
-<!-- The loop appends Q-006+ below this line. -->
+## Q-006 — Accept/revise/reject ADR: ARC-037 (Secret and Org-Leak Detection)
+
+- **What:** [ARC-037](../../../DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop)
+  is `Proposed`, drafted 2026-08-31 (BC-10) from EF-35's deferred secret-detection gap plus ARC-016
+  decision 3's unbuilt org-leak-gate pieces. Implementation is BC-30, gated on your acceptance here.
+- **The shape, briefly:** a new step in `.husky/pre-commit` (after lint/typecheck) scans for both
+  generic secrets (extending the existing `SECRETS_PATTERNS` engine already used at build time) and
+  org tokens (extending the existing org-token-lint logic) in one pass; the existing build-time
+  secrets scan widens from `src/assets/`-only to the whole repository as a CI backstop that survives
+  a local `--no-verify`; a new `.arcane.json`-configurable exclude-list handles the false-positive
+  case this repo's own `test/copy-assets.test.ts` fixture already demonstrates is real; an equivalent
+  pre-commit hook installer ships to consumer repos (none exists today); `spell check-leaks` (ARC-016's
+  originally mandated standalone command) is retired in favor of folding an on-demand check into
+  `spell doctor`, which already exists. Does **not** touch ARC-034's pre-push hook — ruled out
+  mechanically (its unconditional block has no reachable branch for a conditional scan).
+- **Corrects two prior claims while it's at it:** EF-35's "no scanner exists anywhere" is wrong — a
+  homegrown one has run at build time since this repo's first public commit, just narrowly scoped;
+  and ARC-016's CI-gate deliverable is already shipped (`org-token-lint.ts`), not still outstanding as
+  PLAN.md's BC-10 route text implied.
+- **Open questions the ADR deliberately leaves to you or to BC-30** (see ARC-037's own Open Questions
+  section): mandatory-for-every-repo vs. opt-in per repo; exact `.arcane.json` field shape for the
+  exclude-list; whether the widened CI scan becomes its own named required check.
+- **Preconditions:** none — this ADR can be accepted independently of BC-11/BC-12's ADRs.
+- **Status:** ready for your accept/revise/reject call.
+
+<!-- The loop appends Q-007+ below this line. -->

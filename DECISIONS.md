@@ -55,6 +55,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-034](#arc-034--push-safety-for-sensitive-repositories)                                        | Push Safety for Sensitive Repositories                                        | 2026-08-23 | Accepted   |
 | [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round)                                      | Auto-Merge Requires a Clear Review Round                                       | 2026-08-25 | Accepted   |
 | [ARC-036](#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)       | Generated State Diagrams: Deterministic Mermaid for Computed Spell State       | 2026-08-30 | Accepted   |
+| [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) | Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop | 2026-08-31 | Proposed   |
 
 ---
 
@@ -1595,3 +1596,153 @@ Binding the check continuously (a required status check re-evaluated on every pu
 
 - Model-authored diagrams per spell — non-deterministic, drift-prone, and restates rule 8 across 36 files instead of referencing one convention.
 - Rendered images/SVG or a rendering service — breaks the markdown-native, no-lock-in pillar.
+
+---
+
+## ARC-037 — Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop
+
+**Date:** 2026-08-31
+**Status:** Proposed
+**Related:** [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (decision 3's org-leak gate, partially unbuilt — audited and disposed of below), [ARC-034](#arc-034--push-safety-for-sensitive-repositories) (its pre-push hook is examined as a candidate bind point and ruled out, not extended)
+**Intake:** [EF-35](docs/intake/batch-001/EF-35.md)
+
+**Context:**
+
+EF-35 found that Arcane's secret-handling policy is documented in five governance files but checked
+nowhere, and that `threat-model.md` overclaimed "Mitigated" for credential exposure as a result (that
+overclaim was corrected the same day EF-35 was filed; this ADR is only about the missing detection
+mechanism EF-35 deferred). EF-35's own research method — searching the repository for the names of
+well-known third-party scanners (`gitleaks`, `trufflehog`, `detect-secrets`, `git-secrets`,
+`secretlint`, `ggshield`) — found none and concluded no scanner exists "anywhere."
+
+**That conclusion needs correcting before this ADR can settle anything.** `scripts/copy-assets.ts`
+has run a homegrown, regex-based secrets scanner (`SECRETS_PATTERNS` — API keys, Bearer tokens, PEM
+headers, Slack tokens, AWS access key IDs, GitHub PATs, OpenAI-style keys) since this repository's
+very first public commit (`07b98a0`, predating EF-35's 2026-08-23 filing by roughly two months). It
+runs inside `copyDir`, which `npm run build` calls, which CI's `Lint, typecheck, test, build` job
+runs as a required check on every PR. EF-35's search terms — all third-party tool *names* — could not
+find in-house scanning code with no such name attached; that is a real gap in EF-35's methodology, not
+a fabrication, and it does not survive independent verification. **The corrected gap is narrower than
+EF-35 stated:** this scanner's bind point is `npm run build`, and its scope is *only* files being
+copied from `src/assets/` to `dist/assets/` — it protects the shipped product's asset tree from
+carrying a secret, and does nothing for the rest of this repository (`src/`, `test/`, `scripts/`,
+governance docs, `journal/`), and nothing for any consumer repository at all, ever, at any point.
+That is the actual hole EF-35's Impact section describes.
+
+Separately, [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate)
+decision 3 (2026-06-24) mandated an **org-token** leak gate — a narrower concern than general secrets
+(org names, venture names, machine names, ADO URLs, not credentials) — as three deliverables: a
+`spell check-leaks` command, a pre-commit hook, and a CI gate. Audited against current `HEAD`: the CI
+gate shipped (`scripts/org-token-lint.ts`, wired into the same `npm run build` path as the secrets
+scanner above — this piece of ARC-016 is **done**, not a gap, correcting PLAN.md's "unbuilt" framing
+for this specific piece). The command and the pre-commit hook were never built: no `spell check-leaks`
+exists in `src/index.ts`'s command list, and `.husky/pre-commit` runs `npm run lint && npm run
+typecheck` only (confirmed directly, not inferred).
+
+**Decision:**
+
+1. **Bind point: pre-commit, as a third step in the existing `.husky/pre-commit` script** — not a
+   separate hook file, and not ARC-034's pre-push hook. EF-35's own reasoning already ranks pre-commit
+   highest ("the only point where remediation is still free"); once a secret is committed, remediation
+   means rotating the credential, not editing history. Extending the existing hook script (after
+   `lint && typecheck`) reuses the install/collision-guard machinery already proven for that hook
+   rather than inventing a second one.
+2. **ARC-034's pre-push hook is ruled out as a bind point, not merely deprioritized.** Checked directly
+   against `src/modules/push-safety.ts:148`: `HOOK_BODY` is a static, unconditional `exit 1`, installed
+   only for the `push_policy: "blocked"` tier — the minority of repositories (confirmed this session:
+   `guarded`/`open` repos, including this one, get no shipped pre-push hook of any kind). There is no
+   branch inside an unconditional block a scan step could reach without either being dead code (the
+   block already fires first) or changing what an already-shipped, tested hook does. Secret-scanning
+   needs its own bind point, independent of `push_policy` — the same missing primitive a still-open
+   TODO.md item (`ARC-035` decision 4's closed-PR push warning) separately needs for an unrelated
+   reason; BC-30's implementation should build one shared, `push_policy`-independent hook-install path
+   rather than two.
+3. **CI backstop: widen the existing scanner's scope from `src/assets/`-only to repository-wide,**
+   mirroring how `scanRepository`/`resolvePrivateTokens` already does a full-tree walk for the *private*
+   org-token denylist in the same file. This is a scope change to an already-shipped, already-required
+   check, not a new gate — it catches anything that bypasses the new pre-commit hook (`--no-verify`,
+   a client that doesn't run hooks, a direct API commit) before merge.
+4. **Self-host and shipped parity, both required, as two separate deliverables.** (a) This repository's
+   own `.husky/pre-commit` gains the scan step directly (self-host fix, no new distributable content).
+   (b) Arcane currently ships **no** `.husky/` hooks to consumers at all (`src/assets/.husky/` does not
+   exist — confirmed this session investigating a different, related gap). A consumer-facing pre-commit
+   hook installer is new distributable content, not a self-host-only patch; skipping it would leave
+   every consumer repository exactly as unprotected as EF-35's Impact section describes today.
+5. **False-positive posture: extend `copy-assets.ts`'s existing (currently empty)
+   `SCAN_EXCLUDED_PREFIXES` mechanism into an `.arcane.json`-configurable field** (exact name/shape
+   left to BC-30) rather than inventing a parallel allowlist format. This is not a hypothetical
+   concern: `test/copy-assets.test.ts:74` already commits the literal fixture line `"API_KEY=abc123"`
+   to test that `SECRETS_PATTERNS` fires correctly — the exact self-referential collision EF-35's
+   proposed-fix point 4 warned about, confirmed to already exist in this repository's own test suite,
+   which decision 3's repository-wide widening would trip the moment it ships without an allowlist.
+   (PLAN.md's BC-10 route cites `org-token-lint.test.ts` for this concern; the actual fixture lives in
+   `copy-assets.test.ts` — corrected here rather than perpetuated.)
+6. **Bypass posture: `--no-verify` defeats pre-commit hooks by design, and this ADR does not pretend
+   otherwise.** ARC-034's push-safety achieves `--no-verify`-resistance through a disabled push URL —
+   a mechanism that works *because* push-safety's desired end state is binary ("block every push").
+   Secret-scanning has no equivalent: it must let non-secret commits through, so there is no "disable
+   everything" fallback to borrow. Decision 3's CI backstop is the real defense-in-depth here — it
+   inspects pushed content independently of whatever happened to local hooks — and this is stated
+   plainly rather than presenting the pre-commit hook as tamper-proof, which it is not and cannot be.
+7. **ARC-016's three unbuilt-or-partial deliverables, disposed of individually:**
+   - **CI gate — already done**, per the Context section above. No further action; PLAN.md/TODO.md
+     framing that treats this as outstanding should be corrected when this ADR is implemented.
+   - **Pre-commit hook — absorbed**, not built separately. The single new pre-commit step (decision 1)
+     runs both the org-token check (already-existing `scanRepository`/`resolvePrivateTokens` logic) and
+     the generic-secrets check (`SECRETS_PATTERNS`) together, rather than shipping two independent
+     hook mechanisms for two related leak classes.
+   - **`spell check-leaks` standalone command — retired as originally specified.** A dedicated
+     top-level command duplicates what becomes continuous, hook-driven protection once decisions 1–4
+     ship. An on-demand equivalent (for a manual check outside the commit path — e.g. auditing history
+     already in the repo) fits better as a mode of `spell doctor`, which already exists for
+     "check my environment" queries, than as new top-level CLI surface.
+8. **Scanner choice: extend the existing in-house `SECRETS_PATTERNS` regex engine; do not adopt an
+   external tool (gitleaks, trufflehog, or similar).** Arcane distributes as a single `npm install`;
+   the leading third-party scanners ship as standalone non-npm binaries requiring a separate install
+   step (`brew`, `curl`, `go install`). Requiring that for a *mandatory* pre-commit dependency conflicts
+   with the zero-extra-install distribution model every other Arcane capability follows. The existing
+   patterns already cover the highest-value common credential shapes and are already exercised by
+   `test/copy-assets.test.ts`.
+
+**Open questions (deferred to BC-30's implementation, not blocking acceptance of the shape above):**
+
+- Exact `.arcane.json` field name and match semantics for the new exclude-list (literal prefix match,
+  mirroring `SCAN_EXCLUDED_PREFIXES` exactly, or glob support).
+- Whether the widened repository-wide CI scan should also become its own named required status check
+  (the way `Review round clear` is one, per ARC-035) or remain folded into the existing build job.
+- Whether detection should be mandatory for every Arcane-managed repository or opt-in on the same axis
+  as `content_sensitivity`/`push_policy` (EF-35's own first open question — a genuine operator-facing
+  policy call this ADR does not presume to resolve).
+- Whether GitHub's native secret scanning + push protection (already enabled operationally on this
+  repository, per TODO.md's EF-35 entry) should reduce `doctor`'s scope to "report whether the
+  platform feature is on" for GitHub-hosted repos specifically, alongside the portable scanner above.
+
+**Reasoning:**
+
+- Pre-commit is the only bind point where remediation is still free (EF-35's own framing); CI is the
+  only bind point that cannot be locally bypassed. Using both, and explicitly not the third candidate
+  (ARC-034's pre-push hook, mechanically unusable here), covers the two properties that actually matter
+  without inventing a third redundant check.
+- Reusing and widening two already-shipped, already-tested mechanisms (`SECRETS_PATTERNS`,
+  `scanRepository`) is smaller and lower-risk than introducing new scanning logic or a new dependency,
+  and inherits their existing test coverage rather than starting from zero.
+- Naming the bypass limitation explicitly (decision 6) is consistent with how ARC-034 itself describes
+  its own hook as "deliberately not tamper-proof" rather than overclaiming — the same discipline EF-35
+  criticized `threat-model.md` for lacking should apply to this ADR's own claims about itself.
+
+**Rejected alternatives:**
+
+- **Extend ARC-034's pre-push hook to also scan for secrets** — ruled out mechanically (decision 2),
+  not merely deprioritized: the hook's unconditional block and narrow `push_policy: "blocked"`-only
+  installation leave no reachable branch for a conditional scan step.
+- **Adopt gitleaks or trufflehog as the scanning engine** — rejected: both ship as external binaries,
+  conflicting with Arcane's single-`npm-install` distribution model for a capability meant to be
+  mandatory (decision 8). Worth revisiting only if the in-house pattern set proves insufficient in
+  practice, which has not been observed.
+- **Wait for ARC-020's full repository-configuration schema before adding an `.arcane.json` field** —
+  rejected using ARC-032's own precedent: a small, scoped field (the exclude-list) does not need to
+  wait for a broader, still-open schema decision.
+- **Keep `spell check-leaks` as its own top-level command, as ARC-016 originally specified** —
+  rejected: once detection is continuous (pre-commit + CI), a separate on-demand command duplicates
+  coverage the hook already provides for the common case; the genuinely different use case (auditing
+  content already committed, outside the commit path) fits `spell doctor` better than a new verb.
