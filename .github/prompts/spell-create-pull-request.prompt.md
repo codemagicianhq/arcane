@@ -168,6 +168,22 @@ Documentation-only PR. No functional code changed.
 - If no reviewers were resolved (none passed, or names the provider could not match): `⚠ No reviewers assigned — add them in the PR or re-run with --reviewers`.
 - If `--draft`: note it was created as a draft.
 - Delete the body temp file (`<git-dir>/arcane-pr-body.md`) once the PR is confirmed created and verified.
+- **Branch topology** — per the generated state diagrams convention (rule 8, ARC-036), built only from
+  Step 1's already-gathered branch name and commit list (`git log origin/<target>..HEAD --format="%h %s" --reverse`).
+  Skip entirely (the applicability guard) if that commit list is empty — Step 0.4 already stops before
+  reaching here in that case, so this only re-states the same guard for anyone reading this step in
+  isolation:
+
+  ```mermaid
+  gitGraph
+     commit id: "<target HEAD short-sha>"
+     branch <branch-name>
+     commit id: "<short-sha 1>"
+     commit id: "<short-sha 2>"
+  ```
+
+  Same shape `spell-commit-work` uses for the identical concept — reference it rather than re-deriving
+  the rule (D8): one commit per gathered log entry, target's short SHA as the fork point.
 
 ## Rules
 

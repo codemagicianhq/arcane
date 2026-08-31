@@ -243,4 +243,21 @@ Author: Display Name <email>
 
 **Pull Request:** [full PR URL](https://github.com/{org}/{repo}/pull/{id} or https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{id})
 
+**Branch topology** — per the generated state diagrams convention (rule 8, ARC-036), built only from
+data Step 1/9 already gathered (current branch name, commits ahead of target via
+`git log origin/<target>..HEAD --format="%h %s" --reverse`). Skip entirely — this is the applicability
+guard — when there is no separate topic branch (the local-only-checkpoint path, committing directly on
+trunk) or no usable remote (nothing to compare against):
+
+```mermaid
+gitGraph
+   commit id: "<target HEAD short-sha>"
+   branch <branch-name>
+   commit id: "<short-sha 1>"
+   commit id: "<short-sha 2>"
+```
+
+One commit per entry in the gathered commit list, in the same order; omit the diagram (not just the
+commits) if that list is empty. Use `<target>`'s short SHA as the fork-point commit id.
+
 **Next:** Continue work or run `spell-close-session` to finalize journal and session docs.

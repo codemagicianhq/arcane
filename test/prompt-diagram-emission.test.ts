@@ -8,12 +8,16 @@ const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
 let universalRules: string;
 let openSession: string;
 let arcaneVersion: string;
+let commitWork: string;
+let createPullRequest: string;
 
 beforeAll(async () => {
-  [universalRules, openSession, arcaneVersion] = await Promise.all([
+  [universalRules, openSession, arcaneVersion, commitWork, createPullRequest] = await Promise.all([
     readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8"),
     readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-arcane-version.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-create-pull-request.prompt.md"), "utf8"),
   ]);
 });
 
@@ -107,5 +111,36 @@ describe("spell-arcane-version gains the third reading and references the canoni
 
   it("still reports when the npm registry is unreachable", () => {
     expect(arcaneVersion).toContain("Could not reach npm registry");
+  });
+});
+
+describe("spell-commit-work and spell-create-pull-request emit branch/PR topology (R9)", () => {
+  it("both reference the generated state diagrams convention", () => {
+    expect(commitWork).toContain("generated state diagrams convention (rule 8, ARC-036)");
+    expect(createPullRequest).toContain("generated state diagrams convention (rule 8, ARC-036)");
+  });
+
+  it("both contain the gitGraph topology template with a fork point and per-commit entries", () => {
+    for (const text of [commitWork, createPullRequest]) {
+      expect(text).toContain("gitGraph");
+      expect(text).toContain('commit id: "<target HEAD short-sha>"');
+      expect(text).toContain("branch <branch-name>");
+      expect(text).toContain('commit id: "<short-sha 1>"');
+      expect(text).toContain('commit id: "<short-sha 2>"');
+    }
+  });
+
+  it("spell-commit-work states the applicability guard: no separate branch or no usable remote", () => {
+    expect(commitWork).toContain("no separate topic branch");
+    expect(commitWork).toContain("no usable remote");
+  });
+
+  it("spell-create-pull-request references spell-commit-work's shape rather than re-deriving it (D8)", () => {
+    expect(createPullRequest).toContain("Same shape `spell-commit-work` uses for the identical concept");
+  });
+
+  it("both derive the diagram only from already-gathered data, not a new git command", () => {
+    expect(commitWork).toContain("data Step 1/9 already gathered");
+    expect(createPullRequest).toContain("Step 1's already-gathered branch name and commit list");
   });
 });
