@@ -432,9 +432,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   BC-10's accepted ADR to keep scanner boundaries from colliding with secret detection.
   **Done 2026-08-31 — shipped as two PRs, disclosed here** (`ward` and `scry` have genuinely
   different implementation shapes — deterministic CLI code vs. a research-driven prompt spell).
-  - `ward`: **done** — new `spell ward` CLI, reusing `org-token-lint.ts`'s scanning engine (extracted
-    into a new shared `src/modules/denylist-scan.ts`, zero behavior change, verified). 28 new tests.
-  - `scry`: **done** — new prompt-driven `spell-scry.prompt.md`, registered under the existing
+  - `ward`: **done** — [PR #137](https://github.com/codemagicianhq/arcane/pull/137) merged via rebase
+    (`127f257`), `v0.25.0`. New `spell ward` CLI, reusing `org-token-lint.ts`'s scanning engine
+    (extracted into a new shared `src/modules/denylist-scan.ts`, zero behavior change, verified).
+    28 new tests.
+  - `scry`: **done** — [PR #138](https://github.com/codemagicianhq/arcane/pull/138) merged via rebase
+    (`e2471a5`), `v0.26.0`. New prompt-driven `spell-scry.prompt.md`, registered under the existing
     `spells-build` component. Inward pass mandatory and runs first (real ARC-028 `workspace` incident
     cited as why); one shared same-space/adjacent/out-of-space taxonomy for both passes; verdict is
     pass/pass-with-disclosure/kill, never rounded. Does not call `spell ward` — same grep principle,
