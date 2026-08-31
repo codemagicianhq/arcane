@@ -198,8 +198,9 @@
       (Replaces the original "A" mark — 2026-07-12.)
 
 - [x] **New spells `ward` + `scry`**. `spell ward` — local IP/trademark leakage scan of a repo: denylist + word-boundary grep across tree, filenames, and binary asset strings; substring-hazard exclusions (author/provision class); flags grep-proof media (GIF/PNG/MP4/audio) for manual review; CI-gate mode. `spell scry <term>` — live external name clearance: web-search the term across software/app/AI/game contexts, classify hits (same-space / adjacent / out-of-space), apply the four checks (who coined it · is an estate still trading · same-audience giants · first-association salience per market) and return pass / pass-with-disclosure / kill with sources. Ward finds what leaked in; Scry clears what goes out. **Extended 2026-08-24 — `scry` needs an inward pass, not only the outward four-check.** ARC-028's naming decision was nearly settled on bare `workspace` on the strength of a clean external read; a single `grep -ri` then found the word already load-bearing *inside this repository* in two other senses — the agent sandbox root (`workspace-{agent}`) and the shipped, validated schema field `openclaw.workspace_root`, the latter being one of the four colliding meanings ARC-028 exists to disambiguate. All four checks interrogate the outside world; none of them greps the repository the name is about to ship into, so the collision that actually shaped the answer was invisible to the spell as specified. Add a repo-local pass to `scry` that reports existing occurrences of the candidate — prose, identifiers, config keys, and schema fields, weighting code identifiers above prose since those are the ones consumers already depend on — and classify an internal hit the same way an external one is classified (same-space / adjacent / out-of-space). This is a distinct concern from `ward`, which scans for *leaked third-party* identifiers rather than for self-collision with a name under consideration. **Ward must ship with a vendor-identifier denylist** — automated renames can corrupt vendor identifiers (e.g., third-party model ids) and self-consistent mocks will bless the corruption.
-  **`ward` shipped 2026-08-31 (BC-21, split into two PRs — `scry` is a separate follow-up, not done yet;
-  disclosed here rather than silently re-scoping):** new `spell ward` CLI command
+  **`ward` shipped 2026-08-31 (BC-21):** [PR #137](https://github.com/codemagicianhq/arcane/pull/137)
+  merged via rebase (`127f257`), `v0.25.0` — split into two PRs, `scry` a separate follow-up, disclosed
+  here rather than silently re-scoping. New `spell ward` CLI command
   (`src/commands/ward.ts` + `src/modules/ward.ts`). Reuses `scripts/org-token-lint.ts`'s generic
   scanning engine, extracted into a new shared `src/modules/denylist-scan.ts` (zero behavior change —
   verified via `org-token-lint.test.ts`'s existing 9 tests passing unchanged, plus the real
@@ -214,7 +215,8 @@
   `test/denylist-scan.test.ts`/`test/ward.test.ts`/`test/ward-cli.test.ts`, plus a fix to
   `test/cli-unknown-command.test.ts`'s hardcoded command list (same class of fix as BC-18's spell-count
   test, found and fixed the same way).
-  **`scry` shipped 2026-08-31 (BC-21) — item fully done.** New prompt-driven `spell-scry.prompt.md`
+  **`scry` shipped 2026-08-31 (BC-21):** [PR #138](https://github.com/codemagicianhq/arcane/pull/138)
+  merged via rebase (`e2471a5`), `v0.26.0` — item fully done. New prompt-driven `spell-scry.prompt.md`
   (+ `.claude/commands/spell-scry.md` stub), registered under the existing `spells-build` component
   (bumping that profile's spell count 36→37, same hardcoded-count fix class as BC-18's, applied again).
   Inward pass runs first and is mandatory (not optional), citing the real ARC-028 `workspace` incident
