@@ -4,7 +4,6 @@ import {
   expect,
   beforeEach,
   afterEach,
-  beforeAll,
   vi,
 } from "vitest";
 import { promises as fs } from "node:fs";
@@ -281,13 +280,19 @@ describe("spell init — handler", () => {
 // ─── Built CLI tests ─────────────────────────────────────────────────────────
 
 describe("spell init — built CLI", () => {
-  beforeAll(() => {
-    spawnSync("npm", ["run", "build"], {
-      cwd: process.cwd(),
-      stdio: "pipe",
-    });
-  });
-
+  // No beforeAll rebuild here, deliberately: this describe block relies on
+  // dist/index.js already being current -- CI's own workflow (ci.yml) builds
+  // once before running `npm test`, and a per-file rebuild was actively
+  // harmful, not merely redundant. `spawnSync("npm", ...)` fails ENOENT on
+  // Windows (npm resolves to a .cmd shim that Node's spawnSync won't
+  // auto-resolve without shell:true, confirmed live 2026-08-31), so locally
+  // this was already a silent no-op; on CI's Linux runner it actually ran,
+  // and tsup's `clean: true` wiped dist/ as a side effect, racing any OTHER
+  // concurrently-scheduled test file that also spawns dist/index.js --
+  // confirmed live 2026-08-31: test/agent-loader.test.ts's own "built CLI"
+  // test hit `ENOENT: dist/index.js` mid-run, the same failure shape BC-02
+  // found and fixed for copy-assets.ts's import-time rebuild. Run `npm run
+  // build` yourself before `npm test` if iterating on this file locally.
   it("spell --help prints all 5 subcommands", () => {
     const result = spawnSync("node", [BIN, "--help"], { encoding: "utf-8" });
     expect(result.status).toBe(0);
