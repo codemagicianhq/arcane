@@ -280,12 +280,19 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   already shipped, not still unbuilt as this line above implied. The false-positive fixture is
   `test/copy-assets.test.ts:74`, not `org-token-lint.test.ts` as this line above also named —
   corrected in the ADR itself. Bump: n/a, no `src/assets` changes.
-- [ ] **BC-11 — Customization & vendor-neutrality spike + ADR.** Sources: TODO.md:158 (T22) ·
+- [x] **BC-11 — Customization & vendor-neutrality spike + ADR.** Sources: TODO.md:158 (T22) ·
   ARC-020 (Proposed; broad schema open) · IDEAS.md:22 (I14 prior art: copier 3-way merge,
   `ng update` schematics; per-file content hashes prerequisite). Route: adr (research spike first,
   per T22's own instruction). Size L. Covers: override model surviving `spell update`,
   vendor-neutral naming core + pluggable profiles, home for vendor-specific standards.
   Implementation = BC-31.
+  **Done:** [PR #108](https://github.com/codemagicianhq/arcane/pull/108) merged 2026-08-31 via
+  rebase (`e762b30`). [ARC-038](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content)
+  drafted `Proposed`; acceptance requested at OPERATOR-QUEUE.md Q-007. Spike found the "vendor-neutral
+  naming core" premise stale (`naming-conventions.md` carries no Azure content today — the real,
+  current instance is `cicd-standards.md`) and corrected OPERATOR-QUEUE.md Q-005's standing assumption
+  that this ADR would subsume ARC-020's remainder (it doesn't — different axis: data fields vs.
+  content architecture). Bump: n/a, no `src/assets` changes.
 - [ ] **BC-12 — Spell-compiler ADR.** Sources: IDEAS.md:13 (I5), :23 (I15 — 66 hand-maintained
   files → 33 + generator; ARC-027 doesn't cover commands-vs-prompts drift). Route: adr. Size M.
   Must resolve the D2 Gold vanilla-repo tension I5 names. Implementation = BC-32.
