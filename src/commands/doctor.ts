@@ -12,6 +12,14 @@ import {
   undisabledRemotes,
   pushTargets,
 } from "../modules/push-safety.js";
+import {
+  parseGitHubRemote,
+  parseAdoRemote,
+  fetchGitHubRulesets,
+  fetchAdoMergeTypePolicies,
+  evaluateGitHubMergePolicy,
+  evaluateAdoMergePolicy,
+} from "../modules/platform-policy.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -347,6 +355,67 @@ export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
   };
 }
 
+/**
+ * T11/BC-17. Verifies the live platform branch/merge policy matches the
+ * declared ladder (git-conventions.md: merge + rebase sanctioned, squash
+ * never sanctioned). GitHub is checked via Rulesets, never the classic
+ * `/branches/{branch}/protection` endpoint alone -- that endpoint 404s
+ * "not protected" for a Rulesets-only repo (confirmed live against this
+ * repo's own main branch), a false negative this check must not repeat.
+ * Report-only: never mutates a platform setting. Degrades to a
+ * non-blocking warning for any provider it can't resolve, any CLI it
+ * can't reach, or any auth/network failure -- this check depends on
+ * external state doctor's other checks never do, so it must never be the
+ * reason `doctor` crashes.
+ */
+export async function checkPlatformBranchPolicy(targetDir: string): Promise<CheckResult> {
+  const name = "Platform branch/merge policy (T11)";
+  const targets = await pushTargets(targetDir);
+  const origin = targets.find((t) => t.remote === "origin") ?? targets[0];
+  const url = origin?.urls[0];
+
+  if (!url) {
+    return { name, passed: true, message: "no remote configured — nothing to check", blocking: false };
+  }
+
+  const github = parseGitHubRemote(url);
+  if (github) {
+    const rulesets = await fetchGitHubRulesets(github.owner, github.repo);
+    if (rulesets === null) {
+      return {
+        name,
+        passed: false,
+        blocking: false,
+        message: `could not query GitHub Rulesets for ${github.owner}/${github.repo} — is \`gh\` installed and authenticated? Verify manually: gh api repos/${github.owner}/${github.repo}/rulesets`,
+      };
+    }
+    const result = evaluateGitHubMergePolicy(rulesets);
+    return { name, passed: result.passed, blocking: false, message: result.message };
+  }
+
+  const ado = parseAdoRemote(url);
+  if (ado) {
+    const policies = await fetchAdoMergeTypePolicies(ado.org, ado.project, ado.repo, "main");
+    if (policies === null) {
+      return {
+        name,
+        passed: false,
+        blocking: false,
+        message: `could not query the Azure DevOps "Limit merge types" branch policy for ${ado.org}/${ado.project}/${ado.repo} — is \`az\` installed and authenticated? Verify manually in the ADO web UI under Branch Policies.`,
+      };
+    }
+    const result = evaluateAdoMergePolicy(policies);
+    return { name, passed: result.passed, blocking: false, message: result.message };
+  }
+
+  return {
+    name,
+    passed: true,
+    blocking: false,
+    message: "remote is neither GitHub nor Azure DevOps — platform policy verification not available for this provider",
+  };
+}
+
 export async function runDoctor(targetDir: string, options: DoctorOptions = {}, assetsDir?: string): Promise<void> {
   console.log("\nspell doctor — checking your Arcane environment\n");
 
@@ -357,6 +426,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     Promise.resolve(checkIncidentReleaseGate()),
     checkPullRebase(targetDir),
     checkPushPolicy(targetDir),
+    checkPlatformBranchPolicy(targetDir),
   ]);
 
   // Add session continuity checks
