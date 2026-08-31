@@ -81,6 +81,13 @@ When completing a PR via `az repos pr update`, do **not** pass `--squash true`. 
 az repos pr update --id <PR_ID> --org https://dev.azure.com/<org> --status completed --delete-source-branch true
 ```
 
+## MCP Fail-Fast / Fallback
+
+One abnormal MCP tool failure (hang, idle-timeout abort, transport error, empty response where data is
+expected) marks that server down for the rest of the session — fall back to the documented CLI (`az
+repos pr` / `gh` / REST), no blind retries, and report the downgrade in output. Full rule and origin
+incident: `.arcane/governance/git-conventions.md` → Known issues.
+
 ## Branch Naming (Interactive Sessions)
 
 Interactive tool session branches use:

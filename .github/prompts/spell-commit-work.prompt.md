@@ -152,6 +152,8 @@ Workflow:
 
    a. Run `git push origin <branch>`.
 
+   a1. **MCP fail-fast / fallback.** If an MCP tool used anywhere in this step (e.g. `create_pull_request`) fails abnormally once — a hang, an idle-timeout abort, a transport error, or an empty response where data is clearly expected — treat that server as down for the rest of this session. Do not retry it blindly; fall back to the raw CLI paths below (`gh pr create` / `az repos pr create`) and report the downgrade. Full rule: `.arcane/governance/git-conventions.md` → Known issues.
+
    b. **🛑 Mandatory pre-PR rebase (governance guard, applies to every path below).** Before invoking any PR-creation command — whether via `spell-create-pull-request`, raw `gh pr create`, raw `az repos pr create`, or an MCP `create_pull_request` tool — you MUST:
 
    ```bash

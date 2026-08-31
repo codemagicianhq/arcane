@@ -356,6 +356,68 @@ export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
   };
 }
 
+interface McpServerConfig {
+  timeout?: number;
+}
+
+interface McpConfigFile {
+  mcpServers?: Record<string, McpServerConfig>;
+}
+
+/**
+ * I12/BC-22. Checks that any configured .mcp.json server sets a per-server
+ * "timeout" -- companion to the MCP fail-fast/fallback rule in
+ * git-conventions.md. Without one, a hung server runs to the client's own
+ * default idle limit (as long as 30 minutes) instead of a predictable one.
+ * A missing .mcp.json is a silent pass -- MCP is optional.
+ */
+export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
+  const name = "MCP config (per-server timeout, I12)";
+  const filePath = join(targetDir, ".mcp.json");
+
+  let raw: string;
+  try {
+    raw = await readFile(filePath, "utf8");
+  } catch {
+    return { name, passed: true, blocking: false, message: "no .mcp.json — nothing to check" };
+  }
+
+  let parsed: McpConfigFile;
+  try {
+    parsed = JSON.parse(raw) as McpConfigFile;
+  } catch {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: ".mcp.json exists but contains invalid JSON",
+    };
+  }
+
+  const servers = parsed.mcpServers ?? {};
+  const serverNames = Object.keys(servers);
+  if (serverNames.length === 0) {
+    return { name, passed: true, blocking: false, message: "no MCP servers configured" };
+  }
+
+  const missingTimeout = serverNames.filter((n) => typeof servers[n]?.timeout !== "number");
+  if (missingTimeout.length > 0) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `server(s) missing a "timeout": ${missingTimeout.join(", ")} — a hang runs to the client's own default idle limit (up to 30 min) instead of a predictable one`,
+    };
+  }
+
+  return {
+    name,
+    passed: true,
+    blocking: false,
+    message: `${serverNames.length} server(s) configured, all with a timeout set`,
+  };
+}
+
 /**
  * T13/BC-19. Lists standing-authority delegations recorded in
  * `.arcane/delegations.json` -- the solo-operator/no-roster counterpart to
@@ -476,6 +538,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkPushPolicy(targetDir),
     checkPlatformBranchPolicy(targetDir),
     checkDelegations(targetDir),
+    checkMcpConfig(targetDir),
   ]);
 
   // Add session continuity checks

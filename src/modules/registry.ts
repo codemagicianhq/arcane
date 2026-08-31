@@ -137,6 +137,15 @@ const COMPONENTS: RegistryComponent[] = [
     skipExisting: true,
     initOnly: true,
   },
+  // Optional MCP config scaffold (BC-22/I12). skipExisting: a repo's own
+  // .mcp.json is user-owned server config Arcane must never overwrite.
+  // Not initOnly -- useful to retrofit via `spell add` on an existing repo too.
+  {
+    name: "mcp-config-template",
+    description: "Example .mcp.json with a per-server timeout, companion to the MCP fail-fast rule",
+    files: [".mcp.json"],
+    skipExisting: true,
+  },
   {
     name: "records-conventions",
     description: "Supersession, tombstone, and retention conventions for records repositories",
