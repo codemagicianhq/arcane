@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY whenever responding to PR review comments — fetch threads, triage, fix or reply, resolve.
+---
+
 # Address Review
 
 Invoke the Arcane `spell-address-review` spell workflow.

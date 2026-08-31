@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when working on a .NET project and best-practice guidance is needed.
+---
+
 # Dotnet Expert
 
 Invoke the Arcane `spell-dotnet-expert` spell workflow.

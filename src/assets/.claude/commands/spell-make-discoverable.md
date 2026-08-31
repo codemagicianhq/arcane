@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when auditing a web property's search/AI-assistant discoverability (metadata, robots, sitemap, indexing).
+---
+
 # Make Discoverable
 
 Invoke the Arcane `spell-make-discoverable` spell workflow.

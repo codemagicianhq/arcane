@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY in a hub repo when creating a new venture from scratch.
+---
+
 # Summon Venture
 
 Invoke the Arcane `spell-summon-venture` spell workflow.

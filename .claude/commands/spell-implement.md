@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY to work through stories.json autonomously once architecture and stories exist.
+---
+
 # Implement
 
 Invoke the Arcane `spell-implement` spell workflow.

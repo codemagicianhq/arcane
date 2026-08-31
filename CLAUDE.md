@@ -1,5 +1,19 @@
 <!-- arcane:start -->
-<!-- Managed agent roster: updated by `spell agents sync`. -->
+## Spell Routing
+
+| When you're about to... | Invoke |
+|---|---|
+| Commit work | `spell-commit-work` |
+| Open a session | `spell-open-session` |
+| Close a session | `spell-close-session` |
+| Open a pull request | `spell-create-pull-request` |
+| Ship a feature end-to-end | `spell-full-cycle` |
+| Fix a bug | `spell-bug` |
+| Review code or a PR | `spell-review` |
+
+If a spell exists for the workflow you are about to perform, invoke it — do not improvise the workflow from general knowledge, even when the user doesn't name the spell.
+
+<!-- No agent roster installed in this repo (no .arcane/agents.yaml) — the roster table `spell agents sync` would otherwise render here is omitted rather than shown empty. -->
 <!-- arcane:end -->
 
 ## Working protocol

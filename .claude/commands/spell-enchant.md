@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when a PRD should be enhanced — UX, accessibility, security, performance — before implementation.
+---
+
 # Enchant
 
 Invoke the Arcane `spell-enchant` spell workflow.

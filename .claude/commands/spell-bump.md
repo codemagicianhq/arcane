@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY before shipping any change that touches distributable content, to determine and apply the correct version bump.
+---
+
 # Bump Version
 
 Invoke the Arcane `spell-bump` spell workflow.

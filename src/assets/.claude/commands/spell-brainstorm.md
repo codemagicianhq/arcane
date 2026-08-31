@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when exploring multiple solutions to a problem before committing to one.
+---
+
 # Brainstorm
 
 Invoke the Arcane `spell-brainstorm` spell workflow.

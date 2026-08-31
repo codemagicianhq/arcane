@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when the user reports friction with AI assistance or the workflow itself, not the product being built.
+---
+
 # Feedback
 
 Invoke the Arcane `spell-feedback` spell workflow.

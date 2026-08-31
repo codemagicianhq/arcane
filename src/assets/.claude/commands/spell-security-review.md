@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY before shipping any change that introduces new attack surface, handles sensitive data, or changes trust boundaries.
+---
+
 # Security Review
 
 Invoke the Arcane `spell-security-review` spell workflow.

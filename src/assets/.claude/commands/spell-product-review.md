@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when evaluating a shipped feature's real-world performance and deciding next actions.
+---
+
 # Product Review
 
 Invoke the Arcane `spell-product-review` spell workflow.

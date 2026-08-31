@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY when smoke testing or usage surfaces a feature gap worth tracking.
+---
+
 # Suggest Feature
 
 Invoke the Arcane `spell-suggest-feature` spell workflow.

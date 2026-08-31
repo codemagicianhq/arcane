@@ -1,3 +1,7 @@
+---
+description: Use PROACTIVELY in a hub repo to triage idea-book/todo-book entries downstream.
+---
+
 # Manifest
 
 Invoke the Arcane `spell-manifest` spell workflow.
