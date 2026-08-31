@@ -58,6 +58,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) | Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop | 2026-08-31 | Proposed   |
 | [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) | Content-Preserving Updates and Vendor-Neutral Governance Content | 2026-08-31 | Proposed   |
 | [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Proposed   |
+| [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
 
 ---
 
@@ -239,6 +240,7 @@ A replacement prompt set had already been created, but those prompts used a diff
 
 **Date:** 2026-05-25
 **Status:** Accepted
+**Amended by:** [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) (corrects the field count to eight — EF-21 added `Pending Verification` without amending this record — and adds the durability guarantee: task-bearing handoff content must also live on a tracked surface, not only in this ephemeral block)
 
 **Context:**
 
@@ -2011,3 +2013,76 @@ content today.
   mechanism prevents *body* drift, but the stub files themselves are still hand-authored and
   unvalidated; a real, if narrow, gap remains worth closing mechanically rather than by continued
   manual care.
+
+---
+
+## ARC-040 — Session Handoff Durability: Pointer, Never Sole Carrier
+
+**Date:** 2026-08-31
+**Status:** Accepted
+**Amends:** [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context) (see Relationship to ARC-005 below)
+**Sources:** `features/handoff-durability/PRD.md` (a real incident, not a formal batch-001 intake — see that PRD's own corrected frontmatter)
+
+**Context:**
+
+ARC-005's handoff block is explicitly ephemeral — overwritten at every close, consumed at every open —
+and nothing in either spell requires the work it names to also exist on a tracked, durable surface. A
+real incident made this concrete: a consuming repo's stated next-session objective, including
+conventions established that same session, existed only in the handoff block and a journal narrative;
+one close-session overwriting the block, and the task was gone. Separately, ARC-005 documents seven
+handoff fields, but EF-21 added an eighth (`Pending Verification`) without amending the record.
+
+**Decision:**
+
+1. `spell-close-session` gains step 4b: before the handoff is written, register every not-finished,
+   task-bearing item (an incomplete `Active task`, the `Next concrete action`, and any durable content
+   that would otherwise live only in `Notes`) on a durable surface. The sink is tracking-mode aware,
+   per ARC-032: `internal` → the appropriate `TODO.md`; `external` → a work item via the configured
+   `external_provider`, falling back to `TODO.md` when tracker tooling is unavailable that session.
+2. The handoff template's `Active task`, `Next concrete action`, and `Notes` fields each name their
+   durable home in-line once step 4b registers it.
+3. `Notes` is formally a pointer-only field: it must never be the sole carrier of durable content.
+4. `spell-open-session` gains a Durability check in Handoff Detection, sequenced after the Mutation
+   Guard and before the consumed-marker write: it confirms the named durable references actually
+   exist, and if step 4b was skipped or incomplete, registers the missing content now, on the
+   session's own branch, before consuming the handoff. A failure here leaves the handoff unconsumed,
+   so the next open-session idempotently re-checks rather than silently losing the gap.
+5. `spell-open-session` surfaces `Last completed step`, `Blockers`, and `Notes` verbatim in
+   `## Picking Up From Last Session`, alongside the fields it already surfaced — these three were
+   written by close-session but never read back.
+6. The fresh-install scaffold (`ai-context/system-prompt-context.md`) ships its example handoff block
+   in step 5b's real format (bullet fields, `>` header lines) and pre-consumed (a `> ✓ Consumed:`
+   marker already present) — its previous plain bold-colon format with no consumed marker meant a
+   brand-new repo's placeholder content ("Next concrete action: Begin work") could be mistaken by the
+   very first `spell-open-session` run for a real, unconsumed handoff.
+
+**Relationship to ARC-005:** ARC-005 remains the design of record for the handoff mechanism itself
+(the block's existence, its location in `system-prompt-context.md`, the consumed-marker state
+machine) — this decision does not replace it, only corrects its field count (seven → eight, matching
+EF-21's already-shipped `Pending Verification` field) and adds the durability guarantee ARC-005 never
+made: that a handoff's task-bearing content survives being overwritten, because it also lives
+somewhere the overwrite cannot reach.
+
+**Reasoning:**
+
+- Reusing `TODO.md`/tracker infrastructure that already exists (per ARC-032's tracking configuration)
+  needs no new file and no new mechanism — the PRD's own "no new files" constraint, inherited from
+  ARC-005.
+- Gating the consumed-marker write on the Durability check (rather than treating durability as a
+  separate, skippable step) means a session that closes without registering its own unfinished work
+  cannot silently proceed past open-session next time — the check runs exactly where the marker write
+  already is, not bolted on elsewhere.
+- Fixing the scaffold's format is the smallest change that removes a real false-positive: the scaffold
+  already satisfied the open-session detection logic's literal trigger condition (a
+  `## Next Session Handoff` heading with no `> ✓ Consumed:` line) well enough to be mistaken for a
+  live handoff, which is worse than doing nothing for a first-time user.
+
+**Rejected alternatives:**
+
+- **A dedicated durable-handoff file** — rejected for the same reason ARC-005 rejected a dedicated
+  `ai-context/handoff.md`: more distribution surface for no benefit over reusing `TODO.md`, which
+  every tracking mode already reads.
+- **Require durability registration synchronously inside step 5b's handoff write itself, rather than a
+  separate step 4b** — rejected: keeping registration as its own numbered step makes it independently
+  skippable-and-auditable (the applicability guard: nothing to register when the close is fully clean)
+  rather than an unconditional sub-clause of a step that already does several other things.
