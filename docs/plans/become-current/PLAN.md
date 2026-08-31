@@ -494,6 +494,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   diff before deleting "duplicates" — governance edit. (b) I1 org-token gate seeds operator-identity
   tokens. (c) I7 verification-ledger extraction from close-session. (d) I3 attribution trailer split
   — depends on roster/`.arcane/agents.yaml` existing (after BC-19); keep last.
+  - [x] **(a) I4 — done 2026-08-31.** New rule 23 in `universal-agent-rules.md`'s Operational Rules:
+    diff before deleting a "duplicate" during housekeeping, since a near-identical pair is usually a
+    drifted copy carrying unique content, not byte-identical redundancy. Cites `git-conventions.md`'s
+    existing Content-Verified Branch Deletion section as the same discipline already applied to
+    branches, generalized. 3 new tests, including a dynamic check that the cited wiki-link anchor
+    actually resolves to a real heading (caught and fixed a wrong anchor slug while drafting it).
+  - [ ] (b) I1, (c) I7, (d) I3 — remaining.
 - [ ] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size
   M. Run the two named smoke tests (MCP prompts; Claude Code plugin) and write a findings doc;
   go/no-go on each channel is an operator decision → OPERATOR-QUEUE.

@@ -126,6 +126,16 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 20. **For repo path requests**, perform read-only discovery before claiming "no access." Use [[agents/agent-approved-paths|Agent Approved Paths Registry]].
 
+23. **Diff before deleting a "duplicate."** When housekeeping surfaces two blocks of content that look
+    like duplicates — in a document, a config, a data file — compare them in full before removing
+    either. A near-identical pair is usually a **drifted copy carrying unique content in one and not the
+    other**, not byte-identical redundancy; deleting on sight can destroy the unique content silently.
+    Merge anything unique to either copy into the one that survives, and only delete a copy confirmed
+    byte-identical to (or a confirmed strict subset of) the one kept. This generalizes the same
+    content-verification discipline
+    [[governance/git-conventions#content-verified-branch-deletion-todomd-merged-branch-cleanup-finding|Content-Verified
+    Branch Deletion]] already applies to branches specifically.
+
 ---
 
 ## Client-Specific Instruction Locations
