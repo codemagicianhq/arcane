@@ -1,5 +1,5 @@
 ---
-status: draft
+status: accepted
 tracking_mode: internal
 source_intake: none — operator seed, arcane-website TODO.md (2026-08-30)
 ---
