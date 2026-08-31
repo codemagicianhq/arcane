@@ -219,12 +219,24 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (b) corrected; the four follow-on questions are new TODO items. (c)/(d) corrected. (e) re-pointed
   rather than fabricated an intake stub for a citation with no genuine record. (f)/(g) done.
   Bump: no, confirmed by `check:version-bump`.
-- [ ] **BC-06 — Doc-ID link integrity.** Sources: IDEAS.md:17 (I9), :18 (I10), :19 (I11), :25 (I16)
-  + T28's `src/assets` citer. Route: direct. Size M. Bump: **yes**. Extend the
-  `check:adr-references` gate to every ID class (ARC/EF/journal — I10); adopt the doc-ID link rule in
-  governance (I9); fix the named residues: `new-business-setup.md:116,121` dead wiki-links,
-  `spell-review-batch.prompt.md:74` and `spell-full-cycle.prompt.md:189` bare `PR #n`, and the
-  `../../../DECISIONS.md` consumer-root escapes (I16, e.g. `spell-authoring-standards.md:18`).
+- [x] **BC-06 — Doc-ID link integrity.** Sources: IDEAS.md:17 (I9), :18 (I10), :19 (I11), :25 (I16)
+  + T28's `src/assets` citer. Route: direct. Size M. Bump: **yes**.
+  **Done:** [PR #98](https://github.com/codemagicianhq/arcane/pull/98) merged 2026-08-31 via rebase
+  (`aab4446`), `v0.22.5`. `check:adr-references` extended with a new cross-repo-hazard class (ARC/EF
+  same-repo links from shipped content); I9's four named inconsistencies and I11's residues all fixed;
+  T28 fully closed. Found and fixed four real cross-repo-hazard citations, two of which BC-01 had
+  introduced earlier the same night. **Correction mid-epic, disclosed in the PR:** the first commit's
+  fix — full canonical URLs for every citation, "not optional for shipped assets" — was itself wrong
+  for `.github/prompts/*.prompt.md`: CI's pre-existing org-token portability gate failed on it, since a
+  full `github.com/codemagicianhq/arcane` URL bakes this project's own org into distributed spell
+  content, exactly what that gate exists to block. Corrected to a bare, unlinked ID for shipped spell
+  prompts/instructions; full URLs stay correct only for governance docs and runtime output. Root cause
+  of missing it locally: `npm run build` (the only place the org-token lint runs) wasn't in the local
+  verification loop — added to this run's operating lessons below. I10 only partially addressed (ARC/EF
+  cross-repo-hazard shape, not journal-class checking or full anchor-resolution) — left `status: new`
+  in IDEAS.md rather than `promoted`, with the remainder noted inline. One new gap found and filed
+  rather than fixed here (scope discipline): the org-token portability scan only walks
+  `.github/prompts/`, not `.github/instructions/`, though both ship identically — see TODO.md.
 - [ ] **BC-07 — Fresh-session instruction probe.** Sources: TODO.md:46 (T6). Route: process. Size S.
   As the FIRST action of a fresh iteration (before reading anything else): report from checked
   evidence (1) whether the root working protocol was inherited, (2) `.arcane/agents.yaml` existence,
