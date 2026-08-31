@@ -1,8 +1,19 @@
 ---
 status: draft
 tracking_mode: internal
-source_intake: batch-001 (EF-37)
+source_intake: field incident (no formal batch-001 intake filed)
 ---
+
+**Corrected 2026-08-31 (BC-05):** this PRD's frontmatter cited `source_intake: batch-001
+(EF-37)`, but no `docs/intake/batch-001/EF-37.md` exists, and none of batch-001's
+findings were ever assigned that ID — confirmed via a repo-wide search before this PRD's
+own citation was the only hit. Re-pointed rather than backfilled: fabricating an intake
+stub now, months after the fact, with content this repo has no genuine record of, would
+manufacture exactly the false confident-provenance this repo's working protocol exists
+to prevent. The real origin is not lost — it's told faithfully in this PRD's own
+"Problem" section below (a real close-session incident where a next-session objective
+existed only in the handoff block and a journal narrative) — it just never went through
+the formal per-finding intake process the way EF-01 through EF-36 did.
 
 # PRD — Session Handoff Durability (Pointer, Never Sole Carrier)
 

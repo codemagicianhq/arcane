@@ -1,13 +1,19 @@
 ---
 title: "PRD: Documentation Repository Mode"
 status: accepted
-implementation_status: queued
+implementation_status: shipped
 tracking:
   tracking_mode: internal
   external_provider: null
 source_intake: batch-001
 accepted: 2026-07-31
+shipped: 2026-08-23
 ---
+
+**Corrected 2026-08-31 (BC-05):** `implementation_status` was stale at `queued`. Shipped
+across `0.18.0` (registry split + `docs` profile) and `0.19.0` (fields, content,
+adoption), per [ARC-033](../../DECISIONS.md#arc-033--docs-mode-subject-root-and-content-sensitivity)
+and `TODO.md`'s own docs-mode closure entry (EF-03/04/07/10/11/12).
 
 # PRD: Documentation Repository Mode
 
