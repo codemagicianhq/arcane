@@ -40,23 +40,27 @@ Produce output in this exact structure:
 | **Installed At** | `{installedAt}`               |
 | **Components**   | `{count}` installed           |
 
-### Update Check
+### Update Check (two-axis)
 
-- Fetch the latest published version from the npm registry: `https://registry.npmjs.org/arcane-cli/latest`
-- Extract the `version` field from the JSON response.
-- Compare to the installed version.
+This repo's `.arcane.json` version is one of three readings — check both axes, the same two as
+`spell-open-session`'s own version check:
 
-If up to date:
+- **Repo-files version** — already read in Step 1 (`.arcane.json`'s `version` field).
+- **Installed CLI version** — determine the version of the installed `arcane-cli` CLI (for example,
+  `npx arcane-cli --version`, or the locally installed package version).
+- **Npm-latest version** — fetch `https://registry.npmjs.org/arcane-cli/latest` and extract the
+  `version` field.
+
+- **(a) Repo-files behind the installed CLI:** `⚠ Managed files out of date: files at {version} → CLI at {cli}. Run spell update to resync files.`
+- **(b) Installed CLI behind npm-latest:** `⚠ Update available: CLI at {cli} → latest {latest}. Upgrade the CLI, then run spell update.`
+- **If either axis drifts, emit the canonical version-drift diagram** — same template, same collapsing/
+  branching rule, same `:::mermaid`-for-ADO-wikis fencing as `spell-open-session.prompt.md`'s own
+  "Arcane version check (two-axis)" step; that file holds the canonical shape, referenced here rather
+  than repeated.
+- If both axes are current:
 
 ```
 ✔ You are on the latest version ({version}).
-```
-
-If behind:
-
-```
-⚠ Update available: {installed} → {latest}
-Run `spell update` to upgrade.
 ```
 
 If the npm registry is unreachable, report:
