@@ -406,9 +406,16 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   invented. All 5 named fixtures addressed explicitly in the prompt; both routing pointers added.
   Fixed the expected `test/docs-profile-registry-split.test.ts` count bump (35→36) per that test's own
   documented precedent for an existing group growing. 16 new tests.
-- [ ] **BC-19 — Delegation UX (solo-operator mode).** Sources: TODO.md:101 (T13). Route: chain.
+- [x] **BC-19 — Delegation UX (solo-operator mode).** Sources: TODO.md:101 (T13). Route: chain.
   Size M. Bump: yes. Delegations explicit, listable (`spell doctor`), revocable per repo; migrate
   this plan's Authority section into the mechanism as its first record.
+  **Done 2026-08-31:** [PR #133](https://github.com/codemagicianhq/arcane/pull/133) merged via rebase
+  (`9a8dfee`), `v0.24.0` (minor — new distributed capability, per ARC-005/BC-18 precedent). New
+  `.arcane/delegations.json` (no scaffold — repo-specific); `spell doctor`'s new `checkDelegations`
+  live-verified post-merge (`node dist/index.js doctor` → `✓ [pass] Standing delegations (T13)`).
+  This very section above now references that file rather than restating it — migrated in the same
+  commit that added the record, so this loop's own standing authority was never ambiguous even
+  transiently. 11 new tests.
 - [ ] **BC-20 — Full-cycle cross-epic coordination.** Sources: TODO.md:160-161 (T23). Route: direct
   (prompt/governance edits + tests). Size M. Bump: yes. Ship the three fix ideas (migration-number
   re-derivation at write time; real-data migration gate guidance; serialize-migrations doc) plus the
