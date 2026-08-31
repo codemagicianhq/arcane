@@ -5,4 +5,21 @@
 # use that helper, this layer still closes the leak before npm test starts.
 for v in $(env | grep '^GIT_' | cut -d= -f1); do unset "$v"; done
 
+# ARC-035 decision 4: warn, never block, when the current branch's PR is
+# already CLOSED or MERGED. This is exactly how PR #63 became a shipped
+# defect (0.20.0, 2026-08-23): a fix commit was pushed to a branch whose PR
+# had already closed mid-round, and the push succeeded silently into a void
+# nobody was watching. Degrades silently without `gh`, or when it can't
+# resolve a PR for this branch (no error either way) -- this must never
+# block a push on a machine without `gh`, or on a branch that never had one.
+if command -v gh >/dev/null 2>&1; then
+  branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+  if [ -n "$branch" ]; then
+    pr_state=$(gh pr view "$branch" --json state --jq .state 2>/dev/null)
+    if [ "$pr_state" = "CLOSED" ] || [ "$pr_state" = "MERGED" ]; then
+      echo "⚠ arcane: this branch's PR is already $pr_state. New commits pushed here will not reach main automatically -- open a new PR if this work still needs to land." >&2
+    fi
+  fi
+fi
+
 npm test

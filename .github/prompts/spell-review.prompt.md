@@ -122,6 +122,15 @@ Workflow:
 
 9. **Write back to the pull request** — when a PR exists for these changes, sync a short verdict plus a findings summary (verdict + finding counts/IDs + a pointer to the saved report) into the PR body/description. Use provider-agnostic phrasing that works for either GitHub or Azure DevOps. Mark it clearly as a snapshot at review time, and fall back to a top-level PR comment if the description can't be updated.
 
+10. **Post the formal round state** ([ARC-035](../../DECISIONS.md#arc-035--auto-merge-requires-a-clear-review-round) decision 3) — step 9's write-back is a human-readable summary; this is the separate, machine-readable signal the `Review round clear` required check actually reads. Only a confirmed blocker posts a formal review — an `APPROVE` or `DEFER` verdict posts nothing here, preserving the zero-friction path for PRs nobody formally blocks:
+    - **REQUEST CHANGES verdict:**
+      - GitHub: `gh pr review <n> --request-changes --body "<one-line blocker summary + pointer to the saved report>"`.
+      - Azure DevOps: `az repos pr set-vote --id <n> --vote reject` — the same primitive `spell-commit-work.prompt.md`'s author-side self-approval step already uses (`az repos pr set-vote --vote approve`), applied to the reviewer side.
+    - **Closing a round you previously blocked** (a later pass confirms the blocker is fixed) — do this explicitly; `dismiss_stale_reviews_on_push` is `false` on this repository's ruleset, so a later push never clears it automatically:
+      - GitHub: find the blocking review's ID (`gh api repos/{owner}/{repo}/pulls/<n>/reviews --jq '.[] | select(.state=="CHANGES_REQUESTED") | .id'`), then dismiss it — `gh api -X PUT repos/{owner}/{repo}/pulls/<n>/reviews/<review_id>/dismissals -f event=DISMISS -f message="<why this is now resolved, referencing the fix commit>"`.
+      - Azure DevOps: `az repos pr set-vote --id <n> --vote approve` (or reset to no-vote per team convention).
+    - Degrade silently if the CLI is unauthenticated or the PR can't be resolved (e.g. no PR exists yet for a local-only review) — never let this step abort a review that otherwise completed; the findings, report, and step 9 write-back still stand on their own.
+
 Rules:
 - **Cover every dimension, not a finding count.** You MUST explicitly address each lens — correctness, security, performance, tests, naming/clarity, architecture — and state "no issues" for any lens that is clean. There is no minimum number of findings: zero findings is a valid outcome on a clean or small diff. The mandate is coverage of effort, not a count of findings — never fabricate issues to hit a quota.
 - **Never rubber-stamp.** Every review must include substantive analysis across all dimensions.
