@@ -42,6 +42,8 @@
     "typecheck": "tsc --noEmit",
     "check:self-host-parity": "tsx scripts/self-host-parity.ts --check",
     "fix:self-host-parity": "tsx scripts/self-host-parity.ts --fix",
+    "check:spell-catalog": "tsx scripts/spell-catalog.ts --check",
+    "fix:spell-catalog": "tsx scripts/spell-catalog.ts --fix",
     "check:adr-references": "tsx scripts/check-distributed-adr-references.ts",
     "check:version-bump": "tsx scripts/check-version-bump.ts",
     "check:review-round": "tsx scripts/check-review-round.ts",

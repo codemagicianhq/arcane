@@ -455,10 +455,19 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   doctor` check `checkMcpConfig` (per-server timeout, silent pass when no `.mcp.json` exists). Both
   IDEAS.md sources (I8, I12) marked promoted. 16 new tests (patch bump — a new doctor check + optional
   scaffold, not a new spell, matching BC-17's precedent).
-- [ ] **BC-23 — Registry-driven spell catalog.** Sources: TODO.md:130-141 (T15). Route: direct.
-  Size M. Bump: likely (registry). Generator emits the catalog artifact (JSON + README block) from
-  `registry.ts`; CI drift-check in the ARC-012/ARC-027 mold. The website's consumption of the
-  artifact is cross-repo — record a pointer in OPERATOR-QUEUE when the artifact ships.
+- [x] **BC-23 — Registry-driven spell catalog.** Sources: TODO.md:179-190 (T15, corrected — the
+  "130-141" citation had drifted). Route: direct. Size M. Bump: likely (registry).
+  **Done 2026-08-31:** new `scripts/spell-catalog.ts` (`--check`/`--fix`, ARC-027-shaped) derives
+  the catalog from `registry.ts`'s `spells-*` components + each spell's own `.prompt.md`
+  frontmatter — 38 spells confirmed (README still said "34"/"36"). Emits `docs/spell-catalog.json`
+  (cross-repo pointer for `arcane-website` queued at
+  [OPERATOR-QUEUE.md Q-009](OPERATOR-QUEUE.md#q-009)) and README's spell-catalogue block, now
+  marker-wrapped (`<!-- arcane:start/end -->`, `merger.ts`'s existing convention, first use on
+  README.md). New `check:spell-catalog` CI step; new `test/spell-catalog.test.ts` (5 tests,
+  ARC-012-style live-render-and-byte-compare). **Bump deviation from this entry's own forward
+  guess:** actual scope never touches `src/assets/`, `registry.ts`, or `profiles.ts` — confirmed by
+  `check:version-bump` — and ships no consumer-facing capability, so no bump. Full detail in
+  TODO.md's own closure note on this item.
 - [ ] **BC-24 — Research-doc capability.** Sources: TODO.md:165-175 (T25). Route: chain. Size M.
   Bump: yes. Canonical storage convention (a) + `spell-todo` routing (c); optional `spell-research`
   (b) only if (a) proves insufficient alone.

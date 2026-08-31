@@ -89,6 +89,9 @@ jobs:
       - name: Verify distributed ADR references
         run: npm run check:adr-references
 
+      - name: Verify spell catalog
+        run: npm run check:spell-catalog
+
       - name: Lint
         run: npm run lint
 

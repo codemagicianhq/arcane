@@ -176,7 +176,7 @@
       (fleet-wide across all linked worktrees; broke a concurrent session's
       primary checkout on 2026-08-15). Evidence: `backup/arc028-contaminated-2026-08-15`.
 
-- [ ] **Website spell catalog: generate from the CLI registry, not hand-maintained
+- [x] **Website spell catalog: generate from the CLI registry, not hand-maintained
       site data (single source of truth).** The `arcane-website` spell catalog is
       authored by hand and drifts from the CLI's actual source of truth
       (`src/modules/registry.ts` + `src/assets/.github/prompts/*.prompt.md`, 33 spells
@@ -188,6 +188,35 @@
       registry-driven generator should emit both the README block and the website data
       from the same source. Scope the generator + a CI drift-check that fails the build
       when hand-maintained catalogs diverge from the registry.
+      **Shipped 2026-08-31 (BC-23):** confirmed the drift had grown since this item was
+      written — `registry.ts`'s `spells-*` components already held **38** spells (not
+      33), while `README.md` still said "34"/"36" in different spots (and a separate,
+      unrelated "19" vs "23" governance-count inconsistency, fixed by hand in the same
+      pass). New `scripts/spell-catalog.ts` (`--check`/`--fix`, same shape as
+      `self-host-parity.ts`/ARC-027) derives the catalog from `registry.ts`'s `spells-*`
+      components — never a separately hand-maintained category list — reading each
+      spell's `name`/`description` from its own `.prompt.md` frontmatter (the `yaml`
+      package, already a dependency). Emits `docs/spell-catalog.json` (the artifact for
+      `arcane-website`'s cross-repo consumption — pointer queued at
+      [OPERATOR-QUEUE.md Q-009](docs/plans/become-current/OPERATOR-QUEUE.md#q-009)) and
+      README's `<details>` spell-catalogue block, now wrapped in this repo's existing
+      `<!-- arcane:start/end -->` markers (`src/modules/merger.ts`) — the first use of
+      that convention on `README.md`. New CI step `check:spell-catalog` in `ci.yml`'s
+      `build-test` job, alongside the other generated-content gates. New
+      `test/spell-catalog.test.ts`, ARC-012-style: renders live and byte-compares
+      against both committed artifacts (5 tests). **Deliberate content change, not just
+      a count fix:** the README block's categories switched from 6 hand-curated
+      marketing labels (Core Spell Loop / Session / Operational & Git / Specialized /
+      Knowledge & Docs / Business & Admin) to the registry's own 9 `spells-*` group
+      names (Session / Capture / Delivery / Review / Planning / Build / Docs / Venture /
+      Meta) — a second hand-maintained category-to-spell mapping inside the generator
+      would have reopened exactly the drift risk this item exists to close, since a new
+      spell could again be silently left out of it. **No version bump** — deviates from
+      PLAN.md's own forward "Bump: likely (registry)" guess; the actual implementation
+      never touches `src/assets/`, `src/modules/registry.ts`, or `src/config/profiles.ts`
+      (`check:version-bump` confirms: "No distributable paths changed"), and ships no
+      capability to published `arcane-cli` consumers — `scripts/` is dev/CI-only,
+      `docs/spell-catalog.json` and the README block are this repo's own metadata.
 
 - [x] Persona schema: add `epithet` field to agent YAML + openclaw-roster generation (schema v2 already shipped; optional field) — website cards, DMC roster/cards, and README then all READ it. Data with the definition. **Completed 2026-08-31 (BC-04), on the roster entry, not the agent YAML — a deliberate deviation from this item's literal phrasing:** an agent definition YAML (e.g. `architecture-lead.yaml`) is a role archetype reused across every naming strategy — "the Archmage" belongs to the persona *Merlin*, not to "architecture-lead" itself, so putting it in the definition would leak Arcanos-specific flavor into naming strategies designed to be epithet-neutral (`generic`'s plain role labels). `epithet` is schema v2's new optional `AgentRosterEntry` field instead, populated by `naming.ts`'s `applyArcanosNames` (only — `generic`/`random`/`custom` stay deliberately epithet-less) and threaded through to `openclaw-roster.json`'s `identity.epithet`, per this item's own named consumer. Documented in `naming-conventions.md`'s new schema section.
 
