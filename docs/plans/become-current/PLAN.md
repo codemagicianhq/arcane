@@ -35,14 +35,18 @@ The program is complete when all of the following hold:
 
 This repository has no installed agent roster, and `agent-policies.md` fails closed: missing authority
 ⇒ human execution required for commit and merge. The operator resolves that explicitly for this
-program:
+program — recorded as this repo's first entry in the solo-operator delegation mechanism
+(`agent-policies.md` → **Solo-Operator Delegation Records (No Roster)**, BC-19):
 
-> **Standing delegation (activated by the operator merging this plan's PR; revocable by editing or
-> removing this section):** sessions executing epics of this plan may — without per-action approval —
-> create session branches, commit, push, open PRs, and merge their own PRs into `main` via the
-> sanctioned strategies (merge/rebase, never squash), for work scoped to an epic defined in this plan.
+> **Standing delegation, recorded explicitly in [`.arcane/delegations.json`](../../.arcane/delegations.json)
+> (id `become-current-plan`), listable via `spell doctor`, revocable by editing or removing that entry:**
+> sessions executing epics of this plan may — without per-action approval — create session branches,
+> commit, push, open PRs, and merge their own PRs into `main` via the sanctioned strategies
+> (merge/rebase, never squash), for work scoped to an epic defined in this plan.
 
-**Explicitly outside the grant** (always queue, never perform):
+**Explicitly outside the grant** (always queue, never perform) — the authoritative list is
+`.arcane/delegations.json`'s `excludedActions` for this entry; summarized here for readability, but the
+JSON file is the source of truth if the two ever disagree:
 
 - Any GitHub/ADO **platform-settings mutation**: rulesets, required checks, `allow_auto_merge`,
   repo settings, secrets, webhooks.
@@ -54,9 +58,6 @@ program:
 - Accepting an ADR (drafts are `Proposed` until the operator accepts).
 - Marking anything in OPERATOR-QUEUE.md as approved/done — operator-only.
 - Anything in `.arcane/governance/agent-policies.md`'s prohibited list (MCP/security config, etc.).
-
-BC-19 later formalizes this grant into the listable/revocable delegation mechanism TODO.md:101 asks
-for; until then this section is the record.
 
 ## Standing Constraints (digest — full text in the cited sources)
 

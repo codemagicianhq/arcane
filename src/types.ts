@@ -284,3 +284,28 @@ export interface AgentInitOptions {
   dryRun?: boolean;
   force?: boolean;
 }
+
+// ─── Delegation records (BC-19: solo-operator mode, no roster required) ──────
+
+export type DelegationStatus = "active" | "revoked";
+
+/**
+ * A single standing-authority grant, recorded explicitly instead of living as
+ * ad hoc prose. Parallel to agent-policies.md's roster-based power-level
+ * matrix, for repos with no installed .arcane/agents.yaml roster at all.
+ */
+export interface Delegation {
+  id: string;
+  grantedBy: string;
+  grantedAt: string;
+  scope: string;
+  permittedActions: string[];
+  excludedActions: string[];
+  status: DelegationStatus;
+  /** How to revoke this specific grant -- always a git-native action. */
+  revocation: string;
+}
+
+export interface DelegationsFile {
+  delegations: Delegation[];
+}
