@@ -394,10 +394,17 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   live-verified** (no ADO remote exists to test against) — disclosed in the PRD and TODO.md. 22 new
   tests. TODO.md's T11 item stays open: its title also names `ward`, which doesn't exist as a shipped
   spell yet (T18/BC-21) — only the `doctor` half, this epic's actual scope, is done.
-- [ ] **BC-18 — `spell-sync-pull-request`.** Sources: TODO.md:49 (T7; explicit route). Route: chain
+- [x] **BC-18 — `spell-sync-pull-request`.** Sources: TODO.md:49 (T7; explicit route). Route: chain
   (`spell-plan` → `spell-architect` → implement). Size L. Bump: yes. Fixtures: clean sync,
   conflicting rebase, stale lease rejection, ambiguous-conflict handoff, GitHub/ADO post-push
   verification; route conflicted PRs here from `spell-create-pull-request`/`spell-ship`.
+  **Done 2026-08-31:** [PR #131](https://github.com/codemagicianhq/arcane/pull/131) merged via rebase
+  (`16f151f`), `v0.23.0` (minor, not patch — a new spell is new distributed capability, per ARC-005's
+  own precedent). PRD via `spell-plan`'s real template (no separate `stories.json` — solo-loop
+  adaptation). New spell registered under the existing `spells-delivery` component, no new component
+  invented. All 5 named fixtures addressed explicitly in the prompt; both routing pointers added.
+  Fixed the expected `test/docs-profile-registry-split.test.ts` count bump (35→36) per that test's own
+  documented precedent for an existing group growing. 16 new tests.
 - [ ] **BC-19 — Delegation UX (solo-operator mode).** Sources: TODO.md:101 (T13). Route: chain.
   Size M. Bump: yes. Delegations explicit, listable (`spell doctor`), revocable per repo; migrate
   this plan's Authority section into the mechanism as its first record.
