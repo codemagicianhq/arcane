@@ -96,7 +96,19 @@ Before anything else, check:
   - Run `npm view arcane-cli version` to get the latest published version.
   - **(a) Managed files behind the installed CLI** (installed CLI version is newer than the version recorded in `.arcane.json`): surface a warning: `⚠️ Managed files out of date: files at <installed> → CLI at <cli>. Run spell update to resync files.`
   - **(b) Installed CLI behind the latest published version** (latest published is newer than the installed CLI): surface a warning: `⚠️ Arcane CLI update available: CLI at <cli> → latest <latest>. Upgrade the CLI, then run spell update.`
-  - If both axes are current, report current and continue.
+  - **If either axis shows drift, emit the canonical version-drift diagram beside the warning(s)** — per the generated state diagrams convention (rule 8, ARC-036). One commit per *distinct* version value among the three readings, in the order repo-files → installed-CLI → npm-latest; collapse consecutive identical values into a single shared commit rather than repeating it. Branch off immediately after the commit for each axis that drifts — `repo-files` after the repo-files-version commit if axis A drifts, `installed-cli` after the installed-CLI-version commit if axis B drifts. Tag the final commit `"latest"`. The dangling branch(es) *are* the drifting axis/axes — no legend needed:
+    ```mermaid
+    gitGraph
+       commit id: "<repo-files version>"
+       branch repo-files
+       checkout main
+       commit id: "<installed-CLI version>"
+       branch installed-cli
+       checkout main
+       commit id: "<npm-latest version>" tag: "latest"
+    ```
+    (Shown here with both axes drifting — omit whichever `branch`/`checkout` pair belongs to a non-drifting axis, and collapse its commit into its neighbor's if the values are equal.) Use `:::mermaid` fencing instead of ` ```mermaid ` when the output surface is an Azure DevOps wiki — resolve `external_provider` from `.arcane.json` rather than assuming, the same as every other tracker-conditional step in this file; note for bare terminals that the fenced source is still readable without a renderer.
+  - If both axes are current, report current and continue — no diagram (the applicability guard: a single, matching reading has nothing to visualize).
   - If no `.arcane.json` exists, skip silently.
 
 ## State Snapshot

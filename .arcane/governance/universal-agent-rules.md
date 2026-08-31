@@ -33,7 +33,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 7. **Use wiki-links for cross-references** (e.g., `[[DECISIONS#ADR-NNN|Short Title]]`, `[[journal/YYYY-MM-DD-topic-slug|Session Label]]`). This enables knowledge graph visualization.
 
-8. **Use Mermaid for diagrams** (` ```mermaid ` blocks) for all flow charts, architecture diagrams, and sequence diagrams. Directory trees stay as plain code blocks.
+8. **Use Mermaid for diagrams** (` ```mermaid ` blocks) for all flow charts, architecture diagrams, and sequence diagrams. Directory trees stay as plain code blocks. Spell output describing state the spell already computed — not authored, freehand explanatory content — additionally follows the **generated state diagrams** convention ([ARC-036](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)): a deterministic, data-derived Mermaid diagram built only from values already in scope, never modeled or invented. Skip it for one-line outputs, speed-rule spells, or any state with only a single reading — the diagram exists to make relationships between multiple already-computed values legible, not to decorate simple output.
 
 9. **Journal files use date-prefix naming:** `journal/YYYY-MM-DD-topic-slug.md` for chronological sorting.
 
