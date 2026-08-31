@@ -507,7 +507,18 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     names and cite the motivating incident. `ARCANE_ORG_TOKENS`/`org-token-lint.ts` untouched —
     confirmed that env var is this repo's own CI-only build gate, not the consumer-facing mechanism
     I1's report actually targets. 2 new tests.
-  - [ ] (c) I7, (d) I3 — remaining.
+  - [x] **(c) I7 — done 2026-08-31.** New `spell-verification-ledger` (joined `spells-capture`
+    alongside its structural sibling `spell-document`, not `spells-build` — this is a capture spell,
+    not a build/audit one). Extracts a structured {claim, verification method, result, correction}
+    record, deliberately **separate** from `spell-close-session` (per this idea's own wording) — a
+    tie-in mention added to close-session's existing capture tip, not folded into its mandatory flow.
+    A `corrected` result is framed explicitly as the point, not something to hide. New
+    `docs/verification-ledger.md`, starting empty — the idea's own four historical batch-001 instances
+    were **not** backfilled, since reconstructing them accurately from a one-line summary risks getting
+    details wrong; it captures new sessions going forward. 9 new tests. Caught and fixed a real
+    regression while shipping: the new command stub's frontmatter didn't match BC-16 R2's own
+    "Use PROACTIVELY" convention, caught by that epic's own pre-existing test.
+  - [ ] (d) I3 — remaining.
 - [ ] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size
   M. Run the two named smoke tests (MCP prompts; Claude Code plugin) and write a findings doc;
   go/no-go on each channel is an operator decision → OPERATOR-QUEUE.
