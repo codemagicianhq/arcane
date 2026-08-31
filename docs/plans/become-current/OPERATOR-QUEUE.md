@@ -109,9 +109,43 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 
 ## Q-004 — Accept/revise/reject ADR: ARC-029 (Best-Practice-First Solution Selection)
 
-- **What:** ARC-029 has been `Proposed` since EF-34 with no tracking entry anywhere.
-- **Preconditions:** BC-13 appends a one-page decision brief here.
-- **Status:** waiting on BC-13.
+- **What:** [ARC-029](../../../DECISIONS.md#arc-029--best-practice-first-solution-selection-standard)
+  has been `Proposed` since 2026-08-15, with no tracking entry anywhere until this plan's 2026-08-30
+  audit surfaced it (`TODO.md`'s own entry confirms "zero mentions of ARC-029 anywhere in this file
+  before this entry"). Brief prepared 2026-08-31 (BC-13). No implementation epic — accepting this
+  changes agent conduct going forward, it does not gate any BC-30/31/32-style follow-on work.
+- **The standard, briefly:** when an agent presents engineering options, it must name which one is the
+  community-standard/best-practice choice — verified live when checkable, never asserted from memory —
+  and if it recommends something else, say why. "Smaller diff," "faster," and "avoids needing human
+  approval" are explicitly **not** valid reasons on their own; they're signals to ask the human instead
+  of deciding unilaterally. If the correct solution is out of the agent's power level or session scope,
+  it must be queued (TODO/intake/work item) with an explicitly labeled interim measure — an *unlabeled*
+  stopgap that quietly becomes permanent is the violation. Not a mandate for maximal solutions: YAGNI
+  and scope discipline still apply, and the standard says so directly (decision 4) to block that
+  misreading.
+- **The motivating incident, concretely:** while scoping a fix for a different, already-shipped defect
+  (EF-34 — pre-commit test runs leaking `GIT_DIR` into the real repository), the drafting agent
+  recommended the smallest-diff option (scrub the hook's environment only) over the community-standard
+  hook shape (fast pre-commit; full suite on pre-push) — not because it was better, but because it was
+  the smallest change and avoided a workflow change you hadn't yet approved. You caught it only by
+  asking directly: "what does the community actually do?" ARC-029 exists because that near-miss
+  happened once already and had no rule that would have surfaced the trade-off on its own.
+- **What accepting it unlocks — and what it does NOT schedule:** decision 5 names concrete follow-up
+  work (a new "Solution Selection" section in `universal-agent-rules.md`, a one-line echo in
+  `portable-bootstrap.md`, and recommendation-contract language added to `spell-plan`/`spell-architect`/
+  `spell-review`) — all `src/assets/` changes needing a version bump. **Checked directly against
+  PLAN.md: unlike BC-10/11/12's ADRs, none of this plan's 33 epics implements ARC-029's decision 5.**
+  Accepting the ADR establishes the rule and its text in `DECISIONS.md`; it does not, by itself, cause
+  decision 5's shipped changes to happen — that needs a new TODO.md item or a dedicated future session,
+  not something already queued in this plan.
+- **Accept/revise/reject framing:** this is a governance/process standard, not a technical architecture
+  choice — accepting it means every future agent recommendation in this repository (including this
+  autonomous loop's own epic-by-epic work) is expected to name the best-practice option and justify any
+  deviation. Revise if decision 4's gold-plating boundary or decision 5's specific spell list needs
+  adjustment. Reject if you judge the existing fragments (universal-agent-rules rule 4, ADR-034's
+  purchase-scoped verification mandate) already sufficient without a dedicated standard.
+- **Preconditions:** none.
+- **Status:** ready for your accept/revise/reject call.
 
 ## Q-005 — ARC-020 broad schema: still open, NOT subsumed by BC-11 (correcting this entry's own prior assumption)
 
