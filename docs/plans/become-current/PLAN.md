@@ -426,15 +426,19 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   serialize-migrations fix idea (3) was already shipped via ARC-028 (2026-08-15), predating this
   plan — verified fresh before implementing rather than assumed from this summary's own wording; only
   fix ideas (1)/(2) and the four sub-findings needed shipping. 11 new tests.
-- [ ] **BC-21 — `ward` + `scry` spells.** Sources: TODO.md:151 (T18). Route: chain. Size L. Bump:
+- [x] **BC-21 — `ward` + `scry` spells.** Sources: TODO.md:151 (T18). Route: chain. Size L. Bump:
   yes. `ward` (leak scan, vendor-identifier denylist mandatory) + `scry` (name clearance: outward
   four-check **and** the inward repo-local collision pass ARC-028 proved necessary). Soft-depends on
   BC-10's accepted ADR to keep scanner boundaries from colliding with secret detection.
-  **Progress (2026-08-31): split into two PRs, disclosed here** (`ward` and `scry` have genuinely
+  **Done 2026-08-31 — shipped as two PRs, disclosed here** (`ward` and `scry` have genuinely
   different implementation shapes — deterministic CLI code vs. a research-driven prompt spell).
   - `ward`: **done** — new `spell ward` CLI, reusing `org-token-lint.ts`'s scanning engine (extracted
     into a new shared `src/modules/denylist-scan.ts`, zero behavior change, verified). 28 new tests.
-  - `scry`: **not started.** Leave this checkbox unticked until `scry` merges.
+  - `scry`: **done** — new prompt-driven `spell-scry.prompt.md`, registered under the existing
+    `spells-build` component. Inward pass mandatory and runs first (real ARC-028 `workspace` incident
+    cited as why); one shared same-space/adjacent/out-of-space taxonomy for both passes; verdict is
+    pass/pass-with-disclosure/kill, never rounded. Does not call `spell ward` — same grep principle,
+    different operation. 11 new tests.
   - Soft-dependency respected: `ward` scans identifiers/trademarks only, never secret/credential
     patterns — that scope stays reserved for BC-10's still-Proposed ARC-037, not implemented here.
 - [ ] **BC-22 — MCP resilience.** Sources: IDEAS.md:16 (I8), :20 (I12). Route: direct. Size M.
