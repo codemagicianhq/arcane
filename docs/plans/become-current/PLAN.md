@@ -444,9 +444,17 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     different operation. 11 new tests.
   - Soft-dependency respected: `ward` scans identifiers/trademarks only, never secret/credential
     patterns — that scope stays reserved for BC-10's still-Proposed ARC-037, not implemented here.
-- [ ] **BC-22 — MCP resilience.** Sources: IDEAS.md:16 (I8), :20 (I12). Route: direct. Size M.
+- [x] **BC-22 — MCP resilience.** Sources: IDEAS.md:16 (I8), :20 (I12). Route: direct. Size M.
   Bump: yes. Fail-fast/fallback governance rule (one abnormal failure marks a server down for the
   session) + `.mcp.json` scaffold with per-server `timeout` via init/doctor.
+  **Done 2026-08-31:** canonical rule in `git-conventions.md` (near the Known-issues table it
+  generalizes), referenced (not restated, D8) from `agent-output.instructions.md` and
+  `spell-commit-work.prompt.md` step 9. New optional `mcp-config-template` registry component
+  (`.mcp.json`, `skipExisting: true` — structurally exempt from self-host-parity, same as
+  `docs-baseline`'s precedent; not in any default profile, available via `spell add`). New `spell
+  doctor` check `checkMcpConfig` (per-server timeout, silent pass when no `.mcp.json` exists). Both
+  IDEAS.md sources (I8, I12) marked promoted. 16 new tests (patch bump — a new doctor check + optional
+  scaffold, not a new spell, matching BC-17's precedent).
 - [ ] **BC-23 — Registry-driven spell catalog.** Sources: TODO.md:130-141 (T15). Route: direct.
   Size M. Bump: likely (registry). Generator emits the catalog artifact (JSON + README block) from
   `registry.ts`; CI drift-check in the ARC-012/ARC-027 mold. The website's consumption of the

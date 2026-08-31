@@ -1,0 +1,10 @@
+{
+  "$comment": "Example MCP server config. Replace or remove the example server below with your own. Set a per-server \"timeout\" (milliseconds) so a hung server aborts on a predictable schedule instead of running to the client's own default idle limit (as long as 30 minutes) -- see .arcane/governance/git-conventions.md's MCP fail-fast / fallback rule.",
+  "mcpServers": {
+    "example-server": {
+      "command": "npx",
+      "args": ["-y", "@example/mcp-server"],
+      "timeout": 30000
+    }
+  }
+}

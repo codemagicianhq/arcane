@@ -478,6 +478,17 @@ git branch -d <branch>                    # delete local branch (skip if branch 
 git push origin --delete <branch>         # delete remote branch (safety net — --delete-source-branch true usually handles this; ignore 'does not exist' errors)
 ```
 
+**MCP fail-fast / fallback rule:** one abnormal MCP tool failure — a hang, an idle-timeout abort, a
+transport error, or an empty response where data is clearly expected — marks that MCP server **down
+for the rest of the session**. Do not retry it blindly. All subsequent operations that would have used
+it fall back to the documented CLI (`az repos pr` / `gh` / a direct REST call), and the downgrade is
+reported in output so a human sees it happened. The known-issues rows below (`MCP vote_pull_request`,
+`MCP create_pull_request`) are concrete instances of this general rule, not special cases of their own.
+**Consumer hardening:** set a per-server `"timeout"` (milliseconds) in `.mcp.json` so a hang aborts on a
+predictable schedule instead of running to the client's own default idle limit (as long as 30 minutes).
+Origin: a real ops session lost roughly an hour to two consecutive 30-minute MCP hangs before the
+documented `az` fallback was used (2026-08-14).
+
 **Known issues:**
 
 | Issue                                                                          | Symptom                               | Fix                                                                             |
