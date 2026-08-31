@@ -175,7 +175,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   recommendations for the remaining 4 branches appended to
   [OPERATOR-QUEUE.md Q-003](OPERATOR-QUEUE.md#q-003--four-content-holding-local-branches-land-or-abandon),
   including a newly-found 6th instance of EF-34-class fixture contamination.
-- [ ] **BC-04 — Roster integrity batch (incl. ARC-012).** Sources: TODO.md:12 (T1), :107 (T14),
+- [x] **BC-04 — Roster integrity batch (incl. ARC-012).** Sources: TODO.md:12 (T1), :107 (T14),
   :149 (T16), :161 (T20/ARC-012) — lines renumbered by BC-01/02/03's edits, corrected here.
   Route: direct. Size M. Bump: **yes** (one PR, one bump).
   (a) `spell agents sync/init` exits non-zero when any rostered role fails to resolve
@@ -184,15 +184,17 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `src/assets/.github/agents/*.agent.md` (audit confirmed no such test exists; drift class unguarded
   both directions). (c) Add optional `epithet` to schema v2 + roster generation. (d) Document
   `visual_description` in the roster schema docs.
-  **In progress 2026-08-31:** all four shipped. (a) `SyncResult.hasUnresolvedRoles` + non-zero exit
+  **Done:** [PR #94](https://github.com/codemagicianhq/arcane/pull/94) merged 2026-08-31 via rebase
+  (`5a8ecd6`), `v0.22.4`. All four shipped. (a) `SyncResult.hasUnresolvedRoles` + non-zero exit
   in both CLI commands. (b) `test/agent-roster-parity.test.ts` — **found and fixed real, live drift**:
   `mercurio.agent.md` had shipped the literal `[object Object]` defect since before the mobile-dev
   bug's own fix (PR #45), invisible until this test existed. (c) `epithet` landed on the roster entry
   (schema v2), not the agent YAML — a deliberate deviation from this line's own phrasing, since an
   epithet is naming-strategy-bound ("the Archmage" is Merlin's, not "architecture-lead"'s) and putting
   it on the definition would leak Arcanos flavor into the deliberately epithet-less `generic` strategy.
-  (d) documented in `naming-conventions.md`'s new Agent Definition Schema section. Tick on merge, not
-  before.
+  (d) documented in `naming-conventions.md`'s new Agent Definition Schema section. A pre-existing,
+  unrelated CI race (`test/init.test.ts`'s redundant build `beforeAll` colliding with other test
+  files) surfaced while shipping this PR and was fixed in the same PR — see TODO.md's new entry.
 
 ### Wave 2 — Ledger, status & doc-link hygiene
 
