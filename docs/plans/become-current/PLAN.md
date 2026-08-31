@@ -475,10 +475,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `portable-bootstrap.md`'s new "Research Reports" section — plus `spell-todo` routing (c). Optional
   `spell-research` (b) skipped: `spell-document` was already sufficient once the location existed and
   was named, matching this entry's own gate. Full detail in TODO.md's closure note on the T25 item.
-- [ ] **BC-25 — `spell-eas-store-deploy`.** Sources: TODO.md:51-84 (T8). Route: chain. Size L.
-  Bump: yes. One prompt, shared EAS preamble + two store-console sections; placeholders for
-  app-specific values; cite `EV-01`-`EV-06` in `external-verification-standards.md` by ID (the
-  TODO's own doc/spell split note). The ~30 raw lessons in the TODO body are the source material.
+- [x] **BC-25 — `spell-eas-store-deploy`.** Sources: TODO.md:82-115 (T8, confirmed accurate). Route:
+  chain. Size L. Bump: yes.
+  **Done 2026-08-31:** PRD at [features/eas-store-deploy/PRD.md](../../../features/eas-store-deploy/PRD.md).
+  New `mobile-release-standards.md` (`MR-01`-`MR-14`) for the durable store-specific facts with no
+  existing home, cited by ID from the new `spell-eas-store-deploy` (joined `spells-build`) alongside
+  `EV-01`/`EV-02`/`EV-03`/`EV-06` from `external-verification-standards.md` — never restated. Minor
+  version bump (new spell). Full detail in TODO.md's closure note on the T8 item.
 - [ ] **BC-26 — Compliance standards + spell.** Sources: TODO.md:177 (T26). Route: chain. Size L.
   Bump: yes. `compliance-standards.md` (GDPR + CCPA baseline, SOC 2 optional tier) +
   `spell-compliance` self-assessment runnable on any consuming repo.
