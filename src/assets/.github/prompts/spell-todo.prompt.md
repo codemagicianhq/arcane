@@ -118,6 +118,7 @@ Determine the target file(s) for each item:
 | Speculative idea or future-facing concept             | `TODO.md` under `## Product Ideas` or the best matching section                    |
 | ADR candidate                                         | `DECISIONS.md` — flag it as pending, do not write the full ADR yet                 |
 | Journal-worthy context                                | `journal/` — propose a filename with today's date slug, do not create the file yet |
+| Finding sourced from a research report                | `TODO.md` under the matching section — cross-reference the report path (e.g., `— see docs/research/<slug>.md`) |
 | Business-specific execution item                      | Both `TODO.md` AND the relevant `{BUSINESS_ROOT}/<name>/overview.md` reference section  |
 
 ## Step 4 — Show Proposal

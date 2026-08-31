@@ -54,6 +54,12 @@ Paste this entire file into any AI client (Claude web, ChatGPT, etc.) to give it
 - **Project/domain documents:** use explicit descriptive paths such as `docs/`, `security/`, `infrastructure/`, or a configured business root. These add project context alongside framework standards.
 - **Overrides are not yet supported:** editing a managed `.arcane/governance/` standard can be replaced by `arcane update`. Additive project documents are safe; overriding a shipped standard requires the open customization/override model.
 
+## Research Reports
+
+Research findings (competitive analysis, technical spikes, feasibility studies — the output of the Research & Backlog Analyst role) live at `docs/research/<topic-slug>.md`, one file per report. No dedicated spell produces these: `spell-document` already proposes a target path from project structure and matches its destination directory's existing conventions — point it at `docs/research/` for investigative content, the same way it already proposes `docs/` or `.arcane/governance/` for other document types. The directory is created on first real report, not pre-seeded on `spell init`.
+
+Use this repo's standard frontmatter (below) plus one addition: `sources` — a list of what was consulted. Every claim in the body traces back to one of these or is explicitly marked speculative. Structure the body summary-first: a short **Summary** with the key findings, then **Findings** with full detail and inline citations, then an optional **Follow-ups** for anything that should become a TODO item — route those via `spell-todo`, which cross-references the report path. Throughout, distinguish **verified facts**, **reasonable inferences**, and **speculation** explicitly; don't let an inference read as a checked fact.
+
 ## Documentation Format
 
 Every doc uses YAML frontmatter: `title`, `audience` (human/ai/both), `last_updated`, `status` (draft/active/deprecated), `tags`. Use wiki-links (`[[filename]]`) for cross-references.
