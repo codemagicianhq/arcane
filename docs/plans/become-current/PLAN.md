@@ -237,10 +237,16 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   in IDEAS.md rather than `promoted`, with the remainder noted inline. One new gap found and filed
   rather than fixed here (scope discipline): the org-token portability scan only walks
   `.github/prompts/`, not `.github/instructions/`, though both ship identically — see TODO.md.
-- [ ] **BC-07 — Fresh-session instruction probe.** Sources: TODO.md:46 (T6). Route: process. Size S.
-  As the FIRST action of a fresh iteration (before reading anything else): report from checked
-  evidence (1) whether the root working protocol was inherited, (2) `.arcane/agents.yaml` existence,
-  (3) the `git-conventions.md:554` example mapping. Record in journal; close T6.
+- [x] **BC-07 — Fresh-session instruction probe.** Sources: TODO.md:46 (T6). Route: process. Size S.
+  **Done:** [PR #100](https://github.com/codemagicianhq/arcane/pull/100) merged 2026-08-31 via rebase
+  (`188d4fb`). Bump: n/a, no `src/assets` changes. All three facts confirmed from checked evidence:
+  (1) the root working protocol was inherited (present in the fresh iteration's own system context
+  before any file read); (2) `.arcane/agents.yaml` still does not exist; (3) the `Role` trailer's
+  example row is still there, but its `:554` line citation had gone stale (six epics of edits since
+  2026-08-02 shifted it to line 635) — caught and corrected a real error made mid-probe (a first
+  search targeted the wrong text shape and nearly reported the example as removed). Full narrative in
+  [journal/2026-08-31-bc07-fresh-session-probe.md](../../../journal/2026-08-31-bc07-fresh-session-probe.md).
+  New IDEAS.md idea filed for the generalizable line-number-citation-drift problem, not fixed here.
 - [ ] **BC-08 — CLI unknown-command guidance.** Sources: IDEAS.md:14 (I6). Route: direct. Size S.
   Bump: no. `spell <unrecognized>` prints guidance + the real CLI commands instead of failing silent.
 - [ ] **BC-09 — GitHub as first-class `external_provider`.** Sources: IDEAS.md:10 (I2). Route:
