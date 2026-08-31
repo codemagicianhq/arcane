@@ -183,6 +183,23 @@ Output format:
 ## Session Closure
 
 - Summary of what was completed.
+- **Session commit graph** — per the generated state diagrams convention (rule 8, ARC-036), built only
+  from commits this session actually made (`git log <trunk>..HEAD --format="%h %s" --reverse`, or
+  `<remote>/<trunk>..HEAD` once pushed) plus step 1b's succeeded/pending/failed classification per
+  commit. Skip entirely (the applicability guard) for a read-only session or a single-commit session —
+  one point has nothing to sequence. Deliberately `gitGraph`, the same already-verified diagram type
+  R1–R9 use, not Mermaid's `timeline` diagram — that type is marked experimental in Mermaid's own docs,
+  a real compatibility risk across GitHub/VS Code/Obsidian this convention explicitly commits to
+  supporting; a session's own commit sequence is exactly what `gitGraph` already represents:
+
+  ```mermaid
+  gitGraph
+     commit id: "<short-sha 1> succeeded"
+     commit id: "<short-sha 2> pending"
+  ```
+
+  One commit per session commit, in order, `id` carrying its short SHA and step 1b's classification —
+  never claim `succeeded` for anything step 1b did not confirm as such.
 
 ## Journal Updates
 

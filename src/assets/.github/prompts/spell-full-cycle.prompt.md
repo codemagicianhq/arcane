@@ -196,6 +196,28 @@ After each phase completes, output a brief status line:
 [Phase 6/6 — Ship] AWAITING APPROVAL — PR #77 created, ship report below
 ```
 
+**Pipeline state diagram** — per the generated state diagrams convention (rule 8, ARC-036), built only
+from the phase status this section already tracks; skip entirely (the applicability guard) after Phase
+1 alone, before any other phase has run — a single-state pipeline has nothing to show in relation to
+the rest. From Phase 2 onward, alongside the status line above:
+
+```mermaid
+stateDiagram-v2
+   [*] --> Plan
+   Plan --> Architect
+   Architect --> Implement
+   Implement --> Test
+   Test --> Review
+   Review --> Ship
+   Ship --> [*]
+   Implement : Implement (current)
+```
+
+Append ` (current)` to whichever phase's own name is the one that just completed or is in progress —
+exactly one phase carries it at a time, matching the status line's own `[Phase N/6 — Name]` value. Omit
+`Enchant` from the diagram entirely when Phase 1.5 was skipped (Decision logic above); insert it between
+`Plan` and `Architect` when it ran.
+
 ---
 
 ## Rules
@@ -204,7 +226,7 @@ After each phase completes, output a brief status line:
 - **No scope creep.** Only build what the feature description specifies.
 - **Fail fast.** If a phase cannot succeed, halt immediately rather than producing garbage for downstream phases.
 - **Attribution required.** Every commit must carry `Agent`, `Model`, and `Provider` trailers per ADR-028/ADR-029.
-- **Branch discipline.** All work on topic branches, never on main. Per ADR-048.
+- **Branch discipline.** All work on topic branches, never on main — see `.arcane/governance/git-conventions.md`'s Trunk-based development rule. (Corrected 2026-08-31, BC-14: previously cited "ADR-048," which does exist in the shipped `framework-decisions.md` reference but is actually about the Code-Versus-Docs Branch Policy's local-only-repo fallback, unrelated to this general rule — a topical miscitation, the same class BC-06 found and fixed elsewhere. `git-conventions.md` states this rule directly with no ADR/ARC number attached, so there is nothing to cite beyond the file itself.)
 - **Fresh context per story.** Do not carry assumptions between stories during Phase 3.
 - **Epic checkpointing.** When this spell is run as one epic in a multi-epic plan, recommend running `spell-commit-work` before starting the next epic.
 - **Multi-epic runs serialize by default (ARC-028 R4).** Before running two or more epics concurrently in separate worktrees, compare their footprints: the file and directory globs each will touch, plus any **shared sequence** — database migration numbers, generated indexes and manifests, lockfiles, fixture IDs, anything where correctness depends on what another epic picked. If the footprints overlap on either axis, run the epics **sequentially in one workspace**, or re-scope them to disjoint footprints first. State the comparison and the resulting decision in the run's opening report; "they seemed unrelated" is not a footprint comparison.
