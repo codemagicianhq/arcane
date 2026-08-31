@@ -21,7 +21,7 @@ Follow these rules strictly:
 
 1. **Start with the one-sentence answer.** What is it, or why does it happen? No preamble.
 2. **Use analogies from the user's world** — relate to tools, systems, or workflows they already use (their editor, their chat/notification tooling, their own agents, their own infrastructure). Check the workspace for context about the user's setup.
-3. **Use diagrams when architecture matters.** Mermaid sequence diagrams for flows, flowcharts for decision trees. Don't use diagrams for simple definitions.
+3. **Use diagrams per rule 8** (`.arcane/governance/universal-agent-rules.md`) — Mermaid sequence diagrams for flows, flowcharts for decision trees. Don't use diagrams for simple definitions.
 4. **Show the "so what?"** — connect the explanation to what the user can *do* with this knowledge. What decisions does it unlock? What options does it create?
 5. **Name the moving parts** with a summary table when there are multiple components, layers, or options to compare.
 6. **Use real examples from their system** — reference actual agent names, actual config files, actual commands. Don't use generic placeholders when specific is available.

@@ -14,6 +14,10 @@ let reviewBatch: string;
 let manifest: string;
 let fullCycle: string;
 let closeSession: string;
+let explainConcept: string;
+let architect: string;
+let scope: string;
+let securityReview: string;
 
 beforeAll(async () => {
   [
@@ -26,6 +30,10 @@ beforeAll(async () => {
     manifest,
     fullCycle,
     closeSession,
+    explainConcept,
+    architect,
+    scope,
+    securityReview,
   ] = await Promise.all([
     readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8"),
     readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
@@ -36,6 +44,10 @@ beforeAll(async () => {
     readFile(join(PROMPTS, "spell-manifest.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8"),
     readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-explain-concept.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-architect.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-scope.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-security-review.prompt.md"), "utf8"),
   ]);
 });
 
@@ -206,5 +218,44 @@ describe("R10 adopters each reference the convention and derive only from alread
   it("spell-close-session ties each commit's diagram label to step 1b's real classification, never an assumed success", () => {
     expect(closeSession).toContain("step 1b's succeeded/pending/failed classification");
     expect(closeSession).toContain("never claim `succeeded` for anything step 1b did not confirm");
+  });
+});
+
+describe("R11 Tier-3 harmonization: prescriptions repointed to rule 8, not restated (ARC-036)", () => {
+  it("spell-explain-concept repoints to rule 8 and keeps its applicability-guard sentence byte-verbatim", () => {
+    expect(explainConcept).toContain("**Use diagrams per rule 8** (`.arcane/governance/universal-agent-rules.md`)");
+    expect(explainConcept).toContain("Don't use diagrams for simple definitions.");
+  });
+
+  it("spell-architect repoints to rule 8 and classifies its diagrams as agent-authored design output, not ARC-036", () => {
+    expect(architect).toContain("Use Mermaid for all diagrams, per rule 8");
+    expect(architect).toContain("agent-authored design output, not the generated-state-diagrams sub-convention ARC-036 covers");
+  });
+
+  it("spell-scope repoints its dependency graph to rule 8 and classifies it as planning output, not ARC-036", () => {
+    expect(scope).toContain("Produce a Mermaid diagram (per rule 8) showing epic execution order");
+    expect(scope).toContain("an agent-authored planning diagram, not the generated-state-diagrams sub-convention ARC-036 covers");
+  });
+
+  it("spell-security-review adds a trust-boundary/data-flow diagram classified as rule-8 analysis, not ARC-036", () => {
+    expect(securityReview).toContain("**Map trust boundaries and data flow**");
+    expect(securityReview).toContain("agent-authored analysis under rule 8");
+    expect(securityReview).toContain("not the generated-state-diagrams sub-convention ARC-036 covers");
+    expect(securityReview).toContain("there is no already-computed trust-boundary state to read back");
+  });
+
+  it("spell-security-review's trust-boundary diagram states its own applicability guard", () => {
+    expect(securityReview).toContain("Skip this step when the review scope doesn't cross any trust boundary");
+  });
+
+  it("spell-security-review wires the trust-boundary diagram into the report template", () => {
+    expect(securityReview).toContain("### Trust Boundary / Data Flow");
+    expect(securityReview).toContain("[Mermaid flowchart from step 1a — omit this section entirely if step 1a was skipped]");
+  });
+
+  it("none of the four R11 files misclassify their diagrams as the ARC-036 generated-state convention", () => {
+    for (const text of [explainConcept, architect, scope, securityReview]) {
+      expect(text).not.toContain("generated state diagrams convention (rule 8, ARC-036)");
+    }
   });
 });
