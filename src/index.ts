@@ -148,8 +148,11 @@ program
 
 program
   .command("ward")
-  .description("Scan the repo for leaked third-party identifiers and trademarks (T18)")
-  .option("--terms <terms>", "Comma-separated denylist terms, in addition to the built-in vendor-identifier list")
+  .description("Scan the repo for leaked identifiers -- third-party trademarks and the operator's own personal identifiers alike (T18)")
+  .option(
+    "--terms <terms>",
+    "Comma-separated denylist terms, in addition to the built-in vendor-identifier list. Seed this from your OWN identity too, not just org/venture names -- usernames, machine names, and personal handles leak the same way a private venture name does (I1)",
+  )
   .option("--gate", "Exit non-zero if any leak is found (for CI)")
   .action(async (opts: { terms?: string; gate?: boolean }) => {
     await runWardCli(process.cwd(), opts);

@@ -1,10 +1,14 @@
 /**
  * spell ward (T18/BC-21): local IP/trademark leakage scan.
  *
- * Finds what leaked IN -- third-party identifiers, brand tokens, org names
- * baked into a repo's content, filenames, or binary assets. The opposite
- * concern from spell scry (T18), which clears a candidate name before it
- * ships OUT.
+ * Finds what leaked IN -- third-party identifiers, brand tokens, org names --
+ * baked into a repo's content, filenames, or binary assets. `--terms` is a
+ * generic denylist: seed it from the operator's OWN identity too, not just
+ * the org's -- a username, machine name, or personal handle leaks the same
+ * way a private venture name does (I1; the motivating incident was exactly
+ * this -- a branch name containing a username, sitting in this repo's own
+ * ai-context file, in a public repo). The opposite concern from spell scry
+ * (T18), which clears a candidate name before it ships OUT.
  *
  * Deliberately out of scope: secret/credential detection. That is a
  * different scanning concern reserved for BC-10's secret-detection ADR
