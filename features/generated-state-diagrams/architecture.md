@@ -23,8 +23,22 @@ No `flowchart LR` fallback needed — `gitGraph` is a long-stable, core Mermaid 
 
 ## OQ2 — CLI TTY behavior for R8
 
-**Deferred.** R8 is a separate, later PR (CLI parity), not part of Tier 1's scope. Left open for that
-PR to resolve against the actual `spell status` output conventions at that time.
+**Resolved in the R8 PR: aligned text on a TTY, the fenced diagram only when piped** — the second
+option OQ2 itself offered. Reasoning: a fenced Mermaid block doesn't render in a plain terminal (the
+PRD's own "degrades to readable fenced source" point, R5) — printing raw ` ```mermaid ` syntax to an
+interactive session is strictly worse than the three readings shown as plain, aligned label:value
+lines, matching `status.ts`'s own existing minimalist footer convention
+(`  Installed: {v}  Latest: {v}`) rather than inventing a bigger table. When stdout is piped (a file,
+another tool, a captured PR body), the redirected output is presumably meant to be *used* somewhere
+that renders Mermaid, so the real fenced diagram is emitted there instead. Detected via
+`process.stdout.isTTY`, the same primitive Node's own CLI ecosystem uses for this exact decision class.
+
+`generateVersionDriftDiagram` (`src/modules/diagram-generator.ts`) returns the unfenced `gitGraph` body
+only — fencing is the caller's decision, matching R5's principle that the *shape* of the diagram and
+its *presentation* are separate concerns. R5's ADO-wiki `:::mermaid` variant is deliberately not wired
+into the CLI: that distinction exists for agent-authored prompt output that might be posted to a
+specific external system, not for `spell status`'s own stdout, which always just goes to a terminal or
+a shell redirect — there is no "posting destination" for the CLI to key off `external_provider` for.
 
 ## OQ3 — Canonical template home
 

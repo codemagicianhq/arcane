@@ -6,6 +6,7 @@ import {
   checkForUpdate,
   getFeedUrl,
 } from "../modules/version-check.js";
+import { generateVersionDriftDiagram } from "../modules/diagram-generator.js";
 
 /**
  * Runs the `spell status` command.
@@ -99,4 +100,36 @@ export async function runStatus(
   }
 
   console.log(footer);
+
+  // ─── Version-drift diagram (ARC-036 R8) ────────────────────────────────────
+  // Axis A (repo-files vs installed CLI) needs no network call and is always
+  // checkable. Axis B (installed CLI vs npm-latest) needs versionResult.latest,
+  // which is null when the npm check failed — skip the diagram entirely in
+  // that case rather than showing a partial, potentially misleading picture;
+  // the "Latest: unable to check" footer above already covers that failure.
+  if (versionResult.latest !== null) {
+    const diagram = generateVersionDriftDiagram(
+      manifest.version,
+      packageVersion,
+      versionResult.latest,
+    );
+
+    if (diagram !== null) {
+      console.log("");
+      if (process.stdout.isTTY) {
+        // Interactive terminal: a fenced Mermaid block doesn't render here —
+        // print the same three readings as plain aligned text instead.
+        console.log("  Version drift:");
+        console.log(`    repo-files:    ${manifest.version}`);
+        console.log(`    installed-cli: ${packageVersion}`);
+        console.log(`    latest (npm):  ${versionResult.latest}`);
+      } else {
+        // Piped (file, another tool, a captured PR body): emit the real
+        // diagram so the redirected output is directly usable.
+        console.log("```mermaid");
+        console.log(diagram);
+        console.log("```");
+      }
+    }
+  }
 }
