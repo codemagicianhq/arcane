@@ -182,4 +182,29 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Preconditions:** none — independent of BC-10/BC-12's ADRs.
 - **Status:** ready for your accept/revise/reject call.
 
-<!-- The loop appends Q-008+ below this line. -->
+## Q-008 — Accept/revise/reject ADR: ARC-039 (Build-Time Spell Compiler)
+
+- **What:** [ARC-039](../../../DECISIONS.md#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments)
+  is `Proposed`, drafted 2026-08-31 (BC-12) from IDEAS.md's I5 ("spell compiler, not spell runtime")
+  and I15 (dual-copy elimination). Implementation is BC-32, gated on your acceptance here. This closes
+  out all three ADR-drafting epics (BC-10/ARC-037, BC-11/ARC-038, BC-12/ARC-039) — Q-006, Q-007, and
+  this entry are now all waiting on your review.
+- **The shape, briefly:** `.github/prompts/spell-*.prompt.md` is formalized as each spell's sole
+  authored source; the corresponding `.claude/commands/spell-*.md` stub is generated from its
+  frontmatter, reusing `agent-generator.ts`'s already-proven one-source/multiple-renderers pattern.
+  Genuinely shared prose (the `tracking_mode`/`external_provider` resolution block this session's own
+  BC-09 had to hand-edit identically across five files) becomes named fragments assembled at build
+  time. **Explicitly does not** pursue runtime operator-config injection into rendered spell text, and
+  says so directly rather than quietly narrowing scope — that part of I5's original vision hits the D2
+  Gold vanilla-repo tension with no resolution found that avoids either violating D2 Gold or accepting
+  real version skew.
+- **Two premises checked and corrected while drafting, not just accepted:** I15's "66 hand-maintained
+  files" claim overstated the actual problem — all 36 (not 33) `.claude/commands/` files are already
+  9-line thin shims using Claude Code's own `@`-file-inclusion, so body-content drift was never
+  actually possible; the real gap is narrower (stub generation, not de-duplication of full bodies).
+  I5's hoped-for defusal of EF-02/08/14/19/23/29 and fabricated trailers is **not** delivered by this
+  ADR — disclosed as a deliberate scope exclusion (decision 3), not silently dropped.
+- **Preconditions:** none — independent of BC-10/BC-11's ADRs.
+- **Status:** ready for your accept/revise/reject call.
+
+<!-- The loop appends Q-009+ below this line. -->
