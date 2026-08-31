@@ -236,12 +236,14 @@ describe("backwards compatibility of the split", () => {
   // 38: spell-eas-store-deploy joined spells-build (BC-25, EAS Build + EAS Submit deployment guide for
   //     the Apple App Store and Google Play).
   // 39: spell-compliance joined spells-build (BC-26, GDPR/CCPA/SOC 2/HIPAA self-assessment).
+  // 40: spell-verification-ledger joined spells-capture (BC-27c, I7 -- extracts a structured
+  //     checked-claim record separate from spell-close-session's narrative).
   it.each(["lite", "methodology"] as const)(
-    "%s still ships the 39 spells the monolith + spells-build/spells-delivery growth hold, in both formats",
+    "%s still ships the 40 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in both formats",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
-      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(39);
-      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(39);
+      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(40);
+      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(40);
     },
   );
 

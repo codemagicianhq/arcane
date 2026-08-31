@@ -1,5 +1,5 @@
 {
-  "totalSpells": 40,
+  "totalSpells": 41,
   "groups": [
     {
       "component": "spells-session",
@@ -70,6 +70,12 @@
           "shortName": "document",
           "name": "Spell — Document",
           "description": "Formalize valuable insights, analysis, or decisions from the current conversation into polished, permanent reference documents."
+        },
+        {
+          "id": "spell-verification-ledger",
+          "shortName": "verification-ledger",
+          "name": "Spell — Verification Ledger",
+          "description": "Extract a structured record of claims that were checked this session and what the check showed — especially the ones that didn't survive. Separate from spell-close-session; run on demand, not every session."
         },
         {
           "id": "spell-brainstorm",

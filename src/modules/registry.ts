@@ -212,6 +212,8 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-suggest-feature.md",
       ".github/prompts/spell-document.prompt.md",
       ".claude/commands/spell-document.md",
+      ".github/prompts/spell-verification-ledger.prompt.md",
+      ".claude/commands/spell-verification-ledger.md",
       ".github/prompts/spell-brainstorm.prompt.md",
       ".claude/commands/spell-brainstorm.md",
       ".github/prompts/spell-explain-concept.prompt.md",
