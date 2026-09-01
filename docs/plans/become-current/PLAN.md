@@ -639,6 +639,33 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     (`0.29.3` → `0.29.4`, content update to existing docs, no new component).
     **Done:** [PR #152](https://github.com/codemagicianhq/arcane/pull/152) merged 2026-08-31 via
     rebase.
+  - [x] **(d) Batch D — done 2026-09-01.** `agent-policies.md` alone (~460 lines, 18 sections, its
+    own dedicated batch per this entry's original sizing note), 37 annotations. Unlike Batch B/C,
+    this is Arcane's own core agent-behavior policy, so several rules are backed by real, verified
+    mechanisms rather than defaulting to advisory: Branch Discipline's commit/merge/PR/branch-
+    deletion rules cite `spell-commit-work`'s actual Step 1 (branch guard), Step 4.5 (loader-
+    validated execution authority), and Step 8 (approval-fingerprint gate), plus `spell-create-
+    pull-request`'s Step 0.6 rebase guard; Solo-Operator Delegation Records' "Revocable"/"Listable"
+    bullets cite `doctor.ts`'s real `checkDelegations` function — which also surfaced a genuine gap:
+    `.arcane/delegations.json` is parsed via an unchecked type assertion, not a runtime-validated
+    schema, unlike the roster/definition path; PR Hygiene Cadence's 3-/7-day staleness thresholds
+    cite `spell-open-session`'s real Open-PRs step, honestly caveated as conditional on
+    external/ADO tracking mode rather than universal; the working-tree vantage-point rule cites the
+    same Same-Vantage-Point Check wired into `spell-commit-work`/`spell-close-session`'s branch-
+    deletion steps, while disclosing the vantage-point judgment itself stays manual per
+    `git-conventions.md`'s own "not a code-level gate" framing. Several candidate mechanisms were
+    checked and confirmed NOT to apply rather than assumed: `checkPullRebase` (targets bare
+    `git pull`, not this doc's explicit fetch+rebase sequence), `checkMcpConfig` (validates only a
+    timeout field), `checkSessionContinuity` (checks a different file set), `checkArcaneManifest`/
+    `checkPushPolicy`/`checkIncidentReleaseGate` (all orthogonal). Dispatched as a single agent
+    (concurrent same-file edits from multiple agents risked corruption) — its full diff was
+    independently reviewed, and all 3 existing tests referencing this doc
+    (`agent-policies-delegation.test.ts`, `attribution-trailer-split.test.ts`,
+    `prompt-worktree-vantage-check.test.ts`) confirmed passing unaffected, since every annotation
+    was appended after the specific labels/prefixes those tests assert on. Patch bump (`0.29.4` →
+    `0.29.5`, content update to an existing doc, no new component).
+    **Done:** [PR #153](https://github.com/codemagicianhq/arcane/pull/153) merged 2026-09-01 via
+    rebase.
 - [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted**. Route: chain.
   Size M-L per the ADR's settled bind point.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
