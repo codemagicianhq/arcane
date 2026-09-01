@@ -24,9 +24,9 @@ How machines, AI agents, and systems are named across your projects. This is a *
 
 Two rules govern every name in the system.
 
-**The Naming Test:** if an established industry term exists for the thing, use the real term — a universe name has to be *earned* by the absence of one. Two dialects result: magic grammar for the personas and vocabulary, plain functional payloads for everything technical. Corollary: the more autonomous the tool, the more boring its name should be.
+**The Naming Test:** if an established industry term exists for the thing, use the real term — a universe name has to be *earned* by the absence of one. Two dialects result: magic grammar for the personas and vocabulary, plain functional payloads for everything technical. Corollary: the more autonomous the tool, the more boring its name should be. **Enforcement: explicitly advisory prose (ARC-023) — whether a real industry term already exists is a judgment call; no check screens a candidate name against this test.**
 
-**The IP rule:** persona names must be **public domain or your own coinage**. No living people. No franchise-coined characters — a borrowed name is owned by whoever coined it, no matter how well it fits. Before any name ships, run the four checks: who coined it; does an estate still do business in it; do same-audience products already claim it (search live — don't trust memory); and what is its first association in each market you operate in, said aloud in every language your team speaks.
+**The IP rule:** persona names must be **public domain or your own coinage**. No living people. No franchise-coined characters — a borrowed name is owned by whoever coined it, no matter how well it fits. Before any name ships, run the four checks: who coined it; does an estate still do business in it; do same-audience products already claim it (search live — don't trust memory); and what is its first association in each market you operate in, said aloud in every language your team speaks. **Enforcement: explicitly advisory prose (ARC-023) — the four checks depend on human judgment and live research; `spell-scry` can perform this exact check but nothing requires it before an agent name is assigned, and the naming step in `src/modules/naming.ts` validates only that a typed name is non-empty.**
 
 Names should be memorable, distinctive, and never repeated across categories.
 
@@ -70,6 +70,7 @@ Agents get persona names paired with a role. The persona name is the primary ide
 - An agent may serve multiple projects but keeps the same name and role everywhere.
 - If an agent's role changes significantly, it gets a new name (don't reuse names for different roles).
 - If you collaborate with other operators who run their own Arcane instances, reserve names across instances so they don't collide.
+- **Enforcement: explicitly advisory prose (ARC-023) — no code checks persona-name uniqueness within a roster, across projects, or across Arcane instances; `agent-schema.ts`'s roster validation checks each entry's shape only.**
 
 ### Default Roster (Arcane personas)
 
@@ -107,9 +108,9 @@ The table above is the human-readable roster; agent definitions (`agents/*.yaml`
 
 **Role consolidation (ADR-031):** Framework-specific dev roles (.NET, Blazor, React, Flutter, MAUI) are consolidated into generic roles (Full-Stack, Frontend, Mobile). The framework/stack is a prompt parameter, not an agent identity. This scales without needing a new agent for every technology.
 
-**Naming policy:** All agent names should be positive characters — beings, not objects — with a clear thematic connection to their role.
+**Naming policy:** All agent names should be positive characters — beings, not objects — with a clear thematic connection to their role. **Enforcement: explicitly advisory prose (ARC-023) — character and tone are a judgment call; `agent-schema.ts` validates that a name is a non-empty string, not its thematic content.**
 
-**Canonical agent identity domain:** Use a single domain for all agent and tool Git identities — e.g., `merlin@{OPERATOR_DOMAIN}`. See [[DECISIONS#ADR-028|ADR-028]] for the full attribution model.
+**Canonical agent identity domain:** Use a single domain for all agent and tool Git identities — e.g., `merlin@{OPERATOR_DOMAIN}`. See [[DECISIONS#ADR-028|ADR-028]] for the full attribution model. **Enforcement: explicitly advisory prose (ARC-023) — no commit-trailer or identity check verifies that every agent/tool email shares one domain; `git-conventions.md`'s Required Commit Trailers table validates trailer presence, not the author-email domain.**
 
 ### Power Levels (ADR-032)
 

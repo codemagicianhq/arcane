@@ -34,7 +34,7 @@ ventures/        Prototypes      features/     business repo
 
 #### Concept (`ventures/<name>/`)
 
-The permanent record of every idea — good, bad, or deferred. Ideas are **never deleted**. Frontmatter `status` tracks where each idea is in its lifecycle.
+The permanent record of every idea — good, bad, or deferred. Ideas are **never deleted**. **Enforcement: explicitly advisory prose (ARC-023) — no code in this repo checks for or blocks deletion of files under `ventures/<name>/`; this depends on human/agent discipline.** Frontmatter `status` tracks where each idea is in its lifecycle.
 
 **Required files:**
 - `overview.md` — What is it? Why does it matter? Who is it for? (Minimum viable concept doc.)
@@ -45,7 +45,7 @@ The permanent record of every idea — good, bad, or deferred. Ideas are **never
 - `stories.json` — If architecture produced story breakdown
 - Screenshots in `assets/screenshots/YYYY-MM-DD/` (linked from docs)
 
-**What does NOT belong here:** Code files (`.js`, `.ts`, `.py`, `.html`, `.css`, etc.). The docs repo is a documentation-only repository.
+**What does NOT belong here:** Code files (`.js`, `.ts`, `.py`, `.html`, `.css`, etc.). The docs repo is a documentation-only repository. **Enforcement: explicitly advisory prose (ARC-023) — [[governance/agent-policies|Agent Policies]]'s repo-routing rule states the general version of this restriction; this file restates it for the docs repo specifically rather than asserting independent enforcement, and no lint/CI check here rejects code file extensions.**
 
 #### Prototype (Prototypes repo)
 
@@ -57,7 +57,7 @@ Small, self-contained, throwaway code that demonstrates a concept. Prototypes ar
 
 **Folder convention:** `<name>/` at repo root (e.g., `magic-prompt/`, `self-healing-poc/`)
 
-**No governance overhead:** No PRs required, no work items, no branch policies. This is a sandbox. Commit directly to main.
+**No governance overhead:** No PRs required, no work items, no branch policies. This is a sandbox. Commit directly to main. **Enforcement: explicitly advisory prose (ARC-023) — this is a deliberate low-ceremony policy choice, not a constraint with a pass/fail check to enforce.**
 
 #### Feature (`features/{id}-{slug}/`)
 
@@ -116,7 +116,7 @@ Ideas evolve. Track iterations without complex versioning:
 
 2. **Screenshots:** Save evidence of each meaningful state to `assets/screenshots/YYYY-MM-DD/` per [[assets/screenshots/README|screenshot conventions]]. Link from the changelog.
 
-3. **Git history is the version control.** Don't create `v1/`, `v2/` folders. The idea folder is a living document — git tracks every change.
+3. **Git history is the version control.** Don't create `v1/`, `v2/` folders. The idea folder is a living document — git tracks every change. **Enforcement: explicitly advisory prose (ARC-023) — no check inspects idea folders for `v1/`/`v2/`-style version directories; this depends on human/agent discipline.**
 
 ---
 
@@ -128,10 +128,10 @@ No formal gate. If someone (human or agent) wants to see the idea running, gener
 
 ### Concept/Prototype → Feature
 
-All of these must be true:
+All of these must be true: **Enforcement: explicitly advisory prose (ARC-023) — no spell checks these four criteria before a `status: promoted` transition; `spell-plan` satisfies only the fourth criterion (a PRD exists) and does not gate the others, and `spell-manifest`'s promotion flow uses a separate idea-book status marker, not this file's ventures frontmatter.**
 - [ ] A tracker work item exists (User Story or Feature)
 - [ ] A business track owns it (maps to a `ventures/<name>/` folder or a project)
-- [ ] A target code repo exists (or needs to be created; repo creation is human-only)
+- [ ] A target code repo exists (or needs to be created; repo creation is human-only) **Enforcement: explicitly advisory prose (ARC-023) — [[governance/agent-policies|Agent Policies]] is the canonical statement of this rule (Spectator-level, human-only); this restates it rather than asserting independent enforcement, and no code under `src/commands/` implements repo creation for a check to gate in the first place.**
 - [ ] The idea has at least a PRD (`spell-plan` output)
 
 When promoted: update the idea's frontmatter to `status: promoted` with `promoted_to` metadata. The idea folder stays in arcane forever as the historical record.
@@ -166,7 +166,7 @@ In the vibe coding era, a well-written spec can regenerate a prototype in minute
 |---|---|
 | [[governance/development-methodology\|Spell Loop]] | Ideas enter the loop at `spell-plan`. Concept stage is pre-loop exploration. |
 | Repo routing | Code → code repos. Docs → the docs repo. Prototypes → Prototypes repo. |
-| Repo governance | Repo creation is human-only. Prototypes repo is a single shared repo, not per-POC. |
+| Repo governance | Repo creation is human-only. **Enforcement: explicitly advisory prose (ARC-023) — [[governance/agent-policies\|Agent Policies]] is the canonical statement of this rule; this table restates it rather than asserting independent enforcement.** Prototypes repo is a single shared repo, not per-POC. |
 | Feature folders | Feature planning artifacts live in the target code repo under `features/`. |
 | `ventures/<name>/` | Business-level docs for shipped products. Ideas that graduate here are fully promoted. |
 

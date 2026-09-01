@@ -24,16 +24,19 @@ This document provides rationale for authentication decisions across an agent ru
 - Bearer tokens (PATs, API keys) can be replayed if intercepted once
 - Prefer challenge/response authentication (SSH, OAuth) when available
 - When bearer tokens are required, store them as environment variables via a secret-reference pattern
+- **Enforcement: explicitly advisory prose (ARC-023) — these two practices govern a downstream operator's own authentication mechanism and secret storage; no code or spell in this repository observes which mechanism or pattern is actually used.**
 
 **2. Credential Isolation**
 - Each service/agent uses separate credentials with minimal required scope
 - Credentials stored outside version control (`.env`, system keychains, secret managers)
 - Rotation/revocation must be straightforward without config file changes
+- **Enforcement: explicitly advisory prose (ARC-023) — credential scoping, storage location, and rotation ease are properties of a downstream operator's own credential stores; no script in this repository inspects a consumer's `.env` files, keychains, or secret managers.**
 
 **3. Defense in Depth**
 - Authentication is one layer; combine with network isolation (loopback bind, VPN/tunnel)
 - Audit logging for all credential operations
 - Regular review of active credentials and permissions
+- **Enforcement: explicitly advisory prose (ARC-023) — network isolation, audit logging, and credential review are carried out entirely in the operator's own infrastructure; this repository ships no gateway, log pipeline, or scheduled check that observes them.**
 
 ## Authentication Contexts
 
@@ -46,6 +49,8 @@ This document provides rationale for authentication decisions across an agent ru
 - Public key registered with the Git host
 - Private key remains local at `~/.ssh/id_*` (`600` permissions)
 - Git remote configured to use the SSH URL
+
+**Enforcement: explicitly advisory prose (ARC-023) — this decision and its mechanism and implementation-notes steps configure a downstream operator's own Git host account and local filesystem; Arcane ships no code that checks which credential type is registered with the Git host or that verifies key-file permissions.**
 
 **Why SSH Over PAT:**
 
@@ -95,6 +100,8 @@ This document provides rationale for authentication decisions across an agent ru
 - Store the key as an environment variable (e.g. in a `.env` file)
 - Reference it in config via a secret-reference rather than embedding the value
 
+**Enforcement: explicitly advisory prose (ARC-023) — this decision and its mechanism and implementation-notes steps configure a downstream operator's own model-provider account and local secret storage; Arcane ships no code that verifies key scope, storage location, or file permissions.**
+
 **Why Scoped Keys Over Personal Keys:**
 
 1. **Organizational Boundary**
@@ -131,6 +138,8 @@ This document provides rationale for authentication decisions across an agent ru
 - Store it as an environment variable (e.g. in a `.env` file or a secret manager)
 - Reference it from config rather than embedding the literal value
 - Require it in the HTTP header: `Authorization: Bearer <token>`
+
+**Enforcement: explicitly advisory prose (ARC-023) — this decision and its mechanism and implementation-notes steps describe a gateway component operated outside this repository; Arcane's own codebase contains no gateway server to bind an address, validate a token, or enforce this header requirement.**
 
 **Why Token Auth:**
 
@@ -187,6 +196,8 @@ auth = { provider = "token", token = { source = "env", id = "SECRET_NAME" } }
 SECRET_NAME=actual-secret-value-here
 ```
 
+**Enforcement: explicitly advisory prose (ARC-023) — Arcane ships no config-schema validator or lint rule in this repository that checks a downstream repo's config for inline secrets versus this reference pattern; adoption depends on the operator's own discipline.**
+
 **Benefits:**
 - Config files are version-controlled without exposing secrets
 - Secrets are rotated by editing the secret store only (no config changes)
@@ -211,6 +222,8 @@ Regular review (quarterly):
 - [ ] Check `~/.ssh/` permissions (directory `700`, private keys `600`)
 - [ ] Grep the codebase for hardcoded secrets (should find zero matches)
 - [ ] Review the security audit log for any anomalous credential operations
+
+**Enforcement: explicitly advisory prose (ARC-023) — this checklist runs on operator judgment and cadence; no scheduled task, spell gate, or CI check in this repository executes or verifies these items.**
 
 ---
 

@@ -50,7 +50,7 @@ See also: [Hardening Checklist](hardening-checklist.md), [Authentication Strateg
 | Supply chain (package installs) | **Mitigated** | Global package installs use a user-owned directory, not a system directory. No `sudo` during install. |
 | Inter-machine communication | **Mitigated** | Encrypted mesh tunnel/VPN. No direct unencrypted LAN communication. |
 | Token/credential exposure (at rest) | **Mitigated** | Token stored as an env var in a `.env` file. Config uses a secret reference, not plaintext. State directory is mode `700`. |
-| Credential committed to version control | **Not mitigated** | Storage conventions are documented (secret references, `.gitignore` entries for `.env`/`*.pem`/`*.key`) but **no detection exists** — no scanner runs on the commit path, the push path, or in CI, and nothing verifies the conventions were followed. `spell-security-review`'s secrets step is an on-demand agent read, not a control. Treat every credential that reaches a commit as compromised and rotate it — history, existing clones, and remote backups all survive deleting the file (EF-35). |
+| Credential committed to version control | **Not mitigated** | Storage conventions are documented (secret references, `.gitignore` entries for `.env`/`*.pem`/`*.key`) but **no detection exists** — no scanner runs on the commit path, the push path, or in CI, and nothing verifies the conventions were followed. `spell-security-review`'s secrets step is an on-demand agent read, not a control. **Treat every credential that reaches a commit as compromised and rotate it — history, existing clones, and remote backups all survive deleting the file (EF-35). Enforcement: explicitly advisory prose (ARC-023) — rotating a leaked credential happens at the third-party provider that issued it; no Arcane mechanism can perform or verify that a specific credential was actually rotated.** |
 
 ---
 
@@ -94,11 +94,11 @@ This policy defines which collaborators can access which project data. Enforce b
 
 ### Enforcement
 
-- Project-level isolation is the primary boundary: each business is a separate project with its own access control.
-- A partner's access is limited to a single business's project, through a dedicated org only.
-- An operations co-owner receives access only to their business's project and relevant platform accounts — not to infrastructure configs.
-- System-level and multi-business reference documentation stays private to the owner unless explicitly shared.
-- New collaborator access requires an explicit entry in this table and an entry in the security audit log.
+- **Project-level isolation is the primary boundary: each business is a separate project with its own access control. Enforcement: explicitly advisory prose (ARC-023) — isolation depends on the owner actually configuring separate platform projects/repos with distinct access control; `spell doctor`'s `checkPlatformBranchPolicy` (src/modules/platform-policy.ts) verifies only branch merge-method policy and `checkDelegations` (src/commands/doctor.ts) verifies only agent power-level delegations, so no Arcane check queries collaborator or team membership to verify a given business's project is actually isolated.**
+- **A partner's access is limited to a single business's project, through a dedicated org only. Enforcement: explicitly advisory prose (ARC-023) — depends on the owner correctly scoping the partner's platform account to a single org; no Arcane check inspects collaborator or team membership to verify a partner's actual access is so limited.**
+- **An operations co-owner receives access only to their business's project and relevant platform accounts — not to infrastructure configs. Enforcement: explicitly advisory prose (ARC-023) — depends on the owner correctly scoping platform-account grants; no Arcane check inspects collaborator permissions to verify infrastructure configs are actually excluded.**
+- **System-level and multi-business reference documentation stays private to the owner unless explicitly shared. Enforcement: explicitly advisory prose (ARC-023) — depends on the owner's manual sharing decisions; no Arcane check inspects document visibility or sharing state to verify this boundary holds.**
+- **New collaborator access requires an explicit entry in this table and an entry in the security audit log. Enforcement: explicitly advisory prose (ARC-023) — a manual documentation discipline; no Arcane check verifies this table was updated or that a corresponding security audit log entry exists, and the security audit log itself is a manual record referenced across governance docs, not a system Arcane reads or writes.**
 
 ---
 
