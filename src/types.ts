@@ -81,6 +81,15 @@ export interface ArcaneManifest {
    * event rather than a silent flag flip.
    */
   push_policy_unblocked_at?: string;
+  /**
+   * Repository-relative path prefixes to exclude from the secrets/org-leak
+   * scan (ARC-037). Matched as a literal substring against the file's
+   * repo-relative path -- the same semantics `SCAN_EXCLUDED_PREFIXES` already
+   * used before this field existed, not a glob. Use sparingly: an exclusion
+   * is a scan blind spot for that path, not a suppression of one confirmed
+   * false positive elsewhere in the same file.
+   */
+  secretsScanExcludePrefixes?: string[];
 }
 
 export type HubRole = "hub" | "consumer";

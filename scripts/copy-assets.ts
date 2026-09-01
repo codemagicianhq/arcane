@@ -3,11 +3,13 @@
  * scripts/copy-assets.ts
  *
  * Runs as part of "npm run build" (after tsup).
- * Copies all files from src/assets/ → dist/assets/ and runs a secrets scan.
- *
- * Secrets scan: if any copied file contains patterns that look like credentials
- * (API keys, tokens, bearer headers, PEM headers, etc.), the build is failed
- * immediately with exit code 1 so no secrets are accidentally published.
+ * Copies all files from src/assets/ → dist/assets/ and runs two secrets
+ * scans (ARC-037): a copy-time scan scoped to src/assets/ (skips writing any
+ * offending file, so a secret never reaches dist/assets/), and a
+ * repository-wide scan over the whole repo as a CI backstop that catches
+ * anything the pre-commit hook missed or bypassed. Both share the same
+ * SECRETS_PATTERNS engine (src/modules/secrets-scan.ts). Either failing
+ * blocks the build with exit code 1.
  */
 import { readFile, writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import { join, dirname, relative, resolve } from "node:path";
@@ -20,6 +22,8 @@ import {
   scanPromptDirectory,
   scanRepository,
 } from "./org-token-lint.js";
+import { SECRETS_PATTERNS, SECRETS_RULES } from "../src/modules/secrets-scan.js";
+import { resolveSecretsScanExcludePrefixes } from "../src/modules/manifest.js";
 import { INCIDENT_QUEUE } from "../src/config/incidents.js";
 import type { IncidentRecord } from "../src/config/incidents.js";
 import { evaluateIncidentGate } from "../src/modules/incident-gate.js";
@@ -35,26 +39,28 @@ const DIST_ASSETS = process.env["ARCANE_DIST_ASSETS_DIR"]
 const REPO_SCAN_DIR = process.env["ARCANE_REPO_SCAN_DIR"] ?? join(__dirname, "..");
 
 // ─── Secrets scan exclusions ─────────────────────────────────────────────────
-// Add path prefixes here to exclude directories from secrets scanning.
-// Only exclude directories that contain legitimate code examples with credential
-// variable names (e.g., test fixtures, documentation snippets).
+// Copy-time exclusions (src/assets/ -> dist/assets/ only). Empty today: no
+// file under src/assets/ needs excluding, but the mechanism stays wired for
+// a future legitimate example-with-fake-secret shipped there. This is a
+// SEPARATE list from the repository-wide scan's exclusions below -- add a
+// path here only if it is under src/assets/.
 const SCAN_EXCLUDED_PREFIXES: string[] = [];
 
-// ─── Secrets patterns ──────────────────────────────────────────────────────────
-// These patterns are deliberately conservative — they look for common credential
-// fragments. False positives block the build, which is the safe direction to fail.
-
-const SECRETS_PATTERNS: RegExp[] = [
-  /API[_-]KEY\s*[:=]\s*\S+/i,
-  /SECRET\s*[:=]\s*[^\s{]/i,       // avoids matching {SECRET} placeholders
-  /TOKEN\s*[:=]\s*[^\s{]/i,         // avoids matching {TOKEN} placeholders
-  /Bearer\s+[A-Za-z0-9\-._~+/]{20,}/, // real Bearer tokens are long (20+ chars)
-  /sk-[A-Za-z0-9]{20,}/,           // OpenAI-style keys
-  /-----BEGIN [A-Z ]+-----/,        // PEM certificates/keys
-  /xox[bpars]-[A-Za-z0-9\-]+/,     // Slack tokens
-  /AKIA[0-9A-Z]{16}/,               // AWS access key IDs
-  /ghp_[A-Za-z0-9]{36}/,            // GitHub personal access tokens
-];
+// Secrets patterns now live in src/modules/secrets-scan.ts (ARC-037), shared
+// with the repository-wide scan below and with `spell doctor --leaks`. That
+// scan's own exclusions -- "test/copy-assets.test.ts" (a literal
+// API-key-shaped fixture proving the scan fires, the self-referential
+// collision ARC-037 decision 5 names), "test/org-token-lint.test.ts" (a
+// fixture env key set to a variable reference, indistinguishable from a
+// literal secret from source text alone), "test/secrets-scan.test.ts" (the
+// rule tests, which deliberately feed real-looking credential shapes
+// through the regexes -- the same class of collision), and
+// "src/modules/secrets-scan.ts" (the pattern definitions themselves, never
+// an actual credential) -- are configured via .arcane.json's
+// secretsScanExcludePrefixes field (this repo's own self-hosted
+// src/assets/.arcane.json), resolved dynamically below rather than
+// hardcoded here, so `spell doctor --leaks` and this build-time backstop
+// read one shared source of truth.
 
 export interface ScanViolation {
   file: string;
@@ -208,6 +214,29 @@ async function main() {
       log(`  ${v.file}:${v.line}  [${v.rule}]`);
     }
     if (fail) process.exit(1);
+  }
+
+  // Repository-wide secrets backstop (ARC-037 decision 3): the copy-time scan
+  // above only ever protected src/assets/ -> dist/assets/. This mirrors the
+  // org-token privacy scan's own full-tree walk, using the exact same
+  // SECRETS_PATTERNS engine, so a credential anywhere in the repository --
+  // src/, test/, scripts/, governance docs, journal/ -- fails the same
+  // already-required build step rather than shipping undetected. Catches
+  // anything that bypassed the new pre-commit hook (--no-verify, a client
+  // that skips hooks, a direct API commit) before merge (decision 6).
+  const repoSecretsExcludePrefixes = await resolveSecretsScanExcludePrefixes(REPO_SCAN_DIR);
+  const secretsFindings = await scanRepository(
+    REPO_SCAN_DIR,
+    SECRETS_RULES,
+    undefined,
+    repoSecretsExcludePrefixes,
+  );
+  if (secretsFindings.length > 0) {
+    console.error("\n✗ Repository-wide secrets scan FAILED — build blocked.\n");
+    for (const v of secretsFindings) {
+      console.error(`  ${v.file}:${v.line}  [${v.rule}]`);
+    }
+    process.exit(1);
   }
 }
 

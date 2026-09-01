@@ -86,4 +86,13 @@ describe("checkMcpConfig (I12/BC-22)", () => {
     expect(result.blocking).toBe(false);
     expect(result.message).toContain("invalid JSON");
   });
+
+  it("degrades to a non-blocking warning when the file is valid JSON but not an object, never throws", async () => {
+    dir = await createFixtureDir("doctor-mcp-not-an-object");
+    await writeFile(join(dir, ".mcp.json"), "null", "utf8");
+    const result = await checkMcpConfig(dir);
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+    expect(result.message).toContain("not a JSON object");
+  });
 });

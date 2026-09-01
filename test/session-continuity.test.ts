@@ -85,6 +85,37 @@ describe("doctor — self-hosted source manifest", () => {
     expect(result.passed).toBe(false);
     expect(result.message).toContain("invalid JSON");
   });
+
+  it("does not throw when the self-hosted source manifest is valid JSON but not an object", async () => {
+    await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
+    await fs.writeFile(join(tmpDir, "src/assets/.arcane.json"), "null");
+
+    const result = await checkArcaneManifest(tmpDir);
+
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+  });
+
+  it("does not throw when the installed manifest is valid JSON but not an object", async () => {
+    await fs.writeFile(join(tmpDir, ".arcane.json"), "42");
+
+    const result = await checkArcaneManifest(tmpDir);
+
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("missing required fields");
+  });
+
+  it("rejects a non-string version instead of silently stringifying it", async () => {
+    await fs.writeFile(
+      join(tmpDir, ".arcane.json"),
+      JSON.stringify({ version: 29, components: ["core"] }),
+    );
+
+    const result = await checkArcaneManifest(tmpDir);
+
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("missing required fields");
+  });
 });
 
 describe("session-continuity — init scaffolding", () => {

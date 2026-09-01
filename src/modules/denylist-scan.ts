@@ -70,13 +70,23 @@ export async function scanFile(
   return findings;
 }
 
-/** Directories never worth scanning -- generated output, dependencies, VCS metadata. */
+/**
+ * Directories never worth scanning -- generated output, dependencies, VCS
+ * metadata. ".claude" specifically covers `.claude/worktrees/`: each entry
+ * there is a full nested checkout of this same repository (a linked git
+ * worktree), so anything real inside one is scanned again at the primary
+ * checkout's own path -- walking it too only triples every finding without
+ * surfacing anything new (confirmed empirically widening the ARC-037 scan
+ * repository-wide: every one of a worktree's findings duplicated a root-path
+ * finding byte-for-byte).
+ */
 export const SKIP_DIRECTORIES = new Set([
   "node_modules",
   ".git",
   "dist",
   "coverage",
   ".vitest",
+  ".claude",
 ]);
 
 export const DEFAULT_SCANNABLE_EXTENSIONS = [".md", ".ts", ".js", ".json", ".yml", ".yaml"];
@@ -113,16 +123,23 @@ export async function collectScannableFiles(
   return collected;
 }
 
-/** Scans an entire repository tree (text files by default) for denylist rules. */
+/**
+ * Scans an entire repository tree (text files by default) for denylist rules.
+ * `excludePrefixes` drops any file whose repo-relative display path contains
+ * one of the given literal substrings before it's ever read -- a scan blind
+ * spot the caller opted into, not a post-hoc filter on findings (ARC-037).
+ */
 export async function scanRepository(
   repoRoot: string,
   rules: DenylistRule[],
   extensions?: string[],
+  excludePrefixes: string[] = [],
 ): Promise<DenylistFinding[]> {
   if (rules.length === 0) return [];
 
   const findings: DenylistFinding[] = [];
   for (const [absolutePath, displayPath] of await collectScannableFiles(repoRoot, repoRoot, extensions)) {
+    if (excludePrefixes.some((prefix) => displayPath.includes(prefix))) continue;
     findings.push(...(await scanFile(absolutePath, displayPath, rules)));
   }
   return findings;

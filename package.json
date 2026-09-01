@@ -47,6 +47,7 @@
     "check:adr-references": "tsx scripts/check-distributed-adr-references.ts",
     "check:version-bump": "tsx scripts/check-version-bump.ts",
     "check:review-round": "tsx scripts/check-review-round.ts",
+    "doctor:leaks": "tsx src/index.ts doctor --leaks",
     "prepare": "husky"
   },
   "dependencies": {

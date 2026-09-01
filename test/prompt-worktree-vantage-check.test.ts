@@ -369,10 +369,21 @@ describe("threat-model stops claiming credential exposure is mitigated (EF-35)",
     threatModel = await readFile(join(GOVERNANCE, "threat-model.md"), "utf8");
   });
 
-  it("records committed credentials as NOT mitigated, with the reason", () => {
+  // ARC-037 (BC-30) shipped real detection after this describe block was
+  // first written to pin the opposite claim -- updated to pin the new,
+  // still-honest state (partial, not full) rather than weakened or dropped.
+  it("records committed credentials as partially mitigated, naming the real detection points (ARC-037)", () => {
     const line = lineContaining(threatModel, "| Credential committed to version control |");
-    expect(line).toContain("**Not mitigated**");
-    expect(line).toContain("no detection exists");
+    expect(line).toContain("**Partially mitigated**");
+    expect(line).toContain("pre-commit hook step");
+    expect(line).toContain("repository-wide backstop");
+    expect(line).not.toContain("**Not mitigated**");
+    expect(line).not.toContain("**Mitigated**"); // still not a claim of full prevention
+  });
+
+  it("is honest that detection is not prevention", () => {
+    const line = lineContaining(threatModel, "| Credential committed to version control |");
+    expect(line).toContain("detection, not prevention");
   });
 
   it("does not let the security-review spell stand in for a control", () => {

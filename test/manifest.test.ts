@@ -9,6 +9,7 @@ import {
   addComponent,
   removeComponent,
   hasComponent,
+  resolveSecretsScanExcludePrefixes,
   ManifestNotFoundError,
   ManifestCorruptError,
   ManifestInvalidFieldError,
@@ -480,5 +481,58 @@ describe("docs-mode manifest fields (EF-07 / EF-12)", () => {
     const m = await readManifest(tempDir);
     expect(m.subject_root).toBeUndefined();
     expect(m.content_sensitivity).toBeUndefined();
+  });
+});
+
+describe("resolveSecretsScanExcludePrefixes (ARC-037)", () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(join(tmpdir(), "manifest-secrets-exclude-"));
+  });
+
+  afterEach(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("returns the root manifest's configured list", async () => {
+    const manifest = await createManifest(tempDir, "full", "1.0.0");
+    await writeManifest(tempDir, { ...manifest, secretsScanExcludePrefixes: ["test/fixture.ts"] });
+
+    expect(await resolveSecretsScanExcludePrefixes(tempDir)).toEqual(["test/fixture.ts"]);
+  });
+
+  it("returns an empty list when a root manifest exists but configures nothing", async () => {
+    await createManifest(tempDir, "full", "1.0.0");
+
+    expect(await resolveSecretsScanExcludePrefixes(tempDir)).toEqual([]);
+  });
+
+  it("falls back to the self-hosted src/assets/.arcane.json when there is no root manifest", async () => {
+    await fs.mkdir(join(tempDir, "src", "assets"), { recursive: true });
+    await fs.writeFile(
+      join(tempDir, "src", "assets", ".arcane.json"),
+      JSON.stringify({
+        selfHosted: true,
+        tracking_mode: "internal",
+        secretsScanExcludePrefixes: ["src/modules/secrets-scan.ts"],
+      }),
+    );
+
+    expect(await resolveSecretsScanExcludePrefixes(tempDir)).toEqual(["src/modules/secrets-scan.ts"]);
+  });
+
+  it("ignores a self-hosted-shaped file that lacks the actual self-hosted marker", async () => {
+    await fs.mkdir(join(tempDir, "src", "assets"), { recursive: true });
+    await fs.writeFile(
+      join(tempDir, "src", "assets", ".arcane.json"),
+      JSON.stringify({ secretsScanExcludePrefixes: ["should-not-apply"] }),
+    );
+
+    expect(await resolveSecretsScanExcludePrefixes(tempDir)).toEqual([]);
+  });
+
+  it("returns an empty list, never throws, when neither manifest exists", async () => {
+    await expect(resolveSecretsScanExcludePrefixes(tempDir)).resolves.toEqual([]);
   });
 });

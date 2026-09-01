@@ -71,6 +71,15 @@ describe("collectScannableFiles: extensions parameter", () => {
     const files = await collectScannableFiles(dir);
     expect(files.map(([, rel]) => rel)).toEqual(["top.md"]);
   });
+
+  it("skips .claude (nested worktree checkouts would otherwise duplicate every finding)", async () => {
+    dir = await createFixtureDir("denylist-scan-skip-claude");
+    await mkdir(join(dir, ".claude", "worktrees", "some-branch"), { recursive: true });
+    await writeFile(join(dir, ".claude", "worktrees", "some-branch", "a.md"), "hello", "utf8");
+    await writeFile(join(dir, "top.md"), "hello", "utf8");
+    const files = await collectScannableFiles(dir);
+    expect(files.map(([, rel]) => rel)).toEqual(["top.md"]);
+  });
 });
 
 describe("scanFile", () => {
@@ -98,6 +107,18 @@ describe("scanRepository", () => {
     dir = await createFixtureDir("denylist-scan-no-rules");
     await writeFile(join(dir, "a.md"), "anything", "utf8");
     expect(await scanRepository(dir, [])).toEqual([]);
+  });
+
+  it("drops a file whose display path contains an excluded prefix, without reading it", async () => {
+    dir = await createFixtureDir("denylist-scan-exclude-prefixes");
+    await mkdir(join(dir, "test"), { recursive: true });
+    await writeFile(join(dir, "test", "fixture.md"), "flaggedterm", "utf8");
+    await writeFile(join(dir, "real.md"), "flaggedterm", "utf8");
+    const rules = createDenylistRules(["flaggedterm"], "t");
+
+    const findings = await scanRepository(dir, rules, undefined, ["test/fixture.md"]);
+
+    expect(findings).toEqual([{ file: "real.md", line: 1, rule: "t-1" }]);
   });
 });
 

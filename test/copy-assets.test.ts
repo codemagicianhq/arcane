@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFixtureDir } from "./helpers/git-fixture.js";
 import { copyAssets, copyDir } from "../scripts/copy-assets.js";
@@ -78,5 +80,91 @@ describe("copyAssets pruning", () => {
 
     expect(violations.length).toBeGreaterThan(0);
     await expect(fs.access(join(dest, "leaky.md"))).rejects.toThrow();
+  });
+});
+
+// ─── Repository-wide secrets backstop (ARC-037) ──────────────────────────────
+// The copy-time scan above only ever protected src/assets/ -> dist/assets/.
+// These tests pin the wider repo-scan added to main() as a CI backstop.
+
+// The copy-time scan (ARCANE_SRC_ASSETS_DIR) and the repo-wide backstop
+// (ARCANE_REPO_SCAN_DIR) run over two SEPARATE directories here on purpose:
+// pointing both at the same tree would make the copy-time scan trip on the
+// exact same fixture content first, so the build would always fail at the
+// earlier gate and these tests could never observe the backstop specifically.
+async function createBackstopFixture(repoFiles: Record<string, string>) {
+  const root = await fs.mkdtemp(join(tmpdir(), "secrets-backstop-test-"));
+  tempDirs.push(root);
+  const assets = join(root, "assets");
+  await fs.mkdir(assets, { recursive: true });
+  await fs.writeFile(join(assets, "harmless.md"), "Nothing sensitive here.\n", "utf8");
+
+  const repo = join(root, "repo");
+  for (const [relPath, content] of Object.entries(repoFiles)) {
+    const abs = join(repo, relPath);
+    await fs.mkdir(join(abs, ".."), { recursive: true });
+    await fs.writeFile(abs, content, "utf8");
+  }
+  return { assets, dist: join(root, "dist"), repo };
+}
+
+function runBuild(assets: string, dist: string, repo: string) {
+  return spawnSync(
+    process.execPath,
+    [join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs"), "scripts/copy-assets.ts"],
+    {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        ARCANE_SRC_ASSETS_DIR: assets,
+        ARCANE_DIST_ASSETS_DIR: dist,
+        ARCANE_ORG_TOKENS: "",
+        ARCANE_REPO_SCAN_DIR: repo,
+      },
+    },
+  );
+}
+
+describe("repository-wide secrets backstop", () => {
+  it("fails the build on a credential anywhere in the scanned tree, not just src/assets/", async () => {
+    const { assets, dist, repo } = await createBackstopFixture({
+      "docs/notes.md": "SECRET_KEY=thisisarealsecretvalue12345\n",
+    });
+
+    const result = runBuild(assets, dist, repo);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Repository-wide secrets scan FAILED");
+    expect(result.stderr).toContain("docs/notes.md:1");
+  });
+
+  it("passes when the only credential-shaped line lives under a path excluded via .arcane.json", async () => {
+    const { assets, dist, repo } = await createBackstopFixture({
+      "test/copy-assets.test.ts": "API_KEY=abc123\n",
+      "docs/notes.md": "Nothing sensitive here.\n",
+      ".arcane.json": JSON.stringify({
+        version: "1.0.0",
+        profile: "full",
+        installedAt: new Date(0).toISOString(),
+        components: [],
+        secretsScanExcludePrefixes: ["test/copy-assets.test.ts"],
+      }),
+    });
+
+    const result = runBuild(assets, dist, repo);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toContain("Repository-wide secrets scan FAILED");
+  });
+
+  it("passes a clean tree with exit code 0", async () => {
+    const { assets, dist, repo } = await createBackstopFixture({
+      "README.md": "Nothing sensitive here.\n",
+    });
+
+    const result = runBuild(assets, dist, repo);
+
+    expect(result.status).toBe(0);
   });
 });
