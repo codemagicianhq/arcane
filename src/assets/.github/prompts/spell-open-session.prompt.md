@@ -1,6 +1,7 @@
 ---
 name: Spell — Open Session
 description: Open an Arcane session in a new chat by rebuilding context, identifying highest-priority unfinished work, and proposing concrete next actions.
+claude_description: Use PROACTIVELY at the start of any new session, even if the user just says 'let's start' or asks 'what's next'.
 argument-hint: Optional focus area (e.g., security hardening, a specific feature, infrastructure setup)
 agent: agent
 ---
@@ -85,8 +86,10 @@ Before anything else, check:
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
 - **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted — this session's own read-only candidate list (`--merged` also misses every branch landed via this repo's sanctioned rebase-and-fast-forward, so treat a *clean* result as "no ancestry-visible candidates," not "nothing to check"). Open-session only lists; it does not delete. Apply the [Content-Verified Branch Deletion](../../.arcane/governance/git-conventions.md#content-verified-branch-deletion-todomd-merged-branch-cleanup-finding) procedure (git-conventions.md) to any candidate before flagging it as safe, and leave the actual idempotent prune to `spell-close-session`'s sweep.
 - **Tracker configuration check (early):** resolve active tracking settings before planning, in this order: root `.arcane.json` (if present) -> the committed self-hosted source manifest (`src/assets/.arcane.json`, read only when it declares `selfHosted: true` -- this is EF-14's recorded self-hosting resolution tier, distinct from treating the mere presence of a self-host marker as license to infer other, unrelated config) -> the current feature PRD frontmatter -> ask. Persisted once at `spell init`/`spell update` (EF-14); do not re-ask when any of the first three sources already sets it.
+  <!-- fragment:tracking-mode-declaration:start -->
   - `tracking_mode: internal | external`
   - `external_provider: ado | github | jira | other`
+  <!-- fragment:tracking-mode-declaration:end -->
   - If all three sources are absent, ask: "Track work in this repo (TODO.md / PRDs)" [internal] vs "Track work in an external tracker (Azure DevOps / GitHub / Jira / other)" [external]. Default to `external` + `ado` only when existing ADO context already exists (backward compatibility).
 - **Open PRs (external/ado mode only):** if tracking mode is `external` with provider `ado` and ADO MCP is available, list all open PRs across all repos in the configured repo list (resolve from `.arcane.json`; if unset, ask the operator which repos to scan). Flag PRs older than 3 days as stale, older than 7 days as overdue. Format each as a clickable markdown link: `[PR #{id} — {title}](https://dev.azure.com/{ADO_ORG}/{ADO_PROJECT}/_git/{repo}/pullrequest/{id})` — resolve `{ADO_ORG}` and `{ADO_PROJECT}` from `.arcane.json` / PRD frontmatter; ask if unset. Never list a bare `PR #NNN`.
 - **Uncommitted changes:** Run `git status` and report any uncommitted files.

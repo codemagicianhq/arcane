@@ -1,6 +1,7 @@
 ---
 name: Spell — Scope
 description: Analyze a large PRD — scope it, split into epics, check architecture and security implications, estimate effort, and produce an execution plan with agent assignments
+claude_description: Use PROACTIVELY when a PRD is too large for one Spell Loop cycle and needs epic-splitting before architecture.
 argument-hint: "Path to PRD or paste PRD content (e.g., 'Analyze PRD.md for {BUSINESS_NAME} mobile app')"
 agent: agent
 ---
@@ -53,8 +54,10 @@ If the input is an external work item ID:
 4. Combine all content into a single PRD view before proceeding.
 
 Resolve tracking settings from PRD frontmatter (preferred) or ask:
+<!-- fragment:tracking-mode-declaration:start -->
 - `tracking_mode: internal | external`
 - `external_provider: ado | github | jira | other`
+<!-- fragment:tracking-mode-declaration:end -->
 
 If unset and ADO context already exists, default to `external` + `ado` for backward compatibility.
 

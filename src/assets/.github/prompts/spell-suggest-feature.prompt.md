@@ -1,6 +1,7 @@
 ---
 name: Spell — Suggest Feature
 description: Capture a feature suggestion from smoke testing or usage — assesses impact, files a tracker item (provider-aware), and adds to backlog
+claude_description: Use PROACTIVELY when smoke testing or usage surfaces a feature gap worth tracking.
 argument-hint: Feature idea (e.g., "Settings page to change instance name and gateway URL")
 agent: agent
 ---
@@ -54,8 +55,11 @@ Workflow:
 4. **Resolve tracking mode** — before creating a tracker item:
    - Read `tracking_mode` / `external_provider` from `.arcane.json` or the active PRD frontmatter if available.
    - If missing, ask the user:
+     <!-- fragment:tracking-mode-declaration:start -->
      - `tracking_mode: internal | external`
-     - `external_provider: ado | github | jira | other` (required only for external mode)
+     - `external_provider: ado | github | jira | other`
+     <!-- fragment:tracking-mode-declaration:end -->
+     - (`external_provider` is required only for external mode)
    - If ADO context is already active and no explicit choice is provided, default to `external` + `ado` for backward compatibility.
 
 5. **Create tracker item (conditional)**:

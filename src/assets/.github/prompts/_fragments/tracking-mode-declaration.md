@@ -1,0 +1,2 @@
+- `tracking_mode: internal | external`
+- `external_provider: ado | github | jira | other`
