@@ -11,8 +11,11 @@ import {
   resolvePrivateTokens,
   scanRepository,
 } from "../scripts/org-token-lint.js";
+import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const tempDirs: string[] = [];
+const TSX = resolveTsxCli();
+if (!TSX) console.warn(`[org-token-lint.test.ts] ${TSX_SKIP_REASON}`);
 
 async function createAssetsFixture(content: string) {
   const root = await fs.mkdtemp(join(tmpdir(), "org-token-gate-test-"));
@@ -31,7 +34,7 @@ function runGate(
 ) {
   return spawnSync(
     process.execPath,
-    [join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs"), "scripts/copy-assets.ts"],
+    [TSX!, "scripts/copy-assets.ts"],
     {
       cwd: process.cwd(),
       encoding: "utf8",
@@ -53,7 +56,7 @@ afterEach(async () => {
   );
 });
 
-describe("org-token build gate", () => {
+describe.skipIf(!TSX)("org-token build gate", () => {
   it("derives a default organization rule from package metadata", async () => {
     const { assets, dist } = await createAssetsFixture(
       "Deploy Code Magician LLC configuration.\n",

@@ -15,6 +15,7 @@ import {
 } from "../src/modules/agent-loader.js";
 import { runAgentsList } from "../src/modules/agents.js";
 import type { AgentDefinition, AgentRoster } from "../src/types.js";
+import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -49,7 +50,8 @@ const SAMPLE_ROSTER: AgentRoster = {
   ],
 };
 
-const BIN = join(process.cwd(), "dist", "index.js");
+const BIN = resolveBuiltCli();
+if (!BIN) console.warn(`[agent-loader.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 
 // ─── Setup ────────────────────────────────────────────────────────────────────
 
@@ -268,10 +270,10 @@ describe("loadRoster", () => {
     expect(logSpy).not.toHaveBeenCalled();
   });
 
-  it("built CLI refuses a future roster without emitting list output", async () => {
+  it.skipIf(!BIN)("built CLI refuses a future roster without emitting list output", async () => {
     await writeRoster({ ...SAMPLE_ROSTER, schema_version: 3 });
 
-    const result = spawnSync(process.execPath, [BIN, "agents", "list"], {
+    const result = spawnSync(process.execPath, [BIN!, "agents", "list"], {
       cwd: tmpDir,
       encoding: "utf8",
     });

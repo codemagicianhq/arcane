@@ -5,8 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFixtureDir } from "./helpers/git-fixture.js";
 import { copyAssets, copyDir } from "../scripts/copy-assets.js";
+import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const tempDirs: string[] = [];
+const TSX = resolveTsxCli();
+if (!TSX) console.warn(`[copy-assets.test.ts] ${TSX_SKIP_REASON}`);
 
 async function fixtureDirs() {
   const src = await createFixtureDir("copy-assets-src-");
@@ -111,7 +114,7 @@ async function createBackstopFixture(repoFiles: Record<string, string>) {
 function runBuild(assets: string, dist: string, repo: string) {
   return spawnSync(
     process.execPath,
-    [join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs"), "scripts/copy-assets.ts"],
+    [TSX!, "scripts/copy-assets.ts"],
     {
       cwd: process.cwd(),
       encoding: "utf8",
@@ -126,7 +129,7 @@ function runBuild(assets: string, dist: string, repo: string) {
   );
 }
 
-describe("repository-wide secrets backstop", () => {
+describe.skipIf(!TSX)("repository-wide secrets backstop", () => {
   it("fails the build on a credential anywhere in the scanned tree, not just src/assets/", async () => {
     const { assets, dist, repo } = await createBackstopFixture({
       "docs/notes.md": "SECRET_KEY=thisisarealsecretvalue12345\n",

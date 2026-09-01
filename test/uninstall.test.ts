@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 vi.mock("@inquirer/prompts", () => ({
@@ -21,7 +22,8 @@ vi.mock("@inquirer/prompts", () => ({
 const { runUninstall } = await import("../src/commands/uninstall.js");
 const inquirer = await import("@inquirer/prompts");
 
-const BIN = join(process.cwd(), "dist/index.js");
+const BIN = resolveBuiltCli();
+if (!BIN) console.warn(`[uninstall.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 const PACKAGE_VERSION = "0.1.0";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -334,7 +336,7 @@ describe("spell uninstall — handler", () => {
 
 // ─── Built binary integration tests ──────────────────────────────────────────
 
-describe("spell uninstall — built CLI integration", () => {
+describe.skipIf(!BIN)("spell uninstall — built CLI integration", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
@@ -346,7 +348,7 @@ describe("spell uninstall — built CLI integration", () => {
   });
 
   it("exits 1 with helpful message when not initialized", () => {
-    const result = spawnSync("node", [BIN, "uninstall", "--yes"], {
+    const result = spawnSync("node", [BIN!, "uninstall", "--yes"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -369,7 +371,7 @@ describe("spell uninstall — built CLI integration", () => {
       }),
     );
 
-    const result = spawnSync("node", [BIN, "uninstall", "--yes"], {
+    const result = spawnSync("node", [BIN!, "uninstall", "--yes"], {
       cwd: tmpDir,
       encoding: "utf8",
       timeout: 30_000,
@@ -395,7 +397,7 @@ describe("spell uninstall — built CLI integration", () => {
       }),
     );
 
-    const result = spawnSync("node", [BIN, "uninstall", "--dry-run"], {
+    const result = spawnSync("node", [BIN!, "uninstall", "--dry-run"], {
       cwd: tmpDir,
       encoding: "utf8",
       timeout: 30_000,
