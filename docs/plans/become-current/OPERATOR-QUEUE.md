@@ -129,9 +129,10 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   been restructured into a vendor-neutral Core / Azure DevOps Profile split (BC-31 Batch B) after the
   branch was cut — the new "Self-Hosted Agents" content was re-nested as an H3 under the Azure DevOps
   Profile rather than kept as the old flat H2. Also caught and fixed in the same PR: the stale
-  branch's content baked in a real client name ("Kiubo México") that CI's org-token lint (ARC-031)
-  flagged on push — replaced with "Ordovica," the same defect class BC-06 had already hit once
-  before. The stale branch itself (commit `86025d9`) is deleted, its content fully superseded.
+  branch's content baked in a real client name that CI's org-token lint (ARC-031) flagged on push —
+  replaced with "Ordovica," the same defect class BC-06 had already hit once before. (This closure
+  note itself repeated the same real name in its first draft, caught only when the *second* PR's own
+  CI run flagged it again — a second, self-inflicted instance of the exact defect being described.) The stale branch itself (commit `86025d9`) is deleted, its content fully superseded.
 
 ## Q-004 — Accept/revise/reject ADR: ARC-029 (Best-Practice-First Solution Selection)
 
