@@ -813,8 +813,17 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     itself, not just surviving the restructuring. Closes TODO.md's original 2026-07-14
     vendor-neutral/customization backlog item in full (parts a, b, and c all disposed of, across
     both batches of this epic). This also closes out BC-31 as a whole.
-- [ ] **BC-32 — Spell-compiler implementation.** Depends: BC-12 ADR **Accepted**. Route: chain.
-  Size L. Includes the I15 dual-copy elimination (66 → 33 + generator).
+- [x] **BC-32 — Spell-compiler implementation.** Depends: BC-12 ADR **Accepted**. Route: chain.
+  Size L, minor bump (`v0.33.0`). **Done 2026-09-01:** `renderClaudeCommandStub()` generates all
+  `.claude/commands/spell-*.md` stubs from prompt frontmatter (41 spells today, not the 66→33
+  framing this line originally carried — I15's own premise was already corrected once, in ARC-039
+  itself, to "36 nine-line thin shims, not 66 independently hand-maintained bodies"; BC-32 shipped
+  against the further-grown real count of 41). Fixed 2 real stub-title drift bugs found generating
+  from source. Added a marker-based shared-fragment mechanism (decision 2), narrower in practice
+  than described — only a 2-line declaration was genuinely shared across the 5 named files, not a
+  full resolution-order paragraph; the deeper inconsistency is a disclosed `TODO.md` item, not
+  silently fixed. Two new self-host-parity axes. Full implementation notes: `DECISIONS.md` → ARC-039
+  Implementation note (2026-09-01, BC-32).
 
 ---
 
