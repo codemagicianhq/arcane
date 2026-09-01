@@ -189,14 +189,14 @@ Without this chain, agents make conflicting decisions across stories (e.g., one 
 
 ### Adversarial Review
 
-`spell-review` requires the reviewer to **find issues**. "Looks good" is not an acceptable review. The reviewer must:
+`spell-review` requires the reviewer to **cover every lens, not hit a finding count**. "Looks good" without addressing each lens is not an acceptable review. The reviewer must:
 
-1. Find a minimum of 3 issues (or explain why fewer exist)
-2. Classify each as HIGH / MEDIUM / LOW severity
+1. Explicitly cover every lens — correctness, security, performance, tests, naming/clarity, architecture — and state "no issues" for any lens that is clean. There is no finding quota: zero findings is a valid outcome on a clean or small diff; never fabricate issues to hit one.
+2. Classify each real finding as HIGH / MEDIUM / LOW severity
 3. Check for missing test coverage, architecture violations, security issues
 4. Defer unrelated findings to a backlog (don't derail the current change)
 
-**Enforcement: explicitly advisory prose (ARC-023) — no script counts or verifies findings, and `spell-review.prompt.md`'s current Rules section has superseded item 1's minimum with "no finding quota... zero findings is a valid outcome," so this minimum should be read as superseded framing, not current spell behavior.**
+**Enforcement: explicitly advisory prose (ARC-023) — no script counts or verifies lens coverage; this text now matches `spell-review.prompt.md`'s own current Rules section (coverage of effort, not a count of findings) rather than the superseded "minimum of 3" framing an earlier version of this rule stated.**
 
 ### Append-Only Progress
 
@@ -339,7 +339,7 @@ A tool that writes code **must not also run `spell-review` on that same code. En
 ### Minimum gate for any Copilot-produced code
 
 ```
-Copilot implements → spell-test (run tests, check coverage) → spell-review (adversarial pass, min 3 findings) → spell-ship
+Copilot implements → spell-test (run tests, check coverage) → spell-review (adversarial pass, every lens covered) → spell-ship
 ```
 
 This applies regardless of change size. Even single-file bug fixes must pass `spell-review` before being pushed to `origin/main`.

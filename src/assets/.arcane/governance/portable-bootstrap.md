@@ -35,7 +35,7 @@ Paste this entire file into any AI client (Claude web, ChatGPT, etc.) to give it
 5. **Log significant decisions** in DECISIONS.md as ADRs.
 6. **Production system** — no shortcuts, no "fix it later."
 7. **Conventional Commits** format: `type(scope): description`.
-8. **Never auto-commit** during interactive sessions — present for approval first.
+8. **Never auto-commit** during interactive sessions — present for approval first. Exception: autonomous agents at Magus+ power level may self-commit within approved scope.
 9. **Recommendation guardrails:** Flag actionable recommendations. Verify information. Present free alternatives. Confirm >$50 items.
 
 ## Key Files
