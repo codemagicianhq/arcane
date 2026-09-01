@@ -15,14 +15,14 @@ How to structure commits, branches, and pull requests for this repository.
 
 - This repo uses Conventional Commits format for all commit messages — industry standard, tool-portable, human-readable.
 - Trunk-based development with short-lived feature branches keeps history clean and reduces merge conflicts.
-- No custom git hooks — conventions work on any machine without setup, no fragile tooling dependencies.
+- No custom git hooks — conventions work on any machine without setup, no fragile tooling dependencies. **Enforcement: explicitly advisory prose (ARC-023) — inaccurate as currently written: this repository's own `.husky/pre-commit` (`npm run lint && npm run typecheck`) and `.husky/pre-push` (`npm test`, plus a PR-state check) are custom git hooks that exist today. Neither validates commit message format or branch naming, so the Conventional Commits and branch-naming conventions this document describes remain hook-independent — but the bullet's literal claim of no custom git hooks in this repository does not hold.**
 - Use `spell-commit-work` prompt during sessions to automate commit message generation in the correct format.
 
 ---
 
 ## Conventional Commits Format
 
-All commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) standard.
+All commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) standard. **Enforcement: explicitly advisory prose (ARC-023) — see Validating Format below for the verified specifics; nothing in this Conventional Commits Format section (structure, types, scopes, short-description rules, body, footer) is mechanically checked in this repo.**
 
 ### Basic Structure
 
@@ -138,7 +138,7 @@ Each commit should be a **single logical change** — one coherent unit that can
 
 ### The Rule
 
-> **One commit = one purpose.** If you can't describe the commit in a single short description without "and", it's probably two commits.
+> **One commit = one purpose.** If you can't describe the commit in a single short description without "and", it's probably two commits. **Enforcement: explicitly advisory prose (ARC-023) — a semantic judgment about what counts as one logical change; no script evaluates commit scope or purpose, and nothing in this repo attempts to.**
 
 ### When to Split
 
@@ -182,7 +182,7 @@ git commit -m "fix(repo): correct broken link in README"
 
 ### The Rule
 
-> **Main is an integration-only branch.** It receives merges, never direct commits. All work happens on topic branches.
+> **Main is an integration-only branch.** It receives merges, never direct commits. All work happens on topic branches. **Enforcement: split (ARC-023) — for agent-mediated commits via `spell-commit-work`, this is a structured spell gate: Step 1 checks the current branch and stops before staging or committing if `main`/`master` is checked out against a usable remote, requiring a compliant topic branch first. For a human's raw Git commands, or an agent bypassing the spell, this is explicitly advisory prose: `spell doctor`'s `checkPlatformBranchPolicy` verifies only the platform's merge-method policy (squash disallowed), not that direct pushes/commits to main are blocked — matching `universal-agent-rules.md` rule 14's identical finding for the same underlying claim.**
 
 This applies to:
 
@@ -192,7 +192,7 @@ This applies to:
 
 ### Where Work Runs — Session Workspaces
 
-Every unit of work runs in exactly one **session workspace**: one instance of one isolation primitive — the **primary checkout**, a **linked worktree**, or a **full clone** (ARC-028 R1–R5). One session workspace holds one session's work, and it is the unit a control center renders as a tile. Which primitive a session takes is decided by ARC-028 R1–R5; `spell-open-session` states the choice before it writes anything.
+Every unit of work runs in exactly one **session workspace**: one instance of one isolation primitive — the **primary checkout**, a **linked worktree**, or a **full clone** (ARC-028 R1–R5). One session workspace holds one session's work, and it is the unit a control center renders as a tile. Which primitive a session takes is decided by ARC-028 R1–R5; `spell-open-session` states the choice before it writes anything. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s "Isolation primitive (ARC-028 R1–R5)" step requires naming the selected primitive in session output before the Mutation Guard creates anything; the selection logic itself (which of the four conditions applies) is evaluated from already-gathered `git worktree list`/`git status` output, not independently re-verified.**
 
 `session workspace` is the **product-level noun only**. The git terms in this document are unchanged: `worktree`, `primary checkout` and `clone` remain correct in every command, path and error message. Shorten to `workspace` only where the surrounding context is unambiguously about sessions — the bare word already means an agent's approved filesystem root in `agent-approved-paths.md` and an OpenClaw config field (`openclaw.workspace_root`), and neither of those is this.
 
@@ -219,7 +219,7 @@ Create the session branch as the **first action** of any session, before any fil
 
 **Session branch policy (required):**
 
-- Session branches must be deterministic, human-readable, and derived from the active task title.
+- Session branches must be deterministic, human-readable, and derived from the active task title. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s Mutation Guard renames a noncompliant, unpushed branch to the deterministic `sessions/YYYY-MM-DD-<topic-slug>` format before the first mutation, and its "Session branch naming compliance" check records the required rename when a PR doesn't already depend on the old name.**
 - Default format for new interactive sessions: `sessions/YYYY-MM-DD-<topic-slug>`.
 - Random adjective-noun branches (for example, `ideal-disco`) are non-compliant and must be renamed.
 - If a non-compliant branch was already pushed, migrate it safely:
@@ -232,7 +232,7 @@ Create the session branch as the **first action** of any session, before any fil
   directly through a tool that supports a per-call timeout (an agent's shell tool, a CI step),
   set one rather than assuming the command will return. Arcane's own TypeScript Git helper
   (`src/modules/git.ts`) applies this as a standing contract — closed stdin plus a
-  command-class timeout — for every `git` invocation the CLI itself makes.
+  command-class timeout — for every `git` invocation the CLI itself makes. **Enforcement: explicitly advisory prose (ARC-023) — the recommendation to set a timeout applies to an agent's own separate shell tool invocations of raw `git`, which nothing here checks. The cited precedent is independently verified: `runGit` (`src/modules/git.ts`) closes stdin immediately and applies a `DEFAULT_TIMEOUTS_MS`-scoped timeout for every git invocation Arcane's own CLI makes internally — a real executable check, but scoped to Arcane's own code path, not to a human's or agent's independent terminal command.**
 
 **Agents:**
 
@@ -240,7 +240,7 @@ Create the session branch as the **first action** of any session, before any fil
 {agent-slug}/type/short-description
 ```
 
-The agent slug prefix makes branch ownership obvious in `git branch -r` output and prevents naming collisions between agents.
+The agent slug prefix makes branch ownership obvious in `git branch -r` output and prevents naming collisions between agents. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an agent branch name against this format, unlike session-branch naming above (which `spell-open-session` does check and, when noncompliant, rename).**
 
 **Examples:**
 
@@ -334,7 +334,7 @@ When working across machines, topic branches are the coordination mechanism:
 > that exception; the exception governs. Repositories that produce artifacts keep
 > the PR requirement in full.
 
-- **Code repos have main branch protection.** Direct pushes to main are rejected, and all changes go through a PR. Docs-only repositories keep branch discipline (branch → work → fast-forward merge) but may merge locally without a PR, per the exception above.
+- **Code repos have main branch protection.** Direct pushes to main are rejected, and all changes go through a PR. Docs-only repositories keep branch discipline (branch → work → fast-forward merge) but may merge locally without a PR, per the exception above. **Enforcement: explicitly advisory prose (ARC-023) — `spell doctor`'s `checkPlatformBranchPolicy` (`src/commands/doctor.ts`) verifies only the platform's merge-method policy (squash disallowed), not that direct pushes to main are actually rejected; matches `universal-agent-rules.md` rule 14's identical finding for the same underlying claim. Confirmed live against this repo's own GitHub ruleset ("protect main", id 18841659): it does carry active `pull_request`, `non_fast_forward`, and `required_status_checks` rules with `current_user_can_bypass: "never"`, which together do reject direct/non-fast-forward pushes to `main` in practice — but that live confirmation is this agent's own manual query, not something any Arcane code path checks for an arbitrary consumer repo.**
 
 #### Azure DevOps PR Merge Type
 
@@ -343,7 +343,7 @@ When completing a PR in Azure DevOps, allow only these merge strategies by defau
 - **Merge (no fast forward)**, or
 - **Rebase and fast-forward**
 
-Do **not** use Squash commit.
+Do **not** use Squash commit. **Enforcement: verified external platform policy (ARC-023) — `spell doctor`'s `checkPlatformBranchPolicy` (`src/commands/doctor.ts`, backed by `src/modules/platform-policy.ts`'s `evaluateGitHubMergePolicy`/`evaluateAdoMergePolicy`) queries live GitHub Rulesets or Azure DevOps branch policy and verifies the effective merge methods match this same ladder — a local, on-demand CLI check the operator runs, not a check wired into CI itself. Confirmed live against this repo's own GitHub ruleset: `allowed_merge_methods` is `["merge", "rebase"]` — squash is not present.**
 
 | Merge Type                  | Use?    | Why                                                                                               |
 | --------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
@@ -358,15 +358,15 @@ Commit execution rights depend on the interaction context:
 
 | Context                                                           | Commit Behavior                                                                                                      | Rationale                                                       |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Interactive session** (Copilot, Claude in VS Code, Claude Code) | **Must ask human** before committing. Stage changes, present proposed message, wait for approval.                    | Human is actively collaborating; commits are a shared decision. |
-| **Autonomous agent** at Magus+ power level                        | May self-commit and self-merge within approved scope (per your power-level policy). Must use proper author/trailers. | Agent is operating independently with delegated authority.      |
-| **Autonomous agent** below Magus                                  | Must commit to topic branch and queue merge for human review.                                                        | Insufficient autonomy level for unsupervised merges to main.    |
+| **Interactive session** (Copilot, Claude in VS Code, Claude Code) | **Must ask human** before committing. Stage changes, present proposed message, wait for approval.                    | Human is actively collaborating; commits are a shared decision. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s Step 8 computes an approval fingerprint from the staged diff and proposed message and requires an authenticated operator response tied to it before `git commit` runs.** |
+| **Autonomous agent** at Magus+ power level                        | May self-commit and self-merge within approved scope (per your power-level policy). Must use proper author/trailers. | Agent is operating independently with delegated authority. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 4.5's loader-validated execution-authority table gates this: EF-27-resolved power level and `exec_allowed` must both check out before a commit/merge is permitted; missing or invalid authority always downgrades to human execution.**      |
+| **Autonomous agent** below Magus                                  | Must commit to topic branch and queue merge for human review.                                                        | Insufficient autonomy level for unsupervised merges to main. **Enforcement: structured spell gate (ARC-023) — the same Step 4.5 execution-authority table: below-Magus may commit to the topic branch when `exec_allowed`, but merge/auto-complete is prohibited and the PR is queued for human completion.**    |
 
 **Interactive session rule applies to ALL interactive tools, regardless of agent identity.** Even a high-power-level agent cannot auto-commit when operating through an interactive editor session — the human is present and must approve.
 
 ### Post-Merge Cleanup
 
-After every PR merge or local fast-forward merge, **from the primary checkout, always return to main and prune the branch** (ARC-028 R8 — the worktree procedure is below, and differs). Failing to do this leaves you on a stale branch where new work gets committed to the wrong place or stays unpushed.
+After every PR merge or local fast-forward merge, **from the primary checkout, always return to main and prune the branch** (ARC-028 R8 — the worktree procedure is below, and differs). Failing to do this leaves you on a stale branch where new work gets committed to the wrong place or stays unpushed. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 10 performs this cleanup (worktree-safe) after every push; see Content-Verified Branch Deletion and Same-Vantage-Point Check below for the verified branch/worktree-deletion mechanism this step relies on.**
 
 ```bash
 # After PR merges on remote — from the primary checkout:
@@ -401,7 +401,7 @@ This applies to all actors — humans, interactive tools (Copilot, Claude), and 
 
 ### Content-Verified Branch Deletion (TODO.md merged-branch-cleanup finding)
 
-Ancestry (`git branch --merged`, plain `git branch -d`) is not a reliable "is this landed?" test on this repo. Two of this repo's own sanctioned states defeat it identically: **Rebase-and-fast-forward** (ARC-009 §7) and any **pre-ARC-009 squash merge** both rewrite commit SHAs, so a fully-landed branch stays permanently invisible to `--merged` and refused by `-d` — not a rare edge case; every branch merged the sanctioned way hits this. Verify by content instead, for any local branch except `<trunk>` and any branch currently attached to another worktree (`git worktree list`):
+Ancestry (`git branch --merged`, plain `git branch -d`) is not a reliable "is this landed?" test on this repo. Two of this repo's own sanctioned states defeat it identically: **Rebase-and-fast-forward** (ARC-009 §7) and any **pre-ARC-009 squash merge** both rewrite commit SHAs, so a fully-landed branch stays permanently invisible to `--merged` and refused by `-d` — not a rare edge case; every branch merged the sanctioned way hits this. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 10 and `spell-close-session`'s branch-deletion step both require running this content-verification procedure (steps 1-6 below) before a branch deletion; `spell-close-session` runs it as an idempotent sweep every session, and `spell-open-session`'s stale-branch check applies the same procedure to its read-only candidate list.** Verify by content instead, for any local branch except `<trunk>` and any branch currently attached to another worktree (`git worktree list`):
 
 1. **Fetch first.** `git fetch <remote> --prune` — a stale local `<trunk>` under-counts and produces a false "unmerged" reading.
 2. **Prefer the provider's own record when a PR exists.** `gh pr list --head <branch> --state all` (or `az repos pr list --source-branch <branch> --status all`) — a confirmed `MERGED`/`completed` status is the fastest, most authoritative signal and needs no further check.
@@ -423,7 +423,7 @@ Apply the Same-Vantage-Point Check below before any deletion if this repository 
 3. Only if step 2 gives you a genuine reason to trust your own vantage point (matching path syntax, plus independent knowledge that this is the same machine/container/session that registered the worktree — not merely "the check ran without error"): confirm the path from the current process's own filesystem (`Test-Path` / `[ -e "$path" ]` / `os.path.exists()` / equivalent). Never treat Git's own `prunable` annotation as sufficient evidence on its own, and never treat "the existence check returned a clean answer" as sufficient either — a clean answer from the wrong vantage point is not a safe answer.
 4. If step 2 raised any doubt, if the path syntax doesn't match, or if there is any uncertainty about which environment actually owns the repository, **stop and ask** rather than trusting the more convenient answer. This is the default outcome whenever step 2's confidence isn't genuinely established — not a rare escape hatch reserved for exceptional cases.
 
-This is documented as a standing operational caution, not a code-level gate: EF-33's own intake report frames the underlying defect as cross-machine/cross-mount filesystem visibility, which no single CI runner can reproduce — the confirmation step above must be followed manually by whichever human or agent is about to run the destructive command. Confirmed as a live near-miss on 2026-08-03: a Linux-side read reported eight healthy linked worktrees `prunable`; the same repository read from Windows (their actual owning environment) showed zero prunable entries, and `git worktree prune -v` there removed nothing.
+This is documented as a standing operational caution, not a code-level gate: EF-33's own intake report frames the underlying defect as cross-machine/cross-mount filesystem visibility, which no single CI runner can reproduce — the confirmation step above must be followed manually by whichever human or agent is about to run the destructive command. Confirmed as a live near-miss on 2026-08-03: a Linux-side read reported eight healthy linked worktrees `prunable`; the same repository read from Windows (their actual owning environment) showed zero prunable entries, and `git worktree prune -v` there removed nothing. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 10 and `spell-close-session`'s branch-deletion step both require running this check before a worktree-adjacent deletion, matching `agent-policies.md`'s Branch Discipline and Multi-Agent Concurrency Rules sections; the vantage-point determination itself (steps 2-4 above) remains the manual judgment call this paragraph already discloses, not a code-level gate.**
 
 **Unconditional, vantage-point-independent note on branch deletion:** `git branch --merged` can also report a fully-landed branch as unmerged, because Git's rebase-and-fast-forward and squash merge strategies (both sanctioned by this repo's own merge-strategy table above) rewrite commit SHAs, defeating ancestry-based detection. This has nothing to do with filesystem bridges — it fires identically on a single machine with no mount involved. See **Content-Verified Branch Deletion** above for the actual procedure; verify branch content before deleting regardless of what vantage-point confidence steps 1-4 above establish.
 
@@ -487,7 +487,7 @@ reported in output so a human sees it happened. The known-issues rows below (`MC
 **Consumer hardening:** set a per-server `"timeout"` (milliseconds) in `.mcp.json` so a hang aborts on a
 predictable schedule instead of running to the client's own default idle limit (as long as 30 minutes).
 Origin: a real ops session lost roughly an hour to two consecutive 30-minute MCP hangs before the
-documented `az` fallback was used (2026-08-14).
+documented `az` fallback was used (2026-08-14). **Enforcement: explicitly advisory prose (ARC-023) — this fail-fast behavior and the `.mcp.json` timeout hardening both depend on the acting agent actually following them; no check in this repo verifies an agent stopped retrying a downed MCP server or that a given `.mcp.json` entry sets a timeout.**
 
 **Known issues:**
 
@@ -515,6 +515,8 @@ documented `az` fallback was used (2026-08-14).
 - **Scheduled hygiene:** any scheduled auto-pull job should also run `git fetch --prune` to remove stale remote-tracking branches. Locally merged branches are pruned on the next session or scheduled cycle.
 - **Workspace isolation:** agents must never create, switch, or modify branches in a human's primary workspace. All agent work happens in their own isolated clones.
 
+**Enforcement: split (ARC-023) — the "already merged" half of stale-branch cleanup is a structured spell gate: `spell-open-session`'s stale-local-branch check and `spell-close-session`'s idempotent sweep (cited in full under Content-Verified Branch Deletion above) surface and prune merged branches every session. Every other bullet here — short-lived/no-long-running-branches as a target duration, the 7-day age threshold specifically (as distinct from merge status), scheduled-hygiene cron jobs, and workspace isolation between agents and a human's primary workspace — is explicitly advisory prose: no check in this repo measures branch age, verifies a scheduled job ran `git fetch --prune`, or confirms an agent never touched a human's primary workspace.**
+
 ---
 
 ## Ticket Tagging
@@ -525,7 +527,7 @@ If your tracker links commits to work items by ID (Azure Boards, GitHub Issues, 
 
 - Create or identify a work item **before** starting spell-plan
 - Include the work item ID in the PR description and link it before merging
-- If your branch policy requires a linked work item, PRs without one will be blocked
+- If your branch policy requires a linked work item, PRs without one will be blocked. **Enforcement: verified external platform policy (ARC-023) when such a policy is configured — the platform itself (Azure Boards / GitHub Issues linking policy) blocks the PR, not any Arcane check; this repo has no such policy configured today.**
 
 **Commit prefix format:**
 
@@ -536,7 +538,7 @@ If your tracker links commits to work items by ID (Azure Boards, GitHub Issues, 
 - Prefix commits with `#WORKITEM` to enable automatic commit → work item linking
 - The orchestrating agent should include the work item ID in the initial spell-plan message and carry it through to ship
 
-**Agent responsibility:** When a Spell Loop run is triggered, the work item ID should be provided upfront. The agent stores it in `stories.json` top-level as `"workItemId"` and includes it in every commit and the PR description.
+**Agent responsibility:** When a Spell Loop run is triggered, the work item ID should be provided upfront. The agent stores it in `stories.json` top-level as `"workItemId"` and includes it in every commit and the PR description. **Enforcement: explicitly advisory prose (ARC-023) — no script validates that a commit or PR description actually includes the stored `workItemId`; confirmed by direct search — no reference to `workItemId` validation exists anywhere in `scripts/` or `src/`.**
 
 ---
 
@@ -546,7 +548,7 @@ All pull requests — whether created by humans or agents — must meet these re
 
 ### 🛑 Agent-mandatory pre-PR guard
 
-> **AGENTS: BEFORE running any PR-creation tool (`az repos pr create`, `gh pr create`, the `create_pull_request` MCP tool, or any equivalent), you MUST run `git fetch origin && git rebase origin/<target-branch>` and resolve any conflicts. This is not optional. Skipping this step is a governance violation.**
+> **AGENTS: BEFORE running any PR-creation tool (`az repos pr create`, `gh pr create`, the `create_pull_request` MCP tool, or any equivalent), you MUST run `git fetch origin && git rebase origin/<target-branch>` and resolve any conflicts. This is not optional. Skipping this step is a governance violation. Enforcement: structured spell gate (ARC-023) — `spell-create-pull-request` Step 0's mandatory rebase guard (its Step 0.6) and `spell-commit-work` Step 9b both require this fetch/rebase sequence before any PR-creation call — backed by an executable check: `.github/workflows/ci.yml`'s `rebase-check` job ("PR branch is rebased on target") independently re-verifies `origin/<base>` is an ancestor of HEAD via `git merge-base --is-ancestor` on every PR, and this repo's own live GitHub ruleset ("protect main") lists that exact check in `required_status_checks` with `current_user_can_bypass: "never"` — an unrebased PR cannot merge even if the spell-level guard were skipped.**
 
 This rule applies **every single time**, regardless of:
 
@@ -573,13 +575,13 @@ See also: [Agent Workflow — Sync with main before opening a PR](#agent-workflo
 
 | Requirement        | Details                                                                                                                                                                                                                                      |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Work item link** | Optional. Linking is encouraged for traceability but enforce it only if your branch policy requires it.                                                                                                                                      |
-| **Title format**   | Conventional Commits format: `type(scope): description`                                                                                                                                                                                      |
-| **Description**    | Must include: summary of changes, rationale, verification steps, and a linked work item ID if applicable                                                                                                                                     |
-| **Pre-PR sync**    | **Mandatory rebase on latest `origin/<target>` before pushing.** See [🛑 Agent-mandatory pre-PR guard](#-agent-mandatory-pre-pr-guard) above — this applies even when opening PRs via raw `az repos pr create` / `gh pr create` / MCP tools. |
-| **Branch cleanup** | After merge, delete the source branch (local and remote).                                                                                                                                                                                    |
-| **PR link format** | All PR references in agent output **must** be clickable markdown links to the PR, not a bare `PR #NNN`.                                                                                                                                     |
-| **Doc-ID link format** | The same rule extends to `ADR-NNN`/`ARC-NNN`/`EF-NN`/journal entries/named governance docs — never a bare ID. See `.github/instructions/agent-output.instructions.md` → Doc-ID Link Format for the full rule and required formats per context. |
+| **Work item link** | Optional. Linking is encouraged for traceability but enforce it only if your branch policy requires it. **Enforcement: explicitly advisory prose (ARC-023) — this repo has no branch policy requiring a work-item link, and no Arcane check verifies one exists even where a policy would require it.** |
+| **Title format**   | Conventional Commits format: `type(scope): description` **Enforcement: explicitly advisory prose (ARC-023) — `spell-create-pull-request` Step 3 generates a title in this shape by default, but nothing rejects a PR opened without one.** |
+| **Description**    | Must include: summary of changes, rationale, verification steps, and a linked work item ID if applicable. **Enforcement: explicitly advisory prose (ARC-023) — `spell-create-pull-request` Step 4 generates a description in this shape by default, but nothing rejects a PR opened without one — the same reasoning `agent-policies.md`'s PR Creation Requirements section applies to the identical claim.** |
+| **Pre-PR sync**    | **Mandatory rebase on latest `origin/<target>` before pushing.** See [🛑 Agent-mandatory pre-PR guard](#-agent-mandatory-pre-pr-guard) above — this applies even when opening PRs via raw `az repos pr create` / `gh pr create` / MCP tools. **Enforcement: same structured-spell-gate-plus-executable-check cited in the guard above.** |
+| **Branch cleanup** | After merge, delete the source branch (local and remote). **Enforcement: structured spell gate (ARC-023) — the same `spell-commit-work` Step 10 / `spell-close-session` branch-deletion mechanism cited under Content-Verified Branch Deletion above.** |
+| **PR link format** | All PR references in agent output **must** be clickable markdown links to the PR, not a bare `PR #NNN`. **Enforcement: explicitly advisory prose (ARC-023) — no check validates that agent-generated chat/PR output actually used a clickable link instead of a bare `PR #NNN`.** |
+| **Doc-ID link format** | The same rule extends to `ADR-NNN`/`ARC-NNN`/`EF-NN`/journal entries/named governance docs — never a bare ID. See `.github/instructions/agent-output.instructions.md` → Doc-ID Link Format for the full rule and required formats per context. **Enforcement: explicitly advisory prose (ARC-023) — `agent-output.instructions.md` is itself instruction text with no validating check; the adjacent `scripts/org-token-lint.ts` check enforces a different, unrelated property (no hardcoded org/repo names in shipped prompts), not link-format compliance.** |
 
 ### Agent PR Workflow
 
@@ -592,10 +594,10 @@ See also: [Agent Workflow — Sync with main before opening a PR](#agent-workflo
 
 ### PR Hygiene
 
-- `spell-open-session` checks for open PRs across all repos and reports them.
-- PRs open >3 days are flagged as **stale** — the human is prompted to review or close.
-- PRs open >7 days without activity are flagged for **closure** — the human decides.
-- Abandoned PRs should be closed with a comment explaining why (e.g., "superseded by #{newPR}", "scope changed").
+- `spell-open-session` checks for open PRs across all repos and reports them. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s "Open PRs" step lists open PRs and flags them stale/overdue at these exact thresholds, though only when tracking mode is external/ADO and ADO MCP is available — it is not universal across every provider/session, matching `agent-policies.md`'s PR Hygiene Cadence annotation for the identical rule.**
+- PRs open >3 days are flagged as **stale** — the human is prompted to review or close. **Enforcement: same `spell-open-session` step cited above.**
+- PRs open >7 days without activity are flagged for **closure** — the human decides. **Enforcement: same `spell-open-session` step cited above.**
+- Abandoned PRs should be closed with a comment explaining why (e.g., "superseded by #{newPR}", "scope changed"). **Enforcement: explicitly advisory prose (ARC-023) — no check verifies an abandoned PR was actually closed with an explanatory comment.**
 
 ---
 
@@ -613,7 +615,7 @@ Every commit must clearly identify **who produced the content** and **who approv
 - If **you** wrote the content: don't override author. Your global Git config is used.
 - If an **agent** produced the content: use `--author` to set the agent's identity.
 - If an **interactive AI tool** (Copilot, Claude in VS Code) produced the content: use the tool-level identity.
-- If the content is an **Arcane vendored scaffold or managed update**: do not invent a vendor email identity and do not use an agent author. Keep the operator's Git identity and record package provenance with `Vendor: arcane-cli` plus a programmatically derived `Vendor-Version` when available. Split mixed vendor/operator changes first.
+- If the content is an **Arcane vendored scaffold or managed update**: do not invent a vendor email identity and do not use an agent author. Keep the operator's Git identity and record package provenance with `Vendor: arcane-cli` plus a programmatically derived `Vendor-Version` when available. Split mixed vendor/operator changes first. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 3 requires determining authorship before commit and explicitly instructs "when authorship is unknown or disputed, stop and ask"; that gate only fires when authorship is flagged as disputed, so a confidently wrong identity choice that is never flagged as disputed is not independently caught.**
 
 ### Agent Email Convention
 
@@ -636,7 +638,7 @@ New agents are registered during onboarding.
 
 ### Required Commit Trailers (Agent Commits)
 
-Agent-authored commits MUST include trailers in the commit message footer. Human commits MAY include them.
+Agent-authored commits MUST include trailers in the commit message footer. Human commits MAY include them. **Enforcement: explicitly advisory prose (ARC-023) — `spell-commit-work`'s Step 7 documents the required trailers, but no hook or CI check verifies they are actually present on a given commit, matching `universal-agent-rules.md` rule 12's identical finding for the same underlying rule.**
 
 **`Agent` is the runtime/tool only — never a persona name.** The prior single-field model let `kellar` (a persona) and `copilot`/`claude` (runtimes) sit in the same field's example list, which is exactly the conflation this split removes. `Persona` and `Role` are conditional on a roster (`.arcane/agents.yaml`) existing and one having been assigned — omit both, do not guess, when no roster exists or none was assigned this session (this repo's own root has no roster today; the "Solo-Operator Delegation Records (No Roster)" pattern in [[agent-policies#solo-operator-delegation-records-no-roster|agent-policies.md]] is the same "mechanism doesn't apply, degrade gracefully" shape applied to delegation instead of attribution).
 
@@ -667,7 +669,7 @@ Vendored scaffold/update commits use these provenance trailers instead of an inv
 | `Vendor`         | Required    | `arcane-cli`                                                                                                  |
 | `Vendor-Version` | Conditional | Output of `arcane --version` / `spell --version`, whose value is read from the installed CLI's `package.json` |
 
-Never type or infer `Vendor-Version`. If the installed CLI cannot be resolved programmatically, omit the version trailer and disclose incomplete provenance rather than guessing.
+Never type or infer `Vendor-Version`. If the installed CLI cannot be resolved programmatically, omit the version trailer and disclose incomplete provenance rather than guessing. **Enforcement: explicitly advisory prose (ARC-023) — the same absence of a hook/CI check noted under Required Commit Trailers above applies here: nothing verifies `Vendor`/`Vendor-Version` presence or correctness on a given commit.**
 
 ### Complete Examples
 
@@ -771,7 +773,7 @@ If committing manually, use this mental checklist:
 
 ### Validating Format
 
-Quick regex to check format (optional — not enforced by hooks):
+Quick regex to check format (optional — not enforced by hooks): **Enforcement: explicitly advisory prose (ARC-023) — confirmed: no `commitlint` (or equivalent) dependency exists in `package.json`, and no `.husky/commit-msg` hook exists; `.husky/pre-commit` runs only `npm run lint && npm run typecheck`, and `.husky/pre-push` runs only `npm test` plus a PR-state check — neither validates commit message format.**
 
 ```bash
 # Valid: type(scope): description
@@ -831,7 +833,7 @@ Excludes .env, *.log, node_modules/, .obsidian/, OS artifacts.
 
 ## What NOT to Commit
 
-Enforced by root `.gitignore`:
+Enforced by root `.gitignore`: **Enforcement: executable check (ARC-023), partial — git's own ignore engine deterministically excludes any committed path matching a `.gitignore` pattern (absent a forced `git add -f`), a real code-level mechanism, not judgment-dependent prose. The root `.gitignore` currently contains `node_modules/`, `dist/`, `coverage/`, `.obsidian/`, `*.tsbuildinfo`, `*.log`, `.DS_Store`, and `**/.DS_Store` — fully covering the Logs and Obsidian-vault bullets below, and partially covering Dependencies/Build-artifacts/OS-artifacts (`vendor/`, `build/`, `*.pyc`, `Thumbs.db`, and `desktop.ini` are absent). Secrets (`.env`, `*.pem`, `*.key`) and Editor state (`.vscode/settings.json`, `.idea/`) have no matching pattern at all — those two bullets are currently unenforced despite this heading's blanket claim.**
 
 - Secrets (`.env`, `*.pem`, `*.key`)
 - Logs (`*.log`)
@@ -859,7 +861,7 @@ See [.gitignore](../.gitignore) for full list.
 - Finalized session documentation
 - Ready to hand off or resume later
 
-**Commit early, commit often.** Small commits with clear messages are easier to review, revert, and understand than giant "end of day" dumps.
+**Commit early, commit often.** Small commits with clear messages are easier to review, revert, and understand than giant "end of day" dumps. **Enforcement: explicitly advisory prose (ARC-023) — cadence and timing are judgment calls; no check measures commit frequency or size, and nothing in this repo prevents a large end-of-day commit.**
 
 ---
 
