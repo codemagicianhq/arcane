@@ -20,7 +20,7 @@ your output's meaning:
 - Surrounding prose ("only if you ever want to undo this…") does **not** make a runnable
   fence safe — users click the button, not the paragraph.
 
-**Origin (2026-07-25, Kiubo México):** an agent posted a "revert anytime"
+**Origin (2026-07-25, Ordovica):** an agent posted a "revert anytime"
 `firewall-rule delete` example in a runnable fence; it was accidentally executed twice,
 deleting a prod DB firewall rule mid-deploy and failing the pipeline's prod stage both
 times.
