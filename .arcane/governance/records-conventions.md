@@ -64,16 +64,16 @@ superseded_by: path/to/replacement.md
 
 Rules:
 
-- `superseded_by` is required. A tombstone that does not say what replaced it is
+- **`superseded_by` is required. Enforcement: explicitly advisory prose (ARC-023) — no script checks a superseded document's frontmatter for this field.** A tombstone that does not say what replaced it is
   worse than no tombstone: it tells the reader to stop without telling them
   where to go.
-- If a document was superseded by *several* documents, list all of them.
-- If a document was retired without replacement, say so explicitly
-  (`superseded_by: none — <reason>`), rather than leaving the field off.
-- Do not delete the original content. The tombstone is a header, not a
+- **If a document was superseded by *several* documents, list all of them. Enforcement: explicitly advisory prose (ARC-023) — no script cross-checks the list against the document's actual replacements.**
+- **If a document was retired without replacement, say so explicitly
+  (`superseded_by: none — <reason>`), rather than leaving the field off. Enforcement: explicitly advisory prose (ARC-023) — no script distinguishes this explicit form from an omitted field.**
+- **Do not delete the original content. Enforcement: explicitly advisory prose (ARC-023) — no diff check runs when a tombstone is added, so nothing confirms the body underneath is untouched.** The tombstone is a header, not a
   replacement for the body.
-- **Add the reverse link on the replacement**, so the relationship is
-  discoverable from either end. A reader who finds only the current document
+- **Add the reverse link on the replacement, so the relationship is
+  discoverable from either end. Enforcement: explicitly advisory prose (ARC-023) — no script checks that a `supersedes` field exists on the named replacement.** A reader who finds only the current document
   should still be able to see what it replaced:
 
   ```yaml
@@ -91,7 +91,7 @@ Supersession and deletion are different decisions and must not be conflated.
 Marking a document superseded is a routine editorial act. Deleting it is not.
 
 **Deletion is prohibited without an explicit, recorded decision when any of the
-following is true:**
+following is true. Enforcement: explicitly advisory prose (ARC-023) — none of the four conditions below is checked by a script; `content_sensitivity`'s value is schema-validated, but nothing gates deletion on it.**
 
 - The document records a decision, agreement, or obligation that other parties
   relied on.
@@ -101,8 +101,8 @@ following is true:**
 - The repository is marked `content_sensitivity: sensitive` and the document's
   own existence is part of the record.
 
-When deletion *is* approved, record it: what was deleted, when, on whose
-authority, and why. A deletion nobody can account for later is indistinguishable
+**When deletion *is* approved, record it: what was deleted, when, on whose
+authority, and why. Enforcement: explicitly advisory prose (ARC-023) — no script checks that a deletion record exists after the fact.** A deletion nobody can account for later is indistinguishable
 from data loss.
 
 **Arcane does not ship a retention schedule.** Retention periods are

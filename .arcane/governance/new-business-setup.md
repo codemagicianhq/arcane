@@ -38,6 +38,8 @@ Have the following ready:
 
 ## Phase 1 — Project & Repo Setup
 
+**Every step in this phase is performed by hand in your version-control host's UI. Enforcement: explicitly advisory prose (ARC-023) — project, repo, and template creation happen entirely on the external VCS host, which no script or CI check in this repo observes or verifies.**
+
 ### Step 1.1 — Create the Project
 
 1. Open your version-control host's project organization
@@ -82,6 +84,8 @@ In your docs/ops repo, copy `ventures/_template/` to `ventures/{venture}/` as a 
 
 ## Phase 2 — Infrastructure & Security
 
+**The security checklist and docs-repo clone in this phase are unverified operator actions. Enforcement: explicitly advisory prose (ARC-023) — no script or CI check in this repo confirms these steps were completed or completed correctly.**
+
 ### Step 2.1 — Confirm Security Baseline
 
 Before running the agent runtime for any new business, verify:
@@ -101,6 +105,8 @@ git clone <docs-repo-url> ~/code/{repo}
 
 ## Phase 3 — Agent Runtime Configuration
 
+**Steps 3.1, 3.2, and 3.4 (runtime install, configuration, and the dry-run test) are manual operator actions. Enforcement: explicitly advisory prose (ARC-023) — no script or CI check in this repo verifies the agent runtime was installed, configured, or dry-run tested before live use.**
+
 ### Step 3.1 — Install the Agent Runtime (if not already installed)
 
 See [[agents/installation|Runtime Installation]].
@@ -112,6 +118,8 @@ See [[agents/installation|Runtime Installation]].
 - Review [[agents/agent-policies|Agent Policies]] — adjust permitted actions if needed for this business type
 
 ### Step 3.3 — Agent Git Identity Setup
+
+**Registering an agent's persona, Git identity, and `.mailmap` entry, and running the verify command below, are self-administered. Enforcement: explicitly advisory prose (ARC-023) — no script or CI check validates `.mailmap` entries or roster registration; the verify command is a manual smoke test, distinct from `spell-commit-work`'s Step 8 gate, which governs the commit action itself, not agent registration.**
 
 Every agent that will produce commits for this business must have a registered Git identity **before making its first commit**. See [[git-conventions#agent-attribution-model|Git Conventions — Agent Attribution]].
 
@@ -141,6 +149,8 @@ Run the agent runtime in dry-run / observation mode first. Do not let it execute
 
 ## Phase 4 — Legal Baseline
 
+**Every step in this phase happens outside Arcane — entity structuring, tax registration, and ToS review. Enforcement: explicitly advisory prose (ARC-023) — these are legal and tax determinations on external systems that no script or CI check in this repo can observe or verify.**
+
 ### Step 4.1 — Business Entity
 
 - Confirm operations run under {LLC_NAME}
@@ -160,6 +170,8 @@ Run the agent runtime in dry-run / observation mode first. Do not let it execute
 ---
 
 ## Phase 5 — First Launch Checklist
+
+**This launch checklist is self-attested against external systems (the selling platform, the agent runtime's monitoring). Enforcement: explicitly advisory prose (ARC-023) — no script or CI check in this repo confirms any item below; the operator marks each complete by judgment.**
 
 - [ ] At least 10 product listings live (or equivalent for non-e-commerce)
 - [ ] Order/fulfillment workflow tested end-to-end

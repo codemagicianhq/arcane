@@ -18,6 +18,8 @@ Defines a single markdown-first queue for assigning work across businesses, whil
 - Queue rows include execution host and approval gate so autonomy stays explicit.
 - {BUSINESS_NAME} starts first; same structure extends to AcmeStore and other businesses.
 
+**This document specifies a queue design that has not been implemented anywhere in this codebase — no queue instance exists yet, and this document's own frontmatter is still `status: draft` (see the `## Next Action` section below). Enforcement: explicitly advisory prose (ARC-023) — every principle, field, and rollout step that follows is advisory guidance only, since no code, spell, or platform check exists yet to enforce any of it.**
+
 ---
 
 ## Queue Principles

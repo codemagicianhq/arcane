@@ -20,6 +20,8 @@ Step-by-step hardening for a Linux host that will run an autonomous agent runtim
 
 See also: [Threat Model](threat-model.md), [Authentication Strategy](authentication-strategy.md)
 
+**Enforcement: explicitly advisory prose (ARC-023) — every item below configures a downstream operator's own Linux host, a target outside anything Arcane's own CI or spells can inspect; completion is tracked only in the operator's own security audit log, not by any Arcane mechanism.**
+
 ---
 
 ## Pre-Checklist: Know Your Environment
