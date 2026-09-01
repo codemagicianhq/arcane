@@ -208,7 +208,10 @@ describe("Terraform and Markdown-lint pipelines stay include-based, filetype-sco
 
 describe("commit-metadata prohibition and branch-policy alignment (R1, R4/R5 in the PRD's own numbering)", () => {
   it("states the explicit rule against commit-message/author/branch-name CI trust signals", () => {
-    expect(cicdStandards).toContain("## Never Trust Commit Metadata for CI Skipping");
+    // Heading renamed under ARC-038's core/profile split (BC-31 batch b) --
+    // same rule, now filed under the vendor-neutral Core section rather than
+    // a top-level heading, since the principle applies to any CI platform.
+    expect(cicdStandards).toContain("Never Trust Commit Metadata (ARC-022)");
     expect(cicdStandards).toContain("only on changed paths");
     expect(cicdStandards).toContain("attacker-controlled metadata");
   });
@@ -234,11 +237,68 @@ describe("commit-metadata prohibition and branch-policy alignment (R1, R4/R5 in 
 
 describe("all four pipeline templates remain syntactically valid YAML", () => {
   it.each([
-    "### .NET Backend Pipeline",
-    "### Node.js Pipeline",
-    "### Terraform Pipeline",
-    "### Markdown Lint Pipeline",
+    "#### .NET Backend Pipeline",
+    "#### Node.js Pipeline",
+    "#### Terraform Pipeline",
+    "#### Markdown Lint Pipeline",
   ])("the block under %s parses without error", (heading) => {
     expect(() => parse(extractYamlBlockAfter(cicdStandards, heading))).not.toThrow();
+  });
+});
+
+// ARC-038 decision 2: cicd-standards.md split into a vendor-neutral core and
+// an Azure DevOps profile, reusing development-methodology.md's own
+// per-provider shape rather than a new architecture.
+describe("vendor-neutral core / Azure DevOps profile split (ARC-038 decision 2)", () => {
+  it("has a Core Principles section stated in platform-agnostic terms", () => {
+    expect(cicdStandards).toContain("## Core Principles (vendor-neutral)");
+    // The branch-policy table's rationale column must not itself assume
+    // Azure DevOps -- that's exactly the coupling this split removes.
+    const coreStart = cicdStandards.indexOf("## Core Principles (vendor-neutral)");
+    const profileStart = cicdStandards.indexOf("## Azure DevOps Profile");
+    expect(profileStart).toBeGreaterThan(coreStart);
+    const core = cicdStandards.slice(coreStart, profileStart);
+    expect(core).toContain("any platform's branch-protection mechanism");
+    expect(core).not.toContain("azure-pipelines.yml");
+  });
+
+  it("has an Azure DevOps Profile section holding every pipeline YAML template", () => {
+    expect(cicdStandards).toContain("## Azure DevOps Profile");
+    const profile = cicdStandards.slice(cicdStandards.indexOf("## Azure DevOps Profile"));
+    for (const heading of [
+      "#### .NET Backend Pipeline",
+      "#### Node.js Pipeline",
+      "#### Terraform Pipeline",
+      "#### Markdown Lint Pipeline",
+    ]) {
+      expect(profile).toContain(heading);
+    }
+  });
+
+  it("states this reuses development-methodology.md's own per-provider shape, not a new architecture", () => {
+    expect(cicdStandards).toContain("ARC-038 decision 2");
+    expect(cicdStandards).toContain("development-methodology");
+  });
+});
+
+describe("spell-authoring-standards.md D2 gate extended to vendor coupling (ARC-038 decision 3)", () => {
+  let spellAuthoringStandards: string;
+  beforeAll(async () => {
+    spellAuthoringStandards = await readFile(
+      join(GOVERNANCE, "spell-authoring-standards.md"),
+      "utf8",
+    );
+  });
+
+  it("D2's Gold bar names CI/CD platform and deployment vendor alongside tracker", () => {
+    expect(spellAuthoringStandards).toContain(
+      "no hard assumption of a specific tracker, CI/CD platform, cloud/deployment vendor",
+    );
+  });
+
+  it("documents the vendor-coupling convention, citing cicd-standards.md as the found (not assumed) example", () => {
+    expect(spellAuthoringStandards).toContain("ARC-038 decision 3");
+    expect(spellAuthoringStandards).toContain("[[cicd-standards]]");
+    expect(spellAuthoringStandards).toContain("Azure-DevOps-specific end to end until ARC-038");
   });
 });

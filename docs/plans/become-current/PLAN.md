@@ -761,7 +761,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     this work -- it needs the SAME pre-push hook FILE to carry conditional logic, which is a
     different, not-yet-designed change, though the prerequisite this batch's own generalization
     unblocks is noted there.
-- [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted** (2026-09-01,
+- [x] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted** (2026-09-01,
   operator accept call — [OPERATOR-QUEUE.md Q-007](docs/plans/become-current/OPERATOR-QUEUE.md#q-007--acceptreviserreject-adr-arc-038-content-preserving-updates-and-vendor-neutral-governance-content)).
   Route: chain, 2 batches matching the ADR's own decisions 1 (mechanics) and 2+3 (content) —
   "batch sensibly" per the ADR's own note. Size L.
@@ -793,12 +793,26 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     always blindly overwritten" assumption directly (manually corrupting a tracked file, then
     asserting update overwrote it) — updated to the correct new behavior rather than the old
     behavior forced back into place.
-  - [ ] **(b) Vendor-neutral CI/CD content (ARC-038 decisions 2+3) — not started.** Split
-    `cicd-standards.md` into a vendor-neutral core + an Azure DevOps profile, reusing the
-    `external_provider` per-provider pattern (ARC-011/032, BC-09) rather than inventing a plugin
-    system; extend `spell-authoring-standards.md`'s D2 gate to vendor coupling, not only org
-    coupling. `naming-conventions.md` needs no change (the ADR's own Context section: the premise
-    that motivated naming it no longer holds).
+  - [x] **(b) Vendor-neutral CI/CD content (ARC-038 decisions 2+3) — done 2026-09-01.** Split
+    `cicd-standards.md` into a `## Core Principles (vendor-neutral)` section (branch-policy
+    principles stated for any platform, the CI-skip-semantics concept, the branch-policy
+    path-filter-alignment concept, deployment-gate principles) and an `## Azure DevOps Profile`
+    section (the Pipeline Matrix, all four pipeline YAML templates, Azure Pipelines' own skip-CI
+    syntax enumeration, the concrete ADO failure-mode example, Prospero's Responsibilities,
+    Implementation Priority) — reusing the `external_provider` per-provider pattern
+    (ARC-011/032, BC-09; the identical shape [[development-methodology]] already uses for tracking
+    providers) rather than inventing a plugin system or a second file. Extended
+    `spell-authoring-standards.md`'s D2 Gold bar and its Distributability-conventions section from
+    tracker-only to any CI/CD platform or deployment vendor, citing this exact split as the found
+    (not assumed) precedent for the remediation shape. `naming-conventions.md` needed no change,
+    confirmed (the ADR's own Context section: the premise that motivated naming it no longer
+    holds). `test/cicd-fail-safe-path-filters.test.ts`'s existing heading- and phrase-anchored
+    assertions needed two fixes unrelated to content correctness (a heading genuinely renamed
+    under the new structure; two bolded phrases that happened to line-wrap across the exact
+    substring two tests checked for) plus 5 new tests directly covering the core/profile boundary
+    itself, not just surviving the restructuring. Closes TODO.md's original 2026-07-14
+    vendor-neutral/customization backlog item in full (parts a, b, and c all disposed of, across
+    both batches of this epic). This also closes out BC-31 as a whole.
 - [ ] **BC-32 — Spell-compiler implementation.** Depends: BC-12 ADR **Accepted**. Route: chain.
   Size L. Includes the I15 dual-copy elimination (66 → 33 + generator).
 
