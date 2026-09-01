@@ -50,7 +50,7 @@ this broader ≥ Silver gate is not fully verified by any coded scorer or workfl
 | --- | --- |
 | Bronze | No real organization, person, venture, or machine names. Org-specific values use `{UPPER_SNAKE}` placeholders. Enforcement: executable check (ARC-023) — `scripts/org-token-lint.ts` scans `.github/prompts/*.prompt.md` against the `ARCANE_ORG_TOKENS` denylist and runs automatically as part of `npm run build`, failing the build on a match; `spell ward --gate` (`src/commands/ward.ts`) runs the same denylist-scanning engine standalone but is not currently wired into CI as its own gate. |
 | Silver | + every placeholder has an inline resolution note: *"resolve from `.arcane.json` / frontmatter; ask if unset."* Enforcement: explicitly advisory prose (ARC-023) — part of the D2 hard gate by name, but this specific bar is self-graded; no check verifies a placeholder carries an inline resolution note. |
-| Gold | + no hard assumption of a specific tracker, agent roster, or directory layout — the spell works in a vanilla consuming repo with no Arcane context files present. |
+| Gold | + no hard assumption of a specific tracker, CI/CD platform, cloud/deployment vendor, agent roster, or directory layout — the spell works in a vanilla consuming repo with no Arcane context files present. |
 
 > A **Bronze on D2 is OSS-blocking** and must be fixed before release. **Enforcement: executable check (ARC-023) — same mechanism as the D2 Bronze bar above: the `org-token-lint` build gate fails `npm run build` automatically; `spell ward --gate` provides the same scan standalone but is not yet wired into CI.** See **Distributability conventions** below.
 
@@ -136,6 +136,18 @@ Arcane spells ship to other repositories and, eventually, open source. Keep them
   [[development-methodology]] — point to them rather than re-inlining ADO logic. Enforcement: explicitly
   advisory prose (ARC-023) — self-graded during spell audit; no lint scans spell prompts for a
   hard-coded tracker assumption.
+- **CI/CD and deployment vendors are optional too (ARC-038 decision 3):** the same D2 bar that
+  forbids assuming a single tracker applies to any other platform a spell might otherwise hard-code
+  — a CI/CD system, a cloud provider, a deployment target. When a governance doc's actual content
+  turns out to be vendor-specific throughout (found, not assumed: [[cicd-standards]] was
+  Azure-DevOps-specific end to end until ARC-038), the remediation is the same shape decision 2
+  demonstrates concretely there — split into a vendor-neutral core (principles) plus a
+  provider-specific profile (that vendor's mechanics), the same shape
+  [[development-methodology]] already uses for tracking providers. No separate "vendor-specific
+  standards directory" — the pattern is the split itself, applied to whichever governance doc or
+  spell risks the same coupling next. Enforcement: explicitly advisory prose (ARC-023) — self-graded
+  during spell audit; no lint scans a spell prompt or governance doc for a hard-coded CI/CD or
+  deployment vendor assumption.
 
 > **Maintainer-internal exemption.** A few spells operate *on the Arcane framework itself*
 > (e.g. `spell-bump`, `spell-arcane-version`) and legitimately reference repo internals like
