@@ -298,7 +298,7 @@
 
 - [x] **Make Arcane customizable + vendor-neutral for open-source users — and preserve customizations across updates.** Now that Arcane is public, it bakes in our stack (Azure CAF naming, GoDaddy, our governance). For other adopters: (a) a documented **customization / override model** — extend or replace governance, spells, and naming standards for your own cloud/tools/preferences — that **survives `arcane update`** (same root cause as the data-loss bug above: user-modified managed files must not be clobbered). (b) `naming-conventions.md` currently encodes our Azure convention — consider a vendor-neutral core + **pluggable vendor profiles** (Azure / AWS / GCP / Netlify / Vercel …), each linking that provider's official naming doc. (c) A home for vendor-specific standards/playbooks distinct from the vendor-neutral core. Scope as a research spike → ADR before implementing. Raised 2026-07-14.
   **Research spike + ADR done 2026-08-31 (BC-11):** [ARC-038](DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content)
-  (`Proposed`) settles (a) with per-file content hashing plus an npm-history-backed three-way merge on
+  settles (a) with per-file content hashing plus an npm-history-backed three-way merge on
   `spell update`. **(b)'s own premise checked and found stale:** `naming-conventions.md` carries no
   Azure/CAF/GoDaddy content today (verified directly — its actual scope is agent/persona naming,
   unrelated), likely cleaned up during this repo's public-readiness passes sometime after this item
@@ -307,6 +307,12 @@
   there instead, reusing the `external_provider` core/per-provider pattern this repo already ships
   (ARC-011/032, BC-09) rather than inventing a new mechanism. Acceptance requested at
   [OPERATOR-QUEUE.md Q-007](docs/plans/become-current/OPERATOR-QUEUE.md#q-007--acceptrevisereject-adr-arc-038-content-preserving-updates-and-vendor-neutral-governance-content).
+  **Accepted and shipped 2026-08-31/2026-09-01 (BC-31):** this closure note itself went stale within
+  the same program — written while ARC-038 was still `Proposed`, never updated after acceptance and
+  implementation. Found 2026-09-01 (Phase 5, DoD closure) cross-checking `portable-bootstrap.md`'s
+  own still-`"not yet built"` claim against `update.ts`'s actual shipped hash-compare/merge logic,
+  which directly contradicted it. Both fixed together rather than just this one, since they were the
+  same underlying drift.
   Implementation is BC-31, gated on acceptance — this item stays open until that ships.
   **Closed 2026-09-01 (BC-31).** (a) shipped in Batch A: `InstalledComponent.fileHashes` (per-file
   SHA-256) plus a from-scratch line-based three-way merge (`src/modules/merge3.ts`) on `spell
