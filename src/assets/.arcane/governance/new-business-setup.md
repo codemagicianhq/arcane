@@ -126,7 +126,8 @@ For each agent assigned to this business:
 4. **Verify** you can commit with the agent's author:
    ```bash
    git commit --allow-empty --author="{AGENT_NAME} <{AGENT_EMAIL}>" \
-     --trailer="Agent=kellar" --trailer="Model=test" --trailer="Provider=test" \
+     --trailer="Agent=claude" --trailer="Persona={AGENT_NAME}" --trailer="Model=test" \
+     --trailer="Model-Source=test" --trailer="Provider=test" \
      -m "test: verify agent git identity for {AGENT_NAME}"
    git log -1  # confirm author shows {AGENT_NAME}
    git reset HEAD~1  # clean up test commit

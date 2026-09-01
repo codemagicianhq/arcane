@@ -489,7 +489,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   applicability — explicit not-legal-advice framing) + new `spell-compliance` (joined `spells-build`),
   a read-only self-assessment with no apply/fix phase — citing `CS-nn` by ID, never restating. Minor
   version bump (new spell). Full detail in TODO.md's closure note on the T26 item.
-- [ ] **BC-27 — Governance tail batch.** Sources: IDEAS.md:9 (I1), :11 (I3), :12 (I4), :15 (I7).
+- [x] **BC-27 — Governance tail batch.** Sources: IDEAS.md:9 (I1), :11 (I3), :12 (I4), :15 (I7).
   Route: direct, one PR per sub-item where they touch different trees. Size M. (a) I4 dedup rule:
   diff before deleting "duplicates" — governance edit. (b) I1 org-token gate seeds operator-identity
   tokens. (c) I7 verification-ledger extraction from close-session. (d) I3 attribution trailer split
@@ -518,7 +518,25 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     details wrong; it captures new sessions going forward. 9 new tests. Caught and fixed a real
     regression while shipping: the new command stub's frontmatter didn't match BC-16 R2's own
     "Use PROACTIVELY" convention, caught by that epic's own pre-existing test.
-  - [ ] (d) I3 — remaining.
+  - [x] **(d) I3 — done 2026-08-31. All four sub-items of BC-27 now complete.** Confirmed live
+    (`ls .arcane/`) that this item's own stated prerequisite — `.arcane/agents.yaml` existing — is
+    still unmet in this repo even after BC-19 (which was about `delegations.json` specifically, not
+    the agent roster). Did not treat that as a hard blocker: designed the split to degrade correctly
+    in the no-roster case (this repo's own real state today), the same graceful-degradation shape
+    already established this session. `git-conventions.md`'s Required Commit Trailers table now
+    splits `Agent` (runtime/tool only — `claude`/`copilot`/`codex`) from `Persona` (roster identity,
+    conditional) from `Role` (derived **only** from `Persona`'s real `AgentDefinition.role` field via
+    `agent-loader.ts` — never typed by hand), plus a new required `Model-Source` trailer marking
+    `Model` as self-reported (closing the separate fabricated-trailer incident I7 also cited). This
+    directly resolves BC-07's own probe finding and I7's grading-probe example ("`Role: developer`
+    resolves from nothing today") — the correct behavior is now to omit `Role` when it can't be
+    roster-sourced, not type a plausible guess. Propagated consistently to
+    `universal-agent-rules.md` rule 12, `spell-commit-work.prompt.md`'s trailer template (the actual
+    generation point), `spell-full-cycle.prompt.md`, `spell-address-review.prompt.md`, and
+    `new-business-setup.md`'s onboarding verification snippet — found via a dedicated research sweep
+    before editing, so the fix landed everywhere the old model was referenced, not just at its
+    definition site. 11 new tests. Caught and fixed the same line-wrap-crossing test mistake as
+    BC-27a, in the same file family, before it shipped.
 - [ ] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size
   M. Run the two named smoke tests (MCP prompts; Claude Code plugin) and write a findings doc;
   go/no-go on each channel is an operator decision → OPERATOR-QUEUE.

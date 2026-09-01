@@ -45,7 +45,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 11. **Use Conventional Commits format** for all commit messages: `type(scope): description`. See [[governance/git-conventions|Git Conventions]] for types, scopes, and examples.
 
-12. **Agent attribution trailers** are required on agent-authored commits (`Agent`, `Model`, `Provider`). See [[governance/git-conventions#agent-attribution-model|Attribution Model]].
+12. **Agent attribution trailers** are required on agent-authored commits (`Agent`, `Model`, `Model-Source`, `Provider`). `Persona`/`Role` are conditional — present only when a roster exists and one was assigned, never guessed. See [[governance/git-conventions#agent-attribution-model|Attribution Model]].
 
 13. **For runtime config changes** (anything touching the agent runtime's config files or service restarts): do NOT commit supporting docs until the user has confirmed the change is working. Stage and present — but wait for explicit approval after testing.
 
