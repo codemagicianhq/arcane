@@ -557,9 +557,42 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 - [ ] **BC-29 — ARC-023 enforcement-mode backfill.** Sources: DECISIONS.md (ARC-023, Accepted) ·
   audit: exactly ONE rule in all of `src/assets/` carries an enforcement-mode declaration
-  (`spell-close-session.prompt.md:36`); all 23 governance docs have zero. Route: direct, sub-PRs
-  per governance doc (each bumps — batch sensibly, ~4-6 docs per PR). Size L. Mechanical but huge;
+  (`spell-close-session.prompt.md:36`). **Correcting this entry's own stale count:** a full audit
+  found **25** governance docs, not "23" — two were added this session (`mobile-release-standards.md`,
+  `compliance-standards.md`) after this entry was first written. All 25 had zero enforcement
+  annotations before this epic started. Route: direct, 5 sub-PRs: Batch A (8 docs), Batch B (9 docs),
+  Batch C (5 docs, deliberately excluding `framework-decisions.md` — a legacy historical-decision
+  index that mostly re-summarizes rules classified elsewhere; annotating it separately would recreate
+  the "separate registry that can drift" problem ARC-023's own Rejected Alternatives warns against),
+  Batch D (`agent-policies.md` alone, ~460 lines/40-60 rules — too large to bundle), Batch E
+  (`git-conventions.md` alone, ~889 lines/50-70 rules — same reason). Size L. Mechanical but huge;
   scheduled late so vocabulary benefits from every earlier epic.
+  - [x] **(a) Batch A — done 2026-08-31.** 8 governance docs annotated, each rule classified against
+    ARC-023's 4 modes and cross-checked against this session's own real, verified mechanisms rather
+    than guessed: `external-verification-standards.md` (6 rules, all advisory), `mobile-release-
+    standards.md` (14 rules, 10 gate/4 advisory), `universal-agent-rules.md` (24 rules, 2 gate/22
+    advisory — also fixed a pre-existing duplicate rule-15 number, "Screenshot Curation" renumbered to
+    24, the next unused number), `compliance-standards.md` (12 rules, all advisory), `cicd-standards.md`
+    (16 rules, 1 verified-external-platform-policy citing `checkPlatformBranchPolicy`/15 advisory —
+    also reconciled its "explicitly advisory" wording to ARC-023's own "explicitly advisory prose"
+    term, matching the other 7 docs), `web-discoverability-standards.md` (15 rules, 7 gate/8 advisory
+    — one dispatched agent found 8 of `spell-make-discoverable`'s 15 Phase 2 audit rows actually check
+    different content than the WD-nn rule they're labeled against; filed as a separate, out-of-scope
+    follow-up rather than fixed inline here), `spell-authoring-standards.md` (18 rules/statements, 3
+    executable-check citing `org-token-lint.ts`'s build gate/15 advisory — one dispatched agent
+    overrode a citation it was explicitly instructed to use after verifying the mechanism didn't
+    actually cover that rule, per this repo's own "when a check contradicts a claim, change the claim"
+    protocol), `testing-standards.md` (11 rules, 3 executable-check — coverage thresholds, each
+    honestly caveated as configured-but-not-CI-wired since `ci.yml` runs bare `npm test`, not
+    `npm run test:coverage` — /8 advisory). Dispatched as 8 parallel agents; every file's actual diff
+    (not the agent's own completion summary) was independently reviewed before shipping — caught and
+    fixed the hard-line-wrap-vs-established-single-line-convention bug recurring a third and fourth
+    time this session (`mobile-release-standards.md`, `compliance-standards.md`; same class as BC-24's
+    `portable-bootstrap.md` and BC-27d's `git-conventions.md`), and fixed 6 test files whose literal-
+    substring assertions matched the old label-only-bold rule format now superseded by the annotation.
+    Patch bump (`0.29.1` → `0.29.2`, content update to existing docs, no new component).
+    **Done:** [PR #150](https://github.com/codemagicianhq/arcane/pull/150) merged 2026-08-31 via
+    rebase.
 - [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted**. Route: chain.
   Size M-L per the ADR's settled bind point.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
