@@ -81,7 +81,7 @@ Show a table (`# | category | disposition | author | file:line | summary | plann
 
 ## Step 5 — Execute
 
-Commits in this spell follow `.arcane/governance/git-conventions.md`: Conventional Commits format, agent attribution (`--author` + required `Agent`/`Model`/`Provider` trailers) when an agent authors the change, and — because this is an **interactive session** — present each proposed commit message and **wait for the human's approval before committing** (the Step 4 plan approval covers *what* to do, not the commit itself). Never squash.
+Commits in this spell follow `.arcane/governance/git-conventions.md`: Conventional Commits format, agent attribution (`--author` + required `Agent`/`Model`/`Model-Source`/`Provider` trailers, plus `Persona`/`Role` when a roster exists and one was assigned) when an agent authors the change, and — because this is an **interactive session** — present each proposed commit message and **wait for the human's approval before committing** (the Step 4 plan approval covers *what* to do, not the commit itself). Never squash.
 
 For **must-fix** (one thread at a time): read the code → implement → run the relevant tests.
 - **If tests pass:** commit (e.g. `fix(scope): address review — <desc>`) → reply `Fixed in <hash>. <what changed>` (cite the `R#` finding ID if one exists) → resolve the thread immediately.

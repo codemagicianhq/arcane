@@ -122,7 +122,7 @@ Execute the `spell-implement` workflow:
    b1. **DB migration guard.** If `architecture.md`/the PRD did not name a database migration as part of this feature's scope, but implementing this story is about to produce one anyway, **halt and flag it** — do not write the migration file silently (2026-07-22 dogfooding finding: this is a scoped hard guard, not a blanket ban). If a migration genuinely is in scope, **re-derive its sequence number from a fresh `git pull --ff-only` of the target branch immediately before writing the file** — not once at branch-creation time in step 0 — so a concurrent epic that landed a migration in the meantime is reflected. This is the concrete fix for a real incident: two epics run in parallel worktrees each independently claimed the same migration sequence number, invisible until human merge review.
    c. Write tests per `governance/testing-standards.md`.
    d. Run tests. If passing:
-      - In `external/ado` mode, commit with `#{adoWorkItemId} type(scope): description` and agent attribution trailers (`Agent`, `Model`, `Provider`).
+      - In `external/ado` mode, commit with `#{adoWorkItemId} type(scope): description` and agent attribution trailers (`Agent`, `Model`, `Model-Source`, `Provider`).
       - In `internal` mode, commit with standard Conventional Commits format (no ADO prefix) plus attribution trailers.
    e. Update `stories.json`: set `passes: true`, fill `testEvidence`.
    f. Append learnings to `progress.txt`.
@@ -240,7 +240,7 @@ exactly one phase carries it at a time, matching the status line's own `[Phase N
 - **One human gate only.** Everything before Phase 6 step 5 is autonomous. Do not ask for intermediate approvals unless a gate fails.
 - **No scope creep.** Only build what the feature description specifies.
 - **Fail fast.** If a phase cannot succeed, halt immediately rather than producing garbage for downstream phases.
-- **Attribution required.** Every commit must carry `Agent`, `Model`, and `Provider` trailers per ADR-028/ADR-029.
+- **Attribution required.** Every commit must carry `Agent`, `Model`, `Model-Source`, and `Provider` trailers per ADR-028/ADR-029, plus `Persona`/`Role` when a roster exists and one was assigned.
 - **Branch discipline.** All work on topic branches, never on main — see `.arcane/governance/git-conventions.md`'s Trunk-based development rule. (Corrected 2026-08-31, BC-14: previously cited "ADR-048," which does exist in the shipped `framework-decisions.md` reference but is actually about the Code-Versus-Docs Branch Policy's local-only-repo fallback, unrelated to this general rule — a topical miscitation, the same class BC-06 found and fixed elsewhere. `git-conventions.md` states this rule directly with no ADR/ARC number attached, so there is nothing to cite beyond the file itself.)
 - **Fresh context per story.** Do not carry assumptions between stories during Phase 3.
 - **Epic checkpointing.** When this spell is run as one epic in a multi-epic plan, recommend running `spell-commit-work` before starting the next epic.

@@ -116,12 +116,14 @@ Workflow:
    - References to ADRs or files
    - Context for why]
 
-   Agent: [lowercase-persona or tool name]
+   Agent: [runtime/tool name only -- claude, copilot, codex -- never a persona name]
+   Persona: [roster identity operated as, ONLY if a roster exists (.arcane/agents.yaml) and one was assigned this session -- omit entirely otherwise, never guess]
+   Role: [Persona's own AgentDefinition.role value, resolved from the roster -- never typed by hand. Present only if Persona is present]
    Model: [model identifier, e.g., claude-opus-4-20250918]
+   Model-Source: [self-reported -- currently the only defined value; marks Model/Agent as self-reported, not independently verified]
    Provider: [anthropic or openai]
    Vendor: [arcane-cli, for vendored scaffold/update commits]
    Vendor-Version: [programmatically derived installed package version, when available]
-   Role: [agent role slug, if applicable]
    Task-Type: [docs, code, review, marketing, infra]
    Channel: [vscode, cli, chat]
    ```
@@ -132,7 +134,7 @@ Workflow:
    - Body is optional but useful for complex changes
    - Reference ADRs if applicable (e.g., "Implements ADR-028")
    - Trailers go after a blank line following the body (standard Git footer position)
-   - Required trailers for agent commits: `Agent`, `Model`, `Provider`
+   - Required trailers for agent commits: `Agent`, `Model`, `Model-Source`, `Provider`. `Persona`/`Role` are conditional -- see `.arcane/governance/git-conventions.md`'s Agent Attribution Model for the full rule and the grading-probe example of what happens when `Role` is guessed instead of sourced.
    - Required trailer for Arcane-vendored commits: `Vendor: arcane-cli`; include `Vendor-Version` only when derived from the installed CLI at commit time
    - Human-authored commits: trailers are optional
 
