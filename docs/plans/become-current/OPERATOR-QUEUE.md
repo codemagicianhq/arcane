@@ -112,7 +112,21 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   commits) — but ARC-028 R7 means only a session working *in* that worktree may remove it.
 
 - **Why:** deletion of content-holding branches is outside the grant.
-- **Status:** ready for your land/abandon call on the four branches above.
+- **Status:** [x] done 2026-09-01 — operator authorized following the recorded recommendations
+  (endgame planning session). Executed: `chore/todo-update-preserve-user-content` abandoned
+  (deleted local + remote; content re-verified via `git cherry` patch-id, confirming the
+  compliance-coverage backlog item it added is independently already closed on `main` via BC-26);
+  `docs/session-close-2026-08-01` abandoned (deleted local; its one substantial unlanded commit's
+  content — a full ARC-025 decision record plus the publish-workflow npm-11 pin it describes — is
+  independently confirmed already on `main`, the other unlanded commit is stale session-state
+  narrative); `sessions/2026-08-02-provider-neutral-close` abandoned (deleted local; confirmed
+  EF-34-class fixture contamination, cross-reference on EF-34.md updated to record the resolution).
+  `docs/runnable-fences-selfhosted-agents` (land) still pending, and for a reason found only while
+  executing this, not known when the recommendation was recorded: its single commit touches
+  `.github/instructions/agent-output.instructions.md` alongside `cicd-standards.md` — the former is
+  squarely the parallel session's protected footprint (its own ARC-023 prompt/instructions
+  annotation pass). Held for the same gate BC-32 is already waiting on, rather than landed now or
+  surgically split, to avoid any entanglement with in-flight work on that exact file.
 
 ## Q-004 — Accept/revise/reject ADR: ARC-029 (Best-Practice-First Solution Selection)
 
