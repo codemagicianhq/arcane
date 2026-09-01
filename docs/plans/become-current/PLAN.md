@@ -555,7 +555,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 5 — Unparked implementations & the big backfill
 
-- [ ] **BC-29 — ARC-023 enforcement-mode backfill.** Sources: DECISIONS.md (ARC-023, Accepted) ·
+- [x] **BC-29 — ARC-023 enforcement-mode backfill.** Sources: DECISIONS.md (ARC-023, Accepted) ·
   audit: exactly ONE rule in all of `src/assets/` carries an enforcement-mode declaration
   (`spell-close-session.prompt.md:36`). **Correcting this entry's own stale count:** a full audit
   found **25** governance docs, not "23" — two were added this session (`mobile-release-standards.md`,
@@ -666,6 +666,45 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     `0.29.5`, content update to an existing doc, no new component).
     **Done:** [PR #153](https://github.com/codemagicianhq/arcane/pull/153) merged 2026-09-01 via
     rebase.
+  - [x] **(e) Batch E — done 2026-09-01. All five sub-batches of BC-29 now complete.**
+    `git-conventions.md` alone (~889 lines, its own dedicated batch per this entry's original sizing
+    note) — the largest and most cross-referenced doc in the whole pass, since nearly every other
+    governance doc annotated this session cites a mechanism defined here. Prioritized consistency
+    with four already-shipped sibling annotations over independent re-derivation: `agent-
+    policies.md`'s Same-Vantage-Point Check/Content-Verified Branch Deletion (same structured-spell-
+    gate classification, same "not a code-level gate" self-disclosure preserved), `cicd-
+    standards.md`'s merge-type row (same verified-external-platform-policy classification, same
+    `checkPlatformBranchPolicy` citation), and `universal-agent-rules.md` rules 10 and 12 (same
+    classifications and reasoning for the auto-commit and attribution-trailer rules). New
+    investigation surfaced a stronger finding than expected: the Agent-mandatory pre-PR guard is
+    backed by more than a spell instruction — `.github/workflows/ci.yml`'s "PR branch is rebased on
+    target" job fails CI on an unrebased PR, and a live query of this repo's own GitHub ruleset (id
+    `18841659`) confirmed that check has `current_user_can_bypass: "never"`. Two genuine content-
+    accuracy findings disclosed rather than silently fixed: the Executive Summary's "No custom git
+    hooks" claim is inaccurate (this repo's own `.husky/pre-commit`/`pre-push` are custom hooks that
+    exist today), and the root `.gitignore`'s actual coverage was checked directly against "What NOT
+    to Commit" — Secrets and Editor state have zero matching patterns despite the heading's blanket
+    claim. One transient test-suite flake during verification (`prompt-drift-classification.test.ts`,
+    confirmed via isolated re-run to complete in ~2s — the timeout is scheduling contention among
+    vitest's concurrent workers, not a regression) — resolved by retry, full suite green at 995
+    passed/2 skipped. 15 existing tests referencing this doc confirmed unaffected. Patch bump
+    (`0.29.5` → `0.29.6`, content update to an existing doc, no new component).
+    **Done:** [PR #154](https://github.com/codemagicianhq/arcane/pull/154) merged 2026-09-01 via
+    rebase.
+
+    **Scope note on BC-29's completion, stated explicitly rather than left implicit:** all 25
+    governance docs now carry ARC-023 enforcement annotations, which is BC-29's actual scope as
+    this plan defined it (see the audit-corrected "25 governance docs" line above). ARC-023's own
+    decision text (DECISIONS.md) says the retroactive pass covers "every existing normative
+    statement" in "governance, prompts, and instructions" — a broader universe than the 25
+    governance docs alone, since it could be read to include the ~40+ `.github/prompts/*.prompt.md`
+    spell files and `.github/instructions/*.instructions.md` files too (the ONE pre-existing
+    precedent this whole epic started from, `spell-close-session.prompt.md:36`, is itself a prompt
+    file, not a governance doc — never itself re-annotated as part of BC-29, since it already carried
+    the precedent annotation). Whether that broader scope is genuinely required by ARC-023 or was
+    always understood to be governance-docs-only is a real, unresolved question this epic does not
+    decide unilaterally — flagging it here rather than silently declaring total completion. If the
+    broader scope applies, it is unscoped, unsized, unbatched work — a new epic, not a BC-29 sub-item.
 - [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted**. Route: chain.
   Size M-L per the ADR's settled bind point.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
