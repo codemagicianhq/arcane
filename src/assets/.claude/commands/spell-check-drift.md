@@ -2,7 +2,7 @@
 description: Use PROACTIVELY to detect contradictions and stale statements across core docs, periodically or after major changes.
 ---
 
-# Check Drift
+# Check Doc Drift
 
 Invoke the Arcane `spell-check-drift` spell workflow.
 

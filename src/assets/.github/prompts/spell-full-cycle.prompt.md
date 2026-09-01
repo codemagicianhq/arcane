@@ -1,6 +1,7 @@
 ---
 name: Spell — Full Cycle
 description: End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time
+claude_description: Use PROACTIVELY for an end-to-end feature request that should chain plan, architect, implement, test, review, and ship.
 argument-hint: "Feature description, optional work item ID, target repo (e.g., 'Add user auth to the mobile app, #507, {REPO_ORG}/{REPO_NAME}')"
 agent: agent
 ---
@@ -38,8 +39,11 @@ Before proceeding, confirm you have all three:
    - Path to a PRD file (e.g., `PRD.md`)
    - **Tracker work item ID** (e.g., `#507`) in `external` mode — fetch it using the detected provider's CLI/API. For an ADO provider, fetch via `az boards work-item show --id {id} --org https://dev.azure.com/{ADO_ORG} --output json` and extract `System.Title`, `System.Description`, and `Microsoft.VSTS.Common.AcceptanceCriteria`; for other providers, fetch the title, description, and acceptance criteria via that provider's equivalent. If the work item has child items, fetch those too. `{ADO_ORG}` resolves from `.arcane.json` or the PRD/feature frontmatter; ask if unset.
 2. **Tracking configuration** — required before execution:
+   <!-- fragment:tracking-mode-declaration:start -->
    - `tracking_mode: internal | external`
-   - `external_provider: ado | github | jira | other` (required when `tracking_mode=external`)
+   - `external_provider: ado | github | jira | other`
+   <!-- fragment:tracking-mode-declaration:end -->
+   - (`external_provider` is required when `tracking_mode=external`)
    - If omitted and an ADO context is already present, default to `external` + `ado` (backward compatibility).
    - If `tracking_mode=external` and `external_provider=ado`, an `adoWorkItemId` is required for commit/PR linkage.
    - If `tracking_mode=external` and `external_provider=github`, a `githubIssueId` is used for commit/PR linkage when one exists (optional, unlike ADO).

@@ -2014,6 +2014,69 @@ content today.
   unvalidated; a real, if narrow, gap remains worth closing mechanically rather than by continued
   manual care.
 
+**Implementation note (2026-09-01, BC-32):**
+
+- **Re-verified the count directly before generating anything, per this ADR's own precedent of not
+  trusting a prior count.** 41 spells today, not the 36 this ADR recorded on 2026-08-31 — the count
+  grew again in the intervening day (BC-30/BC-31 shipped no new spells, but the total nonetheless
+  moved). Implementation proceeded against the freshly-counted 41, not the ADR's now-stale figure.
+- **Decision 1 shipped as specified, with one real premise correction found before generating
+  anything.** `parsePromptFrontmatter()` / `renderClaudeCommandStub()` / `deriveStubTitle()` land in
+  a new `src/modules/spell-compiler.ts`, mirroring `agent-generator.ts`'s one-source/multiple-render()
+  shape exactly as decision 1 specified. **Correction, checked directly rather than assumed:** this
+  decision's own text says the stub is generated "from its frontmatter (`name`, `description`)" —
+  but every one of the 41 current stubs' `description:` field is actually a distinct, hand-crafted
+  Claude-Code-specific "Use PROACTIVELY whenever X, even if Y" invocation hint, verified byte-for-byte
+  absent from the corresponding prompt's own `description` field in all 41 cases. Generating strictly
+  per the decision's literal text would have silently discarded this phrasing for every spell — a real
+  regression to Claude Code's own proactive-invocation behavior, not a neutral refactor. Added a new
+  `claude_description` frontmatter field to the prompt source instead, backfilled verbatim from each
+  stub's existing description (scripted, not hand-typed, to guarantee zero wording drift in the
+  backfill itself); `renderClaudeCommandStub()` prefers it and falls back to the plain `description`
+  only for a spell that has neither (none do today). Proceeding on the decision's literal reading
+  without checking real stub content first would have been exactly the kind of unverified premise this
+  program has repeatedly had to correct after the fact.
+- **Regenerating all 41 stubs from the corrected source found 2 real, pre-existing drift bugs** —
+  proof the problem decision 1 names is live, not hypothetical: `spell-check-drift`'s stub said
+  "Check Drift" against its prompt's actual name "Check Doc Drift", and `spell-dotnet-expert`'s stub
+  said "Dotnet Expert" against ".NET Expert". Both are corrected as a disclosed side effect of
+  generation, not a separate fix.
+- **Open question 2 (filename agreement) resolves itself, not by a fourth check.** The stub's filename
+  is derived directly from the prompt's own id at generation time (`{id}.prompt.md` → `{id}.md`), so
+  the two can never disagree by construction — no separate validation was needed or added.
+- **Open question 1 (fragment syntax) resolved: named, paired marker comments, generalizing
+  `merger.ts`'s proven single-anonymous-marker model rather than inventing a new one.**
+  `<!-- fragment:{name}:start -->` / `<!-- fragment:{name}:end -->` bound an always-regenerable span,
+  the same idempotent, Arcane-owns-this-region model `merger.ts` already uses for CLAUDE.md's routing
+  table — generalized to a *name* so one file can host more than one distinct fragment, which a single
+  anonymous marker pair cannot. The library lives at
+  `src/assets/.github/prompts/_fragments/*.md` exactly where this ADR's decision 2 named it; plain
+  `.md` (not `.prompt.md`) so every existing "find the spell prompts" filter in this codebase already
+  excludes it without change. `expandFragment()` re-indents injected lines to the start marker's own
+  leading whitespace, since real consuming prompts nest the marker at different list depths — an
+  indentation bug here silently dedented the closing marker in 4 of 5 real files on first pass, caught
+  by inspection before landing and now covered by a dedicated regression test.
+- **Decision 2's own motivating premise is narrower than described, checked directly rather than
+  ported forward from the ADR's text.** The 5 files named as duplicating a resolution-order paragraph
+  "worded almost identically" do **not**, once diffed for real: `spell-open-session` and `spell-plan`
+  resolve tracking config in a 4-source order (root `.arcane.json` → self-hosted manifest → PRD
+  frontmatter → ask); `spell-scope` checks only PRD frontmatter or asks, skipping `.arcane.json`
+  entirely; `spell-suggest-feature` and `spell-full-cycle` each carry their own distinct qualifier
+  wording. Only the bare 2-line `tracking_mode`/`external_provider` enum declaration is genuinely
+  identical across all 5. Extracted exactly that (`_fragments/tracking-mode-declaration.md`) rather
+  than homogenizing the surrounding resolution logic to force a fragment that was never really there —
+  forcing uniformity onto behavior that has already independently diverged would have been a silent,
+  undisclosed logic change smuggled inside a stub/fragment-mechanics epic. The deeper inconsistency
+  (should `spell-scope` resolve from `.arcane.json` too?) is filed as its own open item in `TODO.md`
+  rather than decided here.
+- **Wired as two new self-host-parity axes** (`runStubParity`, `runFragmentParity` in
+  `scripts/self-host-parity.ts`), both operating on canonical `src/assets/` content and settling before
+  the pre-existing canonical-vs-root-copy axis runs in `--fix` mode, so root dogfood copies reflect the
+  fully-repaired canonical state rather than a stale one. `npm run check:self-host-parity` reports all
+  four axes together, tagged (`[fragment]`/`[stub]`/`[copy]`) so a failure names which relationship
+  broke. Full regression coverage in `test/spell-compiler.test.ts`, including a read-only consistency
+  guard asserting all 41 real spells stay compiler-consistent going forward.
+
 ---
 
 ## ARC-040 — Session Handoff Durability: Pointer, Never Sole Carrier
