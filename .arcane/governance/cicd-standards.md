@@ -350,6 +350,31 @@ triggers), a change to a new top-level code directory outside `src/` triggers th
 fail-safe) but does **not** require it to pass before merge (branch policy is not) — the build can
 run, fail, and be ignored, or the PR can merge before it finishes.
 
+### Self-Hosted Agents
+
+Self-hosted agents consume **zero** hosted minutes (each org gets one free self-hosted
+parallel job) — the standard fallback when the Microsoft-hosted free grant (1800
+min/month) runs out mid-month. Hard-won rules for running them (origin: Kiubo México
+deploy incident, 2026-07-25 — three separate failures in one night):
+
+1. **Disable system sleep on the agent machine.** A napping agent drops mid-job with
+   "We stopped hearing from agent …" and kills the stage. On macOS:
+   `sudo pmset -a sleep 0` (display may still sleep; the system must not). Waking the
+   machine is not a fix — it will re-sleep 15 minutes later, mid-retry.
+2. **Keep hosted as a selectable fallback, not a hard switch.** Add an `agentPool`
+   pipeline parameter (`selfhosted` default / `hosted`) mapped to conditional `pool:`
+   blocks, so a downed agent machine never blocks an emergency deploy once hosted
+   minutes exist again.
+3. **Audit network reachability before the first deploy run.** Hosted agents reach
+   Azure-firewalled resources (Postgres, storage) via "Allow Azure services" rules;
+   a self-hosted machine does **not** — its public egress IP must be allowlisted
+   explicitly. If that IP is residential, expect it to rotate: when deploys suddenly
+   fail with `connect ETIMEDOUT <db-host>:5432`, check the firewall rule's IP first.
+4. **Audit tooling parity.** Hosted images preinstall the Azure CLI, pipx, etc.;
+   a self-hosted machine has whatever was installed by hand. Walk the pipeline's
+   tasks (AzureCLI@2 → `az`, Checkov → `pipx`/`pip`, …) before pointing it at the
+   new pool.
+
 ### Prospero's Responsibilities
 
 1. **Create and maintain all CI/CD pipelines** across Azure DevOps organizations
