@@ -354,7 +354,7 @@ run, fail, and be ignored, or the PR can merge before it finishes.
 
 Self-hosted agents consume **zero** hosted minutes (each org gets one free self-hosted
 parallel job) — the standard fallback when the Microsoft-hosted free grant (1800
-min/month) runs out mid-month. Hard-won rules for running them (origin: Kiubo México
+min/month) runs out mid-month. Hard-won rules for running them (origin: the Ordovica
 deploy incident, 2026-07-25 — three separate failures in one night):
 
 1. **Disable system sleep on the agent machine.** A napping agent drops mid-job with
