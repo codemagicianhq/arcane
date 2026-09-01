@@ -593,6 +593,31 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     Patch bump (`0.29.1` → `0.29.2`, content update to existing docs, no new component).
     **Done:** [PR #150](https://github.com/codemagicianhq/arcane/pull/150) merged 2026-08-31 via
     rebase.
+  - [x] **(b) Batch B — done 2026-08-31.** 9 governance docs annotated: `authentication-strategy.md`
+    (8 clustered annotation points, all advisory), `hardening-checklist.md` (1 document-level
+    statement covering ~40 checklist items — decorating each individually would have been pure noise
+    given uniform advisory content), `threat-model.md` (6 rules, all advisory), `records-
+    conventions.md` (7 rules, all advisory), `naming-conventions.md` (5 rules, all advisory),
+    `agent-work-queue-model.md` (1 document-level statement — the whole design is unbuilt/`status:
+    draft`), `agent-approved-paths.md` (10 rules, all advisory — its Discovery Rule cross-references
+    `universal-agent-rules.md` rule 20's existing classification for the same behavior rather than
+    re-deriving it), `new-business-setup.md` (6 phase-level annotations, all advisory),
+    `poc-management-pattern.md` (7 rules, all advisory — two restate rules whose canonical statement
+    lives in `agent-policies.md`, classified advisory-by-cross-reference). Unlike Batch A's docs, none
+    of these 9 use a `Rule (ID):` convention, so each dispatched agent had to first identify genuinely
+    normative statements in narrative/checklist prose and choose a sensible annotation granularity —
+    per-rule for dense rule lists, clustered or document-level for uniformly-advisory checklists.
+    Nearly everything landed on (4) explicitly advisory prose, verified rather than assumed: these 9
+    docs are almost entirely about a downstream operator's own external processes (host hardening,
+    business onboarding, naming, credential storage) outside anything Arcane's own CI/spells can
+    observe. One agent explicitly overrode a classification hint it was given (that
+    `poc-management-pattern.md`'s promotion checklist was "the most likely structured-spell-gate
+    candidate") after verifying no spell actually gates it. Several agents caught and fixed CRLF
+    line-ending corruption introduced by their own edits before declaring root-mirror parity. No test
+    file exists for any of these 9 docs — full suite confirmed unaffected (995 passed, 2 skipped).
+    Patch bump (`0.29.2` → `0.29.3`, content update to existing docs, no new component).
+    **Done:** [PR #151](https://github.com/codemagicianhq/arcane/pull/151) merged 2026-08-31 via
+    rebase.
 - [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted**. Route: chain.
   Size M-L per the ADR's settled bind point.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
