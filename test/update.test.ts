@@ -14,6 +14,7 @@ import { createHash } from "node:crypto";
 import type { ArcaneManifest } from "../src/types.js";
 import { hashFile } from "../src/modules/copier.js";
 import { runGit } from "./helpers/git-fixture.js";
+import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const {
   inspectGitRepositoryMock,
@@ -68,14 +69,19 @@ const { runUpdate, resolveOrphan } = await import("../src/commands/update.js");
 const { runInit } = await import("../src/commands/init.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
-const BIN = join(process.cwd(), "dist/index.js");
+const BIN = resolveBuiltCli();
+if (!BIN) console.warn(`[update.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 const PACKAGE_VERSION = "0.1.0";
 const OLD_VERSION = "0.0.9";
 
-/** The real version the built binary uses (read from package.json). */
-const REAL_PKG_VERSION = JSON.parse(
-  await fs.readFile(join(process.cwd(), "package.json"), "utf8"),
-).version as string;
+// The version BIN itself reports -- asked directly, not read from
+// process.cwd()'s package.json. BIN may resolve to an ancestor checkout (see
+// resolveBuiltCli) whose own package.json version can legitimately differ
+// from this worktree's; the built binary's notion of "current version" is
+// whatever IT reports, not whatever this checkout happens to say.
+const REAL_PKG_VERSION = BIN
+  ? spawnSync("node", [BIN, "--version"], { encoding: "utf8" }).stdout.trim()
+  : "0.0.0";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -799,7 +805,7 @@ describe("spell update — handler", () => {
 
 // ─── Built binary integration tests ──────────────────────────────────────────
 
-describe("spell update — built CLI integration", () => {
+describe.skipIf(!BIN)("spell update — built CLI integration", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
@@ -811,7 +817,7 @@ describe("spell update — built CLI integration", () => {
   });
 
   it("exits 1 with helpful message when not initialized", () => {
-    const result = spawnSync("node", [BIN, "update"], {
+    const result = spawnSync("node", [BIN!, "update"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -822,7 +828,7 @@ describe("spell update — built CLI integration", () => {
   it("refuses a manifest-backed update outside a Git repository", async () => {
     await writeManifest(tmpDir);
 
-    const result = spawnSync("node", [BIN, "update"], {
+    const result = spawnSync("node", [BIN!, "update"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -835,7 +841,7 @@ describe("spell update — built CLI integration", () => {
     await writeManifest(tmpDir);
     runGit(tmpDir, ["init"]);
 
-    const result = spawnSync("node", [BIN, "update"], {
+    const result = spawnSync("node", [BIN!, "update"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -850,7 +856,7 @@ describe("spell update — built CLI integration", () => {
     commitBaseline(tmpDir);
     await fs.writeFile(join(tmpDir, "tracked.txt"), "changed");
 
-    const result = spawnSync("node", [BIN, "update"], {
+    const result = spawnSync("node", [BIN!, "update"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -877,7 +883,7 @@ describe("spell update — built CLI integration", () => {
     );
     commitBaseline(tmpDir);
 
-    const result = spawnSync("node", [BIN, "update"], {
+    const result = spawnSync("node", [BIN!, "update"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -908,7 +914,7 @@ describe("spell update — built CLI integration", () => {
 
     const result = spawnSync(
       "node",
-      [BIN, "update", "--dry-run"],
+      [BIN!, "update", "--dry-run"],
       {
         cwd: tmpDir,
         encoding: "utf8",

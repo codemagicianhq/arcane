@@ -6,8 +6,11 @@ import { join } from "node:path";
 import { INCIDENT_QUEUE, type IncidentRecord } from "../src/config/incidents.js";
 import { checkIncidentReleaseGate } from "../src/commands/doctor.js";
 import { evaluateIncidentGate } from "../src/modules/incident-gate.js";
+import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const tempDirs: string[] = [];
+const TSX = resolveTsxCli();
+if (!TSX) console.warn(`[incident-gate.test.ts] ${TSX_SKIP_REASON}`);
 
 function incident(overrides: Partial<IncidentRecord> = {}): IncidentRecord {
   return {
@@ -51,7 +54,7 @@ describe("ARC-024 incident release gate", () => {
     );
   });
 
-  it("blocks the real asset build process for the historical EF-25 fixture", async () => {
+  it.skipIf(!TSX)("blocks the real asset build process for the historical EF-25 fixture", async () => {
     const dir = await fs.mkdtemp(join(tmpdir(), "incident-build-gate-test-"));
     tempDirs.push(dir);
     const queuePath = join(dir, "incidents.json");
@@ -69,7 +72,7 @@ describe("ARC-024 incident release gate", () => {
 
     const result = spawnSync(
       process.execPath,
-      [join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs"), "scripts/copy-assets.ts"],
+      [TSX!, "scripts/copy-assets.ts"],
       {
         cwd: process.cwd(),
         encoding: "utf8",

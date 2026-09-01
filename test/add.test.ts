@@ -11,12 +11,14 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 // ─── Module under test ────────────────────────────────────────────────────────
 const { runAdd } = await import("../src/commands/add.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
-const BIN = join(process.cwd(), "dist/index.js");
+const BIN = resolveBuiltCli();
+if (!BIN) console.warn(`[add.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 const PACKAGE_VERSION = "0.1.0";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -224,7 +226,7 @@ describe("spell add — handler", () => {
 
 // ─── Built binary tests (integration) ─────────────────────────────────────────
 
-describe("spell add — built CLI integration", () => {
+describe.skipIf(!BIN)("spell add — built CLI integration", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
@@ -236,7 +238,7 @@ describe("spell add — built CLI integration", () => {
   });
 
   it("exits 1 with helpful message when not initialized", () => {
-    const result = spawnSync("node", [BIN, "add", "testing-standards"], {
+    const result = spawnSync("node", [BIN!, "add", "testing-standards"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -257,7 +259,7 @@ describe("spell add — built CLI integration", () => {
       }, null, 2),
     );
 
-    const result = spawnSync("node", [BIN, "add", "totally-fake-component"], {
+    const result = spawnSync("node", [BIN!, "add", "totally-fake-component"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -282,7 +284,7 @@ describe("spell add — built CLI integration", () => {
     // Provide the src/assets dir via env var so binary resolves assets correctly
     const result = spawnSync(
       "node",
-      [BIN, "add", "testing-standards"],
+      [BIN!, "add", "testing-standards"],
       {
         cwd: tmpDir,
         encoding: "utf8",

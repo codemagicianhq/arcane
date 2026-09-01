@@ -4,9 +4,11 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runGit } from "./helpers/git-fixture.js";
+import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const tempDirs: string[] = [];
-const TSX = join(process.cwd(), "node_modules", "tsx", "dist", "cli.mjs");
+const TSX = resolveTsxCli();
+if (!TSX) console.warn(`[version-bump-gate.test.ts] ${TSX_SKIP_REASON}`);
 const GATE_SOURCE = join(process.cwd(), "scripts", "check-version-bump.ts");
 
 async function createPullRequestFixture() {
@@ -32,7 +34,7 @@ async function createPullRequestFixture() {
 }
 
 function runGate(dir: string) {
-    return spawnSync(process.execPath, [TSX, "scripts/check-version-bump.ts"], {
+    return spawnSync(process.execPath, [TSX!, "scripts/check-version-bump.ts"], {
         cwd: dir,
         encoding: "utf8",
     });
@@ -45,7 +47,7 @@ afterEach(async () => {
 });
 
 describe("distributable version bump gate", () => {
-    it("fails a PR that changes src/assets without changing package version", async () => {
+    it.skipIf(!TSX)("fails a PR that changes src/assets without changing package version", async () => {
         const dir = await createPullRequestFixture();
         await fs.mkdir(join(dir, "src", "assets"), { recursive: true });
         await fs.writeFile(join(dir, "src", "assets", "fixture.md"), "changed\n", "utf8");
@@ -59,7 +61,7 @@ describe("distributable version bump gate", () => {
         expect(result.stderr).toContain("Version bump required");
     }, 15_000);
 
-    it("passes a PR with only non-distributable changes and no version bump", async () => {
+    it.skipIf(!TSX)("passes a PR with only non-distributable changes and no version bump", async () => {
         const dir = await createPullRequestFixture();
         await fs.writeFile(join(dir, "README.md"), "# Updated fixture\n", "utf8");
         runGit(dir, ["add", "-A"]);

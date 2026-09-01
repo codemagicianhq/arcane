@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 // vitest hoists vi.mock() to avoid real stdin interaction in tests
@@ -51,7 +52,8 @@ const { runInit } = await import("../src/commands/init.js");
 
 // Assets dir pointing to src/assets/ (used in handler-level tests)
 const ASSETS_DIR = join(process.cwd(), "src/assets");
-const BIN = join(process.cwd(), "dist/index.js");
+const BIN = resolveBuiltCli();
+if (!BIN) console.warn(`[init.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 const PACKAGE_VERSION = "0.1.0";
 
 describe("spell init — handler", () => {
@@ -279,7 +281,7 @@ describe("spell init — handler", () => {
 
 // ─── Built CLI tests ─────────────────────────────────────────────────────────
 
-describe("spell init — built CLI", () => {
+describe.skipIf(!BIN)("spell init — built CLI", () => {
   // No beforeAll rebuild here, deliberately: this describe block relies on
   // dist/index.js already being current -- CI's own workflow (ci.yml) builds
   // once before running `npm test`, and a per-file rebuild was actively
@@ -294,7 +296,7 @@ describe("spell init — built CLI", () => {
   // found and fixed for copy-assets.ts's import-time rebuild. Run `npm run
   // build` yourself before `npm test` if iterating on this file locally.
   it("spell --help prints all 5 subcommands", () => {
-    const result = spawnSync("node", [BIN, "--help"], { encoding: "utf-8" });
+    const result = spawnSync("node", [BIN!, "--help"], { encoding: "utf-8" });
     expect(result.status).toBe(0);
     for (const cmd of ["init", "add", "update", "status", "uninstall"]) {
       expect(result.stdout, `Expected '${cmd}' in --help output`).toContain(
@@ -308,7 +310,7 @@ describe("spell init — built CLI", () => {
     try {
       const result = spawnSync(
         "node",
-        [BIN, "init", "--profile", "lite", "--dry-run"],
+        [BIN!, "init", "--profile", "lite", "--dry-run"],
         { cwd: tmpDir, encoding: "utf-8", timeout: 30_000 },
       );
       expect(result.status).toBe(0);
@@ -325,7 +327,7 @@ describe("spell init — built CLI", () => {
   it("spell init --profile full --dry-run exit code is 0", () => {
     const result = spawnSync(
       "node",
-      [BIN, "init", "--profile", "full", "--dry-run"],
+      [BIN!, "init", "--profile", "full", "--dry-run"],
       { cwd: tmpdir(), encoding: "utf-8" },
     );
     expect(result.status).toBe(0);

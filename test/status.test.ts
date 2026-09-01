@@ -11,6 +11,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 // ─── Mock version-check so tests never hit the network ───────────────────────
 vi.mock("../src/modules/version-check.js", () => ({
@@ -25,7 +26,8 @@ vi.mock("../src/modules/version-check.js", () => ({
 const { runStatus } = await import("../src/commands/status.js");
 const versionCheck = await import("../src/modules/version-check.js");
 
-const BIN = join(process.cwd(), "dist/index.js");
+const BIN = resolveBuiltCli();
+if (!BIN) console.warn(`[status.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 const PACKAGE_VERSION = "0.1.0";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -342,7 +344,7 @@ describe("spell status — handler", () => {
 
 // ─── Built binary integration tests ──────────────────────────────────────────
 
-describe("spell status — built CLI integration", () => {
+describe.skipIf(!BIN)("spell status — built CLI integration", () => {
   let tmpDir: string;
 
   beforeEach(async () => {
@@ -354,7 +356,7 @@ describe("spell status — built CLI integration", () => {
   });
 
   it("exits 1 with helpful message when not initialized", () => {
-    const result = spawnSync("node", [BIN, "status"], {
+    const result = spawnSync("node", [BIN!, "status"], {
       cwd: tmpDir,
       encoding: "utf8",
     });
@@ -377,7 +379,7 @@ describe("spell status — built CLI integration", () => {
     };
     await fs.writeFile(join(tmpDir, ".arcane.json"), JSON.stringify(manifest, null, 2));
 
-    const result = spawnSync("node", [BIN, "status"], {
+    const result = spawnSync("node", [BIN!, "status"], {
       cwd: tmpDir,
       encoding: "utf8",
       // Network calls will fail but that's fine — error is caught gracefully
