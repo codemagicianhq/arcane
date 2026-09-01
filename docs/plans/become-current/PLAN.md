@@ -618,6 +618,27 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     Patch bump (`0.29.2` → `0.29.3`, content update to existing docs, no new component).
     **Done:** [PR #151](https://github.com/codemagicianhq/arcane/pull/151) merged 2026-08-31 via
     rebase.
+  - [x] **(c) Batch C — done 2026-08-31.** 5 governance docs annotated: `decision-documentation-
+    standard.md` (10 annotations across 9 edits, all advisory), `rca-process-standard.md` (9 rules,
+    8 advisory/1 structured-spell-gate — its auto-commit rule cross-references `universal-agent-
+    rules.md` rule 10's existing classification rather than re-deriving it), `product-excellence-
+    standards.md` (8 annotations — 7 quality dimensions + 1 override rule, all advisory, verified
+    directly against `spell-enchant.prompt.md`/`spell-scope.prompt.md`'s own explicit "suggestions
+    engine, not a mandate" / "recommendation, not a gate" text), `development-methodology.md` (7
+    rule clusters, 5 advisory/2 structured-spell-gate — stories.json schema validation in
+    `spell-architect`/`spell-full-cycle`, and `spell-full-cycle`'s own explicit per-phase `Gate:`
+    steps), `portable-bootstrap.md` (a cross-reference note for its 9 condensed "Non-Negotiable
+    Rules" pointing to `universal-agent-rules.md` rules 1-6/10/11/15's existing classifications,
+    plus 5 more rules, all advisory). Two genuine, pre-existing doc contradictions found and
+    flagged rather than fixed (out of scope for an annotation pass): `development-methodology.md`
+    claims `spell-review` requires "a minimum of 3 issues," directly contradicted by
+    `spell-review.prompt.md`'s own current "no finding quota... never fabricate issues to hit a
+    quota" text; and `portable-bootstrap.md`'s condensed rule-10 restatement silently drops the
+    Magus+ self-commit exception. One transient pre-push test-timeout failure (confirmed zero
+    content relation via grep, non-reproducing on retry) — retried successfully. Patch bump
+    (`0.29.3` → `0.29.4`, content update to existing docs, no new component).
+    **Done:** [PR #152](https://github.com/codemagicianhq/arcane/pull/152) merged 2026-08-31 via
+    rebase.
 - [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted**. Route: chain.
   Size M-L per the ADR's settled bind point.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
