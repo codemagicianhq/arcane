@@ -49,12 +49,14 @@ Agent autonomy is gamified into ascending power levels. Each level grants broade
 | Magus     | Self-merge within approved scope (fast-forward only).                      |
 | Archmage  | Broadest autonomous authority within an approved repo.                     |
 
-Assign a default power level per agent × per repo. Human approval and commit governance still apply in interactive sessions.
+Assign a default power level per agent × per repo. **Enforcement: explicitly advisory prose (ARC-023) — no check verifies a level was assigned for every agent × repo pair.** Human approval and commit governance still apply in interactive sessions. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s execution-authority table requires exact operator approval for any interactive-context commit regardless of power level, gated by an approval-fingerprint check before `git commit` runs.**
 
 **Notes:**
 
 - Repo creation remains Spectator-level (human only), regardless of an agent's assigned power level.
 - Grant the lowest level that lets an agent do its job; promote only after an autonomous fix-verify loop is validated for that agent.
+
+**Enforcement: explicitly advisory prose (ARC-023) — both notes are operating conventions with no code check for repo-creation gating or promotion timing.**
 
 ---
 
@@ -84,19 +86,19 @@ For exactly this case, record the grant explicitly instead, in `.arcane/delegati
 }
 ```
 
-- **Explicit:** a structured, git-tracked file — not prose buried in an unrelated document.
+- **Explicit:** a structured, git-tracked file — not prose buried in an unrelated document. **Enforcement: explicitly advisory prose (ARC-023) — nothing prevents an ad hoc delegation from still being written as free prose elsewhere; using this file is a recommended convention, not a checked requirement.**
 - **Listable:** `spell doctor` reads this file (when present) and reports every active delegation's
   scope and exclusion list. A missing file is a silent pass — a repo with no ad hoc grants has nothing
   to report.
 - **Revocable per repo:** revocation is the git-native act of editing or removing the entry and
-  committing — set `status` to `"revoked"` or delete the entry outright.
+  committing — set `status` to `"revoked"` or delete the entry outright. **Enforcement: executable check (ARC-023) — `checkDelegations` (`src/commands/doctor.ts`) reads `.arcane/delegations.json` and reports only entries with `status === "active"`, so a revoked entry silently drops out of `spell doctor`'s report; it verifies visibility, not the legitimacy of the scope itself.**
 - **Grants no new authority.** This mechanism does not permit anything `agent-policies.md` didn't
   already allow in principle (human execution required absent an explicit grant) — it only makes an
   existing kind of ad hoc grant explicit and discoverable instead of buried.
 - **No scaffold is shipped.** A delegation record is inherently repo-specific and starts empty for a
   fresh install — there is nothing generic to seed.
 - **Does not replace the roster-based matrix.** A repo with an installed roster still uses per-agent
-  power levels for standing authority; this is the parallel, lighter-weight path for repos without one.
+  power levels for standing authority; this is the parallel, lighter-weight path for repos without one. **Enforcement: explicitly advisory prose (ARC-023) — these notes describe the mechanism's scope; `.arcane/delegations.json` is parsed with an unchecked type assertion, not a runtime-validated schema, so nothing constrains a delegation's claimed scope or actions.**
 
 ---
 
@@ -106,7 +108,7 @@ Spawn rights are configured per agent. Use a small number of orchestrators; keep
 
 - **Orchestrators** delegate work to specialists and aggregate their results.
 - **Leaf nodes** perform a single role (development, QA, research, comms) and report results upward; they cannot spawn subagents.
-- Promote a leaf to an orchestrator only once its autonomous behavior is validated.
+- Promote a leaf to an orchestrator only once its autonomous behavior is validated. **Enforcement: explicitly advisory prose (ARC-023) — `spawn.can_spawn`/`spawn.spawnable_by` are schema-validated fields (`src/modules/agent-schema.ts`) when an agent definition declares them, but that only checks the declared value's shape; no code in this repo verifies a runtime actually honors the leaf/orchestrator split.**
 
 ---
 
@@ -120,13 +122,13 @@ Agents may integrate external tools and services through MCP (Model Context Prot
 
 **Access boundaries:** An agent may be intentionally denied access to one org/service while retaining access to another (a least-privilege split). Verify the split behaves as expected — the denied target should return an unauthorized error.
 
-**MCP change control rule:** Never enable a fully automatic write mode. Adding a new MCP server (new org, new service, new auth pattern) is a **Medium**-risk change — it requires explicit approval and a recorded decision if it changes the agent's reachable network surface.
+**MCP change control rule:** Never enable a fully automatic write mode. Adding a new MCP server (new org, new service, new auth pattern) is a **Medium**-risk change — it requires explicit approval and a recorded decision if it changes the agent's reachable network surface. **Enforcement: explicitly advisory prose (ARC-023) — `spell doctor`'s `checkMcpConfig` only validates that a configured `.mcp.json` server declares a numeric timeout; it does not check write-mode, per-agent scoping, access boundaries, or new-server change-approval.**
 
 ---
 
 ## Guiding Principle
 
-An agent is operational infrastructure. It executes defined tasks. It does not make business decisions, handle financial transactions without explicit approval, or access systems outside its defined scope.
+An agent is operational infrastructure. It executes defined tasks. It does not make business decisions, handle financial transactions without explicit approval, or access systems outside its defined scope. **Enforcement: explicitly advisory prose (ARC-023) — a framing statement of intent with no independent mechanical check; the specific prohibitions it summarizes are enforced (or not) where they recur below.**
 
 ---
 
@@ -138,7 +140,7 @@ When agents can be driven through remote channels (chat, messaging, CLI, IDE), a
 
 - A front-door orchestrator captures and triages remote requests.
 - A designated privileged executor handles high-risk runtime/config changes.
-- The orchestrator may execute low-risk documentation-only updates directly in approved paths.
+- The orchestrator may execute low-risk documentation-only updates directly in approved paths. **Enforcement: explicitly advisory prose (ARC-023) — this role split is an operating convention for remote-channel work with no code that checks it was followed.**
 
 ### Required Workflow
 
@@ -150,8 +152,8 @@ Every remote environment change follows this sequence:
 4. **Pre-change backup** — snapshot relevant config/artifacts before mutation.
 5. **Apply** — execute the scoped change (delegate high-risk to the privileged executor).
 6. **Verify** — run deterministic checks and report results.
-7. **Document** — update canonical docs (policy/runbook/journal/TODO/decisions as needed).
-8. **Commit proposal** — prepare a commit message and request explicit approval.
+7. **Document** — update canonical docs (policy/runbook/journal/TODO/decisions as needed). **Enforcement: explicitly advisory prose (ARC-023) — steps 1–7 are a general change-management sequence with no dedicated spell or check verifying each step ran.**
+8. **Commit proposal** — prepare a commit message and request explicit approval. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 8 computes an approval fingerprint from the staged diff and proposed message and requires an authenticated operator response tied to that fingerprint before `git commit` runs.**
 
 ### Risk Classes
 
@@ -175,14 +177,14 @@ Each completed remote change should preserve traceability by recording:
 - rollback reference
 - links to updated docs and the proposed/approved commit
 
-When evidence cannot be captured in a single step, queue a TODO immediately and mark the change as partially complete.
+When evidence cannot be captured in a single step, queue a TODO immediately and mark the change as partially complete. **Enforcement: explicitly advisory prose (ARC-023) — a recommended record-keeping checklist with no code that verifies any of these fields were actually captured.**
 
 ### Commit Hygiene for Remote Changes
 
 - **Author identity:** commits are authored under the human owner's identity ({OPERATOR_EMAIL}).
 - **Agent identity:** record the acting agent ({AGENT_NAME}) and the model/provider used.
-- Use Conventional Commits format: `type(scope): description`.
-- Show the full proposed commit and obtain approval before executing `git commit`.
+- Use Conventional Commits format: `type(scope): description`. **Enforcement: explicitly advisory prose (ARC-023) — these three conventions are generated by `spell-commit-work`'s message-drafting steps, but nothing rejects a commit that skips them; `git-conventions.md` itself notes the format regex is "optional — not enforced by hooks."**
+- Show the full proposed commit and obtain approval before executing `git commit`. **Enforcement: structured spell gate (ARC-023) — the same `spell-commit-work` Step 8 approval-fingerprint gate cited above.**
 
 ---
 
@@ -195,7 +197,7 @@ To reduce friction without weakening security, agents must follow this behavior 
 3. Only request operator clarification after in-scope discovery fails.
 4. Never probe paths outside approved roots.
 
-**Intent:** fail-closed on boundaries, but avoid unnecessary "no access" responses for already-approved locations.
+**Intent:** fail-closed on boundaries, but avoid unnecessary "no access" responses for already-approved locations. **Enforcement: explicitly advisory prose (ARC-023) — this discovery-before-escalation sequence and the approved-root boundary are behavioral guidance with no check in this repo verifying an agent stayed within them.**
 
 ---
 
@@ -207,11 +209,13 @@ Before meaningful autonomous work in any newly cloned repo, agents must verify c
 - `CLAUDE.md` and/or `.github/copilot-instructions.md` (agent instruction surface)
 - Any project-local contribution/architecture guidance docs
 
+**Enforcement: explicitly advisory prose (ARC-023) — `spell doctor`'s `checkSessionContinuity` verifies a different file set (`TODO.md`, `DECISIONS.md`, `ai-context/system-prompt-context.md`, `journal/.gitkeep`, for `spell-close-session`) and does not check for `README.md`/`CLAUDE.md`/contribution docs, so this bootstrap requirement has no executable backing.**
+
 ---
 
 ## Actionable Recommendation Policy
 
-Any recommendation that could lead to a **monetary cost, account creation, subscription, purchase, license, or irreversible action** must follow these guardrails.
+Any recommendation that could lead to a **monetary cost, account creation, subscription, purchase, license, or irreversible action** must follow these guardrails. **Enforcement: explicitly advisory prose (ARC-023) — this entire policy (the classification tiers, the six guardrails below, and the worked examples) depends on model judgment at generation time; no code in this repo checks that a recommendation was flagged, verified, or confirmed.**
 
 ### Classification
 
@@ -261,7 +265,7 @@ Permitted actions are agent- and deployment-specific. As a baseline, an agent ma
 - Read and write to designated business data directories when explicitly configured.
 - Read, flag, and queue operational workflows — never execute irreversible actions (fulfillment, publishing, payment) without approval.
 
-Define the concrete permitted-actions list per agent in that agent's configuration.
+Define the concrete permitted-actions list per agent in that agent's configuration. **Enforcement: explicitly advisory prose (ARC-023) — `tools.allowed`/`tools.denied` are schema-validated when present (`src/modules/agent-schema.ts`) but declaring them is optional, and nothing in this repo verifies a runtime actually restricts an agent to its declared list.**
 
 ---
 
@@ -275,6 +279,8 @@ Define the concrete permitted-actions list per agent in that agent's configurati
 - Modifying security-relevant configuration without human approval.
 - Using personal Git credentials or SSH keys — agents must use scoped, dedicated credentials.
 
+**Enforcement: explicitly advisory prose (ARC-023) — this deny list describes deployment/runtime hardening expectations; no check in this repo's own code observes agent process privileges, filesystem access, or credential usage at execution time.**
+
 ---
 
 ## Escalation Rules
@@ -286,11 +292,13 @@ If an agent encounters a situation outside its defined parameters, it should:
 3. Queue for human review.
 4. Not attempt to resolve ambiguity autonomously.
 
+**Enforcement: explicitly advisory prose (ARC-023) — a behavioral sequence with no code that verifies an agent actually stopped, logged, or queued for review.**
+
 ---
 
 ## Branch Discipline
 
-**Agents must never commit directly to main.** All work happens on topic branches. This prevents collisions when multiple agents or human operators work in parallel.
+**Agents must never commit directly to main. Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 1 checks the current branch and stops before staging or committing if `main`/`master` is checked out against a usable remote, requiring a compliant topic branch first.** All work happens on topic branches. This prevents collisions when multiple agents or human operators work in parallel.
 
 **Required workflow for all agents:**
 
@@ -302,7 +310,7 @@ If an agent encounters a situation outside its defined parameters, it should:
 
    Example: `lafayette/feat/api-endpoint`, `merlin/docs/architecture-update`
 
-2. **Commit** with proper attribution (author identity + required trailers per your git conventions).
+2. **Commit** with proper attribution (author identity + required trailers per your git conventions). **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Steps 1, 4.5, and 8 gate this: Step 1's branch guard, Step 4.5's loader-validated execution-authority check, and Step 8's approval-fingerprint requirement before `git commit` executes.**
 
 3. **Sync with main before opening a PR** — always fetch and rebase on the latest `origin/main` before pushing or creating a PR, even if you think no one else has merged:
 
@@ -313,21 +321,21 @@ If an agent encounters a situation outside its defined parameters, it should:
    # If rebase is unrecoverable: git rebase --abort, report to operator
    ```
 
-   **Rule:** Never open a PR against a base that is ahead of your branch. Never push a branch with unresolved conflicts. Resolve locally — the PR must be clean and CI-green before review.
+   **Rule:** Never open a PR against a base that is ahead of your branch. Never push a branch with unresolved conflicts. Resolve locally — the PR must be clean and CI-green before review. **Enforcement: structured spell gate (ARC-023) — `spell-create-pull-request` Step 0's mandatory rebase guard (its Step 0.6) and `spell-commit-work` Step 9b both require a clean `git fetch origin && git rebase origin/<target>` before any PR-creation call, stopping for human resolution on conflict.**
 
 4. **Push the branch** to origin (after rebase).
 
 5. **Merge or queue** based on your power level — and merge by the mechanism your isolation primitive allows (ARC-028 R1):
    - **Magus+ power level, in the primary checkout:** self-merge via `git merge --ff-only`, push main, delete branch.
    - **Magus+ power level, in a linked worktree or a clone:** self-merge through the platform's PR merge instead. The authority is identical; only the mechanism changes, because a local ff-merge requires checking out `main` and another working tree already holds it. Power level decides *whether* you may merge without review; the isolation primitive decides *how*.
-   - **Below Magus:** push the branch, report the branch name, and queue for human merge.
+   - **Below Magus:** push the branch, report the branch name, and queue for human merge. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s execution-authority table and its Step 9 merge-authorization gate (and `spell-create-pull-request`'s Authorization Gate) resolve power level and `exec_allowed` through the EF-27 loader-validated roster before permitting self-merge; below-Magus or unresolved authority always downgrades to human completion.**
 
-6. **Delete the branch** (local and remote) after merge.
+6. **Delete the branch** (local and remote) after merge. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 10 and `spell-close-session`'s branch-deletion step both require running the Same-Vantage-Point Check before a worktree-adjacent deletion; the vantage-point determination itself remains a manual judgment call, which `git-conventions.md` discloses as "not a code-level gate."**
 
 **Branch naming format:** `{agent-slug}/type/short-description`
 
 - The agent-slug prefix makes ownership obvious and prevents naming collisions.
-- Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc.
+- Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an agent branch name against this format (unlike session-branch naming, which `spell-open-session` does check).**
 
 **What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry — **from the primary checkout**, since this block checks out `main`:
 
@@ -350,8 +358,8 @@ When more than one agent may work in the same repository simultaneously:
 4. **Append-only progress logs.** Never overwrite or truncate `features/{id}-{slug}/progress.txt`. Use `>>`, not `>`.
 5. **Story ownership.** Only the agent assigned to a feature modifies that feature's `stories.json`. If the assigned agent does not match your slug, halt and report.
 6. **No cross-repo mutations without coordination.** If a story requires changes in two repos, complete and push one before starting the second. Never hold uncommitted changes across two repos simultaneously.
-7. **Merge window.** When two agents have PRs open for the same repo, the first to merge wins; the second must rebase before merging. The operator coordinates merge order if there are conflicts.
-8. **Working-tree vantage point (EF-33 / ARC-028 R7) — applies even to a solo agent, not only when multiple agents are active.** Listed here because it's the working-tree/multi-primitive dimension ARC-028 R7 defines, not because the hazard requires a second agent: a lone agent working through a bridged/remote mount hits the identical near-miss. All linked worktrees share one physical `.git` and `.git/config` — treat config-mutating operations as fleet-wide, not scoped to the worktree that ran them. Before any `git worktree prune`, `worktree remove`, `gc`, or branch deletion, confirm the target path from the *current process's own filesystem* (not just Git's own report) — a repository or its linked worktrees reached through a bridged/remote mount can report a live, healthy worktree as safe to prune with no error distinguishing "confirmed absent" from "not resolvable from here." See [governance/git-conventions.md](git-conventions.md) Same-Vantage-Point Check section for the full procedure, including how to establish that your own vantage point is trustworthy before relying on it.
+7. **Merge window.** When two agents have PRs open for the same repo, the first to merge wins; the second must rebase before merging. The operator coordinates merge order if there are conflicts. **Enforcement: explicitly advisory prose (ARC-023) — items 1-7 are multi-agent coordination conventions (branch/folder/story ownership, staleness checks, append-only logs, cross-repo sequencing, merge order) with no code in this repo that checks another agent honored them.**
+8. **Working-tree vantage point (EF-33 / ARC-028 R7) — applies even to a solo agent, not only when multiple agents are active.** Listed here because it's the working-tree/multi-primitive dimension ARC-028 R7 defines, not because the hazard requires a second agent: a lone agent working through a bridged/remote mount hits the identical near-miss. All linked worktrees share one physical `.git` and `.git/config` — treat config-mutating operations as fleet-wide, not scoped to the worktree that ran them. Before any `git worktree prune`, `worktree remove`, `gc`, or branch deletion, confirm the target path from the *current process's own filesystem* (not just Git's own report) — a repository or its linked worktrees reached through a bridged/remote mount can report a live, healthy worktree as safe to prune with no error distinguishing "confirmed absent" from "not resolvable from here." See [governance/git-conventions.md](git-conventions.md) Same-Vantage-Point Check section for the full procedure, including how to establish that your own vantage point is trustworthy before relying on it. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 10 and `spell-close-session`'s worktree-deletion step both require running this check before a worktree-adjacent branch/worktree deletion; the vantage-point determination itself stays a manual judgment call, which `git-conventions.md`'s own Same-Vantage-Point Check section calls "a standing operational caution, not a code-level gate."**
 
 ---
 
@@ -370,7 +378,7 @@ When producing planning artifacts (PRD, architecture, stories.json, UX specs), a
 - The root of a code repo (e.g. alongside `src/`).
 - Temporary or unversioned locations.
 
-Planning artifacts are the reproducible source of truth — code can be regenerated from them. They must live in a git-tracked, governed location.
+Planning artifacts are the reproducible source of truth — code can be regenerated from them. They must live in a git-tracked, governed location. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo verifies where a PRD, architecture doc, or `stories.json` was actually written.**
 
 ---
 
@@ -392,6 +400,8 @@ Agents must place artifacts in the correct repository. Misrouting (e.g. code in 
 3. **Delegation must include the target repo.** When an orchestrator delegates work, the delegation message must specify which repo the work targets. If ambiguous, ask the operator before delegating.
 4. **POC code** without a permanent home should go in an operator-designated repo or a new repo — never in the docs repo by default.
 
+**Enforcement: explicitly advisory prose (ARC-023) — these routing rules depend on the acting agent's own judgment about repo fit; nothing in this repo checks that an artifact landed in the repo this section prescribes.**
+
 ---
 
 ## PR Notification & Hygiene
@@ -404,21 +414,23 @@ Agents creating pull requests must ensure the operator is aware and that PRs do 
 2. **PR title** follows Conventional Commits format: `type(scope): description`.
 3. **PR description** must include: summary of changes, rationale, verification steps, and any linked work item ID.
 
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-create-pull-request` generates a title and description in this shape by default, but nothing rejects a PR opened without one.**
+
 ### PR Notification
 
-When an agent creates or updates a PR, notify the operator (routed through the orchestrator) with: repo name, PR link, work item ID (if any), and a one-line summary.
+When an agent creates or updates a PR, notify the operator (routed through the orchestrator) with: repo name, PR link, work item ID (if any), and a one-line summary. **Enforcement: explicitly advisory prose (ARC-023) — no check confirms the operator was actually notified.**
 
 ### PR Hygiene Cadence
 
-- **At the start of every session:** list all open PRs across repos; flag PRs older than 3 days as stale.
-- **7-day threshold:** PRs open longer than 7 days without activity are flagged for closure. The operator decides whether to merge, update, or abandon.
-- **After merge:** the merging actor (agent or human) deletes the source branch (local and remote).
+- **At the start of every session:** list all open PRs across repos; flag PRs older than 3 days as stale. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s "Open PRs" step lists open PRs and flags them stale/overdue at these exact thresholds, though only when tracking mode is external/ADO and ADO MCP is available — it is not universal across every provider/session.**
+- **7-day threshold:** PRs open longer than 7 days without activity are flagged for closure. The operator decides whether to merge, update, or abandon. **Enforcement: structured spell gate (ARC-023) — the same `spell-open-session` step above flags PRs older than 7 days as overdue in the same pass.**
+- **After merge:** the merging actor (agent or human) deletes the source branch (local and remote). **Enforcement: structured spell gate (ARC-023) — the same `spell-commit-work` Step 10 / `spell-close-session` branch-deletion mechanism cited under Branch Discipline.**
 
 ---
 
 ## Hardening Baseline (Policy)
 
-This section defines the minimum hardening policy baseline for production operations. It is normative for runbooks and future automation.
+This section defines the minimum hardening policy baseline for production operations. It is normative for runbooks and future automation. **Enforcement: explicitly advisory prose (ARC-023) — every deny/allow list and hardening principle below describes deployment/runtime configuration for wherever an agent actually executes; this repository's own CLI code does not run agents or observe their runtime privileges, network exposure, or filesystem access, so none of it is independently checked here.**
 
 ### Execution Restriction Baseline
 
