@@ -19,6 +19,8 @@ import {
   installHook,
   isHookInstalled,
   removeHook,
+  installClosedPrWarningHook,
+  isClosedPrWarningHookInstalled,
 } from "../src/modules/push-safety.js";
 
 /**
@@ -417,7 +419,62 @@ describe("generic multi-hook support (ARC-037 decision 2)", () => {
   });
 });
 
+describe("closed-PR push warning (ARC-035 decision 4)", () => {
+  it("installs successfully on a repo with no existing hook", async () => {
+    const { work } = await repoWithRemote();
+
+    const outcome = await installClosedPrWarningHook(work);
+
+    expect(outcome.status).toBe("installed");
+    expect(await isClosedPrWarningHookInstalled(work)).toBe(true);
+  });
+
+  it("is distinguished from the blocking pre-push hook, not just 'some hook exists'", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+
+    // The blocking hook occupies the "pre-push" slot; the warning hook does not.
+    expect(await isHookEnforced(work)).toBe(true);
+    expect(await isClosedPrWarningHookInstalled(work)).toBe(false);
+  });
+
+  it("replaces the blocking hook when installed into the same slot (caller's job to gate this, not this function's)", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+
+    await installClosedPrWarningHook(work);
+
+    expect(await isHookEnforced(work)).toBe(false);
+    expect(await isClosedPrWarningHookInstalled(work)).toBe(true);
+  });
+
+  it("removePrePushHook removes it too -- same generic 'pre-push' slot as the blocking hook", async () => {
+    const { work } = await repoWithRemote();
+    await installClosedPrWarningHook(work);
+
+    await removePrePushHook(work);
+
+    expect(await isClosedPrWarningHookInstalled(work)).toBe(false);
+    expect(await readHooksPath(work)).toBeUndefined();
+  });
+
+  it("the installed hook body never blocks a real push (no gh on PATH in this fixture, and the remote isn't github.com either)", async () => {
+    const { work } = await repoWithRemote();
+    await installClosedPrWarningHook(work);
+
+    const { ok } = tryPush(work);
+
+    expect(ok).toBe(true);
+  });
+});
+
 describe("awkward but legal remote configurations", () => {
+  // Every test in this block does several real git operations (fixture repo
+  // creation, remote add/rename/restore, real pushes) and was confirmed
+  // timing out at vitest's default 5000ms under full-suite contention (5 of
+  // these 6 in one run, a different 1 of them on immediate retry -- TODO.md,
+  // found 2026-09-01). None is individually slow in isolation; all six get
+  // the same margin used elsewhere in this suite for contention-prone tests.
   it("covers a remote whose name is not a legal trailing config key", async () => {
     // `my_remote` is a legal remote name but an illegal last config-key segment.
     // The flat `arcane.originalPushUrl.<remote>` key made git error, which threw
@@ -439,7 +496,7 @@ describe("awkward but legal remote configurations", () => {
     for (const remote of ["origin", "my_remote", "team.backup"]) {
       expect(tryPush(work, ["--no-verify", remote, "main"]).ok).toBe(false);
     }
-  });
+  }, 15_000);
 
   it("keeps `origin` and `Origin` apart instead of collapsing them onto one key", async () => {
     // Trailing key segments are case-INSENSITIVE, so the flat key lost one of
@@ -460,7 +517,7 @@ describe("awkward but legal remote configurations", () => {
     expect(normalize(fixtureGit(work, ["remote", "get-url", "--push", "Origin"]))).toBe(
       normalize(upper),
     );
-  });
+  }, 15_000);
 
   it("blocks BOTH urls of a mirror remote and restores both", async () => {
     // `git remote set-url --push` refuses a remote with multiple push URLs
@@ -477,7 +534,7 @@ describe("awkward but legal remote configurations", () => {
 
     await restorePushUrls(work);
     expect(configValues(work, "remote.origin.pushurl")).toHaveLength(2);
-  });
+  }, 15_000);
 
   it("does not pin a pushurl that was never there", async () => {
     // A remote with no pushurl key pushes to its fetch URL. Writing the resolved
@@ -490,7 +547,7 @@ describe("awkward but legal remote configurations", () => {
     await restorePushUrls(work);
 
     expect(configValues(work, "remote.origin.pushurl")).toEqual([]);
-  });
+  }, 15_000);
 
   it("survives a remote renamed while blocked", async () => {
     // `git remote rename` moves the whole `remote.<name>.*` section, custom keys
@@ -505,7 +562,7 @@ describe("awkward but legal remote configurations", () => {
     expect(results).toEqual([{ remote: "upstream", status: "restored" }]);
     expect(await blockedRemotes(work)).toEqual([]);
     expect(tryPush(work, ["upstream", "main"]).ok).toBe(true);
-  });
+  }, 15_000);
 
   it("does not enshrine the sentinel as the original when disabled twice", async () => {
     const { work, bare } = await repoWithRemote();
@@ -517,7 +574,7 @@ describe("awkward but legal remote configurations", () => {
     expect(fixtureGit(work, ["remote", "get-url", "--push", "origin"]).replace(/\\/g, "/")).toBe(
       bare.replace(/\\/g, "/"),
     );
-  });
+  }, 15_000);
 });
 
 describe("push URLs configured outside this repository", () => {

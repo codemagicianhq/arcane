@@ -21,6 +21,7 @@ import {
 import { runAgentsInit } from "../modules/agents.js";
 import {
   installPrePushHook,
+  installClosedPrWarningHook,
   disablePushUrls,
   describeConfigScope,
   ARCANE_HOOKS_DIR,
@@ -583,6 +584,33 @@ export async function runInit(
           `The manifest records push_policy: "${push_policy}", but this repository may not actually be ` +
           "protected. Run `spell doctor` to see exactly what is and isn't in place.",
       );
+    }
+  }
+
+  // ── Closed-PR push warning (ARC-035 decision 4) ─────────────────────────
+  // Every tier except "blocked" gets this: a "blocked" repo already refuses
+  // every push outright and has no use for a warning about which PR it
+  // would have gone to (installing here would also silently downgrade that
+  // stronger control, since both share the "pre-push" hook slot). Wrapped
+  // the same way as the blocks above -- a failure here must not surface as
+  // a raw stack trace after "Initialized successfully".
+  if (push_policy !== "blocked") {
+    try {
+      const hook = await installClosedPrWarningHook(targetDir);
+      if (hook.status === "installed") {
+        printInfo("Installed a pre-push hook that warns when the current branch's PR is already closed or merged.");
+      }
+      // Other outcomes (refused-*, already-ours) mirror the blocking hook's
+      // own install path and are silent here on purpose: this hook is a
+      // convenience warning, not a security control, so a refusal doesn't
+      // leave the repository in a worse-than-before state the way a silently
+      // skipped block would -- `spell doctor` still surfaces the refusal
+      // reason for the shared hooks-path collision case.
+    } catch {
+      // Never let this convenience warning's own failure surface as a raw
+      // stack trace after "Initialized successfully" -- it is strictly
+      // additive, so a failure here means the repo is exactly as protected
+      // as it was before this block ran, not less.
     }
   }
 

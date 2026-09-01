@@ -80,23 +80,45 @@ export function createOrgTokenRules(tokens: string[]): DenylistRule[] {
   return createDenylistRules(tokens, "org-token");
 }
 
-export async function scanPromptDirectory(
-  promptsDir: string,
+/**
+ * Scans every file matching `extension` directly inside `dir` (non-recursive)
+ * for org tokens, reporting findings under `reportedPrefix/{name}` rather
+ * than `dir`'s own (possibly absolute, possibly differently-rooted) path.
+ *
+ * Generalized from the original prompts-only `scanPromptDirectory` so a
+ * second `src/assets/` directory shipping the same way -- `.github/
+ * instructions/*.instructions.md` -- can reuse the same scan rather than a
+ * second hand-copied loop (found missing entirely: MEDIUM gap, TODO.md,
+ * 2026-08-31 BC-06 -- a full `github.com/codemagicianhq/arcane` URL shipped
+ * in `agent-output.instructions.md` undetected because instructions files
+ * were never in the scanned set at all).
+ */
+export async function scanDirectoryByExtension(
+  dir: string,
+  extension: string,
+  reportedPrefix: string,
   rules: DenylistRule[],
 ): Promise<DenylistFinding[]> {
   const findings: DenylistFinding[] = [];
   let names: string[];
   try {
-    names = (await readdir(promptsDir)).filter((name) => name.endsWith(".prompt.md"));
+    names = (await readdir(dir)).filter((name) => name.endsWith(extension));
   } catch {
     return findings;
   }
 
   for (const name of names) {
     findings.push(
-      ...(await scanFile(join(promptsDir, name), `.github/prompts/${name}`, rules)),
+      ...(await scanFile(join(dir, name), `${reportedPrefix}/${name}`, rules)),
     );
   }
 
   return findings;
+}
+
+export async function scanPromptDirectory(
+  promptsDir: string,
+  rules: DenylistRule[],
+): Promise<DenylistFinding[]> {
+  return scanDirectoryByExtension(promptsDir, ".prompt.md", ".github/prompts", rules);
 }

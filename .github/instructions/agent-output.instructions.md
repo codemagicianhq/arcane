@@ -61,8 +61,8 @@ stale number is invisible until someone tries.
 - **Spell prompts and instructions this framework ships**
   (`.github/prompts/*.prompt.md`, `.github/instructions/*.md`): **plain text only —
   cite the bare ID, no link at all** (`ARC-035`, not `[ARC-035](...)`). A full
-  canonical URL is *also* unsafe here, not just a same-repo link: it bakes
-  `github.com/codemagicianhq/arcane` — this project's own org and repo name — into
+  canonical URL is *also* unsafe here, not just a same-repo link: it bakes a literal
+  `github.com/{GITHUB_ORG}/{REPO_NAME}` — this project's own org and repo name — into
   content the org-token portability gate (`scripts/org-token-lint.ts`, D2 in
   `spell-authoring-standards.md`) exists specifically to keep out of distributed
   spells. **Confirmed live 2026-08-31 (BC-06):** the build's `Org-token lint` failed
@@ -90,8 +90,8 @@ missing one. The first fix replaced it with a same-repo wiki-link to this repo's
 `DECISIONS.md` — itself the exact cross-repo defect this section warns about
 (`DECISIONS.md` doesn't ship). The second fix replaced that with a full canonical
 URL, which held up locally but failed the build's org-token portability gate: a
-`github.com/codemagicianhq/arcane` URL bakes this project's own org into a file the
-gate treats as distributed content (see Doc-ID Link Format above). Settled on the
+literal `github.com/{GITHUB_ORG}/{REPO_NAME}` URL bakes this project's own org into a
+file the gate treats as distributed content (see Doc-ID Link Format above). Settled on the
 bare ID — the gate's own documented safe form.
 
 When completing a PR via `az repos pr update`, do **not** pass `--squash true`. The correct command:

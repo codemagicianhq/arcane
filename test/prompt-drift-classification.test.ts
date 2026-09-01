@@ -88,29 +88,43 @@ describe("self-host parity gate", () => {
         expect(workflow).toContain("run: npm run check:self-host-parity");
     });
 
-    it("ignores line-ending-only differences", async () => {
-        const { root, assets } = await createParityFixture();
-        const outputPath = join(root, DRIFT_FIXTURE);
-        const content = await fs.readFile(outputPath, "utf8");
-        await fs.writeFile(outputPath, content.replace(/\r\n?|\n/g, "\r\n"), "utf8");
+    it(
+        "ignores line-ending-only differences",
+        async () => {
+            const { root, assets } = await createParityFixture();
+            const outputPath = join(root, DRIFT_FIXTURE);
+            const content = await fs.readFile(outputPath, "utf8");
+            await fs.writeFile(outputPath, content.replace(/\r\n?|\n/g, "\r\n"), "utf8");
 
-        const result = await runSelfHostParity("check", root, assets);
+            const result = await runSelfHostParity("check", root, assets);
 
-        expect(result.drifted).toEqual([]);
-    });
+            expect(result.drifted).toEqual([]);
+        },
+        // createParityFixture() does a full recursive fs.cp of src/assets/
+        // (158+ files) plus a real runSelfHostParity("fix", ...) inside the
+        // fixture itself; the default 5s margin is too tight under
+        // full-suite contention. Confirmed timing out here specifically
+        // (TODO.md, found 2026-09-01), same class already fixed in
+        // update.test.ts's two heaviest tests.
+        15_000,
+    );
 
-    it("repairs drift only in explicit fix mode", async () => {
-        const { root, assets } = await createParityFixture();
-        const outputPath = join(root, DRIFT_FIXTURE);
-        await fs.writeFile(outputPath, "stale content\n", "utf8");
+    it(
+        "repairs drift only in explicit fix mode",
+        async () => {
+            const { root, assets } = await createParityFixture();
+            const outputPath = join(root, DRIFT_FIXTURE);
+            await fs.writeFile(outputPath, "stale content\n", "utf8");
 
-        const result = await runSelfHostParity("fix", root, assets);
+            const result = await runSelfHostParity("fix", root, assets);
 
-        expect(result.repaired).toEqual([DRIFT_FIXTURE]);
-        await expect(fs.readFile(outputPath, "utf8")).resolves.toBe(
-            await fs.readFile(join(assets, DRIFT_FIXTURE), "utf8"),
-        );
-    });
+            expect(result.repaired).toEqual([DRIFT_FIXTURE]);
+            await expect(fs.readFile(outputPath, "utf8")).resolves.toBe(
+                await fs.readFile(join(assets, DRIFT_FIXTURE), "utf8"),
+            );
+        },
+        15_000, // same createParityFixture() cost as the test above.
+    );
 });
 
 describe("spell-check-drift classification contract", () => {

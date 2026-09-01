@@ -7,6 +7,7 @@ import {
 } from "../src/modules/git.js";
 import { checkPullRebase } from "../src/commands/doctor.js";
 import { isSecretsPrecommitHookInstalled } from "../src/modules/secrets-scan.js";
+import { isClosedPrWarningHookInstalled } from "../src/modules/push-safety.js";
 import { createFixtureDir, runGit as fixtureGit } from "./helpers/git-fixture.js";
 
 // This file deliberately does NOT mock src/modules/git.js -- these tests
@@ -363,6 +364,10 @@ describe("runInit — end-to-end git-state wiring (real git)", () => {
     // ARC-037 decision 2: installed unconditionally, unlike the pre-push
     // hook -- this profile never asks the push_policy question at all.
     expect(await isSecretsPrecommitHookInstalled(dir)).toBe(true);
+    // ARC-035 decision 4: push_policy is undefined here (never asked), and
+    // undefined !== "blocked", so this repo gets the closed-PR warning hook
+    // -- the same tier every guarded/open/unset repo gets.
+    expect(await isClosedPrWarningHookInstalled(dir)).toBe(true);
 
     vi.doUnmock("@inquirer/prompts");
     vi.resetModules();
