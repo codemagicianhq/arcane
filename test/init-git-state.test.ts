@@ -6,6 +6,7 @@ import {
   ensureLocalPullRebase,
 } from "../src/modules/git.js";
 import { checkPullRebase } from "../src/commands/doctor.js";
+import { isSecretsPrecommitHookInstalled } from "../src/modules/secrets-scan.js";
 import { createFixtureDir, runGit as fixtureGit } from "./helpers/git-fixture.js";
 
 // This file deliberately does NOT mock src/modules/git.js -- these tests
@@ -359,6 +360,9 @@ describe("runInit — end-to-end git-state wiring (real git)", () => {
 
     expect(fixtureGit(dir, ["symbolic-ref", "--short", "HEAD"])).toBe("main");
     expect(fixtureGit(dir, ["config", "--local", "--get", "pull.rebase"])).toBe("true");
+    // ARC-037 decision 2: installed unconditionally, unlike the pre-push
+    // hook -- this profile never asks the push_policy question at all.
+    expect(await isSecretsPrecommitHookInstalled(dir)).toBe(true);
 
     vi.doUnmock("@inquirer/prompts");
     vi.resetModules();

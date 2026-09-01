@@ -16,6 +16,9 @@ import {
   blockedRemotes,
   DISABLED_PUSH_URL,
   ARCANE_HOOKS_DIR,
+  installHook,
+  isHookInstalled,
+  removeHook,
 } from "../src/modules/push-safety.js";
 
 /**
@@ -365,6 +368,52 @@ describe("hook-manager collision guard (R7)", () => {
     fixtureGit(work, ["config", "--local", "core.hooksPath", ".husky/_"]);
     await removePrePushHook(work);
     expect((await readHooksPath(work))?.value).toBe(".husky/_");
+  });
+});
+
+describe("generic multi-hook support (ARC-037 decision 2)", () => {
+  it("installs a hook under an arbitrary name, not just pre-push", async () => {
+    const { work } = await repoWithRemote();
+
+    const outcome = await installHook(work, "pre-commit", "#!/bin/sh\necho hi\n");
+
+    expect(outcome.status).toBe("installed");
+    expect(await isHookInstalled(work, "pre-commit", "#!/bin/sh\necho hi\n")).toBe(true);
+    await expect(fs.access(await hookFilePath(work, "pre-commit"))).resolves.toBeUndefined();
+  });
+
+  it("a second Arcane hook joins the already-claimed directory rather than being refused as foreign", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+
+    const outcome = await installHook(work, "pre-commit", "#!/bin/sh\necho hi\n");
+
+    expect(outcome.status).toBe("installed");
+    // Both hooks now live side by side under the one claimed core.hooksPath.
+    expect(await isHookEnforced(work)).toBe(true);
+    expect(await isHookInstalled(work, "pre-commit", "#!/bin/sh\necho hi\n")).toBe(true);
+  });
+
+  it("removing one hook does not disable a sibling hook still installed", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    await installHook(work, "pre-commit", "#!/bin/sh\necho hi\n");
+
+    await removeHook(work, "pre-commit");
+
+    // The sibling pre-push hook, and the shared core.hooksPath claim it still
+    // needs, must survive removing a DIFFERENT hook from the same directory.
+    expect(await isHookEnforced(work)).toBe(true);
+    await expect(fs.access(await hookFilePath(work, "pre-commit"))).rejects.toThrow();
+  });
+
+  it("removing the LAST remaining hook does unclaim core.hooksPath, matching the original single-hook behavior", async () => {
+    const { work } = await repoWithRemote();
+    await installHook(work, "pre-commit", "#!/bin/sh\necho hi\n");
+
+    await removeHook(work, "pre-commit");
+
+    expect(await readHooksPath(work)).toBeUndefined();
   });
 });
 

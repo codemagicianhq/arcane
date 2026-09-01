@@ -705,7 +705,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     always understood to be governance-docs-only is a real, unresolved question this epic does not
     decide unilaterally — flagging it here rather than silently declaring total completion. If the
     broader scope applies, it is unscoped, unsized, unbatched work — a new epic, not a BC-29 sub-item.
-- [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted** (2026-09-01,
+- [x] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted** (2026-09-01,
   operator accept call — [OPERATOR-QUEUE.md Q-006](docs/plans/become-current/OPERATOR-QUEUE.md#q-006--acceptrevisereject-adr-arc-037-secret-and-org-leak-detection)).
   Route: chain, 2 batches matching the ADR's own two separate deliverables. Size M-L per the ADR's
   settled bind point.
@@ -731,11 +731,36 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     `null` threw outside its try/catch, crashing the whole `spell doctor` run). Closes TODO.md's
     EF-35; TODO:401 (instructions-dir portability-scan gap) checked and confirmed NOT subsumed by
     this batch — different rule set, stays open.
-  - [ ] **(b) Consumer-facing hook installer — not started.** The shared,
-    `push_policy`-independent hook-install path (generalizing `push-safety.ts`'s
-    install/collision-guard machinery for a Husky-independent consumer repo) plus the actual
-    installer and any new distributable `.husky/`-shipping content this needs — genuinely new
-    distributable content, unlike (a), so this batch gets its own version bump.
+  - [x] **(b) Consumer-facing hook installer — done 2026-09-01.** Generalized
+    `push-safety.ts`'s pre-push-only install/collision-guard machinery into hook-name-agnostic
+    `installHook`/`isHookInstalled`/`removeHook` (existing `installPrePushHook`/`isHookEnforced`/
+    `removePrePushHook` become thin wrappers -- unchanged behavior, verified against the full
+    existing 43-test suite plus 4 new tests for the generalization itself, including a real latent
+    bug the single-hook design would have had once two hooks share one directory: removing one hook
+    must not unclaim `core.hooksPath` out from under a sibling hook still installed there --
+    verified via `readdir`, not assumed from the hook being deleted). `secrets-scan.ts` adds
+    `installSecretsPrecommitHook`/`isSecretsPrecommitHookInstalled`/`removeSecretsPrecommitHook`
+    (hook name "pre-commit", body a static shell script invoking `spell doctor --leaks`, degrading
+    to a skip rather than blocking the commit when `spell` isn't on PATH) and wires the install into
+    `spell init` **unconditionally** -- independent of `push_policy`, per decision 2, so every
+    profile gets it regardless of the push-policy answer. **Correcting this entry's own prior
+    speculation:** no new distributable content or registry component was actually needed -- the
+    hook body is pure code, exactly like the pre-existing pre-push `HOOK_BODY`, not a shipped
+    `src/assets/` template; `check:version-bump`'s gate (scoped to `src/assets/`) does not fire, but
+    a minor bump is applied anyway since this is real new capability shipped from `src/commands/`/
+    `src/modules/`, matching (a)'s own "new CLI flag → minor" precedent. `spell uninstall` gained a
+    matching cleanup step: unlike the pre-push hook, this one installs regardless of `push_policy`,
+    so uninstall's own "refuse while push-blocked" invariant does not already guarantee nothing is
+    left behind -- without the cleanup, the hook would keep running against a project with no
+    `.arcane.json` after uninstall, since a global `spell` binary is a separate install this command
+    never touches. **Explicitly out of scope, and said so rather than silently left:** no new
+    `spell doctor` check reports the secrets pre-commit hook's own installation status (ARC-037's
+    own decision 6 frames this hook as best-effort/convenience, not a verified control the way
+    push-blocking is, so parity with `checkPushPolicy` was judged unwarranted); TODO.md's separate
+    ARC-035-decision-4 item (closed-PR push warning for `guarded`/`open` repos) is NOT closed by
+    this work -- it needs the SAME pre-push hook FILE to carry conditional logic, which is a
+    different, not-yet-designed change, though the prerequisite this batch's own generalization
+    unblocks is noted there.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
   Size L. Includes TODO.md:88 (T10) `spell update` orphan report + `--prune` — its content-hash
   prerequisite is decided by BC-11.

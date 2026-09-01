@@ -1,5 +1,16 @@
-import { describe, it, expect } from "vitest";
-import { SECRETS_RULES, SECRETS_PATTERNS } from "../src/modules/secrets-scan.js";
+import { describe, it, expect, afterEach } from "vitest";
+import { promises as fs } from "node:fs";
+import {
+  SECRETS_RULES,
+  SECRETS_PATTERNS,
+  SECRETS_PRECOMMIT_HOOK_NAME,
+  SECRETS_PRECOMMIT_HOOK_BODY,
+  installSecretsPrecommitHook,
+  isSecretsPrecommitHookInstalled,
+  removeSecretsPrecommitHook,
+} from "../src/modules/secrets-scan.js";
+import { readHooksPath, hookFilePath } from "../src/modules/push-safety.js";
+import { runGit as fixtureGit, createFixtureDir } from "./helpers/git-fixture.js";
 
 function ruleFor(label: string) {
   const rule = SECRETS_RULES.find((r) => r.label === label);
@@ -75,5 +86,69 @@ describe("other credential-shape rules", () => {
     expect(
       ruleFor("github-pat").pattern.test("ghp_abcdefghijklmnopqrstuvwxyz0123456789AB"),
     ).toBe(true);
+  });
+});
+
+describe("secrets pre-commit hook (ARC-037 decision 2 / decision 4b)", () => {
+  let dir: string | undefined;
+
+  afterEach(async () => {
+    if (dir) await fs.rm(dir, { recursive: true, force: true });
+    dir = undefined;
+  });
+
+  async function plainRepo(): Promise<string> {
+    const work = await createFixtureDir("secrets-precommit-hook-");
+    fixtureGit(work, ["init", "-b", "main"]);
+    fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
+    fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);
+    return work;
+  }
+
+  it("has a fixed, well-known hook name", () => {
+    expect(SECRETS_PRECOMMIT_HOOK_NAME).toBe("pre-commit");
+  });
+
+  it("degrades to skipping the scan, not failing the commit, when `spell` is not on PATH", () => {
+    // The hook body itself, not just the installer -- this is the actual
+    // behavior a consumer's commit hits, so it's worth pinning directly.
+    expect(SECRETS_PRECOMMIT_HOOK_BODY).toContain("command -v spell");
+    expect(SECRETS_PRECOMMIT_HOOK_BODY).toContain("exit 0");
+    expect(SECRETS_PRECOMMIT_HOOK_BODY).toContain("spell doctor --leaks");
+  });
+
+  it("installs, reports installed, and can be removed", async () => {
+    dir = await plainRepo();
+
+    const outcome = await installSecretsPrecommitHook(dir);
+
+    expect(outcome.status).toBe("installed");
+    expect(await isSecretsPrecommitHookInstalled(dir)).toBe(true);
+    await expect(fs.access(await hookFilePath(dir, "pre-commit"))).resolves.toBeUndefined();
+
+    await removeSecretsPrecommitHook(dir);
+
+    expect(await isSecretsPrecommitHookInstalled(dir)).toBe(false);
+    expect(await readHooksPath(dir)).toBeUndefined();
+  });
+
+  it("is push_policy-independent: installs with no push_policy question ever asked, unlike the pre-push hook", async () => {
+    // No manifest, no push_policy field at all -- installSecretsPrecommitHook
+    // takes no such input, which IS the point ARC-037 decision 2 makes.
+    dir = await plainRepo();
+
+    const outcome = await installSecretsPrecommitHook(dir);
+
+    expect(outcome.status).toBe("installed");
+  });
+
+  it("refuses rather than clobbering a foreign core.hooksPath, same R7 guard as the pre-push hook", async () => {
+    dir = await plainRepo();
+    fixtureGit(dir, ["config", "--local", "core.hooksPath", ".husky/_"]);
+
+    const outcome = await installSecretsPrecommitHook(dir);
+
+    expect(outcome.status).toBe("refused-foreign-hooks-path");
+    expect(await isSecretsPrecommitHookInstalled(dir)).toBe(false);
   });
 });

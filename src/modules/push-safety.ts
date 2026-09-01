@@ -1,5 +1,6 @@
 /**
- * Push safety (EF-09 / features/push-safety/PRD.md).
+ * Push safety (EF-09 / features/push-safety/PRD.md) and shared git-hooks
+ * management (ARC-037 decision 2).
  *
  * Two layered controls for a repository whose history must not reach a remote:
  * a `pre-push` hook, and disabled push URLs. Neither is tamper-proof, and the
@@ -13,6 +14,16 @@
  *     remote's URL → the hook catches it.
  * Only combining both bypasses in one command gets through, which is squarely
  * the determined-operator case this does not claim to stop.
+ *
+ * `installHook`/`isHookInstalled`/`removeHook` below are the generalized form
+ * of this module's original pre-push-only machinery: any Arcane hook (pre-push,
+ * and now the consumer-facing secrets-scan pre-commit hook) claims the SAME
+ * shared `.arcane/hooks/` directory and `core.hooksPath` slot through the SAME
+ * R7 collision-guarded path, rather than each hook re-implementing its own
+ * claim-and-refuse logic. `installPrePushHook`/`isHookEnforced`/
+ * `removePrePushHook` are now thin wrappers over the generic functions, kept
+ * for every existing caller (doctor.ts, init.ts, unblock-push.ts, uninstall.ts)
+ * and this file's own extensive test suite -- their behavior is unchanged.
  */
 import { mkdir, readFile, writeFile, chmod, access, rm, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
@@ -145,7 +156,7 @@ function isArcaneHooksPath(root: string, value: string): boolean {
   return normalize(value) === normalize(ARCANE_HOOKS_DIR);
 }
 
-const HOOK_BODY = `#!/bin/sh
+const PRE_PUSH_HOOK_BODY = `#!/bin/sh
 # Installed by Arcane because this repository's .arcane.json sets
 # push_policy: "blocked".
 #
@@ -232,11 +243,15 @@ async function repositoryRoot(cwd: string): Promise<string> {
 }
 
 /**
- * Absolute path of the hook file Arcane installs, resolved against the
- * repository top level rather than the working directory.
+ * Absolute path of a named hook file Arcane installs, resolved against the
+ * repository top level rather than the working directory. Defaults to
+ * "pre-push" -- this module's original and, until ARC-037, only hook -- so
+ * every existing single-argument call site (this file's own internals and
+ * this file's test suite) is unaffected by the generalization to other
+ * hook names.
  */
-export async function hookFilePath(cwd: string): Promise<string> {
-  return join(await repositoryRoot(cwd), ARCANE_HOOKS_DIR, "pre-push");
+export async function hookFilePath(cwd: string, hookName: string = "pre-push"): Promise<string> {
+  return join(await repositoryRoot(cwd), ARCANE_HOOKS_DIR, hookName);
 }
 
 /**
@@ -256,8 +271,8 @@ async function hooksPathValue(cwd: string): Promise<string> {
 }
 
 /**
- * Installs the pre-push hook, refusing rather than clobbering someone else's
- * hook manager (R7).
+ * Installs a named hook (its body written verbatim), refusing rather than
+ * clobbering someone else's hook manager (R7).
  *
  * `core.hooksPath` is a single exclusive slot — Git reads one directory, never
  * several — so pointing it at Arcane's directory silently disables Husky,
@@ -265,8 +280,13 @@ async function hooksPathValue(cwd: string): Promise<string> {
  * global scope. This repository's own `core.hooksPath` is `.husky/_`, running
  * lint, typecheck and the full test suite; a naive install would have turned
  * that off while appearing to add protection.
+ *
+ * Safe to call for a SECOND hook name once a first has already claimed the
+ * directory: the collision guard above only refuses a FOREIGN path, and
+ * Arcane's own already-claimed `.arcane/hooks/` is not foreign to a second
+ * Arcane hook — the two hooks share the one slot rather than racing for it.
  */
-export async function installPrePushHook(cwd: string): Promise<HookInstallOutcome> {
+export async function installHook(cwd: string, hookName: string, body: string): Promise<HookInstallOutcome> {
   const root = await repositoryRoot(cwd);
   const existing = await readHooksPath(cwd);
 
@@ -284,6 +304,8 @@ export async function installPrePushHook(cwd: string): Promise<HookInstallOutcom
   // core.hooksPath. A repository using git's DEFAULT hooks directory has no
   // such key, so taking the slot silently disabled every hook it had -- the
   // exact harm R7 names, reached by the one route R7 wasn't looking at.
+  // Only relevant on the FIRST claim: once existing is defined (ours), a
+  // second hook joining the same directory displaces nothing new.
   if (existing === undefined) {
     const displaced = await defaultHooks(cwd);
     if (displaced.length > 0) {
@@ -291,12 +313,14 @@ export async function installPrePushHook(cwd: string): Promise<HookInstallOutcom
     }
   }
 
-  const hookPath = join(root, ARCANE_HOOKS_DIR, "pre-push");
+  const hookPath = join(root, ARCANE_HOOKS_DIR, hookName);
 
-  if (existing !== undefined && (await hookBodyMatches(cwd))) return { status: "already-ours" };
+  if (existing !== undefined && (await hookFileMatches(cwd, hookName, body))) {
+    return { status: "already-ours" };
+  }
 
   await mkdir(join(root, ARCANE_HOOKS_DIR), { recursive: true });
-  await writeFile(hookPath, HOOK_BODY, "utf-8");
+  await writeFile(hookPath, body, "utf-8");
   // Git requires the hook be executable on POSIX. chmod is a no-op for the
   // owner on Windows, which is fine -- Git for Windows does not check the bit.
   await chmod(hookPath, 0o755);
@@ -305,29 +329,31 @@ export async function installPrePushHook(cwd: string): Promise<HookInstallOutcom
   return { status: "installed", path: hookPath };
 }
 
+/** Installs the pre-push hook. Thin wrapper over {@link installHook}. */
+export async function installPrePushHook(cwd: string): Promise<HookInstallOutcome> {
+  return installHook(cwd, "pre-push", PRE_PUSH_HOOK_BODY);
+}
+
 /**
- * True only if the hook is genuinely in force: the config points at Arcane's
- * directory AND the hook file actually exists there.
+ * True only if the named hook is genuinely in force: the config points at
+ * Arcane's directory AND that hook's file actually exists there with the
+ * expected body.
  *
  * Checking the config alone is a declaration check, not an enforcement check —
  * deleting the hook file leaves the config intact and pushes succeed.
  */
-export async function isHookEnforced(cwd: string): Promise<boolean> {
+export async function isHookInstalled(cwd: string, hookName: string, body: string): Promise<boolean> {
   const hooksPath = await readHooksPath(cwd);
   if (hooksPath === undefined || hooksPath.unreadable === true) return false;
   if (!isArcaneHooksPath(await repositoryRoot(cwd), hooksPath.value)) return false;
-  return hookBodyMatches(cwd);
+  return hookFileMatches(cwd, hookName, body);
 }
 
-/**
- * True when the hook file on disk is the one Arcane wrote, byte for byte.
- *
- * Existence alone is not enforcement: a zero-byte file, or one edited down to
- * `exit 0`, leaves the config pointing at a hook that blocks nothing while
- * `doctor` reports a pass. That is the same declaration-versus-enforcement
- * confusion review already found one level up, so the check compares content --
- * which `installPrePushHook` already needed for its `already-ours` decision.
- */
+/** Whether the pre-push hook is genuinely enforced. Thin wrapper over {@link isHookInstalled}. */
+export async function isHookEnforced(cwd: string): Promise<boolean> {
+  return isHookInstalled(cwd, "pre-push", PRE_PUSH_HOOK_BODY);
+}
+
 /**
  * Real hooks living in git's default directory, which taking `core.hooksPath`
  * would silently switch off. `.sample` files are git's own inert templates.
@@ -347,11 +373,20 @@ async function defaultHooks(cwd: string): Promise<string[]> {
   }
 }
 
-async function hookBodyMatches(cwd: string): Promise<boolean> {
-  const hookPath = await hookFilePath(cwd);
+/**
+ * True when a named hook file on disk is the one Arcane wrote, byte for byte.
+ *
+ * Existence alone is not enforcement: a zero-byte file, or one edited down to
+ * `exit 0`, leaves the config pointing at a hook that blocks nothing while
+ * `doctor` reports a pass. That is the same declaration-versus-enforcement
+ * confusion review already found one level up, so the check compares content --
+ * which `installHook` already needed for its `already-ours` decision.
+ */
+async function hookFileMatches(cwd: string, hookName: string, body: string): Promise<boolean> {
+  const hookPath = await hookFilePath(cwd, hookName);
   if (!(await fileExists(hookPath))) return false;
   try {
-    if ((await readFile(hookPath, "utf-8")) !== HOOK_BODY) return false;
+    if ((await readFile(hookPath, "utf-8")) !== body) return false;
   } catch {
     return false;
   }
@@ -369,12 +404,41 @@ async function hookBodyMatches(cwd: string): Promise<boolean> {
   }
 }
 
-/** Removes the hook wiring. Leaves a foreign `core.hooksPath` untouched. */
-export async function removePrePushHook(cwd: string): Promise<void> {
+/**
+ * Removes a named hook's wiring. Leaves a foreign `core.hooksPath` untouched.
+ *
+ * Only unclaims `core.hooksPath` itself once NO Arcane-installed hook remains
+ * in the shared directory: since ARC-037, `.arcane/hooks/` can hold more than
+ * one hook (pre-push and pre-commit), and removing one must not silently
+ * disable a sibling that still needs the same claimed path. Verified rather
+ * than assumed by re-listing the directory after deleting -- not by counting
+ * known hook names, which this module has no reason to enumerate.
+ */
+export async function removeHook(cwd: string, hookName: string): Promise<void> {
   const existing = await readHooksPath(cwd);
   if (existing === undefined || existing.unreadable === true) return;
-  if (!isArcaneHooksPath(await repositoryRoot(cwd), existing.value)) return;
+  const root = await repositoryRoot(cwd);
+  if (!isArcaneHooksPath(root, existing.value)) return;
   if (existing.scope !== "local" && existing.scope !== "worktree") return;
+
+  // Remove the hook file first. Leaving it behind means a later `spell init`
+  // that re-points core.hooksPath silently re-arms a block the operator
+  // lifted.
+  try {
+    await rm(await hookFilePath(cwd, hookName), { force: true });
+  } catch {
+    // Non-fatal: if core.hooksPath ends up unset below, git no longer reads
+    // this directory anyway.
+  }
+
+  const hooksDir = join(root, ARCANE_HOOKS_DIR);
+  let remaining: string[] = [];
+  try {
+    remaining = await readdir(hooksDir);
+  } catch {
+    remaining = [];
+  }
+  if (remaining.length > 0) return; // a sibling hook still needs core.hooksPath
 
   // Unset at the scope the value actually lives in. `--local` cannot touch a
   // per-worktree `config.worktree` value, so accepting worktree scope above and
@@ -386,14 +450,11 @@ export async function removePrePushHook(cwd: string): Promise<void> {
   } catch {
     // Already unset; nothing to undo.
   }
+}
 
-  // Remove the hook file too. Leaving it behind means a later `spell init` that
-  // re-points core.hooksPath silently re-arms a block the operator lifted.
-  try {
-    await rm(await hookFilePath(cwd), { force: true });
-  } catch {
-    // Non-fatal: with core.hooksPath unset, git no longer reads this directory.
-  }
+/** Removes the pre-push hook's wiring. Thin wrapper over {@link removeHook}. */
+export async function removePrePushHook(cwd: string): Promise<void> {
+  return removeHook(cwd, "pre-push");
 }
 
 /** Every configured remote name, in git's own order. */
