@@ -7,6 +7,7 @@ import {
 } from "../modules/manifest.js";
 import { stripMarkerSection } from "../modules/merger.js";
 import { isHookEnforced, blockedRemotes } from "../modules/push-safety.js";
+import { removeSecretsPrecommitHook } from "../modules/secrets-scan.js";
 
 /**
  * Runs the `spell uninstall` command.
@@ -148,6 +149,21 @@ export async function runUninstall(
   ];
   for (const file of markerFiles) {
     await stripMarkerSection(targetDir, file, { dryRun: false });
+  }
+
+  // Secrets pre-commit hook (ARC-037): installed unconditionally by `spell
+  // init` regardless of push_policy, so -- unlike the push-safety pre-push
+  // hook -- there is no push_policy invariant above already guaranteeing
+  // nothing is left behind. Without this, the hook would keep running
+  // `spell doctor --leaks` against a project that no longer has an
+  // .arcane.json to configure it, since `spell` itself is a separate global
+  // install this command never touches. Best-effort: a failure here is a
+  // leftover local convenience hook, not a reason to report uninstall itself
+  // as failed.
+  try {
+    await removeSecretsPrecommitHook(targetDir);
+  } catch {
+    // Non-fatal.
   }
 
   console.log(`\n✓ Uninstalled — ${removed} files removed.`);

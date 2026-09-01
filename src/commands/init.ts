@@ -25,6 +25,7 @@ import {
   describeConfigScope,
   ARCANE_HOOKS_DIR,
 } from "../modules/push-safety.js";
+import { installSecretsPrecommitHook } from "../modules/secrets-scan.js";
 import {
   correctUnbornMasterDefault,
   ensureLocalPullRebase,
@@ -578,6 +579,42 @@ export async function runInit(
           "protected. Run `spell doctor` to see exactly what is and isn't in place.",
       );
     }
+  }
+
+  // ── Secrets pre-commit hook (ARC-037 decision 2) ────────────────────────
+  // Deliberately push_policy-independent: every profile gets this, since
+  // credential leakage is a risk regardless of whether history may reach a
+  // remote. Mandatory, not an interactive question -- see secrets-scan.ts's
+  // own reasoning for why. Wrapped the same way as the push-safety block
+  // above: a failure here must not surface as a raw stack trace after
+  // "Initialized successfully".
+  try {
+    const hook = await installSecretsPrecommitHook(targetDir);
+    if (hook.status === "installed") {
+      printInfo("Installed a pre-commit hook that scans staged content for leaked credentials.");
+    } else if (hook.status === "refused-unreadable-config") {
+      printWarning(
+        "Did not install the secrets pre-commit hook: git could not report the current " +
+          "core.hooksPath (unreadable config, or a git too old for `--show-scope`).",
+      );
+    } else if (hook.status === "refused-default-hooks") {
+      printWarning(
+        `Did not install the secrets pre-commit hook: this repository has hooks in git's default ` +
+          `directory (${hook.hooks.join(", ")}). Setting core.hooksPath would silently stop them ` +
+          `running. Move them under \`${ARCANE_HOOKS_DIR}\` yourself and re-run.`,
+      );
+    } else if (hook.status === "refused-foreign-hooks-path") {
+      printWarning(
+        `Did not install the secrets pre-commit hook: core.hooksPath is already "${hook.existing}" ` +
+          `(${describeConfigScope(hook.scope)}), so another hook manager owns it.`,
+      );
+    }
+    // "already-ours": nothing to report, matches the prior install exactly.
+  } catch (err) {
+    printWarning(
+      `Could not install the secrets pre-commit hook: ${err instanceof Error ? err.message : String(err)}. ` +
+        "Run `spell doctor --leaks` directly to scan on demand instead.",
+    );
   }
 
   // ── Step 7: Offer agent setup (for full and lite profiles) ─────────────
