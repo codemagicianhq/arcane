@@ -15,7 +15,7 @@ Paste this entire file into any AI client (Claude web, ChatGPT, etc.) to give it
 
 **Arcane** — Operational documentation for running AI-automated businesses under {LLC_NAME} (owner: {OPERATOR_NAME}). Uses an agent runtime to automate operations across one or more ventures.
 
-**This is a documentation-only repository.** No build commands, test suites, or deployable code. Do not add automation without being asked.
+**This is a documentation-only repository.** No build commands, test suites, or deployable code. **Do not add automation without being asked. Enforcement: explicitly advisory prose (ARC-023) — no check blocks adding scripts, build tooling, or automation to this repo; compliance depends on agent judgment.**
 
 ## Environment
 
@@ -25,6 +25,8 @@ Paste this entire file into any AI client (Claude web, ChatGPT, etc.) to give it
 - **User:** a dedicated non-root user.
 
 ## Non-Negotiable Rules
+
+**Enforcement note (ARC-023):** these 9 rules are a condensed restatement of `.arcane/governance/universal-agent-rules.md` rules 1-6, 10, 11, and 15 — see that file for each rule's full text and its authoritative enforcement-mode classification; this summary does not duplicate those classifications here, to avoid a second, driftable copy of the same information.
 
 1. **Never access an encrypted or cross-OS volume you are not authorized to touch.** This rule stands as defense-in-depth regardless of encryption status.
 2. **No root commands** unless explicitly scoped and justified.
@@ -49,20 +51,20 @@ Paste this entire file into any AI client (Claude web, ChatGPT, etc.) to give it
 
 ## Where Documents Live
 
-- **Framework-managed standards:** `.arcane/governance/`. Spells reference this single installed layer; do not create a duplicate root `governance/` tree.
+- **Framework-managed standards:** `.arcane/governance/`. Spells reference this single installed layer; **do not create a duplicate root `governance/` tree. Enforcement: explicitly advisory prose (ARC-023) — no check scans a repo for a duplicate root-level `governance/` directory.**
 - **Project-owned orientation and continuity:** `README.md`, `project.md`, `TODO.md`, `DECISIONS.md`, `ai-context/`, and `journal/`. Arcane creates missing files once and preserves existing content.
 - **Project/domain documents:** use explicit descriptive paths such as `docs/`, `security/`, `infrastructure/`, or a configured business root. These add project context alongside framework standards.
-- **Overrides are not yet supported:** editing a managed `.arcane/governance/` standard can be replaced by `arcane update`. Additive project documents are safe; overriding a shipped standard requires the open customization/override model.
+- **Overrides are not yet supported:** editing a managed `.arcane/governance/` standard can be replaced by `arcane update`. Additive project documents are safe; **overriding a shipped standard requires the open customization/override model. Enforcement: explicitly advisory prose (ARC-023) — that model is still an open backlog item (not yet built), so nothing currently blocks a direct edit; `arcane update` will just overwrite it silently on the next run.**
 
 ## Research Reports
 
 Research findings (competitive analysis, technical spikes, feasibility studies — the output of the Research & Backlog Analyst role) live at `docs/research/<topic-slug>.md`, one file per report. No dedicated spell produces these: `spell-document` already proposes a target path from project structure and matches its destination directory's existing conventions — point it at `docs/research/` for investigative content, the same way it already proposes `docs/` or `.arcane/governance/` for other document types. The directory is created on first real report, not pre-seeded on `spell init`.
 
-Use this repo's standard frontmatter (below) plus one addition: `sources` — a list of what was consulted. Every claim in the body traces back to one of these or is explicitly marked speculative. Structure the body summary-first: a short **Summary** with the key findings, then **Findings** with full detail and inline citations, then an optional **Follow-ups** for anything that should become a TODO item — route those via `spell-todo`, which cross-references the report path. Throughout, distinguish **verified facts**, **reasonable inferences**, and **speculation** explicitly; don't let an inference read as a checked fact.
+Use this repo's standard frontmatter (below) plus one addition: `sources` — a list of what was consulted. **Every claim in the body traces back to one of these or is explicitly marked speculative. Enforcement: explicitly advisory prose (ARC-023) — no mechanism reads research-report prose to verify citation coverage or speculation marking.** Structure the body summary-first: a short **Summary** with the key findings, then **Findings** with full detail and inline citations, then an optional **Follow-ups** for anything that should become a TODO item — route those via `spell-todo`, which cross-references the report path. Throughout, distinguish **verified facts**, **reasonable inferences**, and **speculation** explicitly; don't let an inference read as a checked fact.
 
 ## Documentation Format
 
-Every doc uses YAML frontmatter: `title`, `audience` (human/ai/both), `last_updated`, `status` (draft/active/deprecated), `tags`. Use wiki-links (`[[filename]]`) for cross-references.
+**Every doc uses YAML frontmatter: `title`, `audience` (human/ai/both), `last_updated`, `status` (draft/active/deprecated), `tags`. Enforcement: explicitly advisory prose (ARC-023) — no schema validates these frontmatter fields on arbitrary docs; `.arcane.json` manifest validation (`src/modules/manifest.ts`) covers only installation-config fields, not document frontmatter.** Use wiki-links (`[[filename]]`) for cross-references.
 
 ## Naming Tiers
 

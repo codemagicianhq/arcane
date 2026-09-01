@@ -141,9 +141,11 @@ Child linkage rules:
 3. If the selected fallback type combination cannot be linked as parent/child in that process template, use `Related` links and prefix titles with logical level tags (for example: `[EPIC]`, `[FEATURE]`) to preserve intent.
 4. Never silently flatten hierarchy. Document fallback/link decisions in `execution-plan.md` notes.
 
+**Enforcement: explicitly advisory prose (ARC-023) — no script verifies the fallback order was followed or that `execution-plan.md` documents a link decision; compliance depends entirely on the executing agent's judgment.**
+
 ### GitHub Issues Conventions
 
-When `tracking_mode=external` and `external_provider=github`, resolve `{owner}/{repo}` from `git remote get-url origin` (or `.arcane.json`'s `github.repo` field if set) rather than assuming it matches the working directory name.
+When `tracking_mode=external` and `external_provider=github`, **resolve `{owner}/{repo}` from `git remote get-url origin` (or `.arcane.json`'s `github.repo` field if set) rather than assuming it matches the working directory name. Enforcement: explicitly advisory prose (ARC-023) — no script gates this resolution before issue-tracking commands run; a same-principle utility (`parseGitHubRemote` in `src/modules/platform-policy.ts`) exists but serves `doctor`'s branch-policy check, not this workflow.**
 
 GitHub Issues has no configurable work-item-type hierarchy the way Azure DevOps does — there is no process-template discovery step, and no equivalent to `az boards work-item-type list`. Use these substitutes instead:
 
@@ -193,6 +195,8 @@ Without this chain, agents make conflicting decisions across stories (e.g., one 
 2. Classify each as HIGH / MEDIUM / LOW severity
 3. Check for missing test coverage, architecture violations, security issues
 4. Defer unrelated findings to a backlog (don't derail the current change)
+
+**Enforcement: explicitly advisory prose (ARC-023) — no script counts or verifies findings, and `spell-review.prompt.md`'s current Rules section has superseded item 1's minimum with "no finding quota... zero findings is a valid outcome," so this minimum should be read as superseded framing, not current spell behavior.**
 
 ### Append-Only Progress
 
@@ -248,6 +252,8 @@ The Arcane story schema for autonomous implementation:
 
 If the output is missing required tracking fields, `passes`, `assignedTo`, `priority`, or `testEvidence`, it is malformed and must be regenerated.
 
+**Enforcement: structured spell gate (ARC-023) — `spell-architect` step 5a self-checks every field and must regenerate before outputting if any is missing, and `spell-full-cycle` Phase 2 independently gates on the same schema completeness before proceeding to Phase 3; no external schema-validator script exists, so the check is agent-administered, not tool-verified.**
+
 ### Story Sizing
 
 Each story must be small enough to complete in one context window:
@@ -275,7 +281,7 @@ For features that should run end-to-end with minimal human intervention, use `sp
 spell-full-cycle = spell-plan → [spell-enchant] → spell-architect → [spell-implement → spell-test → spell-review]* → spell-ship
 ```
 
-The entire pipeline runs autonomously with a single human gate at PR approval. Includes optional PRD enchantment between Plan and Architect (runs automatically if any quality dimension scores Bronze, or if `--enchant` is specified). Requires three inputs: feature description, tracking configuration (`tracking_mode` and optional `external_provider`), and target repo. In ADO mode, include the ADO work item ID; in GitHub mode, include the issue number if one already exists. Each phase has built-in quality gates that halt the pipeline on failure rather than producing garbage for downstream phases.
+The entire pipeline runs autonomously with a single human gate at PR approval. Includes optional PRD enchantment between Plan and Architect (runs automatically if any quality dimension scores Bronze, or if `--enchant` is specified). Requires three inputs: feature description, tracking configuration (`tracking_mode` and optional `external_provider`), and target repo. In ADO mode, include the ADO work item ID; in GitHub mode, include the issue number if one already exists. **Each phase has built-in quality gates that halt the pipeline on failure rather than producing garbage for downstream phases. Enforcement: structured spell gate (ARC-023) — `spell-full-cycle.prompt.md` encodes explicit per-phase `Gate:` steps (e.g., Phase 4: "If coverage is below threshold or any acceptance criterion lacks a test, loop back to Phase 3... Maximum 2 coverage-fix loops before halting"; Phase 5: "If any HIGH severity finding exists, loop back to Phase 3... Maximum 2 review-fix loops before halting") plus a human/authority gate before merge.**
 
 See [.github/prompts/spell-full-cycle.prompt.md](../.github/prompts/spell-full-cycle.prompt.md) for the complete prompt.
 
@@ -299,7 +305,7 @@ spell-plan → [spell-enchant] → spell-scope → [spell-architect → spell-im
 
 Each epic then runs through its own Spell Loop cycle (architect → implement → test → review → ship).
 
-Before starting the next epic after a major output checkpoint (execution plan, architecture + stories, full test evidence, or ship recommendation), run `spell-commit-work` to preserve progress and checkpoint branch state.
+**Before starting the next epic after a major output checkpoint (execution plan, architecture + stories, full test evidence, or ship recommendation), run `spell-commit-work` to preserve progress and checkpoint branch state. Enforcement: explicitly advisory prose (ARC-023) — `spell-full-cycle.prompt.md`'s Rules section frames this as a recommendation ("recommend running `spell-commit-work` before starting the next epic"), and nothing blocks epic-start if it is skipped.**
 
 See [.github/prompts/spell-scope.prompt.md](../.github/prompts/spell-scope.prompt.md) for the complete prompt.
 
@@ -323,7 +329,7 @@ When GitHub Copilot, Claude in VS Code, or any other interactive AI tool (not an
 
 ### Rule: Interactive tools cannot self-validate
 
-A tool that writes code **must not** also run `spell-review` on that same code. This is the same constraint that prevents Lafayette from marking his own stories as passing. Specifically:
+A tool that writes code **must not also run `spell-review` on that same code. Enforcement: explicitly advisory prose (ARC-023) — no mechanism in this repo can detect that the same agent or session both wrote and reviewed a diff (no session-identity tracking exists); GitHub's own block on self-authored `CHANGES_REQUESTED` reviews operates on GitHub account identity, not agent/session identity, and this repo routinely reuses one account for both.** This is the same constraint that prevents Lafayette from marking his own stories as passing. Specifically:
 
 - Copilot sessions count as implementation (`spell-implement` equivalent)
 - `spell-test` must be run to produce test evidence before review
