@@ -44,7 +44,7 @@ This is not a rare edge case specific to any one product; it is a structural pro
 
 The only valid evidence of a successful write is: perform the write, then reload or re-fetch through a path independent of the one that performed the write (a fresh page load, a separate read API call, a different client), then compare the observed value against intent field by field. A screenshot taken without reloading, or a success message read from the same response that carried the write, proves only that the interface accepted input — never that the input was stored.
 
-**Rule (EV-01):** Persisted state is proved by re-reading it, never by the interface that accepted it.
+**Rule (EV-01): Persisted state is proved by re-reading it, never by the interface that accepted it. Enforcement: explicitly advisory prose (ARC-023) — which read path counts as genuinely independent varies by system and is a judgment call applied case-by-case at the point of use, not a property a script can verify after the fact.**
 
 ### EV-02: A green pipeline does not mean the live system reflects the change
 
@@ -54,7 +54,7 @@ The only assertion that counts as evidence is against the actual served artifact
 
 This also cuts the other way: a live check performed in the same breath as a *confirmed-successful* deploy may legitimately still show the old state for a short window — propagation, cache invalidation, and instance rollout all take real time. A mismatch observed immediately after a successful deploy is not by itself proof the deploy failed; it is grounds to wait a short, bounded interval and re-check the served artifact again before escalating. What distinguishes this from ignoring a real failure is that the re-check still has to happen and still has to pass — the propagation window is a reason to retry the observation, never a reason to skip it.
 
-**Rule (EV-02):** A green exit status from a deploy or pipeline step is evidence that the pipeline ran, not that the live system reflects the change — verify against the served artifact itself, allowing a short, bounded propagation window before treating a fresh mismatch as failure.
+**Rule (EV-02): A green exit status from a deploy or pipeline step is evidence that the pipeline ran, not that the live system reflects the change — verify against the served artifact itself, allowing a short, bounded propagation window before treating a fresh mismatch as failure. Enforcement: explicitly advisory prose (ARC-023) — what counts as a short, bounded window versus a genuine failure depends on the specific target system and cannot be fixed as a general mechanical threshold.**
 
 ---
 
@@ -66,7 +66,7 @@ Some external tools expose their own summary of current state alongside the acti
 
 Retrying the identical automated input against a control that just silently dropped it is not a fix — it is a repeat of the same conditions that produced the drop, and it will typically produce the same silent drop again. If the input path is the problem (a field the automation can't reach correctly, a save handler that doesn't fire for scripted events, a control that requires a human-timed interaction the automation collapses), no number of retries changes that. What changes it is a different path: a human operator performing the same step by hand, since a human interacting normally exercises the code path the interface was actually built for.
 
-**Rule (EV-03):** When a console or tool's own state readout disagrees with what you intended to set, trust the readout over the action's apparent success, and hand the step to a human operator rather than retrying the same automated input blindly.
+**Rule (EV-03): When a console or tool's own state readout disagrees with what you intended to set, trust the readout over the action's apparent success, and hand the step to a human operator rather than retrying the same automated input blindly. Enforcement: explicitly advisory prose (ARC-023) — recognizing a genuine disagreement and deciding to stop and escalate are judgment calls made in the moment; this document states the discipline but does not itself implement or require a gate.**
 
 ---
 
@@ -80,7 +80,7 @@ The dangerous part is what "slightly different" does at the comparison site. Equ
 
 The fix is scope discipline: a value that will be compared verbatim carries only the characters the comparison expects, full stop. Explanation belongs in a comment beside the value's declaration, in a separate field, or in documentation — never folded into the value itself.
 
-**Rule (EV-04):** A value that will be compared elsewhere by exact string equality must never carry explanatory commentary appended or interleaved into the same string.
+**Rule (EV-04): A value that will be compared elsewhere by exact string equality must never carry explanatory commentary appended or interleaved into the same string. Enforcement: explicitly advisory prose (ARC-023) — identifying which values are comparison-critical and what counts as appended commentary is a semantic judgment about intent, not a syntactic pattern a generic mechanical check can detect across arbitrary code and data.**
 
 ### EV-05: Enumerate before you write to shared external state
 
@@ -90,7 +90,7 @@ Two operations look interchangeable at the call site but are not: an additive op
 
 The failure this produces is also delayed and displaced: whatever else depended on the value you overwrote breaks only when that other thing is next exercised, which may be long after and far away from the change that actually caused it — making the eventual failure much harder to trace back to its cause than if the destructive write had failed loudly at the time. Enumerating the current value first, before deciding what to write, is what makes the additive-vs-replace choice an informed one rather than a guess.
 
-**Rule (EV-05):** Before writing to a piece of externally-shared state you did not create and do not fully control, first enumerate its current full value, and prefer an additive operation over a create-or-replace operation whenever the system offers both.
+**Rule (EV-05): Before writing to a piece of externally-shared state you did not create and do not fully control, first enumerate its current full value, and prefer an additive operation over a create-or-replace operation whenever the system offers both. Enforcement: explicitly advisory prose (ARC-023) — recognizing which state is shared and not fully owned, and weighing additive against replace, is a case-by-case judgment about a specific external system, not a general invariant a script can verify.**
 
 ---
 
@@ -102,7 +102,7 @@ Many external systems separate the act of accepting a write from the act of refl
 
 The trap runs the other direction too, though: propagation lag is a real phenomenon, not a universal excuse, and it is easy to reach for as an explanation precisely because it requires no further investigation. Before attributing a "not found" to lag, verify the underlying resource independently, through a check that does not depend on the same status system that's reporting the problem — fetch the resource directly with a plain client, resolve a record against an independent resolver, query the actual target rather than a summary of it. If the independent check also fails, there is a real problem to fix, and lag was never the explanation. Only once the real, checkable causes are ruled out does "still propagating" become a legitimate conclusion rather than a guess dressed up as one.
 
-**Rule (EV-06):** A status of "not found" / "could not fetch" / "pending" observed immediately after submitting or registering something with an external system is often propagation lag in that system's own status reporting rather than a real failure — but before concluding it is lag, independently verify the underlying resource through a different, direct check, and only attribute the status to lag once the real, checkable causes have been ruled out.
+**Rule (EV-06): A status of "not found" / "could not fetch" / "pending" observed immediately after submitting or registering something with an external system is often propagation lag in that system's own status reporting rather than a real failure — but before concluding it is lag, independently verify the underlying resource through a different, direct check, and only attribute the status to lag once the real, checkable causes have been ruled out. Enforcement: explicitly advisory prose (ARC-023) — distinguishing genuine propagation lag from a real failure depends on judgment about the specific system involved, not a property a generic mechanical check can decide.**
 
 ---
 

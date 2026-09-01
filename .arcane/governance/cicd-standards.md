@@ -12,7 +12,7 @@ Pipeline patterns, branch policies, and deployment gates for all your projects. 
 
 ## Executive Summary
 
-- Every code repository must have a CI pipeline that runs on PR creation and merge to main.
+- Every code repository must have a CI pipeline that runs on PR creation and merge to main. **Enforcement: explicitly advisory prose (ARC-023) — prescriptive guidance for repos Prospero provisions; Arcane's own tooling does not enumerate an organization's repositories to verify each one has a CI pipeline.**
 - Branch policies enforce PR requirements: build must pass, reviewer required, work item linked.
 - Terraform changes use plan-on-PR / apply-on-merge with manual approval gates.
 - Prospero owns pipeline creation and maintenance across all repos.
@@ -39,12 +39,12 @@ Applied to all code repositories (not docs-only repos per ADR-048):
 
 | Policy | Setting | Rationale |
 |--------|---------|-----------|
-| **Require PR** | All branches → main | No direct pushes to main |
-| **Minimum reviewers** | 1 (Lince for code, Merlin for architecture) | Quality gate |
-| **Build validation** | CI pipeline must pass | No merging broken code |
-| **Work item linking** | Required (when ticketing active) | Traceability |
-| **Comment resolution** | All comments must be resolved | No ignored feedback |
-| **Merge type** | Merge (no fast-forward) or Rebase and fast-forward — Squash disallowed | Preserves per-commit attribution trailers (ARC-009 §7); see [[git-conventions#Azure DevOps PR Merge Type]] |
+| **Require PR** | All branches → main | No direct pushes to main. Enforcement: explicitly advisory prose (ARC-023) — prescriptive for consumer Azure DevOps repos; no Arcane check verifies a PR-required policy is configured. |
+| **Minimum reviewers** | 1 (Lince for code, Merlin for architecture) | Quality gate. Enforcement: explicitly advisory prose (ARC-023) — prescriptive for consumer Azure DevOps repos; no Arcane check verifies configured reviewer counts. |
+| **Build validation** | CI pipeline must pass | No merging broken code. Enforcement: explicitly advisory prose (ARC-023) — prescriptive for consumer Azure DevOps repos; no Arcane check verifies a build-validation policy is configured. |
+| **Work item linking** | Required (when ticketing active) | Traceability. Enforcement: explicitly advisory prose (ARC-023) — prescriptive for consumer Azure DevOps repos; no Arcane check verifies it. |
+| **Comment resolution** | All comments must be resolved | No ignored feedback. Enforcement: explicitly advisory prose (ARC-023) — prescriptive for consumer Azure DevOps repos; no Arcane check verifies a comment-resolution policy is configured. |
+| **Merge type** | Merge (no fast-forward) or Rebase and fast-forward — Squash disallowed | Preserves per-commit attribution trailers (ARC-009 §7); see [[git-conventions#Azure DevOps PR Merge Type]]. Enforcement: verified external platform policy (ARC-023) — `spell doctor`'s `checkPlatformBranchPolicy` (src/commands/doctor.ts, backed by src/modules/platform-policy.ts's evaluateGitHubMergePolicy/evaluateAdoMergePolicy) queries live GitHub Rulesets or Azure DevOps branch policy and verifies the effective merge methods match this ladder — a local, on-demand CLI check the operator runs, not a check wired into CI itself. |
 
 For docs-only repos (Arcane):
 - PR not required (ADR-048 allows local ff-only merge for docs)
@@ -64,7 +64,7 @@ glob, and deliberately just one entry: `docs/**`/`journal/**`/`.arcane/governanc
 directory-wide excludes would ALSO exclude any non-Markdown file a consumer happens to place in
 those directories (a build script, a manifest, tooling config) — silently violating ARC-022's own
 unconditional requirement that scripts, manifests, lockfiles, migrations, containers, and
-infrastructure always remain triggering inputs, regardless of which directory they live in. Filetype-scoping to
+infrastructure always remain triggering inputs, regardless of which directory they live in. **Enforcement: explicitly advisory prose (ARC-023) — prescriptive for the Azure DevOps template this repo ships to consumers; Arcane has no shipped `azure-pipelines.yml` file of its own to check parity against, and cannot verify a downstream repo kept the filter filetype-scoped.** Filetype-scoping to
 `**/*.md` closes that gap: only actual Markdown files are excluded, anywhere in the tree; anything
 else — including a `.md`-adjacent script — still triggers CI by default.
 
@@ -111,7 +111,7 @@ steps:
 Previously had no path filter at all — fail-safe (never misses a code change) but wasteful (a
 pure docs commit still burns a full pipeline run). Fail-safe path filter (ARC-022): the same
 filetype-scoped `**/*.md` **exclude** entry as the .NET template above — never a directory-wide
-exclude, and never an include list.
+exclude, and never an include list. **Enforcement: explicitly advisory prose (ARC-023) — prescriptive for the Azure DevOps template this repo ships to consumers; Arcane has no shipped `azure-pipelines.yml` file of its own to check parity against, and cannot verify a downstream repo kept this filter filetype-scoped.**
 
 ```yaml
 trigger:
@@ -149,7 +149,7 @@ steps:
 ### Terraform Pipeline
 
 An **include** filter is correct here, not the ARC-022 anti-pattern — but only if it's a
-**filetype** glob, not a directory-prefix one. An earlier version of this template included only
+**filetype** glob, not a directory-prefix one. **Enforcement: explicitly advisory prose (ARC-023) — prescriptive for the Azure DevOps template this repo ships to consumers; Arcane has no shipped `azure-pipelines.terraform.yml` file of its own to check parity against, and cannot verify a downstream repo kept the include filter filetype-scoped rather than directory-prefixed.** An earlier version of this template included only
 `infrastructure/terraform/**`: a directory-prefix pattern that silently misses any `.tf` file
 added *outside* that one named directory (a new `modules/**` root, a renamed infra folder) —
 exactly the "new code locations fail open" failure ARC-022 rejects, and exactly what EF-22's own
@@ -244,7 +244,7 @@ steps:
 CI skip/run decisions are based **only on changed paths** — never on commit message, author
 identity, or branch name. Do not add a *new* mechanism (a custom `docs(...)`-style commit-prefix
 convention, a bot rule, a pipeline-level check) that lets a commit opt itself out of validation by
-what it *says* rather than what it *changed*.
+what it *says* rather than what it *changed*. **Enforcement: explicitly advisory prose (ARC-023) — prescriptive guidance for Azure DevOps consumer pipelines; this repo's own `.github/workflows/ci.yml` runs unconditionally on every push/PR to `main` with no path filter at all, so it neither implements nor is bound by this pattern, and no Arcane check inspects a downstream repo's CI configuration for compliance.**
 
 Commit messages, authorship, and branch names are attacker-controlled metadata — anyone who can
 push a commit controls all three. A CI-skip mechanism keyed on any of them is a bypass primitive:
@@ -253,7 +253,7 @@ actually touched. Path-based filtering (above) is the only trust signal this rep
 recognizes, because the pipeline itself independently observes the changed paths rather than
 trusting a claim embedded in the commit.
 
-**Know the platform default, don't assume this rule alone controls it.** Azure Pipelines honors
+**Know the platform default, don't assume this rule alone controls it. Enforcement: explicitly advisory prose (ARC-023) — this paragraph discloses a residual platform-level gap; it is not a mechanism Arcane enforces.** Azure Pipelines honors
 `[skip ci]`, `[ci skip]`, `skip-checks: true`, `[skip azurepipelines]`, `[skip azpipelines]`,
 `[skip azp]`, and `***NO_CI***` in a pushed commit message **by default**, on `trigger:`-driven
 runs — this is platform behavior, not something a consumer opts into, and this governance rule
@@ -283,7 +283,7 @@ adopted exclude-based YAML triggers), a change to a new top-level code directory
 triggers the pipeline (YAML is fail-safe) but does **not** require it to pass before merge (branch
 policy is not) — the build can run, fail, and be ignored, or the PR can merge before it finishes.
 Whenever a pipeline's YAML trigger scope changes, the branch policy's own path filter (if it has
-one) must be reviewed and updated to match or be a strict superset — never left narrower.
+one) must be reviewed and updated to match or be a strict superset — never left narrower. **Enforcement: explicitly advisory prose (ARC-023) — prescriptive for consumer Azure DevOps projects; Arcane has no visibility into a downstream repo's branch-policy path-filter configuration and cannot verify the two stay aligned.**
 
 ---
 
@@ -291,9 +291,9 @@ one) must be reviewed and updated to match or be a strict superset — never lef
 
 | Environment | Gate | Who Approves |
 |-------------|------|-------------|
-| **Staging** | CI passes + PR approved | Automatic on merge |
-| **Production** | Staging verified + manual approval | Human (operator) |
-| **Terraform apply** | Plan reviewed + Checkov clean | Human (operator) |
+| **Staging** | CI passes + PR approved | Automatic on merge. Enforcement: explicitly advisory prose (ARC-023) — describes a consumer Azure DevOps pipeline's intended gating; Arcane does not verify a downstream repo's environment configuration. |
+| **Production** | Staging verified + manual approval | Human (operator). Enforcement: explicitly advisory prose (ARC-023) — describes a consumer Azure DevOps environment's approval configuration; Arcane does not verify it is actually configured. |
+| **Terraform apply** | Plan reviewed + Checkov clean | Human (operator). Enforcement: explicitly advisory prose (ARC-023) — describes a consumer Azure DevOps pipeline's manual-apply step; Arcane does not verify it is actually configured. |
 
 ---
 

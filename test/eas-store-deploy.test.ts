@@ -29,7 +29,7 @@ describe("mobile-release-standards.md: rule-index/rule-body consistency (T8/BC-2
 
     for (const id of indexIds) {
       expect(standards).toContain(`### ${id}:`);
-      expect(standards).toContain(`**Rule (${id}):**`);
+      expect(standards).toContain(`**Rule (${id}):`);
     }
   });
 
