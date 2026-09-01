@@ -35,8 +35,8 @@ Arcane separates framework-level decisions from org-specific ones using two pref
 
 - If the decision would apply to any organization using Arcane, it is `ARC-NNN`.
 - If the decision is specific to how your organization operates, it is `ADR-NNN`.
-- When uncertain, default to `ADR-NNN` in ops; promote to `ARC-NNN` later if the decision proves framework-generic.
-- Never renumber existing entries in either sequence.
+- When uncertain, default to `ADR-NNN` in ops; promote to `ARC-NNN` later if the decision proves framework-generic. **Enforcement: explicitly advisory prose (ARC-023) — whether a decision is framework-generic enough for `ARC-NNN` (this rule and the two prefix-scoping rules above) is a judgment call; no script evaluates a decision's content to confirm the chosen prefix.**
+- Never renumber existing entries in either sequence. **Enforcement: explicitly advisory prose (ARC-023) — `scripts/check-distributed-adr-references.ts` only verifies that a bare `ADR-NNN` citation resolves to a heading declared in `framework-decisions.md` (and separately flags certain `ARC-NNN`/`EF-NNN` link forms as cross-repo hazards); it never checks that numbers are sequential, unique, or never reused.**
 
 ## Problem Statement
 
@@ -64,7 +64,7 @@ Arcane separates framework-level decisions from org-specific ones using two pref
 - Rejected alternatives (2-3 bullets: what was considered but not chosen)
 - **Deep dive link** (if companion doc exists): `[[path/to/detail-doc|Display Text]]`
 
-**Keep ADRs under 20 lines** (excluding frontmatter). Longer means detail should move to companion doc.
+**Keep ADRs under 20 lines** (excluding frontmatter). Longer means detail should move to companion doc. **Enforcement: explicitly advisory prose (ARC-023) — no script measures ADR entry length in DECISIONS.md; the Quarterly Review checklist below asks a human to check for long ADRs manually.**
 
 **Naming Impact Check:** If the decision introduces, changes, or retires a name (repo, project, product, agent, service), the ADR **must** include a "Naming impact" section that:
 
@@ -72,7 +72,7 @@ Arcane separates framework-level decisions from org-specific ones using two pref
 2. Confirms no collision with other entities
 3. Identifies any docs, scripts, or prompts that reference the old name
 
-This check was added after [[governance/rcas/RCA-001-naming-collision|RCA-001]] discovered that ADR-061 named a product without checking whether the ops repo already used that name.
+This check was added after [[governance/rcas/RCA-001-naming-collision|RCA-001]] discovered that ADR-061 named a product without checking whether the ops repo already used that name. **Enforcement: explicitly advisory prose (ARC-023) — no script or spell gate verifies that an ADR introducing a new name actually contains a "Naming impact" section or performed its three checks; `spell-scry` can run the grep-and-collision check manually, but nothing requires it before such an ADR is written.**
 
 ### Tier 2: Companion Detail Docs
 
@@ -243,13 +243,13 @@ Create "Related ADRs" section at the top of every companion doc:
 - [[DECISIONS#ADR-NNN|Git SSH Authentication decision]]
 ```
 
-**Rationale:** Creates bidirectional graph edges in Obsidian visualization. Clicking an ADR shows its authentication strategy companion; the companion links back to each related ADR.
+**Rationale:** Creates bidirectional graph edges in Obsidian visualization. Clicking an ADR shows its authentication strategy companion; the companion links back to each related ADR. **Enforcement: explicitly advisory prose (ARC-023) — no script verifies that a companion doc's "Related ADRs" section reciprocates an ADR's "Deep dive" link, or that every companion doc has one at all; the Anti-Patterns section below lists forgetting this link as a known failure mode with no automated catch.**
 
 ---
 
 ## Index-Free Discovery
 
-**No DECISIONS-INDEX.md required.** Discovery happens via:
+**No DECISIONS-INDEX.md required. Enforcement: explicitly advisory prose (ARC-023) — nothing prevents creating one, and no script verifies that the four discovery methods below actually surface a given decision.** Discovery happens via:
 
 1. **Obsidian Graph View:** Visual clusters show related docs
 2. **Wiki-link navigation:** Click ADR "Deep dive" link → companion doc → "Related ADRs" → back to other ADRs
@@ -287,6 +287,8 @@ Create "Related ADRs" section at the top of every companion doc:
 - If new companion doc needed, create it first, then add "Deep dive" link in ADR
 - If existing companion doc covers it, add new section to that doc + update "Related ADRs" list
 
+**Enforcement: explicitly advisory prose (ARC-023) — none of the editorial steps above (bumping `last_updated`, extracting detail past 20 lines, adding or updating "Deep dive"/"Related ADRs" links) is checked by any script; each depends on the editor remembering to do it.**
+
 ### Quarterly Review
 
 Every 3 months:
@@ -295,6 +297,8 @@ Every 3 months:
 - [ ] Check for long ADRs (>20 lines) that should have detail extracted
 - [ ] Verify Obsidian graph shows connected clusters (no isolated decision nodes)
 - [ ] Review "Future Considerations" sections in companion docs — any re-evaluation triggers?
+
+**Enforcement: explicitly advisory prose (ARC-023) — this is a manual checklist; no script detects orphaned companion docs, measures ADR length, verifies Obsidian graph connectivity, or reminds anyone to revisit "Future Considerations" sections.**
 
 ---
 
@@ -312,6 +316,8 @@ Every 3 months:
 
 ❌ **Putting rationale in journals instead of companion docs** — Journals are chronological session logs (narrative). Companion docs are topic-indexed reference (structured). Rationale goes in companion docs, linked from journals.
 
+**Enforcement: explicitly advisory prose (ARC-023) — no lint or script detects any of the six anti-patterns above (a stray `ADR-NNN-deep-dive.md` file, duplicated content, implementation steps in a companion doc, a companion doc for a simple decision, a missing bidirectional link, or rationale left in a journal); catching them depends on the writer's or a reviewer's judgment.**
+
 ---
 
 ## Evolution of This Standard
@@ -323,6 +329,8 @@ Every 3 months:
 3. Update this file
 4. Add entry to DECISIONS.md if decision-making process itself changes
 5. Announce in relevant channels (if the team expands beyond a single operator)
+
+**Enforcement: explicitly advisory prose (ARC-023) — no script or spell gate enforces this five-step process when this standard itself changes; it depends on the editor following it by discipline.**
 
 **Versioning note:** Per-business decisions follow this pattern — business-only decisions live in `ventures/{name}/DECISIONS.md` (unnumbered or business-prefixed); system/cross-business decisions stay in the root `DECISIONS.md`.
 

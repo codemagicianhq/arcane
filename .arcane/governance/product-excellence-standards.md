@@ -25,6 +25,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Dependency identification**    | External services, APIs, and decisions the feature depends on are listed                                           |
 | **Open questions documented**    | Unresolved items are captured — not ignored or assumed                                                             |
 
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
+
 ### 2. User Experience (UX)
 
 | Criterion              | Description                                                                                         |
@@ -37,6 +39,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Onboarding flow**    | New users have a clear path from zero to first value delivered                                      |
 | **Consistency**        | UI patterns, terminology, and behavior are consistent across features                               |
 | **Micro-interactions** | Transitions, hover effects, and subtle animations provide polish without slowing users down         |
+
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
 
 ### 3. Accessibility (WCAG 2.1 AA Baseline)
 
@@ -51,6 +55,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Motion sensitivity**    | Animations respect `prefers-reduced-motion`; no content-critical motion            |
 | **Text resizing**         | UI remains usable at 200% zoom                                                     |
 
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
+
 ### 4. Performance
 
 | Criterion                                         | Description                                                                |
@@ -62,6 +68,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Bundle size**                                   | Web: initial JS bundle < 200KB gzipped; lazy-load non-critical modules     |
 | **Offline / degraded**                            | Define behavior when network is slow or unavailable (if applicable)        |
 | **Concurrent users**                              | Target number documented; load testing plan defined for > 100 concurrent   |
+
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
 
 ### 5. Security (Beyond OWASP Baseline)
 
@@ -76,6 +84,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Secret handling**        | No hardcoded secrets; all credentials via environment variables or secret store |
 | **Dependency scanning**    | Third-party packages audited for known vulnerabilities                          |
 
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
+
 ### 6. Responsive Design
 
 | Criterion                 | Description                                                           |
@@ -85,6 +95,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Layout adaptation**     | Content reflows appropriately — no horizontal scrolling on mobile     |
 | **Navigation adaptation** | Desktop nav collapses to mobile pattern (hamburger, bottom nav, etc.) |
 
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
+
 ### 7. Competitive Differentiation
 
 | Criterion                 | Description                                                                |
@@ -93,6 +105,8 @@ Define what "the best version of an app" means across every dimension — UX, ac
 | **Unique value**          | At least one feature or quality that sets this app apart from alternatives |
 | **Table-stakes coverage** | Features that users expect as standard for this category are all present   |
 | **Experience premium**    | At least one UX element that makes users think "this is well-made"         |
+
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant` scores this dimension and generates enhancement suggestions but never blocks (the user has final say per its Rules section); `spell-scope`'s Quality Quick-Check treats a Bronze score here as a recommendation, not a gate.**
 
 ---
 
@@ -160,7 +174,7 @@ If the user does not specify a profile, **Public MVP** is the default. Rationale
 | **Could-Add**    | Current score already meets or exceeds target; enhancement is aspirational |
 | **Won't-Add**    | Explicitly excluded regardless of profile                                  |
 
-**Override:** Security and Accessibility gaps are always at least Should-Add regardless of profile. A Bronze Security score is always Must-Add.
+**Override:** Security and Accessibility gaps are always at least Should-Add regardless of profile. A Bronze Security score is always Must-Add. **Enforcement: explicitly advisory prose (ARC-023) — `spell-enchant`'s own tier-assignment step and Rules section restate this override verbatim, so it is not purely aspirational text, but enforcement is still agent judgment during suggestion generation rather than a mechanical check; the user retains final approval over every addition, security and accessibility included.**
 
 ---
 

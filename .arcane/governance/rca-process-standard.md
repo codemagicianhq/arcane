@@ -27,14 +27,18 @@ An RCA is **required** when any of these occur:
 | **Implicit decision detected** | A drift check or session applied a change that had no governing ADR |
 | **Integration failure from doc mismatch** | A playbook or script failed because docs disagreed with reality |
 
+**Enforcement: explicitly advisory prose (ARC-023) — no script or drift check detects decision reversals, naming collisions, multi-file corrections, or the other trigger conditions above, or confirms an RCA was opened when one applies; recognizing a trigger and initiating an RCA depends on human or agent judgment.**
+
 An RCA is **recommended** (but optional) for:
 - Repeated confusion in sessions about the same topic
 - A TODO item that was deferred and caused downstream problems
 - Any incident where the operator says "how did we end up here?"
 
+**Enforcement: explicitly advisory prose (ARC-023) — these are softer signals than the required triggers above; no script detects them, and opening an RCA here is left to human or agent judgment.**
+
 ## RCA Template
 
-Every RCA follows this structure. Artifacts are stored in `governance/rcas/` with the filename `RCA-NNN-short-slug.md` (sequential numbering, matching the related ADR when applicable).
+**Every RCA follows this structure. Artifacts are stored in `governance/rcas/` with the filename `RCA-NNN-short-slug.md` (sequential numbering, matching the related ADR when applicable). Enforcement: explicitly advisory prose (ARC-023) — no script validates RCA filenames, sequential numbering, or template structure.**
 
 ```markdown
 ---
@@ -117,7 +121,7 @@ When a trigger condition is met:
 
 - **Corrective actions** fix the immediate problem (e.g., rename the files, revert the change)
 - **Preventive actions** change the process so the problem can't recur (e.g., add a checklist item, amend a template, update a prompt)
-- Every preventive action must reference the specific governance doc, template, or prompt it modifies
+- **Every preventive action must reference the specific governance doc, template, or prompt it modifies. Enforcement: explicitly advisory prose (ARC-023) — no script verifies that a preventive action's Target Doc cites a real, specific governance path.**
 
 ### 4. Implement and Verify
 
@@ -126,8 +130,8 @@ When a trigger condition is met:
 
 ### 5. Close
 
-- Set RCA status to `active` (RCAs remain active as reference — they are not "resolved" and deleted)
-- Link the RCA from the related ADR using a "Deep dive" wiki-link
+- **Set RCA status to `active` (RCAs remain active as reference — they are not "resolved" and deleted). Enforcement: explicitly advisory prose (ARC-023) — no script checks RCA status fields or blocks deleting an RCA file.**
+- **Link the RCA from the related ADR using a "Deep dive" wiki-link. Enforcement: explicitly advisory prose (ARC-023) — `check-distributed-adr-references.ts` validates ADR-ID references and cross-repo link hazards but does not check for a "Deep dive" backlink from the ADR.**
 - Record a note in the session journal
 
 ## Severity Levels
@@ -138,7 +142,7 @@ RCAs do not have formal severity levels. The trigger conditions above determine 
 
 - In interactive sessions: the human operator and AI agent collaborate on the RCA
 - For autonomous agent work: the agent flags the trigger condition and drafts the RCA for human review
-- RCAs are never auto-committed — they require human approval (same rule as all interactive commits per [[governance/git-conventions|Git Conventions]])
+- **RCAs are never auto-committed — they require human approval (same rule as all interactive commits per [[governance/git-conventions|Git Conventions]]). Enforcement: structured spell gate (ARC-023) — this restates universal-agent-rules.md rule 10 ("Never auto-commit during interactive sessions"), enforced by `spell-commit-work`'s Step 8, which computes an approval fingerprint over the staged diff and message and halts until an authenticated operator response is tied to it before `git commit` runs.**
 
 ## Artifact Location
 
@@ -153,5 +157,5 @@ governance/
 
 ## Maintenance
 
-- Review RCA preventive actions quarterly during `spell-check-drift` runs
-- If a preventive action proves ineffective (same class of problem recurs), update the RCA with a "Recurrence" section and strengthen the preventive action
+- **Review RCA preventive actions quarterly during `spell-check-drift` runs. Enforcement: explicitly advisory prose (ARC-023) — `spell-check-drift` has no RCA-specific detector; this cross-reference depends on the operator or agent remembering to do the review by hand.**
+- **If a preventive action proves ineffective (same class of problem recurs), update the RCA with a "Recurrence" section and strengthen the preventive action. Enforcement: explicitly advisory prose (ARC-023) — no script detects recurrence of the same class of problem; recognizing it depends on human or agent judgment.**
