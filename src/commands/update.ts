@@ -1,5 +1,6 @@
 import { join } from "node:path";
-import { copyFile, copyDirectory, fileExists } from "../modules/copier.js";
+import { readFile, writeFile, rm } from "node:fs/promises";
+import { copyFile, copyDirectory, fileExists, hashFile } from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
@@ -12,6 +13,8 @@ import {
   LEGACY_COMPONENT_MIGRATIONS,
 } from "../modules/registry.js";
 import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from "../modules/hub.js";
+import { merge3 } from "../modules/merge3.js";
+import { fetchPublishedFile } from "../modules/npm-registry.js";
 import type { ArcaneManifest, InstalledComponent, SpellUpdateOptions } from "../types.js";
 
 /**
@@ -64,6 +67,43 @@ export function migrateLegacyComponents(
   }
 
   return out;
+}
+
+export type OrphanStatus = "pruned" | "reported" | "not-found";
+
+/**
+ * Resolves one orphaned file: previously tracked, no longer part of any
+ * current component (TODO.md T10). Report-only unless `prune` is set, and
+ * even then only deletes when the on-disk content still matches the hash
+ * Arcane last recorded -- an operator edit is exactly as worth preserving
+ * here as it is in the main update loop (ARC-038 decision 1's "do not
+ * silently discard the edit" applies to deleting a file, not only
+ * overwriting one). A file with no recorded hash (predates ARC-038, or was
+ * never hashed) is reported but never auto-pruned -- there is nothing to
+ * verify it against, and guessing is not this feature's job.
+ */
+export async function resolveOrphan(
+  targetDir: string,
+  file: string,
+  recordedHash: string | undefined,
+  prune: boolean,
+): Promise<OrphanStatus> {
+  const filePath = join(targetDir, file);
+  if (!(await fileExists(filePath))) return "not-found";
+  if (!prune) return "reported";
+
+  if (recordedHash === undefined) {
+    console.log(`  ! Orphaned, not pruned (no recorded hash to verify it's untouched): ${file}`);
+    return "reported";
+  }
+  const currentHash = await hashFile(filePath);
+  if (currentHash !== recordedHash) {
+    console.log(`  ! Orphaned but edited since install — not pruning: ${file}`);
+    return "reported";
+  }
+  await rm(filePath, { force: true });
+  console.log(`  Pruned orphaned file: ${file}`);
+  return "pruned";
 }
 
 export async function runUpdate(
@@ -130,6 +170,15 @@ export async function runUpdate(
 
   let fileCount = 0;
   const updatedComponents: InstalledComponent[] = [];
+  // ARC-038 decision 1: files whose merge produced genuine conflict markers,
+  // collected across every component so the operator gets one summary at the
+  // end rather than a per-file interruption -- the update still completes
+  // for every other file either way.
+  const conflictedFiles: string[] = [];
+  // TODO.md T10: files tracked before this update that no longer belong to
+  // any current component, reported always and deleted only with --prune
+  // (and only when untouched -- see resolveOrphan).
+  const orphanReport: Array<{ file: string; status: OrphanStatus }> = [];
 
   const componentsToUpdate = migrateLegacyComponents(manifest.components);
 
@@ -140,8 +189,30 @@ export async function runUpdate(
       component = getComponent(installed.name);
     } catch (err) {
       if (err instanceof ComponentNotFoundError) {
-        // Component removed from registry — skip but preserve manifest entry
+        // Component removed from registry entirely -- every file it used to
+        // track is now orphaned, not just individually dropped ones. Report
+        // even during dry-run (that's the point of a preview); only the
+        // actual deletion is dry-run-gated, inside resolveOrphan's `prune`.
         console.log(`  ! ${installed.name} not in registry — skipping.`);
+        for (const file of installed.files) {
+          const status = await resolveOrphan(
+            targetDir,
+            file,
+            installed.fileHashes?.[file],
+            Boolean(options.prune) && !options.dryRun,
+          );
+          orphanReport.push({ file, status });
+        }
+        // Drop the manifest entry once every file it tracked is gone or was
+        // never there; otherwise keep it so a future update can retry
+        // pruning what --prune (or a hash mismatch) left behind.
+        if (
+          options.prune &&
+          !options.dryRun &&
+          installed.files.every((f) => orphanReport.find((o) => o.file === f)?.status !== "reported")
+        ) {
+          continue;
+        }
         updatedComponents.push(installed);
         continue;
       }
@@ -150,6 +221,7 @@ export async function runUpdate(
 
     // Copy files using current registry paths (handles path changes between versions)
     const updatedFiles: string[] = [];
+    const fileHashes: Record<string, string> = {};
     for (const file of component.files) {
       const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
       const targetExists = await fileExists(join(targetDir, file));
@@ -166,12 +238,50 @@ export async function runUpdate(
       }
 
       if (preserveExisting) {
+        // skipExisting keeps its pre-ARC-038 whole-file behavior unchanged --
+        // no hash tracking, no merge machinery (ARC-038 decision 1).
         console.log(`  ${options.dryRun ? "[dry-run] Would preserve" : "Preserved"}: ${file}`);
       } else if (options.dryRun) {
         console.log(`  [dry-run] Would update: ${file}`);
         fileCount++;
       } else {
-        await copyFile(srcPath, targetDir, file, { force: true });
+        const recordedHash = installed.fileHashes?.[file];
+        let handled = false;
+
+        if (recordedHash !== undefined && targetExists) {
+          const currentHash = await hashFile(join(targetDir, file));
+          if (currentHash !== recordedHash) {
+            // On-disk content no longer matches what Arcane last wrote --
+            // the operator edited this file. Do not silently discard that
+            // edit by overwriting it (ARC-038 decision 1).
+            const oldVendorContent = await fetchPublishedFile(installed.installedVersion, file);
+            if (oldVendorContent === undefined) {
+              console.log(
+                `  ! Could not fetch the previously published version of ${file} to merge your edits — left your version untouched. Update it manually if you want the latest.`,
+              );
+              handled = true;
+            } else {
+              const [currentContent, newContent] = await Promise.all([
+                readFile(join(targetDir, file), "utf-8"),
+                readFile(srcPath, "utf-8"),
+              ]);
+              const result = merge3(oldVendorContent, currentContent, newContent);
+              await writeFile(join(targetDir, file), result.content, "utf-8");
+              fileHashes[file] = await hashFile(join(targetDir, file));
+              if (result.hasConflict) {
+                conflictedFiles.push(file);
+                console.log(`  ⚠ Merge conflict in ${file} — resolve the <<<<<<< markers before committing.`);
+              } else {
+                console.log(`  Merged your edits into: ${file}`);
+              }
+              handled = true;
+            }
+          }
+        }
+
+        if (!handled) {
+          fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: true });
+        }
         fileCount++;
       }
 
@@ -191,17 +301,57 @@ export async function runUpdate(
       if (options.dryRun) {
         console.log(`  [dry-run] Would update directory: ${dir}/`);
       } else {
+        // Directory-tracked files are always freshly generated content
+        // (agent rosters, etc.), never hand-edited in place -- unconditional
+        // overwrite, same as before ARC-038, is still correct here.
         const copied = await copyDirectory(srcDirPath, targetDir, dir, { force: true });
-        updatedFiles.push(...copied);
+        for (const { path: copiedPath, hash } of copied) {
+          updatedFiles.push(copiedPath);
+          fileHashes[copiedPath] = hash;
+        }
         fileCount += copied.length;
       }
+    }
+
+    // TODO.md T10: a file this component tracked before this update but no
+    // longer does (dropped from the registry's current file/directory list)
+    // is orphaned -- still on disk, no longer represented in the manifest
+    // this update is about to write.
+    for (const file of installed.files) {
+      if (updatedFiles.includes(file)) continue;
+      const status = await resolveOrphan(
+        targetDir,
+        file,
+        installed.fileHashes?.[file],
+        Boolean(options.prune) && !options.dryRun,
+      );
+      orphanReport.push({ file, status });
     }
 
     updatedComponents.push({
       ...installed,
       files: updatedFiles,
       installedVersion: packageVersion,
+      fileHashes,
     });
+  }
+
+  // TODO.md T10: report orphans -- files tracked before this update but no
+  // longer part of any current component -- in both dry-run and real runs.
+  // Only files still present matter; anything already gone needs no action.
+  const orphansToReport = orphanReport.filter((o) => o.status !== "not-found");
+  if (orphansToReport.length > 0) {
+    const verb = options.dryRun ? "[dry-run] Found" : "Found";
+    console.log(
+      `\n${verb} ${orphansToReport.length} orphaned file(s) (tracked before this update, no longer part of any current component):`,
+    );
+    for (const { file, status } of orphansToReport) {
+      const marker = status === "pruned" ? "pruned" : options.prune ? "kept (see reason above)" : "not removed";
+      console.log(`    ${file} — ${marker}`);
+    }
+    if (!options.prune) {
+      console.log("  Run `spell update --prune` to remove the ones that are safe to delete.");
+    }
   }
 
   if (options.dryRun) {
@@ -253,6 +403,20 @@ export async function runUpdate(
   console.log(
     `\n\u2713 Updated ${fileCount} files.`,
   );
+
+  // ARC-038 decision 1: the update completes regardless of conflicts -- a
+  // conflicted file blocking every other file's update would be a worse
+  // outcome than a clearly flagged conflict the operator resolves before
+  // committing (this repository's own pre-commit/pre-push hooks, and any
+  // CI the operator has, still catch an unresolved <<<<<<< marker before it
+  // reaches main).
+  if (conflictedFiles.length > 0) {
+    console.log(
+      `\n\u26a0 ${conflictedFiles.length} file(s) have unresolved merge conflicts:\n` +
+        conflictedFiles.map((f) => `    ${f}`).join("\n") +
+        `\n  Search for "<<<<<<< yours" and resolve before committing.`,
+    );
+  }
 
   // If this update just turned the repo into a hub, offer to scaffold the
   // venture registry from whatever already exists under business_root.

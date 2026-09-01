@@ -284,6 +284,7 @@ export async function runInit(
 
   for (const component of components) {
     const installedFiles: string[] = [];
+    const fileHashes: Record<string, string> = {};
 
     for (const file of component.files) {
       const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
@@ -291,7 +292,7 @@ export async function runInit(
         printDryRun(`Would copy: ${file}`);
       } else {
         try {
-          await copyFile(srcPath, targetDir, file, { force: options.force });
+          fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: options.force });
         } catch (err) {
           // skipExisting components silently skip files that already exist
           if (component.skipExisting && err instanceof Error && err.message.includes("already exists")) {
@@ -310,7 +311,10 @@ export async function runInit(
         printDryRun(`Would copy directory: ${dir}/`);
       } else {
         const copied = await copyDirectory(srcDirPath, targetDir, dir, { force: options.force });
-        installedFiles.push(...copied);
+        for (const { path: copiedPath, hash } of copied) {
+          installedFiles.push(copiedPath);
+          fileHashes[copiedPath] = hash;
+        }
         fileCount += copied.length;
       }
     }
@@ -320,6 +324,7 @@ export async function runInit(
         name: component.name,
         files: installedFiles,
         installedVersion: packageVersion,
+        fileHashes,
       });
     }
   }

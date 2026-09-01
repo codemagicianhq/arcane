@@ -65,12 +65,13 @@ export async function runAdd(
   // Copy files and directories
   let fileCount = 0;
   const installedFiles: string[] = [];
+  const fileHashes: Record<string, string> = {};
   for (const file of component.files) {
     const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
     if (options.dryRun) {
       console.log(`  [dry-run] Would copy: ${file}`);
     } else {
-      await copyFile(srcPath, targetDir, file, { force: options.force });
+      fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: options.force });
     }
     installedFiles.push(file);
     fileCount++;
@@ -81,7 +82,10 @@ export async function runAdd(
       console.log(`  [dry-run] Would copy directory: ${dir}/`);
     } else {
       const copied = await copyDirectory(srcDirPath, targetDir, dir, { force: options.force });
-      installedFiles.push(...copied);
+      for (const { path: copiedPath, hash } of copied) {
+        installedFiles.push(copiedPath);
+        fileHashes[copiedPath] = hash;
+      }
       fileCount += copied.length;
     }
   }
@@ -98,6 +102,7 @@ export async function runAdd(
     name,
     files: installedFiles,
     installedVersion: packageVersion,
+    fileHashes,
   };
   const updated = addComponent(manifest, newComponent);
   await writeManifest(targetDir, updated);
