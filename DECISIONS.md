@@ -1675,7 +1675,7 @@ typecheck` only (confirmed directly, not inferred).
 5. **False-positive posture: extend `copy-assets.ts`'s existing (currently empty)
    `SCAN_EXCLUDED_PREFIXES` mechanism into an `.arcane.json`-configurable field** (exact name/shape
    left to BC-30) rather than inventing a parallel allowlist format. This is not a hypothetical
-   concern: `test/copy-assets.test.ts:74` already commits the literal fixture line `"API_KEY=abc123"`
+   concern: `test/copy-assets.test.ts:74` already commits a literal API-key-shaped fixture string
    to test that `SECRETS_PATTERNS` fires correctly — the exact self-referential collision EF-35's
    proposed-fix point 4 warned about, confirmed to already exist in this repository's own test suite,
    which decision 3's repository-wide widening would trip the moment it ships without an allowlist.

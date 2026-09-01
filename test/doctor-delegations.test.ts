@@ -119,6 +119,36 @@ describe("checkDelegations (T13/BC-19)", () => {
     expect(result.blocking).toBe(false);
     expect(result.message).toContain("invalid JSON");
   });
+
+  it("degrades to a non-blocking warning when the file is valid JSON but not an object, never throws", async () => {
+    dir = await createFixtureDir("doctor-delegations-null");
+    await writeDelegations(dir, "null");
+
+    const result = await checkDelegations(dir);
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+    expect(result.message).toContain("not a valid delegations file");
+  });
+
+  it("degrades to a non-blocking warning when delegations is not an array, never throws", async () => {
+    dir = await createFixtureDir("doctor-delegations-not-array");
+    await writeDelegations(dir, '{ "delegations": "oops" }');
+
+    const result = await checkDelegations(dir);
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+    expect(result.message).toContain("not a valid delegations file");
+  });
+
+  it("degrades to a non-blocking warning when an entry is missing required fields, never throws", async () => {
+    dir = await createFixtureDir("doctor-delegations-malformed-entry");
+    await writeDelegations(dir, '{ "delegations": [ { "id": "incomplete" } ] }');
+
+    const result = await checkDelegations(dir);
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+    expect(result.message).toContain("not a valid delegations file");
+  });
 });
 
 describe("this repo's own real delegations.json (BC-19 migration)", () => {

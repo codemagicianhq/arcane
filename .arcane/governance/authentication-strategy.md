@@ -193,7 +193,7 @@ Use this consistently across all credential storage:
 auth = { provider = "token", token = { source = "env", id = "SECRET_NAME" } }
 
 # In .env (never committed)
-SECRET_NAME=actual-secret-value-here
+SECRET_NAME={THE_REAL_VALUE}
 ```
 
 **Enforcement: explicitly advisory prose (ARC-023) — Arcane ships no config-schema validator or lint rule in this repository that checks a downstream repo's config for inline secrets versus this reference pattern; adoption depends on the operator's own discipline.**

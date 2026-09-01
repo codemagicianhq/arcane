@@ -3,10 +3,12 @@ import { join, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
-import type { DelegationsFile } from "../types.js";
+import type { Delegation, DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { runGit } from "../modules/git.js";
-import { readManifest } from "../modules/manifest.js";
+import { readManifest, resolveSecretsScanExcludePrefixes } from "../modules/manifest.js";
+import { scanRepository } from "../modules/denylist-scan.js";
+import { SECRETS_RULES } from "../modules/secrets-scan.js";
 import {
   isHookEnforced,
   listRemotes,
@@ -32,6 +34,18 @@ interface CheckResult {
   message: string;
   /** If false, this is a warning, not a blocker. Defaults to true (blocking). */
   blocking?: boolean;
+}
+
+// ─── Runtime validation helpers ───────────────────────────────────────────────
+// Every JSON file below is an external boundary (hand-editable, or written by
+// an older/foreign version of this tool) -- `JSON.parse` only proves "valid
+// JSON", never "matches the shape this code assumes". An unchecked `as` cast
+// on a non-object parse (e.g. a file containing the literal `null`) let a
+// later `.foo` access throw *outside* the surrounding try/catch, crashing
+// the whole `spell doctor` run instead of reporting one degraded check.
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 // ─── Individual checks ────────────────────────────────────────────────────────
@@ -108,11 +122,12 @@ export async function checkArcaneManifest(targetDir: string): Promise<CheckResul
     const selfHostedManifestPath = join(targetDir, "src", "assets", ".arcane.json");
     try {
       const raw = await readFile(selfHostedManifestPath, "utf8");
-      const manifest = JSON.parse(raw) as {
-        selfHosted?: boolean;
-        tracking_mode?: string;
-      };
-      if (manifest.selfHosted === true && manifest.tracking_mode === "internal") {
+      const manifest: unknown = JSON.parse(raw);
+      if (
+        isRecord(manifest) &&
+        manifest["selfHosted"] === true &&
+        manifest["tracking_mode"] === "internal"
+      ) {
         return {
           name,
           passed: true,
@@ -132,8 +147,13 @@ export async function checkArcaneManifest(targetDir: string): Promise<CheckResul
 
   try {
     const raw = await readFile(manifestPath, "utf8");
-    const manifest = JSON.parse(raw) as { version?: string; components?: unknown[] };
-    if (!manifest.version || !Array.isArray(manifest.components)) {
+    const manifest: unknown = JSON.parse(raw);
+    if (
+      !isRecord(manifest) ||
+      typeof manifest["version"] !== "string" ||
+      !manifest["version"] ||
+      !Array.isArray(manifest["components"])
+    ) {
       return {
         name,
         passed: false,
@@ -143,7 +163,7 @@ export async function checkArcaneManifest(targetDir: string): Promise<CheckResul
     return {
       name,
       passed: true,
-      message: `v${manifest.version} — ${manifest.components.length} component(s) installed`,
+      message: `v${manifest["version"]} — ${manifest["components"].length} component(s) installed`,
     };
   } catch {
     return {
@@ -213,6 +233,32 @@ export function checkIncidentReleaseGate(): CheckResult {
   };
 }
 
+/**
+ * ARC-037 decision 7: `spell check-leaks` folded into `spell doctor` as an
+ * on-demand mode (`--leaks`) instead of a standalone command -- one fewer
+ * entry point for the same scan the build's own CI backstop already runs
+ * (scripts/copy-assets.ts). Not part of the default battery below: a
+ * full-repository walk is a different cost profile than doctor's other
+ * checks, and (per decision 6) the real defense is the CI backstop --
+ * this is a fast, opt-in, run-it-yourself pass, mirroring `spell ward`'s
+ * own separateness from the default battery.
+ */
+export async function checkSecrets(targetDir: string): Promise<CheckResult> {
+  const name = "Secrets scan (ARC-037)";
+  const excludePrefixes = await resolveSecretsScanExcludePrefixes(targetDir);
+  const findings = await scanRepository(targetDir, SECRETS_RULES, undefined, excludePrefixes);
+  if (findings.length === 0) {
+    return { name, passed: true, message: "no credential-shaped patterns found" };
+  }
+
+  const summary = findings.map((f) => `${f.file}:${f.line} [${f.rule}]`).join("; ");
+  return {
+    name,
+    passed: false,
+    message: `${findings.length} credential-shaped pattern(s) found: ${summary}`,
+  };
+}
+
 // ─── Session continuity checks ────────────────────────────────────────────────
 
 /** Files required for spell-close-session / spell-open-session to function. */
@@ -269,6 +315,8 @@ export async function fixSessionContinuity(targetDir: string, assetsDir: string)
 
 export interface DoctorOptions {
   fix?: boolean;
+  /** ARC-037 decision 7: run only the on-demand secrets scan, skipping the default battery. */
+  leaks?: boolean;
 }
 
 /**
@@ -382,9 +430,9 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
     return { name, passed: true, blocking: false, message: "no .mcp.json — nothing to check" };
   }
 
-  let parsed: McpConfigFile;
+  let rawParsed: unknown;
   try {
-    parsed = JSON.parse(raw) as McpConfigFile;
+    rawParsed = JSON.parse(raw);
   } catch {
     return {
       name,
@@ -394,6 +442,18 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
     };
   }
 
+  if (!isRecord(rawParsed)) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: ".mcp.json exists but is not a JSON object",
+    };
+  }
+
+  // Field-level shape (mcpServers, per-server timeout) is untrusted beyond
+  // this point -- every access below is `?.`-guarded rather than assumed.
+  const parsed = rawParsed as McpConfigFile;
   const servers = parsed.mcpServers ?? {};
   const serverNames = Object.keys(servers);
   if (serverNames.length === 0) {
@@ -418,6 +478,20 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
   };
 }
 
+function isDelegation(value: unknown): value is Delegation {
+  return (
+    isRecord(value) &&
+    typeof value["id"] === "string" &&
+    typeof value["status"] === "string" &&
+    typeof value["scope"] === "string" &&
+    Array.isArray(value["excludedActions"])
+  );
+}
+
+function isDelegationsFile(value: unknown): value is DelegationsFile {
+  return isRecord(value) && Array.isArray(value["delegations"]) && value["delegations"].every(isDelegation);
+}
+
 /**
  * T13/BC-19. Lists standing-authority delegations recorded in
  * `.arcane/delegations.json` -- the solo-operator/no-roster counterpart to
@@ -437,9 +511,9 @@ export async function checkDelegations(targetDir: string): Promise<CheckResult> 
     return { name, passed: true, blocking: false, message: "no delegations recorded" };
   }
 
-  let parsed: DelegationsFile;
+  let rawParsed: unknown;
   try {
-    parsed = JSON.parse(raw) as DelegationsFile;
+    rawParsed = JSON.parse(raw);
   } catch {
     return {
       name,
@@ -449,7 +523,17 @@ export async function checkDelegations(targetDir: string): Promise<CheckResult> 
     };
   }
 
-  const active = (parsed.delegations ?? []).filter((d) => d.status === "active");
+  if (!isDelegationsFile(rawParsed)) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `.arcane/delegations.json exists but is not a valid delegations file (expected a "delegations" array of well-formed entries)`,
+    };
+  }
+  const parsed = rawParsed;
+
+  const active = parsed.delegations.filter((d) => d.status === "active");
   if (active.length === 0) {
     return { name, passed: true, blocking: false, message: "no active delegations" };
   }
@@ -528,6 +612,20 @@ export async function checkPlatformBranchPolicy(targetDir: string): Promise<Chec
 
 export async function runDoctor(targetDir: string, options: DoctorOptions = {}, assetsDir?: string): Promise<void> {
   console.log("\nspell doctor — checking your Arcane environment\n");
+
+  if (options.leaks) {
+    const result = await checkSecrets(targetDir);
+    const icon = result.passed ? "✓" : "✗";
+    console.log(`  ${icon} [${result.passed ? "pass" : "FAIL"}] ${result.name}`);
+    if (!result.passed) {
+      console.log(`         ${result.message}`);
+      console.log("\n  One or more checks failed. Fix the issues above before proceeding.\n");
+      process.exitCode = 1;
+    } else {
+      console.log("\n  All checks passed. Your environment is ready.\n");
+    }
+    return;
+  }
 
   const results = await Promise.all([
     checkNodeVersion(),

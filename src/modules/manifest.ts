@@ -80,6 +80,26 @@ function validateSubjectRoot(value: string, filePath: string): void {
   }
 }
 
+/**
+ * True when a secretsScanExcludePrefixes value is safe to store: an array of
+ * non-empty strings. Deliberately looser than `isValidSubjectRoot` -- a scan
+ * exclusion is a path *prefix* match, not a path handed to spells, so it has
+ * no traversal-escape risk to guard against; it only needs to be a real,
+ * matchable string.
+ */
+export function isValidSecretsScanExcludePrefixes(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.every((entry) => typeof entry === "string" && entry.length > 0)
+  );
+}
+
+function validateSecretsScanExcludePrefixes(value: unknown, filePath: string): void {
+  if (!isValidSecretsScanExcludePrefixes(value)) {
+    throw new ManifestInvalidFieldError(filePath, "secretsScanExcludePrefixes", value);
+  }
+}
+
 function manifestPath(targetDir: string): string {
   return path.join(targetDir, MANIFEST_FILE);
 }
@@ -120,6 +140,9 @@ function validateTrackingFields(manifest: ArcaneManifest, filePath: string): voi
     }
     validateSubjectRoot(manifest.subject_root, filePath);
   }
+  if (manifest.secretsScanExcludePrefixes !== undefined) {
+    validateSecretsScanExcludePrefixes(manifest.secretsScanExcludePrefixes, filePath);
+  }
 }
 
 /**
@@ -151,6 +174,42 @@ export async function readManifest(targetDir: string): Promise<ArcaneManifest> {
 
   validateTrackingFields(manifest, filePath);
   return manifest;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Resolves the effective `secretsScanExcludePrefixes` list for a target
+ * directory (ARC-037). Self-hosted-aware: falls back to reading
+ * src/assets/.arcane.json when there is no root .arcane.json, mirroring
+ * doctor.ts's own self-hosted-manifest detection (this repo's own case --
+ * it ships no root manifest, only the self-hosted marker file). Shared by
+ * the build-time scan (scripts/copy-assets.ts) and `spell doctor --leaks`,
+ * so a repository configures its exclusions in exactly one place regardless
+ * of which path runs the scan.
+ */
+export async function resolveSecretsScanExcludePrefixes(targetDir: string): Promise<string[]> {
+  try {
+    const manifest = await readManifest(targetDir);
+    return manifest.secretsScanExcludePrefixes ?? [];
+  } catch {
+    // No root manifest -- fall through to the self-hosted case below.
+  }
+
+  try {
+    const raw = await readFile(path.join(targetDir, "src", "assets", ".arcane.json"), "utf-8");
+    const parsed: unknown = JSON.parse(raw);
+    if (isRecord(parsed) && parsed["selfHosted"] === true && parsed["tracking_mode"] === "internal") {
+      const prefixes = parsed["secretsScanExcludePrefixes"];
+      if (isValidSecretsScanExcludePrefixes(prefixes)) return prefixes;
+    }
+  } catch {
+    // No self-hosted manifest either -- scan with no exclusions.
+  }
+
+  return [];
 }
 
 /**

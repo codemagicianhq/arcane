@@ -1,5 +1,11 @@
 {
     "selfHosted": true,
     "tracking_mode": "internal",
-    "external_provider": null
+    "external_provider": null,
+    "secretsScanExcludePrefixes": [
+        "test/copy-assets.test.ts",
+        "test/org-token-lint.test.ts",
+        "test/secrets-scan.test.ts",
+        "src/modules/secrets-scan.ts"
+    ]
 }

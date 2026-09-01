@@ -705,8 +705,37 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     always understood to be governance-docs-only is a real, unresolved question this epic does not
     decide unilaterally — flagging it here rather than silently declaring total completion. If the
     broader scope applies, it is unscoped, unsized, unbatched work — a new epic, not a BC-29 sub-item.
-- [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted**. Route: chain.
-  Size M-L per the ADR's settled bind point.
+- [ ] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted** (2026-09-01,
+  operator accept call — [OPERATOR-QUEUE.md Q-006](docs/plans/become-current/OPERATOR-QUEUE.md#q-006--acceptrevisereject-adr-arc-037-secret-and-org-leak-detection)).
+  Route: chain, 2 batches matching the ADR's own two separate deliverables. Size M-L per the ADR's
+  settled bind point.
+  - [x] **(a) Self-host + CI backstop — done 2026-09-01.** `src/modules/secrets-scan.ts` (new):
+    the shared credential-pattern rules, extracted from `scripts/copy-assets.ts`'s pre-existing
+    `src/assets/`-scoped copy-time scan (unchanged) so one pattern set backs both scans and
+    `spell doctor --leaks`. Two new binding points: a third `.husky/pre-commit` step
+    (`npm run doctor:leaks`, local, `--no-verify`-bypassable by design per decision 6) and a
+    repository-wide backstop inside `scripts/copy-assets.ts`'s `main()` (reusing
+    `denylist-scan.ts`'s `scanRepository`, already shared with the org-token gate), riding inside
+    the existing `npm run build` CI step rather than a new gate (decision 3). `spell doctor --leaks`
+    exposes the same scan on demand (decision 7's `check-leaks`-into-`doctor` fold). Exclusions are
+    configurable via `.arcane.json`'s new `secretsScanExcludePrefixes` field, resolved
+    self-hosted-aware (`src/modules/manifest.ts`'s `resolveSecretsScanExcludePrefixes`, falling back
+    to `src/assets/.arcane.json` when there is no root manifest) so this repo's own build and
+    `doctor --leaks` share one source of truth instead of a hardcoded list. False positives were
+    found and fixed empirically against this repo's real tree, not assumed from the regex alone:
+    GitHub Actions `${{ secrets.X }}` references, `{UPPER_SNAKE}` placeholder docs, ordinary
+    lowercase code identifiers, and TS `IDENTIFIER: Type` annotations containing SECRET/TOKEN.
+    `threat-model.md`'s credential-in-VCS row corrected Not-mitigated → Partially-mitigated.
+    Ride-along: `doctor.ts`'s 4 unchecked `JSON.parse(...) as T` casts replaced with real runtime
+    validation, closing a real latent crash (a `.mcp.json`/`delegations.json` containing literal
+    `null` threw outside its try/catch, crashing the whole `spell doctor` run). Closes TODO.md's
+    EF-35; TODO:401 (instructions-dir portability-scan gap) checked and confirmed NOT subsumed by
+    this batch — different rule set, stays open.
+  - [ ] **(b) Consumer-facing hook installer — not started.** The shared,
+    `push_policy`-independent hook-install path (generalizing `push-safety.ts`'s
+    install/collision-guard machinery for a Husky-independent consumer repo) plus the actual
+    installer and any new distributable `.husky/`-shipping content this needs — genuinely new
+    distributable content, unlike (a), so this batch gets its own version bump.
 - [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
   Size L. Includes TODO.md:88 (T10) `spell update` orphan report + `--prune` — its content-hash
   prerequisite is decided by BC-11.

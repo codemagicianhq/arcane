@@ -140,8 +140,9 @@ program
   .command("doctor")
   .description("Check your environment for Arcane prerequisites")
   .option("--fix", "Automatically create missing session continuity files")
-  .action(async (opts: { fix?: boolean }) => {
-    await runDoctor(process.cwd(), { fix: opts.fix }, ASSETS_DIR);
+  .option("--leaks", "Run only the on-demand secrets/credential scan (ARC-037), skipping the default checks")
+  .action(async (opts: { fix?: boolean; leaks?: boolean }) => {
+    await runDoctor(process.cwd(), { fix: opts.fix, leaks: opts.leaks }, ASSETS_DIR);
   });
 
 // ─── spell ward ───────────────────────────────────────────────────────────────
