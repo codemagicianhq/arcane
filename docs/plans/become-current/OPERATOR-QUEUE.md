@@ -36,7 +36,12 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Rollback:** `gh api -X PUT repos/codemagicianhq/arcane/rulesets/18841659 --input docs/plans/become-current/q-001-ruleset-before.json`
   — the pre-change ruleset, captured live via `gh api repos/codemagicianhq/arcane/rulesets/18841659`
   on 2026-08-31 before this entry was updated.
-- **Status:** ready — preconditions met. Awaiting your decision to apply.
+- **Status:** [x] done 2026-09-01 — Applied via the full-payload PUT above. Independently re-verified
+  via a fresh `gh api` GET (not the PUT's own echoed response): `required_status_checks` now lists
+  exactly `Lint, typecheck, test, build`, `PR branch is rebased on target`, `Review round clear`, and
+  `current_user_can_bypass` remains `"never"`. All other rules (deletion protection, PR requirement,
+  `allowed_merge_methods: ["merge", "rebase"]`, non-fast-forward) confirmed unchanged from the captured
+  before-state.
 
 ## Q-002 — Decide: re-enable `allow_auto_merge`
 
@@ -46,7 +51,9 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   PR #63 failure shape is closed.
 - **Preconditions:** Q-001 done.
 - **Rollback:** same PATCH with `false`.
-- **Status:** waiting on Q-001 + your call.
+- **Status:** [x] done 2026-09-01 — Applied via `gh api -X PATCH repos/codemagicianhq/arcane
+  -f allow_auto_merge=true`. Independently re-verified via a fresh `gh api` GET: `allow_auto_merge`
+  is `true`.
 
 ## Q-003 — Four content-holding local branches: land or abandon
 
@@ -145,7 +152,10 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   adjustment. Reject if you judge the existing fragments (universal-agent-rules rule 4, ADR-034's
   purchase-scoped verification mandate) already sufficient without a dedicated standard.
 - **Preconditions:** none.
-- **Status:** ready for your accept/revise/reject call.
+- **Status:** [x] done 2026-09-01 — **Accepted**, via the endgame-planning session's `AskUserQuestion`
+  accept/revise/reject call. `DECISIONS.md`'s ARC-029 Status flipped to Accepted, citing this entry.
+  Per this entry's own framing, decision 5's follow-up content changes are NOT scheduled by this
+  acceptance alone — recorded as a standalone parked item, not silently dropped.
 
 ## Q-005 — ARC-020 broad schema: still open, NOT subsumed by BC-11 (correcting this entry's own prior assumption)
 
@@ -161,6 +171,8 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   scoped amendment per field group, attached to whichever future epic actually needs one of those
   fields — rather than waiting for a single ADR to cover all three at once. Not blocking anything in
   this plan; no action needed from you unless you want to prioritize drafting that amendment sooner.
+- **Status:** [x] done 2026-09-01 — **Acknowledged, no action taken.** Operator confirmed during
+  endgame planning: close incrementally per future epics, as this entry itself already recommended.
 
 ## Q-006 — Accept/revise/reject ADR: ARC-037 (Secret and Org-Leak Detection)
 
@@ -185,7 +197,11 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   section): mandatory-for-every-repo vs. opt-in per repo; exact `.arcane.json` field shape for the
   exclude-list; whether the widened CI scan becomes its own named required check.
 - **Preconditions:** none — this ADR can be accepted independently of BC-11/BC-12's ADRs.
-- **Status:** ready for your accept/revise/reject call.
+- **Status:** [x] done 2026-09-01 — **Accepted**, via the endgame-planning session's `AskUserQuestion`
+  accept/revise/reject call. `DECISIONS.md`'s ARC-037 Status flipped to Accepted, citing this entry.
+  Implementation epic BC-30 is now unblocked; its own open questions (mandatory-vs-opt-in,
+  `.arcane.json` exclude-list shape, whether the widened CI scan is its own required check) are
+  resolved during BC-30's implementation, not here.
 
 ## Q-007 — Accept/revise/reject ADR: ARC-038 (Content-Preserving Updates and Vendor-Neutral Governance Content)
 
@@ -214,7 +230,10 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   (stop-and-report vs. complete-and-list), whether the npm-registry merge-base fetch should be cached,
   and the exact new file names for `cicd-standards.md`'s split.
 - **Preconditions:** none — independent of BC-10/BC-12's ADRs.
-- **Status:** ready for your accept/revise/reject call.
+- **Status:** [x] done 2026-09-01 — **Accepted**, via the endgame-planning session's `AskUserQuestion`
+  accept/revise/reject call. `DECISIONS.md`'s ARC-038 Status flipped to Accepted, citing this entry.
+  Implementation epic BC-31 is now unblocked; its own open questions (hash algorithm, conflict-marker
+  UX, merge-base caching, exact split filenames) are resolved during BC-31's implementation, not here.
 
 ## Q-008 — Accept/revise/reject ADR: ARC-039 (Build-Time Spell Compiler)
 
@@ -239,7 +258,10 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   I5's hoped-for defusal of EF-02/08/14/19/23/29 and fabricated trailers is **not** delivered by this
   ADR — disclosed as a deliberate scope exclusion (decision 3), not silently dropped.
 - **Preconditions:** none — independent of BC-10/BC-11's ADRs.
-- **Status:** ready for your accept/revise/reject call.
+- **Status:** [x] done 2026-09-01 — **Accepted**, via the endgame-planning session's `AskUserQuestion`
+  accept/revise/reject call. `DECISIONS.md`'s ARC-039 Status flipped to Accepted, citing this entry.
+  Implementation epic BC-32 is now unblocked; note the ADR's own "36 stub files" count needs
+  re-verification against the tree before implementation starts (drifted since drafting).
 
 ## Q-009 — Point `arcane-website` at the new `docs/spell-catalog.json` artifact
 
@@ -262,7 +284,9 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   `scripts/spell-catalog.ts`'s `SpellCatalogEntry`/`SpellCatalogGroup` types to add fields the
   website actually needs is a small, low-risk follow-up once that's known.
 - **Preconditions:** none — the artifact already exists and is gated as of BC-23.
-- **Status:** ready for you to wire up (or delegate) on the `arcane-website` side.
+- **Status:** parked 2026-09-01 (operator default during endgame planning) — cross-repo work outside
+  this repo's working directory; remains open for the operator to wire up or delegate whenever
+  convenient. Not blocking anything in this plan.
 
 ## Q-010 — Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions
 
@@ -290,7 +314,8 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   channels — that needs its own dedicated investigation per channel if the operator wants it, separate
   from this narrow smoke test.
 - **Preconditions:** none.
-- **Status:** ready for your go/no-go call on pursuing package-referenced distribution; the other three
-  channels are queued here only as a named gap, not a decision ready to make yet.
+- **Status:** parked 2026-09-01 (operator default during endgame planning) — pending a scan of the
+  other three channels (MCP prompts, Claude Code plugin marketplaces, portable Agent Skills, Microsoft
+  APM) before a real go/no-go can be made with full context. Not blocking anything in this plan.
 
 <!-- The loop appends Q-011+ below this line. -->

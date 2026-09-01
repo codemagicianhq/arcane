@@ -47,7 +47,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-026](#arc-026--explicit-self-hosted-manifest-and-authoritative-root-validation)               | Explicit Self-Hosted Manifest and Authoritative Root Validation                | 2026-08-02 | Accepted   |
 | [ARC-027](#arc-027--registry-driven-self-host-parity-guard)                                        | Registry-Driven Self-Host Parity Guard                                         | 2026-08-02 | Accepted   |
 | [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work)                             | Concurrency and Isolation Model for Parallel Work                              | 2026-08-15 | Accepted   |
-| [ARC-029](#arc-029--best-practice-first-solution-selection-standard)                               | Best-Practice-First Solution Selection Standard                                | 2026-08-15 | Proposed   |
+| [ARC-029](#arc-029--best-practice-first-solution-selection-standard)                               | Best-Practice-First Solution Selection Standard                                | 2026-08-15 | Accepted   |
 | [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion)         | Venture Idea Lifecycle: Hub Role, Registry, and `spell-manifest` Promotion      | 2026-08-21 | Accepted   |
 | [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate)       | Fictional Venture Names for Examples, and a Repository-Wide Privacy Gate       | 2026-08-22 | Accepted   |
 | [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) | Persisted Tracking Configuration: tracking_mode and external_provider in the Manifest | 2026-08-22 | Accepted   |
@@ -55,9 +55,9 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-034](#arc-034--push-safety-for-sensitive-repositories)                                        | Push Safety for Sensitive Repositories                                        | 2026-08-23 | Accepted   |
 | [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round)                                      | Auto-Merge Requires a Clear Review Round                                       | 2026-08-25 | Accepted   |
 | [ARC-036](#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)       | Generated State Diagrams: Deterministic Mermaid for Computed Spell State       | 2026-08-30 | Accepted   |
-| [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) | Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop | 2026-08-31 | Proposed   |
-| [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) | Content-Preserving Updates and Vendor-Neutral Governance Content | 2026-08-31 | Proposed   |
-| [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Proposed   |
+| [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) | Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop | 2026-08-31 | Accepted   |
+| [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) | Content-Preserving Updates and Vendor-Neutral Governance Content | 2026-08-31 | Accepted   |
+| [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Accepted   |
 | [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
 
 ---
@@ -1155,7 +1155,7 @@ Finally, the concept has no name. Four colliding "workspace" terms are in circul
 ## ARC-029 — Best-Practice-First Solution Selection Standard
 
 **Date:** 2026-08-15
-**Status:** Proposed
+**Status:** Accepted (2026-09-01, operator accept call — [OPERATOR-QUEUE.md Q-004](docs/plans/become-current/OPERATOR-QUEUE.md#q-004--acceptreviserreject-adr-arc-029-best-practice-first-solution-selection))
 **Intake:** [EF-34](docs/intake/batch-001/EF-34.md)
 
 **Context:**
@@ -1606,7 +1606,7 @@ Binding the check continuously (a required status check re-evaluated on every pu
 ## ARC-037 — Secret and Org-Leak Detection: Pre-Commit Scan Plus Repository-Wide CI Backstop
 
 **Date:** 2026-08-31
-**Status:** Proposed
+**Status:** Accepted (2026-09-01, operator accept call — [OPERATOR-QUEUE.md Q-006](docs/plans/become-current/OPERATOR-QUEUE.md#q-006--acceptreviserreject-adr-arc-037-secret-and-org-leak-detection)). Implementation: BC-30.
 **Related:** [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (decision 3's org-leak gate, partially unbuilt — audited and disposed of below), [ARC-034](#arc-034--push-safety-for-sensitive-repositories) (its pre-push hook is examined as a candidate bind point and ruled out, not extended)
 **Intake:** [EF-35](docs/intake/batch-001/EF-35.md)
 
@@ -1756,7 +1756,7 @@ typecheck` only (confirmed directly, not inferred).
 ## ARC-038 — Content-Preserving Updates and Vendor-Neutral Governance Content
 
 **Date:** 2026-08-31
-**Status:** Proposed
+**Status:** Accepted (2026-09-01, operator accept call — [OPERATOR-QUEUE.md Q-007](docs/plans/become-current/OPERATOR-QUEUE.md#q-007--acceptreviserreject-adr-arc-038-content-preserving-updates-and-vendor-neutral-governance-content)). Implementation: BC-31.
 **Related:** [ARC-019](#arc-019--repository-document-ownership-and-path-model) (its own "Open follow-up" section names the override-model gap this ADR closes), [ARC-020](#arc-020--canonical-repository-configuration-schema) (examined as a candidate to subsume — see Decision 4: it is not), [ARC-011](#arc-011--optional-external-tracking-mode-with-process-template-aware-ado-mapping)/[ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest) (the `external_provider` pattern this ADR's vendor-neutral-content decision reuses, not reinvents)
 **Sources:** TODO.md's vendor-neutral-customization backlog item (filed 2026-07-14) — a research spike per that item's own instruction, not a straight-to-implementation route
 
@@ -1898,7 +1898,7 @@ in a CI/CD standards file, not a naming-conventions file.
 ## ARC-039 — Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments
 
 **Date:** 2026-08-31
-**Status:** Proposed
+**Status:** Accepted (2026-09-01, operator accept call — [OPERATOR-QUEUE.md Q-008](docs/plans/become-current/OPERATOR-QUEUE.md#q-008--acceptreviserreject-adr-arc-039-build-time-spell-compiler)). Implementation: BC-32.
 **Related:** [ARC-027](#arc-027--registry-driven-self-host-parity-guard) (the parity model this ADR adds a third axis to, not replaces), [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) (EF-24's actually-shipped fix — this ADR is a related but distinct architectural direction for the same underlying problem class, not a re-litigation of EF-24, which is already closed)
 **Sources:** IDEAS.md:13 (I5, 2026-08-02, "spell compiler, not spell runtime") and IDEAS.md:23 (I15, 2026-08-21, dual-copy elimination) — a research-first route, not straight to implementation
 
