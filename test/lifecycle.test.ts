@@ -179,10 +179,17 @@ describe("lifecycle — full spell loop (init → add → status → update → 
 
   // ── Step 4: spell update ────────────────────────────────────────────────────
   describe("spell update", () => {
-    it("overwrites installed files with new content", async () => {
-      // Overwrite a tracked file so update has something to overwrite
+    it("refreshes an untouched managed file and records its content hash (ARC-038)", async () => {
+      // Pre-ARC-038 this test manually corrupted the tracked file first, to
+      // prove update overwrites it. Under ARC-038 that would instead prove
+      // the OPPOSITE thing: a hash mismatch now reads as an operator edit,
+      // which update correctly preserves rather than overwrites (see
+      // update.test.ts's dedicated ARC-038 tests for that behavior). So this
+      // lifecycle smoke test instead leaves the file untouched -- the
+      // common case -- and checks update still runs cleanly over it and
+      // records a real hash, not that it stomps a hand-edited file.
       const trackedFile = join(tmpDir, ".arcane/governance/git-conventions.md");
-      await fs.writeFile(trackedFile, "# modified by lifecycle test\n");
+      const beforeContent = await fs.readFile(trackedFile, "utf-8");
 
       runGit(tmpDir, ["init"]);
       runGit(tmpDir, ["config", "user.name", "Arcane Tests"]);
@@ -194,9 +201,18 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       // "Already up to date" (which triggers when manifest.version === packageVersion)
       await runUpdate({}, tmpDir, ASSETS_DIR, "0.2.0");
 
-      // The original content from assets should be restored
-      const restoredContent = await fs.readFile(trackedFile, "utf-8");
-      expect(restoredContent).not.toBe("# modified by lifecycle test\n");
+      const afterContent = await fs.readFile(trackedFile, "utf-8");
+      expect(afterContent).toBe(beforeContent);
+
+      const manifest = JSON.parse(
+        await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8"),
+      ) as ArcaneManifest;
+      const component = manifest.components.find((c) =>
+        c.files.includes(".arcane/governance/git-conventions.md"),
+      );
+      expect(component?.fileHashes?.[".arcane/governance/git-conventions.md"]).toMatch(
+        /^[0-9a-f]{64}$/,
+      );
     }, 30_000);
 
     it("bumps the manifest version after update", async () => {

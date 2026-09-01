@@ -761,9 +761,44 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     this work -- it needs the SAME pre-push hook FILE to carry conditional logic, which is a
     different, not-yet-designed change, though the prerequisite this batch's own generalization
     unblocks is noted there.
-- [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted**. Route: chain.
-  Size L. Includes TODO.md:88 (T10) `spell update` orphan report + `--prune` — its content-hash
-  prerequisite is decided by BC-11.
+- [ ] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted** (2026-09-01,
+  operator accept call — [OPERATOR-QUEUE.md Q-007](docs/plans/become-current/OPERATOR-QUEUE.md#q-007--acceptreviserreject-adr-arc-038-content-preserving-updates-and-vendor-neutral-governance-content)).
+  Route: chain, 2 batches matching the ADR's own decisions 1 (mechanics) and 2+3 (content) —
+  "batch sensibly" per the ADR's own note. Size L.
+  - [x] **(a) Content-preserving updates (ARC-038 decision 1) + T10 — done 2026-09-01.**
+    `InstalledComponent` gains an optional per-file `fileHashes` map (SHA-256 hex, recorded at
+    write time in `copier.ts`'s `copyFile`/`copyDirectory`, backward-compatible — a file or
+    install predating this field simply has no entry and keeps the old unconditional-overwrite
+    behavior). `spell update` compares a file's current on-disk hash against the recorded one:
+    match → cheap overwrite as before; differ → the operator edited it, so fetch the exact
+    previously-published version (`src/modules/npm-registry.ts`, via unpkg.com — resolved
+    in-implementation over a raw tarball fetch, since hand-rolling tar extraction for a
+    read-one-file case is a correctness risk with no existing dependency to cover it safely; no
+    local caching, resolved in-implementation, since each (version, file) pair is fetched at most
+    once per run already) as the three-way merge base (`src/modules/merge3.ts`, a from-scratch
+    line-based LCS diff3 implementation — auto-merges non-overlapping edits, writes standard
+    `<<<<<<<`/`=======`/`>>>>>>>` markers for genuine collisions). Conflict UX resolved
+    in-implementation: the update completes and lists every conflicted file in one summary at the
+    end, rather than stopping per-file. `skipExisting` components are explicitly unchanged
+    (decision 1's own carve-out — no merge machinery, same whole-file behavior as before).
+    TODO.md's T10 (orphan report + `--prune`) built on the same hash machinery: a file dropped
+    from a component's current definition (or an entire component removed from the registry) is
+    reported every run and deleted with `--prune` only when its on-disk content still matches its
+    recorded hash — the same "do not discard an edit" guarantee extended from merging to deleting.
+    Found and fixed along the way: hashing every file at write time doubled each file's I/O
+    (`hashFile(srcPath)` then a separate `fsCopyFile`), measurably slowing a ~90-file `spell init`
+    enough to intermittently time out under full-suite contention — fixed by reading the source
+    once into memory and reusing that buffer for both the hash and the write. Two pre-existing
+    tests (`update.test.ts`, `lifecycle.test.ts`) encoded the now-superseded "managed files are
+    always blindly overwritten" assumption directly (manually corrupting a tracked file, then
+    asserting update overwrote it) — updated to the correct new behavior rather than the old
+    behavior forced back into place.
+  - [ ] **(b) Vendor-neutral CI/CD content (ARC-038 decisions 2+3) — not started.** Split
+    `cicd-standards.md` into a vendor-neutral core + an Azure DevOps profile, reusing the
+    `external_provider` per-provider pattern (ARC-011/032, BC-09) rather than inventing a plugin
+    system; extend `spell-authoring-standards.md`'s D2 gate to vendor coupling, not only org
+    coupling. `naming-conventions.md` needs no change (the ADR's own Context section: the premise
+    that motivated naming it no longer holds).
 - [ ] **BC-32 — Spell-compiler implementation.** Depends: BC-12 ADR **Accepted**. Route: chain.
   Size L. Includes the I15 dual-copy elimination (66 → 33 + generator).
 

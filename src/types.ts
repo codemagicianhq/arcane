@@ -7,6 +7,19 @@ export interface InstalledComponent {
   name: string;
   files: string[];
   installedVersion: string;
+  /**
+   * SHA-256 hex digest of each file's content, keyed by its entry in
+   * `files`, recorded at the point the file is written (ARC-038 decision 1).
+   * `spell update` compares a file's current on-disk hash against this
+   * record to distinguish "untouched since install" (safe to overwrite)
+   * from "operator edited it" (needs a three-way merge, not a silent
+   * overwrite). Optional and per-file rather than required: an install or a
+   * file written before this field existed simply has no entry, and update
+   * falls back to the pre-ARC-038 unconditional-overwrite behavior for it --
+   * this field protects edits made after it starts being recorded, not
+   * retroactively.
+   */
+  fileHashes?: Record<string, string>;
 }
 
 export interface ArcaneManifest {
@@ -175,6 +188,8 @@ export interface SpellAddOptions {
 
 export interface SpellUpdateOptions {
   dryRun?: boolean;
+  /** Delete orphaned managed files (TODO.md T10 / ARC-038), hash-checked so an edited file is reported, never silently destroyed. */
+  prune?: boolean;
 }
 
 export interface VersionCheckResult {

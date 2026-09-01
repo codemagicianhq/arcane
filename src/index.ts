@@ -104,9 +104,13 @@ program
   .command("update")
   .description("Update installed components to the current package version")
   .option("--dry-run", "Preview what would be updated without making changes")
-  .action(async (opts: { dryRun?: boolean }) => {
+  .option(
+    "--prune",
+    "Also delete orphaned managed files (tracked before this update, no longer part of any current component). Hash-checked: an edited file is reported, never silently deleted",
+  )
+  .action(async (opts: { dryRun?: boolean; prune?: boolean }) => {
     await runUpdate(
-      { dryRun: opts.dryRun },
+      { dryRun: opts.dryRun, prune: opts.prune },
       process.cwd(),
       ASSETS_DIR,
       pkg.version,
