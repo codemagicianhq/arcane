@@ -12,10 +12,10 @@ Framework selection, coverage thresholds, and test evidence requirements across 
 
 ## Executive Summary
 
-- Every tech stack has a designated test framework — no ambiguity.
+- Every tech stack has a designated test framework — no ambiguity. **Enforcement: explicitly advisory prose (ARC-023) — no script or CI step verifies that code for a given stack was tested with its designated framework; the mapping is a team convention enforced only by code review.**
 - New code requires 80% unit test coverage; critical paths require 95%.
-- Lince (QA Lead) must sign off on test evidence before any ticket moves to "Resolved."
-- Test evidence is required in every PR: results, coverage report, known limitations.
+- Lince (QA Lead) must sign off on test evidence before any ticket moves to "Resolved." **Enforcement: explicitly advisory prose (ARC-023) — a tracker-workflow convention Arcane's own tooling has no visibility into and cannot mechanically verify.**
+- Test evidence is required in every PR: results, coverage report, known limitations. **Enforcement: explicitly advisory prose (ARC-023) — no CI step or PR template parses PR descriptions for these sections; `check:review-round` verifies review-approval state only, not test-evidence content.**
 
 ---
 
@@ -46,8 +46,8 @@ Framework selection, coverage thresholds, and test evidence requirements across 
 
 | Category | Minimum Coverage | Examples |
 |----------|-----------------|----------|
-| **Standard code** | 80% | Business logic, data access, UI components, API handlers |
-| **Critical paths** | 95% | Authentication, payment processing, IoT firmware commands, calibration protocols, encryption/signing |
+| **Standard code** | 80% | Business logic, data access, UI components, API handlers. Enforcement: executable check (ARC-023) — vitest.config.ts configures a global 80% lines/branches/functions/statements threshold under `coverage.thresholds`, but ci.yml's build-test Test step runs `npm test` (bare `vitest run`), not `npm run test:coverage`, so it is never evaluated in CI. |
+| **Critical paths** | 95% | Authentication, payment processing, IoT firmware commands, calibration protocols, encryption/signing. Enforcement: executable check (ARC-023) — vitest.config.ts overrides this to 95% for src/modules/copier.ts, manifest.ts, merger.ts, registry.ts, and src/config/profiles.ts (manifest.ts's branches override is 90%, not 95%), but the same CI gap applies: `npm test` runs bare `vitest run`, not `npm run test:coverage`, so these overrides are never evaluated in CI. |
 
 ### What Counts as "Critical"
 
@@ -101,6 +101,8 @@ Every PR must include:
 
 ### Unit Tests (Required)
 
+**Enforcement: executable check (ARC-023) — ci.yml's build-test job's Test step runs `npm test` (`vitest run`), which fails the job on any failing unit test; `.husky/pre-commit` runs only `lint` and `typecheck`, not tests, so the "every commit" portion of this rule is not locally enforced.**
+
 - Test individual functions/methods in isolation
 - Mock external dependencies (DB, API, hardware)
 - Fast execution (< 1 second per test)
@@ -108,17 +110,23 @@ Every PR must include:
 
 ### Integration Tests (Recommended)
 
+**Enforcement: explicitly advisory prose (ARC-023) — self-labeled Recommended rather than Required, and ci.yml runs a single `npm test` step with no distinct integration-test job or gate.**
+
 - Test component interactions (API → DB, mobile → backend)
 - Use real dependencies where practical (in-memory DB, test containers)
 - Run in CI on PR creation and merge
 
 ### End-to-End Tests (For UI Stories)
 
+**Enforcement: explicitly advisory prose (ARC-023) — no Playwright or other end-to-end job exists in ci.yml, and Arcane's own repository is a CLI tool with no UI for this rule to apply to.**
+
 - Test complete user workflows
 - Use browser automation (Playwright for web, Flutter integration_test for mobile)
 - Run in CI on merge to main (not on every commit — too slow)
 
 ### Firmware Tests ({BUSINESS_NAME}-Specific)
+
+**Enforcement: explicitly advisory prose (ARC-023) — Arcane's own repository has no firmware or hardware target; this is template guidance for consuming projects that Arcane's own tooling does not verify.**
 
 - Host-based unit tests via PlatformIO Unity (no hardware required)
 - Hardware-in-the-loop tests for calibration validation (requires physical device)
@@ -130,14 +138,14 @@ Every PR must include:
 
 Adapt the ticket lifecycle policy to your tracker:
 
-The **Code Review → QA** transition now requires:
+The **Code Review → QA** transition now requires: **Enforcement: explicitly advisory prose (ARC-023) — a tracker-workflow gate Arcane's own tooling cannot observe or enforce; items 1 and 2 below (tests passing, coverage thresholds) are independently verified by CI, but the transition itself is not.**
 
 1. All unit tests pass (CI green)
 2. Coverage meets thresholds (80% standard / 95% critical)
 3. No HIGH-severity review findings unresolved
 4. Lince signs off with test evidence linked to the work item
 
-The **QA → Resolved** transition requires:
+The **QA → Resolved** transition requires: **Enforcement: explicitly advisory prose (ARC-023) — a tracker-workflow gate Arcane's own tooling cannot observe or enforce, the same gap ARC-023 identifies for the Lince sign-off rule above.**
 
 1. Integration tests pass (if applicable)
 2. Manual verification for UI stories (screenshot or recording)

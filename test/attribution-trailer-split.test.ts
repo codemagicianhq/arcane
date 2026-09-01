@@ -63,8 +63,9 @@ describe("git-conventions.md: Agent/Persona/Role/Model-Source split (I3/BC-27d)"
 
 describe("universal-agent-rules.md: rule 12 lists the full required trailer set (I3/BC-27d)", () => {
   it("names Model-Source as required and Persona/Role as conditional", () => {
+    expect(universalRules).toContain("12. **Agent attribution trailers.");
     expect(universalRules).toContain(
-      "12. **Agent attribution trailers** are required on agent-authored commits (`Agent`, `Model`, `Model-Source`, `Provider`).",
+      "are required on agent-authored commits (`Agent`, `Model`, `Model-Source`, `Provider`).",
     );
     expect(universalRules).toContain("`Persona`/`Role` are conditional");
   });

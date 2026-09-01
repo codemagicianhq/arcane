@@ -13,8 +13,8 @@ describe("universal-agent-rules.md: rule 23 (diff before deleting a duplicate, I
   it("states the rule under a numbered heading with the correct next-available number", async () => {
     const rules = await readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8");
     const numbers = [...rules.matchAll(/^(\d+)\. \*\*/gm)].map((m) => Number(m[1]));
-    expect(Math.max(...numbers)).toBe(23);
-    expect(rules).toContain('23. **Diff before deleting a "duplicate."**');
+    expect(Math.max(...numbers)).toBe(24);
+    expect(rules).toContain('23. **Diff before deleting a "duplicate."');
   });
 
   it("frames a near-identical pair as usually drifted, not byte-identical", () => {

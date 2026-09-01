@@ -53,8 +53,9 @@ beforeAll(async () => {
 
 describe("rule 8 generated state diagrams extension (ARC-036)", () => {
   it("leaves rule 8's original sentence byte-unchanged", () => {
+    expect(universalRules).toContain("8. **Use Mermaid for diagrams");
     expect(universalRules).toContain(
-      "8. **Use Mermaid for diagrams** (` ```mermaid ` blocks) for all flow charts, architecture diagrams, and sequence diagrams. Directory trees stay as plain code blocks.",
+      "(` ```mermaid ` blocks) for all flow charts, architecture diagrams, and sequence diagrams. Directory trees stay as plain code blocks.",
     );
   });
 

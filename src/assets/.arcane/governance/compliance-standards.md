@@ -67,8 +67,7 @@ with EU visitors signing up for a free product is a plausible trigger; a company
 not, but "zero" needs to be an actual verified fact about the user base, not an assumption based on
 where the company is headquartered.
 
-**Rule (CS-01):** Determine GDPR applicability from the actual or intended user base's location and
-what the processing does, never from the business's own location alone.
+**Rule (CS-01): Determine GDPR applicability from the actual or intended user base's location and what the processing does, never from the business's own location alone. Enforcement: explicitly advisory prose (ARC-023) — GDPR applicability turns on real-world facts about a specific business's actual user base and processing, a legal/business judgment call no Arcane mechanism observes or verifies.**
 
 ### CS-02: A lawful basis and enforceable data-subject rights
 
@@ -80,8 +79,7 @@ Requests exercising these rights carry a response deadline (commonly one month, 
 cases) — a rights-request process that has no defined owner or turnaround time is itself a gap, even
 before any request arrives.
 
-**Rule (CS-02):** Document a lawful basis per processing category, and maintain a working process — with
-a defined owner and turnaround time — for handling data-subject rights requests.
+**Rule (CS-02): Document a lawful basis per processing category, and maintain a working process — with a defined owner and turnaround time — for handling data-subject rights requests. Enforcement: explicitly advisory prose (ARC-023) — whether a lawful basis is properly documented and a rights-request process actually functions is a substantive judgment about the downstream product's own operations; `spell-compliance` can only ask and report on it, never verify or gate on it.**
 
 ### CS-03: 72-hour breach notification
 
@@ -90,8 +88,7 @@ relevant supervisory authority within 72 hours of the organization becoming awar
 starts at awareness, not at confirmation of scope — an incident-response process that only begins
 drafting a notification after a full investigation completes risks missing the window entirely.
 
-**Rule (CS-03):** Have a breach-notification process that can produce an initial report to the
-supervisory authority within 72 hours of awareness, even before the full scope of an incident is known.
+**Rule (CS-03): Have a breach-notification process that can produce an initial report to the supervisory authority within 72 hours of awareness, even before the full scope of an incident is known. Enforcement: explicitly advisory prose (ARC-023) — whether an incident-response process would actually meet the 72-hour window in a real breach is a judgment call about the team's own readiness that no Arcane mechanism tests.**
 
 ---
 
@@ -107,9 +104,7 @@ number here as current). Covered businesses must honor consumer rights to know w
 it, correct inaccuracies, and opt out of the sale or sharing of their personal information, plus limit
 use of sensitive personal information on request.
 
-**Rule (CS-04):** Verify CCPA's current statutory thresholds against the business's actual revenue and
-data volume, rather than assuming applicability (or non-applicability) from the business's category
-alone.
+**Rule (CS-04): Verify CCPA's current statutory thresholds against the business's actual revenue and data volume, rather than assuming applicability (or non-applicability) from the business's category alone. Enforcement: explicitly advisory prose (ARC-023) — confirming current statutory thresholds against a business's actual revenue and data volume is a legal/business determination outside anything Arcane can check itself.**
 
 ### CS-05: A real opt-out mechanism, not just a policy statement
 
@@ -119,9 +114,7 @@ or an equivalent global-privacy-control-honoring mechanism. Stating an opt-out r
 policy's prose, without a working mechanism a consumer can actually use, does not satisfy the
 requirement.
 
-**Rule (CS-05):** Verify the opt-out mechanism itself functions end-to-end — a link that exists in the
-footer but doesn't actually stop the described sharing is not compliant, regardless of what the privacy
-policy says.
+**Rule (CS-05): Verify the opt-out mechanism itself functions end-to-end — a link that exists in the footer but doesn't actually stop the described sharing is not compliant, regardless of what the privacy policy says. Enforcement: explicitly advisory prose (ARC-023) — `spell-compliance`'s Phase 2 only checks whether an opt-out mechanism's indicators are present, not whether it actually stops sharing end-to-end, so confirming real function stays a human verification step.**
 
 ---
 
@@ -135,8 +128,7 @@ feature), and distinguishable from other terms — not buried in a general terms
 Pre-ticked checkboxes, and consent bundled with acceptance of unrelated terms, do not qualify as valid
 consent under either framework.
 
-**Rule (CS-06):** Any consent mechanism must be opt-in (not pre-ticked), specific to its actual purpose,
-and separable from acceptance of unrelated terms.
+**Rule (CS-06): Any consent mechanism must be opt-in (not pre-ticked), specific to its actual purpose, and separable from acceptance of unrelated terms. Enforcement: explicitly advisory prose (ARC-023) — `spell-compliance` can render a PASS/FAIL/PARTIAL judgment on a consent mechanism in its report, but that report only surfaces a finding for a human to act on and never gates a workflow, so consent validity remains a judgment call.**
 
 ### CS-07: A data inventory is the load-bearing prerequisite
 
@@ -146,8 +138,7 @@ Records of Processing Activities under GDPR Article 30), every downstream rights
 obligation is unenforceable in practice, even if a policy document claims it's honored — there is no way
 to actually locate everything that would need to be produced, corrected, or deleted.
 
-**Rule (CS-07):** Maintain a data inventory naming what personal data is collected, where it's stored,
-and why, before treating any rights-request or retention process as operational.
+**Rule (CS-07): Maintain a data inventory naming what personal data is collected, where it's stored, and why, before treating any rights-request or retention process as operational. Enforcement: explicitly advisory prose (ARC-023) — `spell-compliance` can surface whether a data-inventory document exists, but it neither verifies the inventory's accuracy nor blocks any workflow on its presence, leaving completeness a human-verified judgment call.**
 
 ### CS-08: Retention periods must be defined and actually enforced
 
@@ -156,8 +147,7 @@ actually deleting it at the end of that period — not simply flagging a record 
 while the underlying data persists indefinitely. An undefined retention period is itself a gap, distinct
 from and prior to the question of whether deletion is correctly implemented.
 
-**Rule (CS-08):** Define a retention period per data category, and verify deletion is real (data is
-actually removed, not merely deactivated) at the end of that period.
+**Rule (CS-08): Define a retention period per data category, and verify deletion is real (data is actually removed, not merely deactivated) at the end of that period. Enforcement: explicitly advisory prose (ARC-023) — whether deletion is actually real rather than merely deactivated requires inspecting the downstream product's live data stores, which is outside anything Arcane's static, read-only self-assessment observes.**
 
 ---
 
@@ -174,9 +164,7 @@ suitably designed at a single point in time; a **Type II** report attests that t
 operated effectively over an observation period (commonly 3-12 months) — a Type I report does not
 substitute for a Type II when a customer's requirement specifically calls for one.
 
-**Rule (CS-09):** Confirm which Trust Services Criteria and which report type (I vs. II) a customer's
-actual requirement calls for before scoping a SOC 2 engagement — do not assume Security-only Type I
-satisfies a requirement that wasn't explicitly checked against what was asked for.
+**Rule (CS-09): Confirm which Trust Services Criteria and which report type (I vs. II) a customer's actual requirement calls for before scoping a SOC 2 engagement — do not assume Security-only Type I satisfies a requirement that wasn't explicitly checked against what was asked for. Enforcement: explicitly advisory prose (ARC-023) — what a specific customer or auditor actually requires is an external fact no Arcane mechanism observes, so confirming it against a live requirement is inherently a human step.**
 
 ### CS-10: Access control and audit logging are the operational backbone
 
@@ -186,8 +174,7 @@ sensitive systems sufficient to reconstruct who did what and when. These are the
 controls a real security program needs regardless of whether a SOC 2 report is ever pursued — building
 them only when an audit is scheduled means starting the evidentiary trail late.
 
-**Rule (CS-10):** Implement least-privilege access control, periodic access review, and audit logging of
-access to customer-data-holding systems as an ongoing practice, not as audit-time preparation.
+**Rule (CS-10): Implement least-privilege access control, periodic access review, and audit logging of access to customer-data-holding systems as an ongoing practice, not as audit-time preparation. Enforcement: explicitly advisory prose (ARC-023) — this doc states the obligation and points to `threat-model.md`/`hardening-checklist.md` for the control detail without restating or itself verifying it, so no executable check or platform-policy verification is wired to this rule here.**
 
 ---
 
@@ -202,9 +189,7 @@ typical consumer SaaS product with no health-data handling does not trigger HIPA
 users who happen to be patients elsewhere; the trigger is the product's own handling of PHI, not its
 users' medical status in general.
 
-**Rule (CS-11):** Confirm HIPAA applicability specifically against whether the product creates,
-receives, maintains, or transmits PHI as a covered entity or business associate — do not assume
-applicability (or safety from it) based on the target market alone.
+**Rule (CS-11): Confirm HIPAA applicability specifically against whether the product creates, receives, maintains, or transmits PHI as a covered entity or business associate — do not assume applicability (or safety from it) based on the target market alone. Enforcement: explicitly advisory prose (ARC-023) — whether a product actually creates, receives, maintains, or transmits PHI is a factual/legal determination about that specific product that no Arcane mechanism observes.**
 
 ---
 
@@ -226,8 +211,7 @@ applicability (or safety from it) based on the target market alone.
   starts from real evidence rather than a scramble. HIPAA (CS-11) becomes relevant only if the business
   is entering healthcare specifically, at whatever stage that happens.
 
-**Rule (CS-12):** Use product stage as a prompt to re-check applicability, not as a substitute for
-checking it — a pre-launch product with EU beta users is already in GDPR's scope regardless of stage.
+**Rule (CS-12): Use product stage as a prompt to re-check applicability, not as a substitute for checking it — a pre-launch product with EU beta users is already in GDPR's scope regardless of stage. Enforcement: explicitly advisory prose (ARC-023) — using product stage as a prompt to re-check applicability is itself guidance about when to apply judgment, not a mechanically checkable condition.**
 
 ## Related
 

@@ -17,7 +17,7 @@ beforeAll(async () => {
 describe("rule 22: spell lifecycle (T24/BC-16 R3)", () => {
   it("states lifecycle operations run through their spell when one is installed", () => {
     expect(universalRules).toContain(
-      "**Lifecycle operations run through their spell when one is installed.**",
+      "**Lifecycle operations run through their spell when one is installed.",
     );
   });
 
@@ -42,7 +42,7 @@ describe("rule 22: spell lifecycle (T24/BC-16 R3)", () => {
 
   it("does not renumber any existing rule — rule 8 (ARC-036) stays rule 8", () => {
     expect(universalRules).toContain(
-      "8. **Use Mermaid for diagrams**",
+      "8. **Use Mermaid for diagrams",
     );
   });
 });

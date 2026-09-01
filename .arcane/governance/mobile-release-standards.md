@@ -64,8 +64,7 @@ release, with its own binary assignment and its own country list. An operator wh
 release turn green will reasonably conclude the app is live to the public — it is not, and nothing in
 the console actively corrects that assumption.
 
-**Rule (MR-01):** Treat each Google Play track as an independent release requiring its own review and
-its own configuration; passing review on one track never promotes the binary to another.
+**Rule (MR-01): Treat each Google Play track as an independent release requiring its own review and its own configuration; passing review on one track never promotes the binary to another. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy opens its Google Play section with this exact rule as a read-first prerequisite, so no per-track setup or deployment step proceeds under the wrong assumption that another track's review already covers it.**
 
 ### MR-02: A fresh production track starts with zero countries — and fails silently about why
 
@@ -75,8 +74,7 @@ with your release / To save, fix errors" that never names the actual cause. The 
 summary reading `0 countries / regions` — set the country list on the track before attempting to build
 the release, not after the generic error appears.
 
-**Rule (MR-02):** Before building a release for any Google Play track, confirm its country/region list
-is non-empty; a generic "fix errors" message with no named cause is this failure's signature.
+**Rule (MR-02): Before building a release for any Google Play track, confirm its country/region list is non-empty; a generic "fix errors" message with no named cause is this failure's signature. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Google Play setup step 2 requires confirming the track's country/region count is non-empty before building that release.**
 
 ### MR-03: Saving is not submitting
 
@@ -85,8 +83,7 @@ through an explicit "Send changes for review" action, which itself carries a sec
 A workflow that stops at "Save" ships nothing. The listing pages carry the identical trap under a
 differently-worded "Save and publish" action with its own second dialog.
 
-**Rule (MR-03):** After any Google Play console edit, look for and complete the explicit send-for-review
-(or save-and-publish) action and its confirmation dialog — "saved" is not a release state.
+**Rule (MR-03): After any Google Play console edit, look for and complete the explicit send-for-review (or save-and-publish) action and its confirmation dialog — "saved" is not a release state. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's repeat-deployment step for Google Play requires locating and completing that confirmation dialog before the release counts as shipped.**
 
 ---
 
@@ -99,8 +96,7 @@ re-render, shifting which question sits at which row. A batch of clicks issued a
 lands on the wrong questions and can silently set an unintended answer — including sensitive categories
 like graphic violence or location sharing.
 
-**Rule (MR-04):** Answer the IARC questionnaire one question at a time, and re-read the full form after
-any change to the app's category, rather than assuming the row order is stable.
+**Rule (MR-04): Answer the IARC questionnaire one question at a time, and re-read the full form after any change to the app's category, rather than assuming the row order is stable. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Google Play setup step 5 requires re-reading the full IARC form after any category change before submitting answers.**
 
 ### MR-08: The "no deobfuscation file" warning is benign and permanent
 
@@ -109,8 +105,7 @@ wired up. This warning does not resolve itself and does not indicate a build def
 every future release until a mapping file is actually uploaded. State this explicitly wherever it
 appears in documentation or in-flight guidance, since it reads as alarming on a first submission.
 
-**Rule (MR-08):** Treat Google Play's "no deobfuscation file" warning as an expected, permanent state
-absent mapping-file upload — not a signal of a broken release.
+**Rule (MR-08): Treat Google Play's "no deobfuscation file" warning as an expected, permanent state absent mapping-file upload — not a signal of a broken release. Enforcement: explicitly advisory prose (ARC-023) — spell-eas-store-deploy's Known Pitfalls list mentions this warning for context, but no step checks for it or blocks on it; treating it as benign rather than a build defect depends on the operator's own judgment.**
 
 ---
 
@@ -124,8 +119,7 @@ collection. Because both declarations are public, a reviewer or a user can compa
 two stores' answers for the same app must describe the same underlying behavior, not merely satisfy each
 store's form independently.
 
-**Rule (MR-05):** Data-safety and privacy declarations across both stores must agree with each other on
-what is actually collected, using "leaves the device" as the collection test in both places.
+**Rule (MR-05): Data-safety and privacy declarations across both stores must agree with each other on what is actually collected, using "leaves the device" as the collection test in both places. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Google Play setup step 6 requires confirming the data-safety declaration agrees with the App Store's own App Privacy answers before submission.**
 
 ### MR-06: The stores' locale catalogues differ
 
@@ -134,8 +128,7 @@ identical between Apple and Google. A locale available on one store may not exis
 default-language or locale-coverage choice has to be made against each store's own list — never copied
 across from the other store's configuration.
 
-**Rule (MR-06):** Resolve locale/language coverage against each store's own supported-locale list
-independently; do not assume the other store's locale set applies.
+**Rule (MR-06): Resolve locale/language coverage against each store's own supported-locale list independently; do not assume the other store's locale set applies. Enforcement: explicitly advisory prose (ARC-023) — spell-eas-store-deploy's Known Pitfalls list cites this rule for context, but resolving locale coverage against each store's own catalogue is left to the operator's judgment, with no checkable state or step gating it.**
 
 ---
 
@@ -148,8 +141,7 @@ cap. An app with genuinely distinct account types (consumer vs. business, for ex
 account supplied directly, with prose describing how a reviewer reaches the other flows — there is no
 mechanism for supplying multiple credential sets natively.
 
-**Rule (MR-07):** Provide one working reviewer account per app submission, with any additional
-account-type flows described in prose rather than as separate credentials.
+**Rule (MR-07): Provide one working reviewer account per app submission, with any additional account-type flows described in prose rather than as separate credentials. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Google Play setup step 7 requires a working reviewer account to be provided before the submission steps that follow it.**
 
 ### MR-09: Read the actual signing certificate — never infer it
 
@@ -163,8 +155,7 @@ about certificate matching, since that flow never checks certificates. This is t
 `EV-01` states in general form — re-read the actual persisted/served state, never trust the interface —
 applied to a case where the "interface" is a console page that may not even show the value in question.
 
-**Rule (MR-09):** Never infer an Android signing SHA-1 from a console page; read the certificate the
-installed app actually presents, via `adb logcat` against a Play-delivered install (`EV-01`).
+**Rule (MR-09): Never infer an Android signing SHA-1 from a console page; read the certificate the installed app actually presents, via `adb logcat` against a Play-delivered install (`EV-01`). Enforcement: structured spell gate (ARC-023) — cited by spell-eas-store-deploy's Known Pitfalls step, which requires reading the certificate via `adb logcat` against a Play-delivered install before trusting any `(package, SHA-1)`-keyed integration, applying the general EV-01 re-read-actual-state discipline to this specific case.**
 
 ### MR-10: Android OAuth clients are scoped to one `(package, SHA-1)` pair, custom scheme off by default
 
@@ -174,8 +165,7 @@ shared one. Separately, new Android OAuth clients ship with "Enable custom URI s
 default; leaving it off produces a visible `Error 400: invalid_request`, which is a console
 configuration gap, not a code defect.
 
-**Rule (MR-10):** Provision one Android OAuth client per distinct `(package, SHA-1)` pair, and confirm
-"Enable custom URI scheme" is on for any client that needs a custom-scheme redirect.
+**Rule (MR-10): Provision one Android OAuth client per distinct `(package, SHA-1)` pair, and confirm "Enable custom URI scheme" is on for any client that needs a custom-scheme redirect. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Known Pitfalls step requires confirming each OAuth client's package/SHA-1 pairing and its custom-URI-scheme toggle state before relying on a custom-scheme redirect.**
 
 ### MR-11: The public developer address comes from D-U-N-S, and confirming it locks it in
 
@@ -187,9 +177,7 @@ first, wait for propagation (days to weeks), let Google re-sync, and only then c
 verification carries its own hard deadline, so this correction needs to start early enough that the
 D&B propagation window still fits before that deadline.
 
-**Rule (MR-11):** Correct the address at the D-U-N-S source and allow it to propagate before confirming
-it in the Google Play console — confirming first permanently publishes whatever address is on file at
-that moment.
+**Rule (MR-11): Correct the address at the D-U-N-S source and allow it to propagate before confirming it in the Google Play console — confirming first permanently publishes whatever address is on file at that moment. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Google Play setup step 8 requires the D-U-N-S correction to propagate before the console confirmation step runs.**
 
 ---
 
@@ -205,8 +193,7 @@ dependency's manifest entries survive independently of whether anything still ca
 permission means removing the dependency that declares it, and the removal must be re-verified against a
 newly built artifact, not assumed from the source diff.
 
-**Rule (MR-12):** Verify declared permissions against the actually built artifact, not against source
-code's apparent usage, both before submission and after removing a permission-declaring dependency.
+**Rule (MR-12): Verify declared permissions against the actually built artifact, not against source code's apparent usage, both before submission and after removing a permission-declaring dependency. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's Known Pitfalls step requires running `aapt2 dump permissions` (or an equivalent manifest inspection) against the built artifact before submission.**
 
 ### MR-13: Android notification icons need a dedicated asset, shipped natively
 
@@ -217,8 +204,7 @@ notification icon, check the notification shade specifically rather than the hea
 OEM skins legitimately omit the small icon from the banner view while still rendering it correctly in the
 shade. The branded, full-color icon slot is `largeIcon`, a separate asset from the required small icon.
 
-**Rule (MR-13):** Ship a dedicated monochrome small-icon asset for Android notifications in a native
-build (never an OTA), and diagnose icon issues via the notification shade, not the heads-up banner.
+**Rule (MR-13): Ship a dedicated monochrome small-icon asset for Android notifications in a native build (never an OTA), and diagnose icon issues via the notification shade, not the heads-up banner. Enforcement: explicitly advisory prose (ARC-023) — spell-eas-store-deploy's Known Pitfalls list restates this rule for awareness, but no step verifies the icon asset exists or checks the notification shade before proceeding; both remain judgment calls for the operator.**
 
 ### MR-14: Android's native `AlertDialog` caps at three buttons
 
@@ -227,9 +213,7 @@ Android's native `AlertDialog` silently drops any button past a hard cap of thre
 the *Cancel* row, leaving a dialog with no way to dismiss it. iOS has no equivalent limit
 (`ActionSheetIOS` supports an arbitrary option count).
 
-**Rule (MR-14):** For any Android menu that could exceed three options, use a real bottom sheet
-dismissible at least three ways (an explicit cancel row, a scrim tap, and the hardware back gesture)
-instead of `Alert.alert`.
+**Rule (MR-14): For any Android menu that could exceed three options, use a real bottom sheet dismissible at least three ways (an explicit cancel row, a scrim tap, and the hardware back gesture) instead of `Alert.alert`. Enforcement: explicitly advisory prose (ARC-023) — spell-eas-store-deploy's Known Pitfalls list cites this rule for awareness, but the fix is a UI code change with no console or platform state for the deploy workflow to check before proceeding; catching it depends on code review, not this spell.**
 
 ## Related
 

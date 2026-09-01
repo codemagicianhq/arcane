@@ -15,59 +15,59 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 ## Non-Negotiable Safety Rules
 
-1. **Never access an encrypted or cross-OS volume you are not authorized to touch.** Do not suggest, execute, or recommend any action that would mount, read, or probe a drive outside the agent's authorized environment. This rule stands as defense-in-depth regardless of encryption status.
+1. **Never access an encrypted or cross-OS volume you are not authorized to touch. Enforcement: explicitly advisory prose (ARC-023) — depends on agent judgment about authorization boundaries; no script scans proposed commands for drive or volume access before execution.** Do not suggest, execute, or recommend any action that would mount, read, or probe a drive outside the agent's authorized environment. This rule stands as defense-in-depth regardless of encryption status.
 
-2. **No root commands without justification.** Do not generate or suggest commands that run as root unless explicitly scoped and justified. The agent runtime should run as a dedicated non-root user by design. See [[security/hardening-checklist|Hardening Checklist]].
+2. **No root commands without justification. Enforcement: explicitly advisory prose (ARC-023) — depends on judgment about what justifies root scope; no script inspects generated commands for root usage before they run.** Do not generate or suggest commands that run as root unless explicitly scoped and justified. The agent runtime should run as a dedicated non-root user by design. See [[security/hardening-checklist|Hardening Checklist]].
 
-3. **No secrets on the command line.** Never pass API keys, tokens, or secrets on the command line, in chat, or in config files. Use SecretRef (env vars) and `read -s` for interactive input.
+3. **No secrets on the command line. Enforcement: explicitly advisory prose (ARC-023) — no secret-scanner exists in this repo yet (tracked as future work, BC-30), so no mechanical check catches a violation.** Never pass API keys, tokens, or secrets on the command line, in chat, or in config files. Use SecretRef (env vars) and `read -s` for interactive input.
 
-4. **This is a production system.** No "fix it later" shortcuts. No experimental changes without rollback plans.
+4. **This is a production system. Enforcement: explicitly advisory prose (ARC-023) — the no-shortcuts and rollback-plan requirements depend on engineering judgment; no check evaluates whether a rollback plan exists.** No "fix it later" shortcuts. No experimental changes without rollback plans.
 
 ---
 
 ## Documentation Rules
 
-5. **Update `last_updated` frontmatter** whenever you edit a document. Every document must have YAML frontmatter with `audience`, `status`, `last_updated`, and `tags`.
+5. **Update `last_updated` frontmatter. Enforcement: explicitly advisory prose (ARC-023) — no lint validates frontmatter fields or verifies `last_updated` was bumped when a document changes.** whenever you edit a document. Every document must have YAML frontmatter with `audience`, `status`, `last_updated`, and `tags`.
 
-6. **Log significant decisions in [[DECISIONS]].** Use the next sequential ADR number. Format: Date, Status, Context, Decision, Reasoning, Rejected alternatives.
+6. **Log significant decisions in [[DECISIONS]]. Enforcement: explicitly advisory prose (ARC-023) — whether a decision is "significant" enough to log is a judgment call; `check:adr-references` verifies that ADR citations resolve, not that decisions get logged in the first place.** Use the next sequential ADR number. Format: Date, Status, Context, Decision, Reasoning, Rejected alternatives.
 
-7. **Use wiki-links for cross-references** (e.g., `[[DECISIONS#ADR-NNN|Short Title]]`, `[[journal/YYYY-MM-DD-topic-slug|Session Label]]`). This enables knowledge graph visualization.
+7. **Use wiki-links for cross-references. Enforcement: explicitly advisory prose (ARC-023) — no link-checker validates wiki-link usage or resolution across this repo's docs.** (e.g., `[[DECISIONS#ADR-NNN|Short Title]]`, `[[journal/YYYY-MM-DD-topic-slug|Session Label]]`). This enables knowledge graph visualization.
 
-8. **Use Mermaid for diagrams** (` ```mermaid ` blocks) for all flow charts, architecture diagrams, and sequence diagrams. Directory trees stay as plain code blocks. Spell output describing state the spell already computed — not authored, freehand explanatory content — additionally follows the **generated state diagrams** convention ([ARC-036](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)): a deterministic, data-derived Mermaid diagram built only from values already in scope, never modeled or invented. Skip it for one-line outputs, speed-rule spells, or any state with only a single reading — the diagram exists to make relationships between multiple already-computed values legible, not to decorate simple output.
+8. **Use Mermaid for diagrams. Enforcement: explicitly advisory prose (ARC-023) — no lint validates diagram block type or the generated-state-diagrams determinism convention.** (` ```mermaid ` blocks) for all flow charts, architecture diagrams, and sequence diagrams. Directory trees stay as plain code blocks. Spell output describing state the spell already computed — not authored, freehand explanatory content — additionally follows the **generated state diagrams** convention ([ARC-036](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)): a deterministic, data-derived Mermaid diagram built only from values already in scope, never modeled or invented. Skip it for one-line outputs, speed-rule spells, or any state with only a single reading — the diagram exists to make relationships between multiple already-computed values legible, not to decorate simple output.
 
-9. **Journal files use date-prefix naming:** `journal/YYYY-MM-DD-topic-slug.md` for chronological sorting.
+9. **Journal files use date-prefix naming. Enforcement: explicitly advisory prose (ARC-023) — `checkSessionContinuity` only verifies `journal/.gitkeep` exists, not that individual journal filenames follow the date-prefix pattern.** `journal/YYYY-MM-DD-topic-slug.md` for chronological sorting.
 
 ---
 
 ## Git Rules
 
-10. **Never auto-commit during interactive sessions.** Stage changes and present the proposed commit message for human approval before executing `git commit`. This applies to Copilot, Claude Code, Codex, and any other interactive AI tool. The human decides when to commit. Exception: autonomous agents at Magus+ power level may self-commit within approved scope.
+10. **Never auto-commit during interactive sessions. Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s Step 8 computes an approval fingerprint over the staged diff and message and halts until an authenticated operator response is tied to it before `git commit` runs.** Stage changes and present the proposed commit message for human approval before executing `git commit`. This applies to Copilot, Claude Code, Codex, and any other interactive AI tool. The human decides when to commit. Exception: autonomous agents at Magus+ power level may self-commit within approved scope.
 
-11. **Use Conventional Commits format** for all commit messages: `type(scope): description`. See [[governance/git-conventions|Git Conventions]] for types, scopes, and examples.
+11. **Use Conventional Commits format. Enforcement: explicitly advisory prose (ARC-023) — no commitlint or equivalent hook validates commit message format.** for all commit messages: `type(scope): description`. See [[governance/git-conventions|Git Conventions]] for types, scopes, and examples.
 
-12. **Agent attribution trailers** are required on agent-authored commits (`Agent`, `Model`, `Model-Source`, `Provider`). `Persona`/`Role` are conditional — present only when a roster exists and one was assigned, never guessed. See [[governance/git-conventions#agent-attribution-model|Attribution Model]].
+12. **Agent attribution trailers. Enforcement: explicitly advisory prose (ARC-023) — `spell-commit-work`'s Step 7 documents the required trailers, but no hook or CI check verifies they are actually present on a given commit.** are required on agent-authored commits (`Agent`, `Model`, `Model-Source`, `Provider`). `Persona`/`Role` are conditional — present only when a roster exists and one was assigned, never guessed. See [[governance/git-conventions#agent-attribution-model|Attribution Model]].
 
-13. **For runtime config changes** (anything touching the agent runtime's config files or service restarts): do NOT commit supporting docs until the user has confirmed the change is working. Stage and present — but wait for explicit approval after testing.
+13. **For runtime config changes. Enforcement: structured spell gate (ARC-023), hedged — `spell-commit-work`'s Step 8 operator-approval gate covers this commit like any other before it can be made, though it verifies diff/message approval rather than a dedicated confirmation that testing occurred.** (anything touching the agent runtime's config files or service restarts): do NOT commit supporting docs until the user has confirmed the change is working. Stage and present — but wait for explicit approval after testing.
 
-14. **Never commit directly to main.** All work — human or agent — happens on topic branches. Humans use `type/short-description`; agents use `{agent-slug}/type/short-description`. Main receives changes only through PR completion, not local direct merges. See [[governance/git-conventions#branch-discipline|Branch Discipline]].
+14. **Never commit directly to main. Enforcement: explicitly advisory prose (ARC-023) — `spell doctor`'s `checkPlatformBranchPolicy` verifies only the platform's merge-method policy (squash disallowed), not that direct pushes/commits to main are blocked.** All work — human or agent — happens on topic branches. Humans use `type/short-description`; agents use `{agent-slug}/type/short-description`. Main receives changes only through PR completion, not local direct merges. See [[governance/git-conventions#branch-discipline|Branch Discipline]].
 
 ---
 
 ## Spell Lifecycle
 
-22. **Lifecycle operations run through their spell when one is installed.** Committing, opening a PR, opening or closing a session, reviewing code, and shipping each have a dedicated spell (`spell-commit-work`, `spell-create-pull-request`, `spell-open-session`/`spell-close-session`, `spell-review`, `spell-ship`). When the installed component set includes the matching spell, invoke it for that operation rather than improvising the workflow from general knowledge — even when the user does not name the spell explicitly. The intent→spell routing table injected into each client's L1 instruction file (`CLAUDE.md`, `.github/copilot-instructions.md`, `AGENTS.md`) is normative for this mapping, not illustrative.
+22. **Lifecycle operations run through their spell when one is installed. Enforcement: explicitly advisory prose (ARC-023) — invoking the correct spell instead of improvising depends on agent judgment; no check verifies that a matching spell was actually invoked for a given operation.** Committing, opening a PR, opening or closing a session, reviewing code, and shipping each have a dedicated spell (`spell-commit-work`, `spell-create-pull-request`, `spell-open-session`/`spell-close-session`, `spell-review`, `spell-ship`). When the installed component set includes the matching spell, invoke it for that operation rather than improvising the workflow from general knowledge — even when the user does not name the spell explicitly. The intent→spell routing table injected into each client's L1 instruction file (`CLAUDE.md`, `.github/copilot-instructions.md`, `AGENTS.md`) is normative for this mapping, not illustrative.
 
 ---
 
 ## Recommendation Guardrails (ADR-034)
 
-15. **Flag actionable recommendations.** Any recommendation that could lead to a purchase, subscription, account creation, or irreversible action must: (a) be flagged explicitly, (b) use verified current information — never assume or fabricate, (c) present free/no-cost alternatives when they exist, (d) state confidence level if based on general knowledge. For >$50 or contracts, require explicit confirmation. See [[agents/agent-policies#actionable-recommendation-policy-adr-034|Full Policy]].
+15. **Flag actionable recommendations. Enforcement: explicitly advisory prose (ARC-023) — whether a recommendation is flagged, sourced, and confidence-rated depends on judgment; no automated check evaluates response content against this policy.** Any recommendation that could lead to a purchase, subscription, account creation, or irreversible action must: (a) be flagged explicitly, (b) use verified current information — never assume or fabricate, (c) present free/no-cost alternatives when they exist, (d) state confidence level if based on general knowledge. For >$50 or contracts, require explicit confirmation. See [[agents/agent-policies#actionable-recommendation-policy-adr-034|Full Policy]].
 
 ---
 
 ## Screenshot Curation
 
-15. **Curate screenshots — not every screenshot needs saving.** Use these heuristics:
+24. **Curate screenshots — not every screenshot needs saving. Enforcement: explicitly advisory prose (ARC-023) — which screenshots to keep is a judgment call; no check evaluates screenshot-retention decisions.** Use these heuristics:
     - **Save** when it shows a completed setup, config state, UI result, or evidence of a problem/fix.
     - **Save** when the user explicitly says "save this" or "add this to docs."
     - **Save key decision points and final states** in multi-step flows; skip intermediate steps.
@@ -80,7 +80,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 ## Sensitive Repositories
 
-21. **Reference, don't transcribe, when the repository is marked sensitive.** If
+21. **Reference, don't transcribe, when the repository is marked sensitive. Enforcement: explicitly advisory prose (ARC-023) — whether written output cites versus transcribes sensitive content depends on judgment; no check scans agent output for this distinction.** If
     `.arcane.json` has `content_sensitivity: "sensitive"`, the repository's own
     documents are the sensitive material — not just credentials inside them. In
     that mode:
@@ -106,7 +106,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 ## Naming Conventions
 
-16. **Three naming tiers — never mix them:**
+16. **Three naming tiers — never mix them. Enforcement: explicitly advisory prose (ARC-023) — `spell ward` and `org-token-lint` scan for denylisted org/venture/customer names, not for adherence to this tier taxonomy; no check verifies tier consistency.**
 
 | Tier | What | Style | Examples |
 |------|------|-------|---------|
@@ -114,19 +114,19 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 | AI Agents | Autonomous agents | Persona name + role title | Merlin — CTO, Kellar — Product Ops |
 | Systems/Services | DBs, APIs, tools | Functional `[slug]-[function]` | `inventory-api`, `orders-worker` |
 
-17. **Projects and repos follow a consistent naming convention.** Pick one (TitleCase or kebab-case) and apply it uniformly across your org.
+17. **Projects and repos follow a consistent naming convention. Enforcement: explicitly advisory prose (ARC-023) — no check verifies TitleCase/kebab-case consistency across projects and repos.** Pick one (TitleCase or kebab-case) and apply it uniformly across your org.
 
 ---
 
 ## Operational Rules
 
-18. **TODO.md is a scratchpad.** Resolved items move to the relevant doc, then get deleted from TODO.md.
+18. **TODO.md is a scratchpad. Enforcement: explicitly advisory prose (ARC-023) — `checkSessionContinuity` verifies TODO.md exists, not that resolved items are removed from it.** Resolved items move to the relevant doc, then get deleted from TODO.md.
 
-19. **After any onboarding or config wizard**, re-validate authentication and network-exposure settings — wizards can silently downgrade security settings.
+19. **After any onboarding or config wizard. Enforcement: explicitly advisory prose (ARC-023) — no wizard or check re-validates authentication and network-exposure settings after configuration changes.**, re-validate authentication and network-exposure settings — wizards can silently downgrade security settings.
 
-20. **For repo path requests**, perform read-only discovery before claiming "no access." Use [[agents/agent-approved-paths|Agent Approved Paths Registry]].
+20. **For repo path requests. Enforcement: explicitly advisory prose (ARC-023) — performing read-only discovery before claiming no access depends on agent judgment; no check verifies this behavior occurred.**, perform read-only discovery before claiming "no access." Use [[agents/agent-approved-paths|Agent Approved Paths Registry]].
 
-23. **Diff before deleting a "duplicate."** When housekeeping surfaces two blocks of content that look
+23. **Diff before deleting a "duplicate." Enforcement: explicitly advisory prose (ARC-023) — the branch-specific case this generalizes from has a structured procedure (git-conventions.md's Content-Verified Branch Deletion), but no equivalent structured check exists for arbitrary documents, configs, or data files.** When housekeeping surfaces two blocks of content that look
     like duplicates — in a document, a config, a data file — compare them in full before removing
     either. A near-identical pair is usually a **drifted copy carrying unique content in one and not the
     other**, not byte-identical redundancy; deleting on sight can destroy the unique content silently.

@@ -29,7 +29,7 @@ describe("compliance-standards.md: rule-index/rule-body consistency (T26/BC-26)"
 
     for (const id of indexIds) {
       expect(standards).toContain(`### ${id}:`);
-      expect(standards).toContain(`**Rule (${id}):**`);
+      expect(standards).toContain(`**Rule (${id}):`);
     }
   });
 
