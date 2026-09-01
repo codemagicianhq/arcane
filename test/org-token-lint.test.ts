@@ -27,6 +27,16 @@ async function createAssetsFixture(content: string) {
   return { assets, dist: join(root, "dist") };
 }
 
+async function createInstructionsFixture(content: string) {
+  const root = await fs.mkdtemp(join(tmpdir(), "org-token-gate-test-"));
+  tempDirs.push(root);
+  const assets = join(root, "assets");
+  const instructions = join(assets, ".github", "instructions");
+  await fs.mkdir(instructions, { recursive: true });
+  await fs.writeFile(join(instructions, "fixture.instructions.md"), content, "utf8");
+  return { assets, dist: join(root, "dist") };
+}
+
 function runGate(
   assets: string,
   dist: string,
@@ -91,6 +101,19 @@ describe.skipIf(!TSX)("org-token build gate", () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).not.toContain("Org-token lint FAILED");
+  });
+
+  it("also scans .github/instructions/, not just .github/prompts/ (TODO.md gap, found 2026-08-31 BC-06, closed 2026-09-01)", async () => {
+    const { assets, dist } = await createInstructionsFixture(
+      "Deploy Known Bad Organization configuration.\n",
+    );
+
+    const result = runGate(assets, dist);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Org-token lint FAILED");
+    expect(result.stderr).toContain(".github/instructions/fixture.instructions.md:1");
+    expect(result.stderr).not.toContain("Known Bad Organization");
   });
 });
 // ─── Repository-wide privacy scan (ARC-031) ──────────────────────────────────

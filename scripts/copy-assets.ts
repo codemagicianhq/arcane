@@ -19,6 +19,7 @@ import {
   dedupeFindings,
   resolveOrgTokens,
   resolvePrivateTokens,
+  scanDirectoryByExtension,
   scanPromptDirectory,
   scanRepository,
 } from "./org-token-lint.js";
@@ -188,12 +189,20 @@ async function main() {
   const packageIdentity = JSON.parse(
     await readFile(join(__dirname, "../package.json"), "utf8"),
   );
-  // Portability: distributed spells must carry no org-specific literal at all
-  // (package-derived names included) — scanned only where they ship.
-  const portabilityFindings = await scanPromptDirectory(
-    join(SRC_ASSETS, ".github/prompts"),
-    createOrgTokenRules(resolveOrgTokens(packageIdentity)),
-  );
+  // Portability: distributed spells (and instructions files, which ship the
+  // same way from src/assets/ but were missing from this scan entirely until
+  // TODO.md's 2026-08-31 BC-06 finding) must carry no org-specific literal at
+  // all (package-derived names included) — scanned only where they ship.
+  const orgTokenRules = createOrgTokenRules(resolveOrgTokens(packageIdentity));
+  const portabilityFindings = [
+    ...(await scanPromptDirectory(join(SRC_ASSETS, ".github/prompts"), orgTokenRules)),
+    ...(await scanDirectoryByExtension(
+      join(SRC_ASSETS, ".github/instructions"),
+      ".instructions.md",
+      ".github/instructions",
+      orgTokenRules,
+    )),
+  ];
   // Privacy: the ARCANE_ORG_TOKENS denylist (real venture/customer/machine
   // names, supplied as a CI secret) must appear nowhere in the repository —
   // docs, tests and decision records included. ARC-031.

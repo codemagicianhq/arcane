@@ -355,6 +355,52 @@ export async function isHookEnforced(cwd: string): Promise<boolean> {
 }
 
 /**
+ * Warns -- never blocks -- when the branch being pushed already has a
+ * CLOSED or MERGED pull request (ARC-035 decision 4: the silent
+ * stranded-commit mode that shipped as PR #63's incident is made loud by
+ * extending this same hook slot, not by adding a second, competing one).
+ *
+ * Shares the "pre-push" hook name with {@link PRE_PUSH_HOOK_BODY}, so the
+ * two are mutually exclusive per repository by construction -- a repo with
+ * `push_policy: "blocked"` already refuses every push outright and has no
+ * use for a warning about which PR it would have gone to; every other
+ * tier (`guarded`, `open`, unset) gets this one instead. GitHub-only,
+ * matching the ADR's own cited mechanism (`gh pr view --json state`); a
+ * non-GitHub remote or a missing/unauthenticated `gh` is a silent no-op,
+ * never a blocked or errored push.
+ */
+const CLOSED_PR_WARNING_HOOK_BODY = `#!/bin/sh
+# Installed by Arcane (ARC-035 decision 4): warns when the branch being
+# pushed already has a closed or merged PR, instead of accepting the push
+# into a void with no signal at all. Never blocks -- pushing to a branch
+# behind a closed PR is sometimes intentional.
+remote_url="$2"
+case "$remote_url" in
+  *github.com*) ;;
+  *) exit 0 ;;
+esac
+command -v gh >/dev/null 2>&1 || exit 0
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null) || exit 0
+state=$(gh pr view "$branch" --json state --jq .state 2>/dev/null) || exit 0
+case "$state" in
+  CLOSED|MERGED)
+    echo "arcane: WARNING -- the PR for branch '$branch' is already $state. Pushing anyway (not blocked)." >&2
+    ;;
+esac
+exit 0
+`;
+
+/** Installs the closed-PR warning hook. Thin wrapper over {@link installHook}. */
+export async function installClosedPrWarningHook(cwd: string): Promise<HookInstallOutcome> {
+  return installHook(cwd, "pre-push", CLOSED_PR_WARNING_HOOK_BODY);
+}
+
+/** True only if the closed-PR warning hook (not the blocking one) is the one currently installed. */
+export async function isClosedPrWarningHookInstalled(cwd: string): Promise<boolean> {
+  return isHookInstalled(cwd, "pre-push", CLOSED_PR_WARNING_HOOK_BODY);
+}
+
+/**
  * Real hooks living in git's default directory, which taking `core.hooksPath`
  * would silently switch off. `.sample` files are git's own inert templates.
  */

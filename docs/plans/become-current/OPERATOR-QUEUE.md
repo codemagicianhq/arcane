@@ -339,3 +339,41 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   APM) before a real go/no-go can be made with full context. Not blocking anything in this plan.
 
 <!-- The loop appends Q-011+ below this line. -->
+
+## Q-011 — Phase 5 DoD closure: the 7 items with no forcing function, consolidated
+
+- **What:** `TODO.md`'s Definition of Done audit (2026-09-01, Phase 5) implemented every unchecked
+  item that was small, in-reach, and not operator-blocked (the ARC-035 closed-PR push warning, the
+  spell-routing-layer R3 rule — plus discovering R1/R2 were already shipped and this item's own
+  earlier narrowing pass had missed R3 too via a case-sensitive grep, corrected on the record — the
+  org-token gate's `.github/instructions/` scan gap, and 2 heavy tests' vitest timeouts). Seven items
+  remain, each needing a human decision this program cannot make on its own: an external artifact
+  only the operator can supply, a creative/brand judgment call, or a genuinely open engineering
+  question with no forcing function. `TODO.md` gained a `## Parked — Needs Operator` section listing
+  all seven in place, rather than physically relocating their full detail:
+  1. **EF-18** — external findings verification/consent workflow; blocked on a genuine independent
+     batch-002 submission only the operator can supply.
+  2. **Push-safety's 4 design questions** (ARC-034 follow-on) — open design questions, reconfirmed
+     2026-09-01 against everything BC-30/BC-31 shipped; still no forcing function.
+  3. **Prospero's insignia lore capture** — creative/narrative content for the Arcanos Codex; needs
+     the operator's own voice, not an agent's invention.
+  4. **"The Arcanos" branding copy pass** — a brand/copy judgment call across marketing surfaces.
+  5. **naming-conventions.md reword** ("more boring" → "plainer/clearer") — explicitly flagged
+     "owner's call" in its own text.
+  6. **Windows `ENOTEMPTY` rmdir race investigation** — open-ended environment investigation; the
+     companion `testTimeout` fix already shipped in this same closure, this half remains genuinely
+     open.
+  7. **Tracking-mode resolution-order inconsistency** (`spell-scope` vs `spell-open-session`/
+     `spell-plan`, found landing BC-32's fragment mechanism) — a real behavior decision for whoever
+     owns these spells' design, not a mechanical fix a generation-tooling epic should make as a
+     drive-by.
+- **Why:** PLAN.md's Definition of Done criterion 2 requires `TODO.md` to carry no unchecked item
+  except those listed under a named parked section; criterion 1 requires epics/remainders to be
+  either checked off or explicitly parked here. Consolidated into one entry rather than seven,
+  since none of these is an accept/revise/reject decision or a platform mutation — they are
+  disclosures of genuinely-open work, not open questions this queue's usual format expects an
+  answer to.
+- **Preconditions:** none.
+- **Status:** parked 2026-09-01 (Phase 5, become-current DoD closure) — none of the seven blocks
+  program completion; each is either operator-scoped by nature or a real design decision with no
+  urgency. Revisit individually, on whatever cadence the operator prefers.
