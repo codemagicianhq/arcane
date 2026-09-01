@@ -151,8 +151,8 @@ Execute the `spell-review` workflow:
 1. Review the full diff (`git diff main...HEAD`).
 2. Check architecture compliance against `architecture.md`.
 3. Check for OWASP Top 10 security issues.
-4. Find a minimum of 3 issues or justify why fewer exist.
-5. Classify findings: HIGH / MEDIUM / LOW.
+4. Explicitly cover every lens — correctness, security, performance, tests, naming/clarity, architecture — and state "no issues" for any lens that is clean. There is no finding quota: zero findings is a valid outcome on a clean or small diff; never fabricate issues to hit one.
+5. Classify each real finding: HIGH / MEDIUM / LOW.
 6. **Gate:** If any HIGH severity finding exists, loop back to Phase 3 to fix it. MEDIUM and LOW findings are noted in the ship report but do not block. Maximum 2 review-fix loops before halting.
 
 Proceed automatically to Phase 6.

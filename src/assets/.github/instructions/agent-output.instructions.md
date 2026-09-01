@@ -6,6 +6,25 @@ applyTo: "**"
 
 Source of truth: `.arcane/governance/git-conventions.md` → PR Standards → PR Requirements.
 
+## Runnable Code Fences Are Commitments
+
+Chat UIs (Claude Code, Copilot, etc.) render a one-click **Run button** on shell-tagged
+code fences (```` ```bash ````, ```` ```powershell ````). Treat that button as part of
+your output's meaning:
+
+- Only commands intended for **immediate execution on the current machine** may go in a
+  shell-tagged fence.
+- Reference, undo/revert, cleanup-someday, destructive-example, or
+  **run-on-a-different-machine** commands must use a ```` ```text ```` fence or inline
+  code, labeled "reference only — do not run here".
+- Surrounding prose ("only if you ever want to undo this…") does **not** make a runnable
+  fence safe — users click the button, not the paragraph.
+
+**Origin (2026-07-25, Kiubo México):** an agent posted a "revert anytime"
+`firewall-rule delete` example in a runnable fence; it was accidentally executed twice,
+deleting a prod DB firewall rule mid-deploy and failing the pipeline's prod stage both
+times.
+
 ## PR Link Format
 
 All PR references in agent output **must** be clickable markdown links. Never write a bare `PR #NNN`.
