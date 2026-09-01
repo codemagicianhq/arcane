@@ -121,12 +121,17 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   independently confirmed already on `main`, the other unlanded commit is stale session-state
   narrative); `sessions/2026-08-02-provider-neutral-close` abandoned (deleted local; confirmed
   EF-34-class fixture contamination, cross-reference on EF-34.md updated to record the resolution).
-  `docs/runnable-fences-selfhosted-agents` (land) still pending, and for a reason found only while
-  executing this, not known when the recommendation was recorded: its single commit touches
-  `.github/instructions/agent-output.instructions.md` alongside `cicd-standards.md` — the former is
-  squarely the parallel session's protected footprint (its own ARC-023 prompt/instructions
-  annotation pass). Held for the same gate BC-32 is already waiting on, rather than landed now or
-  surgically split, to avoid any entanglement with in-flight work on that exact file.
+  `docs/runnable-fences-selfhosted-agents` (land) was held for the same gate BC-32 was waiting on
+  (its single commit touches `.github/instructions/agent-output.instructions.md`, the parallel
+  session's protected footprint) — now landed via [PR #165](https://github.com/codemagicianhq/arcane/pull/165)
+  once that session's own work merged to `main` (confirmed via `gh pr view`/`gh pr list`). Re-applied
+  fresh on a new session branch rather than merging the stale commit, since `cicd-standards.md` had
+  been restructured into a vendor-neutral Core / Azure DevOps Profile split (BC-31 Batch B) after the
+  branch was cut — the new "Self-Hosted Agents" content was re-nested as an H3 under the Azure DevOps
+  Profile rather than kept as the old flat H2. Also caught and fixed in the same PR: the stale
+  branch's content baked in a real client name ("Kiubo México") that CI's org-token lint (ARC-031)
+  flagged on push — replaced with "Ordovica," the same defect class BC-06 had already hit once
+  before. The stale branch itself (commit `86025d9`) is deleted, its content fully superseded.
 
 ## Q-004 — Accept/revise/reject ADR: ARC-029 (Best-Practice-First Solution Selection)
 
