@@ -264,4 +264,33 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Preconditions:** none — the artifact already exists and is gated as of BC-23.
 - **Status:** ready for you to wire up (or delegate) on the `arcane-website` side.
 
-<!-- The loop appends Q-010+ below this line. -->
+## Q-010 — Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions
+
+- **What:** I13's "editor files must sit at fixed repo paths" enabling finding rests on two assumptions
+  about VS Code's `chat.promptFilesLocations` setting. Both were empirically tested live on 2026-08-31
+  (BC-28) — see [docs/research/delivery-channels-smoke-tests.md](../../research/delivery-channels-smoke-tests.md)
+  for the full report. **Confirmed:** the setting traverses into `node_modules` (a real risk to
+  disclose in any future config, not just a capability), and prompt-file discovery follows a directory
+  junction standing in for a true symlink (the enabling mechanism itself works, at least for junctions).
+- **Scope correction, disclosed:** this repo's own PLAN.md summarized BC-28's smoke tests as being about
+  "MCP prompts; Claude Code plugin" — checked directly against IDEAS.md's actual I13 entry, that
+  characterization is wrong. I13's own named smoke tests are specifically about `node_modules`
+  traversal and symlink-following, unrelated to MCP prompts or Claude Code plugin marketplaces as
+  channels. Both of those (and the other two channels I13's landscape scan names — portable Agent
+  Skills, Microsoft APM) remain **entirely unevaluated** — this entry's findings inform only the
+  "reference instead of copy" mechanism question, not a go/no-go on any specific channel.
+  Implemented what I13 actually asks, not PLAN.md's inaccurate summary of it.
+- **The actual decision this queues:** whether to pursue a package-referenced (symlink/junction-based)
+  distribution model for Arcane's own spell content as a future direction — relevant to (but not
+  identical with) the 2026-08-02 spell-compiler idea's "emit, don't copy" framing. This is a foundational
+  distribution-architecture choice, not something to decide unilaterally under this plan's existing
+  grant.
+- **Not yet known / explicitly out of scope here:** whether MCP prompts, Claude Code plugin
+  marketplaces, portable Agent Skills, or Microsoft APM are each individually worth pursuing as
+  channels — that needs its own dedicated investigation per channel if the operator wants it, separate
+  from this narrow smoke test.
+- **Preconditions:** none.
+- **Status:** ready for your go/no-go call on pursuing package-referenced distribution; the other three
+  channels are queued here only as a named gap, not a decision ready to make yet.
+
+<!-- The loop appends Q-011+ below this line. -->
