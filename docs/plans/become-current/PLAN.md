@@ -537,9 +537,21 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     before editing, so the fix landed everywhere the old model was referenced, not just at its
     definition site. 11 new tests. Caught and fixed the same line-wrap-crossing test mistake as
     BC-27a, in the same file family, before it shipped.
-- [ ] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size
-  M. Run the two named smoke tests (MCP prompts; Claude Code plugin) and write a findings doc;
-  go/no-go on each channel is an operator decision → OPERATOR-QUEUE.
+- [x] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size M.
+  **Done 2026-08-31: this entry's own "MCP prompts; Claude Code plugin" characterization was wrong**,
+  checked directly against IDEAS.md's actual I13 text — the two named smoke tests are about
+  `chat.promptFilesLocations` node_modules traversal and symlink-following, unrelated to MCP/Claude
+  Code plugins as channels. Ran what I13 actually asks: live on this machine, with real fixtures (a
+  directory junction substituted for a true symlink — creating one needs Developer Mode, a system
+  setting outside this session's grant to enable unilaterally; disclosed in the findings doc). Both
+  confirmed empirically: node_modules traversal happens (a risk to name in any future config, not just
+  a fact), and junction-following works (the enabling mechanism for "reference, don't copy" holds, at
+  least for junctions). Findings doc at
+  [docs/research/delivery-channels-smoke-tests.md](../../research/delivery-channels-smoke-tests.md),
+  dogfooding BC-24's own Research Reports convention. Go/no-go on the actual distribution-model
+  question queued at [OPERATOR-QUEUE.md Q-010](OPERATOR-QUEUE.md#q-010) — the other three landscape-
+  scan channels (MCP prompts, Claude Code plugin marketplaces, Agent Skills, Microsoft APM) remain
+  entirely unevaluated, named there as an explicit gap rather than silently folded into this result.
 
 ### Wave 5 — Unparked implementations & the big backfill
 
