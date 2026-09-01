@@ -107,33 +107,38 @@ for each of `{NONPROD_ORIGINS}`:
 
 For each check below, capture the stated evidence and mark it
 `PASS`/`FAIL`. **Do not restate any rule's justification here — cite the ID
-only**; the reasoning lives in `web-discoverability-standards.md`.
+only**; the reasoning lives in `web-discoverability-standards.md`. A row
+marked *(supplementary)* is a useful check that doesn't correspond to any
+single `WD-nn` rule — capture its evidence the same way, but don't cite a
+rule ID for it.
 
 **Per-route share metadata**
 
 | Rule ID | Check | Evidence to capture |
 | --- | --- | --- |
 | `WD-01` | Fetch `{SITE_ORIGIN}`/&lt;a specific deep route, not the homepage&gt; with a plain HTTP client that does not execute JavaScript. Does the raw response body carry a `<title>` and meta description distinct from the homepage's? | The two raw response bodies, with the extracted `<title>`/description values highlighted. |
-| `WD-02` | In that same response, do the Open Graph / social-card tags (`og:title`, `og:description`, `og:image`) reflect the route's own content, not the homepage's or a hard-coded default? | Extracted `og:*` tag values per sampled route. |
-| `WD-03` | Does each fetched route carry exactly one `<link rel="canonical">`, self-referential or pointing at the one intended canonical URL, with no second conflicting canonical tag? | Canonical URL(s) found per route; flag any route with more than one. |
-| `WD-04` | Where the route type is expected to carry structured data, is an `application/ld+json` block present and does it parse as valid JSON? | The raw JSON-LD block per route, and the parse result. |
+| *(supplementary)* | In that same response, do the Open Graph / social-card tags (`og:title`, `og:description`, `og:image`) reflect the route's own content, not the homepage's or a hard-coded default? | Extracted `og:*` tag values per sampled route. |
+| `WD-03` | Fetch a route representing content that no longer exists, or that was never public. Does the response return a genuine `404` or `410` status — not a `200` that merely renders a not-found-looking page? | The response status code, and the rendered body (to confirm it's the application's own not-found UI, not a generic host error page). |
+| *(supplementary)* | Does each fetched route carry exactly one `<link rel="canonical">`, self-referential or pointing at the one intended canonical URL, with no second conflicting canonical tag? | Canonical URL(s) found per route; flag any route with more than one. |
+| *(supplementary)* | Where the route type is expected to carry structured data, is an `application/ld+json` block present and does it parse as valid JSON? | The raw JSON-LD block per route, and the parse result. |
 | `WD-13` | Where a share-metadata or structured-data value is built from user- or content-supplied text (e.g. a title containing a quote or ampersand), is it correctly escaped for both contexts it appears in — JSON-escaped inside the JSON-LD payload, and separately HTML-escaped in surrounding markup — with no raw pass-through? | One sampled route whose content contains a quote, ampersand, or angle bracket, with the rendered JSON-LD and HTML attribute shown side by side. |
-| `WD-15` | Fetch a sampled `{PUBLIC_ASSET_PREFIX}` share-image URL with a plain, unauthenticated HTTP client. Does it return `200` with an image content-type and no auth redirect? | Response status, `Content-Type` header, and byte size for the sampled asset. |
+| *(supplementary)* | Fetch a sampled `{PUBLIC_ASSET_PREFIX}` share-image URL with a plain, unauthenticated HTTP client. Does it return `200` with an image content-type and no auth redirect? | Response status, `Content-Type` header, and byte size for the sampled asset. |
 
 **Robots and sitemap policy**
 
 | Rule ID | Check | Evidence to capture |
 | --- | --- | --- |
-| `WD-05` | Fetch `{SITE_ORIGIN}/robots.txt` directly. Does it exist, return `200`, parse as valid, and avoid disallowing any route intended to be indexed? | Raw `robots.txt` body, and any `Disallow` line matching an intended-public route. |
-| `WD-06` | Does `robots.txt` contain a `Sitemap:` directive, and does fetching that URL return a well-formed sitemap? | The `Sitemap:` line and the fetched sitemap's parse result. |
+| *(supplementary)* | Fetch `{SITE_ORIGIN}/robots.txt` directly. Does it exist, return `200`, parse as valid, and avoid disallowing any route intended to be indexed? | Raw `robots.txt` body, and any `Disallow` line matching an intended-public route. |
+| *(supplementary)* | Does `robots.txt` contain a `Sitemap:` directive, and does fetching that URL return a well-formed sitemap? | The `Sitemap:` line and the fetched sitemap's parse result. |
 | `WD-07` | Does every URL listed in the sitemap satisfy `{PUBLIC_VISIBILITY_PREDICATE}`? | Any sitemap entries that fail the predicate. |
-| `WD-14` | For a sampled route under `{RESTRICTED_PREFIX}`: is it absent from the sitemap, does it carry a noindex signal, and is it unreachable via any link from a route that satisfies `{PUBLIC_VISIBILITY_PREDICATE}`? | Sitemap membership (should be none), noindex signal, and an inbound-link check from the public route set. |
+| `WD-08` | Where `{PUBLIC_ASSET_PREFIX}` (or another specific public path referenced by page metadata) falls under a broader disallowed prefix in `robots.txt`, is an explicit `Allow:` rule declared for that specific path? | The relevant `Allow:`/`Disallow:` lines from `robots.txt`, and confirmation the specific path is fetchable by a crawler despite the broader disallow. |
+| *(supplementary)* | For a sampled route under `{RESTRICTED_PREFIX}`: is it absent from the sitemap, does it carry a noindex signal, and is it unreachable via any link from a route that satisfies `{PUBLIC_VISIBILITY_PREDICATE}`? | Sitemap membership (should be none), noindex signal, and an inbound-link check from the public route set. |
 
 **Non-production noindexing**
 
 | Rule ID | Check | Evidence to capture |
 | --- | --- | --- |
-| `WD-08` | For each `{NONPROD_ORIGINS}` host: is a site-wide `Disallow: /` in `robots.txt` the *only* suppression signal present — no accompanying noindex header or meta tag? | The host's `robots.txt` plus presence/absence of a noindex header and meta tag on a sampled route. |
+| *(supplementary)* | For each `{NONPROD_ORIGINS}` host: is a site-wide `Disallow: /` in `robots.txt` the *only* suppression signal present — no accompanying noindex header or meta tag? Closely related to `WD-09` below. | The host's `robots.txt` plus presence/absence of a noindex header and meta tag on a sampled route. |
 | `WD-09` | For each `{NONPROD_ORIGINS}` host: does a sampled route serve **both** an `X-Robots-Tag: noindex` response header **and** an HTML `<meta name="robots" content="noindex">` tag, gated by `{ENV_SIGNAL}`? | Response headers and parsed `<head>` for one sampled route per non-prod host. |
 
 **Search-engine registration**
