@@ -21,14 +21,19 @@ Determine the correct semver bump and apply it.
 
 ## Step 1 — Check whether a bump is needed
 
-Run the version check gate:
+Run the version check gate in **staged mode** (LH-06a) — this spell runs before the commit that
+will actually contain the change, so the default `merge-base..HEAD` diff can't see it yet; staged
+mode unions that diff with `git diff --cached --name-only` so today's not-yet-committed work is
+checked too, not just history:
 
 ```
-npm run check:version-bump
+npm run check:version-bump -- --staged
 ```
 
 - If it **passes** → no bump needed. Stop here and report "No version bump required."
 - If it **fails** → proceed to Step 2.
+- If the changed content isn't staged yet (working-tree edits only), use `-- --working-tree`
+  instead, which additionally unions plain `git diff --name-only`.
 
 ## Step 2 — Determine semver type
 

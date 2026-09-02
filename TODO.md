@@ -463,7 +463,8 @@
 
 - [ ] **LOW: `.gitignore`'s `~/.arcane/` pattern is a no-op — gitignore does not tilde-expand, so it never matches anything.** Found 2026-09-02. Left as-is pending LH-11's ADR (a local org-token denylist file may want exactly this path, in which case the pattern gets a real purpose instead of being deleted).
 
-- [ ] **MEDIUM: `scripts/check-version-bump.ts` only diffs `merge-base..HEAD`, so running it before committing reports a false "no bump required."** Found 2026-09-02. `spell-bump.prompt.md` Step 1 runs the gate in exactly that false-negative order; `spell-commit-work.prompt.md` never mentions it at all. Routes to LH-06.
+- [x] **MEDIUM: `scripts/check-version-bump.ts` only diffs `merge-base..HEAD`, so running it before committing reports a false "no bump required."** Found 2026-09-02. `spell-bump.prompt.md` Step 1 runs the gate in exactly that false-negative order; `spell-commit-work.prompt.md` never mentions it at all. Routed to LH-06.
+  **Resolved 2026-09-02 (LH-06a):** `check-version-bump.ts` gained `--staged`/`--working-tree` modes that union the merge-base diff with `git diff --cached`/plain `git diff`; `spell-bump.prompt.md` Step 1 now runs `--staged`; `spell-commit-work.prompt.md` Step 2 gained a distributable-change halt (skipped gracefully in repos without this script — it's Arcane-specific, not general-purpose); `.husky/pre-push` now runs `check:version-bump` at all (it never had before), catching a missing bump before the push itself, not just before merge.
 
 ## Parked — Needs Operator
 

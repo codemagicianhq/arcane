@@ -42,6 +42,10 @@ Workflow:
    - If coverage passes, record the coverage summary for use in the commit body or PR description.
    - **Never commit code that fails CI locally.** The pipeline is not the first gate — this step is.
 
+   - **Distributable-change halt** (LH-06a; only when this repo has its own `scripts/check-version-bump.ts` — Arcane's own repo, or one that adopted the same convention; skip gracefully otherwise, this is not a general-purpose check every consumer repo can run):
+     - Run `npm run check:version-bump -- --staged` before committing. This is the staged-diff mode, not the default CI mode — it can see today's not-yet-committed change, which the default `merge-base..HEAD` diff cannot.
+     - **HALT if it fails.** Distributable content (`src/assets/`, `registry.ts`, `profiles.ts`) changed without a version bump. Run `spell-bump` first, then return here.
+
    - **Format before committing** _(stack-aware; runs alongside the test gate above)_:
      - Detect the configured formatter from the project's own config — do not assume one. Look for the toolchain's standard markers, for example:
        - JS/TS: `.prettierrc*` / `prettier` in `package.json` → `npx prettier --write .`

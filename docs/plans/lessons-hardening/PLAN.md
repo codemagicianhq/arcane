@@ -258,7 +258,9 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   verify offline (no `origin/main`) is a skip-with-warning, not a false pass. (b) `expandFragment`
   throws `MalformedFragmentMarkersError` when the END marker's indentation ≠ the START's (bit 4 of 5
   real files once); `self-host-parity --check` then fails CI on it. Route: direct. Size S. Bump: patch
-  (a) / judgment (b).
+  (a) / judgment (b). **(a) done:** shipped as its own PR — offline-mode testing found a real second
+  silent-skip path (`getVersion("origin/main")` failing separately from the merge-base lookup) the
+  plan text hadn't named; both now warn loudly rather than either failing wrong or passing silent.
 - [ ] **LH-07 — Line-citation hygiene.** Closes P2 (13× + 3 caught live in LH-01), promotes the
   2026-08-31 `IDEAS.md` idea. Route: direct. Size M. Bump: patch. **Mechanism:** (1) citation grammar
   in `agent-output.instructions.md` → Doc-ID Link Format: `path`; `path#anchor`; `path ("unique quoted
