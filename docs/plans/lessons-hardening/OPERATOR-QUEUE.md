@@ -50,8 +50,12 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
 - **What:** Decide on the ADR LH-11 drafts as `Proposed` in `DECISIONS.md`, amending ARC-031
   decision 3: whether `resolvePrivateTokens()` may read the org-token privacy denylist from a file
   outside the repository (e.g. `~/.arcane/org-tokens`) in addition to the `ARCANE_ORG_TOKENS` CI
-  secret, closing the gap that let a real client name leak into local content three times in one
-  session with no local way to catch it before pushing.
+  secret, closing the gap that let a real client name leak into shipped content twice in immediate
+  succession on 2026-09-01 (`a8d8263`/`513f6d8`) with no local way to catch it before pushing. (This
+  line was already corrected once, in LH-02's own still-unmerged PR #174 — Q-002 below — but every
+  epic since branched from a `main` that doesn't have that fix yet, since LH-02 hasn't merged.
+  Reapplied here rather than left stale a second time; LH-02's own copy of this same fix becomes a
+  harmless no-op, or a trivial conflict to resolve, whenever #174 is finally rebased and merged.)
 - **Why:** Accepting an ADR is never within any delegation's grant in this repository — always an
   explicit operator decision, regardless of autonomy level elsewhere.
 - **Preconditions:** LH-11's PR is open with the ADR drafted `Proposed`, including its own
@@ -74,6 +78,12 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
     empirical-first findings (the `.gitignore` no-op check, the staged-scan cost measurement) — per
     the "Exact commands" line above, LH-11 may flip `Status:` to `Accepted` and check this item done
     in the same PR, citing this note, since the operator already decided.
-- **Status:** [ ] open
+- **Acted upon 2026-09-02 (LH-11):** ARC-041 drafted in `DECISIONS.md` reflecting this pre-decision
+  exactly (adopt yes, default path `~/.arcane/org-tokens`, format = `resolvePrivateTokens()`'s own
+  existing delimiter convention), empirical-first findings included (`.gitignore`'s `~/.arcane/`
+  pattern confirmed a no-op; a real 100-file scan timed at 29.0ms), and its own `Status:` field
+  flipped straight to `Accepted` in the same PR per the allowance above — the operator already
+  decided, so there was nothing left to leave `Proposed`.
+- **Status:** [x] done 2026-09-02 — [ARC-041](../../../DECISIONS.md#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) accepted.
 
 <!-- The loop appends Q-004+ below this line. -->

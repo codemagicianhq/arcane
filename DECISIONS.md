@@ -2149,3 +2149,114 @@ somewhere the overwrite cannot reach.
   separate step 4b** — rejected: keeping registration as its own numbered step makes it independently
   skippable-and-auditable (the applicability guard: nothing to register when the close is fully clean)
   rather than an unconditional sub-clause of a step that already does several other things.
+
+---
+
+## ARC-041 — A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist
+
+**Date:** 2026-09-02
+**Status:** Accepted
+**Amends:** [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate) decision 3 (the denylist stays a CI secret; this adds a second, local-only supply channel alongside it, not a replacement)
+**Related:** [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) (the staged-files-only pre-commit scan shape this reuses). The separate portability layer (package-derived tokens, scanned across `src/assets/.github/prompts`, ARC-031 decision 2) is untouched by this decision.
+
+**Context:**
+
+ARC-031 decision 3 keeps `ARCANE_ORG_TOKENS` a CI-only secret so the denylist itself cannot leak the
+names it protects. That decision is still correct — but it has a real, now-demonstrated consequence:
+nothing available locally (`typecheck`, `lint`, the full test suite, `check:self-host-parity`) can
+check content against the denylist before a push, so the very first signal a local session gets is
+CI failing after the push already happened. Confirmed live: a real client name leaked into shipped
+content and was fixed, then the very commit describing that fix quoted the same name while narrating
+its removal, retriggering the identical CI failure minutes later — the natural way to document a leak
+re-committed it, with no local warning either time (`docs/rcas/RCA-001-static-drift-and-ci-only-gates.md`).
+
+The operator decided this gap should close, ahead of this ADR being drafted (`docs/plans/lessons-
+hardening/OPERATOR-QUEUE.md` Q-003's own pre-decision note, recorded 2026-09-02): adopt a local supply
+channel, default to `~/.arcane/org-tokens` when unset, and reuse the CI secret's own delimiter format
+rather than inventing a new one. This ADR records that decision formally, with the empirical checks
+the plan called for.
+
+**Empirical-first:**
+
+- `git check-ignore -v` on a path outside the repository fails outright ("outside repository") —
+  gitignore patterns only ever apply within the working tree. A literal `~/.arcane/` line in
+  `.gitignore` cannot mean the user's home directory; git never expands `~`. Confirmed directly: a
+  `~` directory created *inside* the repository is what that pattern actually matches (`.gitignore`
+  itself, tracked and shipped, currently carries exactly this dead line) — the real home-directory
+  `~/.arcane/org-tokens` this ADR adds is untouched by it either way, since nothing this ADR does
+  writes inside the repository.
+- Timed a real 100-file scan using the existing `scanFile`/`createDenylistRules` engine
+  (`src/modules/denylist-scan.ts`) against 100 real files from this repository: 29.0ms total, 0.29ms
+  per file average. A staged-files-only pre-commit scan (typically far fewer than 100 files per
+  commit) adds negligible latency to `.husky/pre-commit`.
+
+**Decision:**
+
+**1. `resolvePrivateTokens()` gains a second token source, additive to the existing CI secret.** When
+`ARCANE_ORG_TOKENS` is unset (the normal case for any local session — the secret is CI-only by
+ARC-031 decision 3), it additionally attempts to read a local file, in order:
+   - `$ARCANE_ORG_TOKENS_FILE`, if that environment variable is set — an explicit override, e.g. for a
+     machine that keeps the file somewhere other than the default.
+   - Otherwise, `~/.arcane/org-tokens` (resolved via `os.homedir()`, never a shell-expanded string) —
+     the operator's chosen default, and the exact path `.gitignore`'s existing (currently dead) `~/.arcane/`
+     line was clearly written to anticipate.
+
+   File format: identical to the CI secret's own — one or more tokens, separated by commas and/or
+   newlines (`configuredTokens.split(/[,\r\n]+/)`, `scripts/org-token-lint.ts`'s own existing regex).
+   Not a new format: a local file is literally "what you'd put in the CI secret, saved to disk
+   instead," so a maintainer moving between the two never has to reformat anything.
+
+**2. Hard refusal of any path under the repository root, regardless of `.gitignore`.** Before reading
+either the env-var-named file or the default path, resolve it with `node:path`'s `resolve()`/`normalize()`
+and compare against `git rev-parse --show-toplevel`; refuse (empty result, loud warning) if the
+resolved path falls inside the repository. This is not a hypothetical: a gitignored in-repo file can
+still be force-added (`git add -f`) or accidentally un-ignored by a later `.gitignore` edit — exactly
+the class of hole ARC-031 decision 3 was written to close for the CI secret, now closed for the local
+file too, structurally rather than by convention.
+
+**3. `.husky/pre-commit` gains a staged-files-only org-token scan** through this same resolution,
+alongside the existing `doctor:leaks` step (BC-30, repository-wide). Staged-only, not repository-wide,
+by design: a full repo scan on every commit is the wrong cost/benefit trade for a pre-commit hook (the
+100-file timing above), and the files actually being committed are exactly the files a leak would be
+new in.
+
+**4. `spell ward` gains a `--terms-file` flag**, reading the identical format, so a consumer repo
+running `spell ward` to check candidate names against its own private denylist can supply one from a
+file instead of a shell argument — closing the same shell-history-exposure gap decision 1 closes for
+`resolvePrivateTokens()` itself.
+
+**5. CI's `ARCANE_ORG_TOKENS` secret stays authoritative and unchanged.** This ADR adds a local,
+best-effort backstop; it does not weaken, replace, or gate CI's own enforcement in any way. A
+contributor with no local file configured sees exactly the CI-only behavior that exists today.
+
+**Reasoning:**
+
+- The gap this closes is asymmetric in a way that matters: CI enforcement protects the published
+  artifact, but the *authoring* moment — the one place a local warning would actually change what gets
+  written — currently has zero coverage. A local file doesn't need to be perfect to be valuable; it
+  only needs to catch the same leak-and-redescribe pattern that has already recurred.
+- Reusing the CI secret's exact delimiter format (rather than JSON, YAML, or a new bespoke format)
+  means there is nothing new to document or get wrong — the file's content is, by construction,
+  whatever the CI secret's value already is or would be.
+- The in-repo refusal is structural, not advisory, because ARC-031's own core insight (a privacy
+  control that would otherwise have to store the private data it protects) applies identically here: a
+  local file that *could* legally live inside the repository is one accidental `git add -f` away from
+  publishing the exact names it exists to keep private.
+
+**Rejected alternatives:**
+
+- **A gitignored in-repo file** — rejected: `.gitignore` is easy to edit, force-add bypasses it
+  entirely, and this is precisely the shape of hole ARC-031 decision 3 already reasoned about and
+  closed for the CI-secret case. Extending the same reasoning here means the file must live
+  *structurally* outside the repository, not merely outside version control by convention.
+- **A committed, encrypted denylist** — rejected: adds a key-management problem (where does the
+  decryption key live, and how is *that* kept out of the repository) to solve a problem a plain
+  out-of-repo file already solves for free, with less machinery to get wrong.
+- **No local channel at all, leave it CI-only** — rejected as the status quo this ADR responds to: the
+  demonstrated, repeated failure mode (leak, fix, redescribe-and-re-leak) has no local defense today,
+  and the fix is small relative to the recurring cost.
+
+**Open questions closed by the operator's own pre-decision, recorded here for the permanent record:**
+adopt this at all (yes), file format (reuse the CI secret's own delimiter convention, not a new
+format), and home-directory default (yes, `~/.arcane/org-tokens` — see
+`docs/plans/lessons-hardening/OPERATOR-QUEUE.md` Q-003).

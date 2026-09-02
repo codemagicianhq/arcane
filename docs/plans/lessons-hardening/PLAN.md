@@ -367,7 +367,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   passed unchanged, validating that earlier design choice. Each new rule grounded in this session's own
   real incident (the org-token double-leak for 25, the case-sensitive-grep false "still open" for 26)
   rather than a hypothetical, matching this file's existing citation convention.
-- [ ] **LH-11 — ADR ARC-041: a local supply channel for the ARC-031 privacy denylist (amends
+- [x] **LH-11 — ADR ARC-041: a local supply channel for the ARC-031 privacy denylist (amends
   decision 3).** Closes P7's mechanical half. Route: adr. Size M. Bump: n/a. **Operator-gated
   (Q-003).** Proposes: `resolvePrivateTokens()` may additionally read a file **outside** the repository
   (`~/.arcane/org-tokens` or `$ARCANE_ORG_TOKENS_FILE`) when the env var is unset, with a hard refusal
@@ -378,7 +378,25 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   gitignored in-repo file; a committed encrypted list. Open questions for the operator: adopt at all;
   file format; home-directory default. **Empirical-first, in the ADR itself:** `git check-ignore -v`
   confirms `.gitignore`'s `~/.arcane/` pattern is currently a no-op; time a staged-only scan on a
-  100-file commit.
+  100-file commit. **Done:** empirical-first ran for real — `git check-ignore -v` on a path outside the
+  repo fails outright ("outside repository"), confirming the pattern can only ever match a literal `~`
+  directory inside the repo; a real 100-file scan via the existing `scanFile` engine timed at 29.0ms
+  (0.29ms/file). ARC-041 drafted directly as `Accepted`, not `Proposed` — the operator had already
+  decided (adopt yes, default path yes, format = reuse the existing delimiter convention) live in
+  conversation before this epic ran, per Q-003's own explicit allowance for the executing session to
+  flip `Status:` on the operator's behalf once decided. Q-003 marked done in OPERATOR-QUEUE.md
+  accordingly. **A real, pre-existing citation bug found and NOT fixed here (routed to TODO.md
+  instead):** ARC-031's own "Related" line cites "ARC-014" for the org-token-lint-as-a-build-gate
+  concept, but ARC-014's real title is "Spell Authoring Standards" — a mismatched cross-reference this
+  epic declined to copy into ARC-041's own Related line (used plain prose instead) rather than compound
+  it, and declined to root-cause and fix in-place since that's its own investigation, out of this
+  epic's scope. Also closed the TODO.md item recording the `.gitignore` `~/.arcane/` no-op finding,
+  now that ARC-041 gives that exact pattern a real purpose. **A third live-drift instance, found while
+  editing OPERATOR-QUEUE.md for Q-003's closure:** Q-003's own "What" text still said the org-token
+  leak recurred "three times in one session" — LH-02's own fix for this exact text (PR #174) is still
+  unmerged (Q-002 open), so every epic since branched from a `main` that never had that fix. Reapplied
+  the correction here rather than leave it stale a second time; LH-02's own copy becomes a no-op or a
+  trivial conflict whenever #174 is finally rebased and merged.
 - [ ] **LH-12 — Local denylist implementation.** **Parked until ARC-041 Accepted.** Route: direct.
   Size M. Bump: minor by judgment. Reuses `denylist-scan.ts`'s `scanFile` per staged path and
   `org-token-lint.ts`'s `resolvePrivateTokens` (add the file source beside the env source). Tests
