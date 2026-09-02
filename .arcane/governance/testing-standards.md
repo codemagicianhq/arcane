@@ -46,8 +46,8 @@ Framework selection, coverage thresholds, and test evidence requirements across 
 
 | Category | Minimum Coverage | Examples |
 |----------|-----------------|----------|
-| **Standard code** | 80% | Business logic, data access, UI components, API handlers. Enforcement: executable check (ARC-023) — vitest.config.ts configures a global 80% lines/branches/functions/statements threshold under `coverage.thresholds`, but ci.yml's build-test Test step runs `npm test` (bare `vitest run`), not `npm run test:coverage`, so it is never evaluated in CI. |
-| **Critical paths** | 95% | Authentication, payment processing, IoT firmware commands, calibration protocols, encryption/signing. Enforcement: executable check (ARC-023) — vitest.config.ts overrides this to 95% for src/modules/copier.ts, manifest.ts, merger.ts, registry.ts, and src/config/profiles.ts (manifest.ts's branches override is 90%, not 95%), but the same CI gap applies: `npm test` runs bare `vitest run`, not `npm run test:coverage`, so these overrides are never evaluated in CI. |
+| **Standard code** | 80% | Business logic, data access, UI components, API handlers. Enforcement: executable check (ARC-023) — vitest.config.ts configures a global 80% lines/branches/functions/statements threshold under `coverage.thresholds`, evaluated in CI: ci.yml's build-test Test step runs `npm run test:coverage` (LH-04), which fails the build if any threshold is missed. |
+| **Critical paths** | 95% | Authentication, payment processing, IoT firmware commands, calibration protocols, encryption/signing. Enforcement: executable check (ARC-023) — vitest.config.ts overrides this to 95% for src/modules/copier.ts, manifest.ts, merger.ts, registry.ts, and src/config/profiles.ts (manifest.ts's branches override is 90%, not 95%); the same CI step evaluates these overrides too. |
 
 ### What Counts as "Critical"
 

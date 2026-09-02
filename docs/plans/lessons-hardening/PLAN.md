@@ -206,13 +206,16 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   past this one rule: a mechanical check reporting zero findings is only evidence of "no violations"
   once you've independently confirmed it can report a nonzero finding at all (echoes universal-agent-
   rules' forthcoming rule 26 on LH-10's list, applied here to a lint selector instead of a text search).
-- [ ] **LH-04 — Coverage thresholds evaluated in CI.** Closes the gap `testing-standards.md` already
+- [x] **LH-04 — Coverage thresholds evaluated in CI.** Closes the gap `testing-standards.md` already
   documents: `vitest.config.ts` thresholds are configured but `ci.yml` runs bare `npm test`, never
   `npm run test:coverage`. Route: direct. Size S. Bump: patch (the standard's annotations change).
   **Empirical-first branches the epic:** run `npm run test:coverage` on `main`; if thresholds pass,
   switch CI's Test step and relabel both annotations "evaluated in CI"; if they fail, raise coverage or
   lower/exclude honestly in `vitest.config.ts` with a comment, record it, then wire. Keep pre-push at
-  `npm test`.
+  `npm test`. **Done:** thresholds passed on `main` (85.53% all-files, every per-file override clean;
+  exit 0) — took the pass branch. `ci.yml`'s Test step now runs `npm run test:coverage`; both
+  `testing-standards.md` annotations relabeled "evaluated in CI." Pre-push hook stays `npm test` (no
+  coverage collection there — that budget belongs to CI, not every local push).
 
 ### Wave 2 — Mechanical gates
 
