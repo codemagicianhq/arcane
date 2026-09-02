@@ -79,7 +79,7 @@ Identical invariants to Become Current — these are repo-wide, not program-spec
 
 - **Serial by construction.** Any change under `src/assets/`, to `src/modules/registry.ts`, or
   `src/config/profiles.ts` requires a `package.json` version bump differing from `main`
-  (`scripts/check-version-bump.ts`; prose home `project.md:56-58`). Epics touching `src/assets/` run
+  (`scripts/check-version-bump.ts`; prose home `project.md ("requires a version bump"):56-58`). Epics touching `src/assets/` run
   one at a time, sequentially — never two concurrent worktree epics in this repo (ARC-028 R4).
 - **Every merged bump publishes.** `release-drift.yml` auto-creates the release on a `package.json`
   version change on `main`; `publish.yml` publishes to npm with provenance. Batch each epic's
@@ -269,7 +269,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   diff and confirmed "no bump required" rather than asserting it. Verified against all 5 real
   `tracking-mode-declaration` consumers before shipping the stricter guard — none already had the
   defect it now catches, so nothing broke.
-- [ ] **LH-07 — Line-citation hygiene.** Closes P2 (13× + 3 caught live in LH-01), promotes the
+- [x] **LH-07 — Line-citation hygiene.** Closes P2 (13× + 3 caught live in LH-01), promotes the
   2026-08-31 `IDEAS.md` idea. Route: direct. Size M. Bump: patch. **Mechanism:** (1) citation grammar
   in `agent-output.instructions.md` → Doc-ID Link Format: `path`; `path#anchor`; `path ("unique quoted
   phrase")`; `path:NNN` only alongside one of those, or in ephemeral output — never the sole locator
@@ -283,7 +283,23 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   Historical records (`journal/`, `docs/intake/`, completed plans) excluded. (4) convert the ~24
   living-doc citations. **Rollout:** warn mode in `ci.yml`'s `build-test` job first, flip to fail after
   five sessions log zero false positives. **Empirical-first:** report mode on the current tree;
-  `spell-check-drift`'s own `TODO.md:42-45` example and placeholder shapes must read as non-citations.
+  `spell-check-drift`'s own old bare-line-range example (before this epic's own fix reworded it away
+  from a real, resolving-sounding filename) must read as a non-citation. **Done:** real total was 30
+  bare citations, not ~24 (close enough that the estimate wasn't the finding — but a first `--report`
+  run also came back with 452 hits, dominated by bare backtick-wrapped filenames that are just prose
+  mentions, e.g. `` `registry.ts` ``, never a location claim; narrowed the checker to only validate
+  citations making an actual specific claim, which is what P2 is actually about. A second, real gap:
+  the first regex missed comma-separated line-number lists entirely (one real instance in
+  `check-version-bump.ts`'s own header comment), silently passing them — found by hand-reading the
+  diff, not by the tool itself, and fixed with a regression test. One live drift instance caught while
+  converting: `agent-policies.md`'s own comma-listed citation had already drifted onto an unrelated
+  "PR Notification & Hygiene" section — the actual secret-related content
+  had moved to `#prohibited-actions`/`#generic-runtime-hardening-principles`. All 34 real findings
+  (the 30 plus the 4 the regex fix surfaced) converted; `check:citations` wired into `ci.yml` in warn
+  mode (`continue-on-error: true`); regression suite in `test/check-citations.test.ts` (15 tests,
+  fixture-based, not the live tree). One pre-existing test broke on this epic's own rewrite —
+  `test/prompt-handoff-durability.test.ts` had hardcoded the old `TODO.md:NNN` placeholder text — fixed
+  to assert the new stable-locator wording instead.
 - [ ] **LH-08 — Shipped-state staleness scan.** Closes P11 (6×) + the status-claim half of P1;
   proof case = `universal-agent-rules.md` rule 3 (filed in `TODO.md` by LH-01). Route: direct. Size M.
   Bump: patch. **Mechanism, two classes:** **A (gate)** — every `ARC-NNN (Proposed|Accepted|

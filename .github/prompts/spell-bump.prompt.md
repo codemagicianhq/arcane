@@ -13,7 +13,7 @@ agent: agent
 - It enforces the rule from `project.md` → Constraints → Self-hosting: "Anything touching
   `src/assets/` requires a version bump." (Corrected 2026-08-31, BC-06 — this previously cited
   CLAUDE.md, which now carries only the working protocol; the rule's live prose home moved to
-  `project.md:56-58`.)
+  `project.md ("requires a version bump"):56-58`.)
 
 ---
 

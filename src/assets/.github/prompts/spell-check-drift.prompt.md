@@ -62,11 +62,11 @@ For each drift finding include:
 - Severity (`Critical`, `High`, `Medium`, or `Low`)
 - Severity rationale (one line: why this severity — e.g. work-integrity/duplicate-work risk → HIGH; confidence/correctness gap → MEDIUM; cosmetic → LOW)
 - Drift statement
-- Canonical source file (cite `file:line` — or the nearest locator such as a heading or section — wherever a specific location applies)
-- Affected file (cite `file:line` — or the nearest locator — wherever a specific location applies)
+- Canonical source file (cite by stable locator — a heading anchor or a unique quoted phrase, e.g. `path#anchor` or `path ("unique phrase")` — never a bare line number, since findings routinely get promoted into TODO.md or another living doc afterward, where a line number drifts the moment the file is next edited)
+- Affected file (same stable-locator citation)
 - Exact recommended fix
 
-Every finding that points to a specific location MUST be pinpointable: cite `file:line` (or a line range, e.g. `TODO.md:42-45`). If no precise line exists, cite the nearest available locator (heading, section, or list item) instead of omitting it.
+Every finding that points to a specific location MUST be pinpointable: cite by stable locator (a heading anchor or a unique quoted phrase, e.g. `path#anchor` or `path ("a unique phrase from the target")`). A bare line number may accompany a stable locator as a convenience (this report is read once, in the current tree), but never replace one — a citation promoted into a living doc later must survive on its own. If no precise anchor or phrase exists, cite the nearest available locator (heading, section, or list item) instead of omitting it.
 
 Behavior:
 
@@ -85,7 +85,7 @@ Output format:
 
 ## Real Content Drift Findings
 
-- One line per finding with `file:line` references (or nearest locator) and its severity rationale.
+- One line per finding with stable-locator references (heading anchor or unique quoted phrase — nearest locator if neither applies) and its severity rationale.
 
 ## Line-Ending-Only Drift
 
