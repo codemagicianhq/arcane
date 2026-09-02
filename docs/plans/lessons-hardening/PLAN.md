@@ -352,7 +352,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 3 — Conduct rules and ADR-gated work
 
-- [ ] **LH-10 — Advisory conduct rules batch.** Closes P7's prose half, P8 (6×), P10 (3×). Route:
+- [x] **LH-10 — Advisory conduct rules batch.** Closes P7's prose half, P8 (6×), P10 (3×). Route:
   direct. Size S. Bump: patch. Three rules appended to `universal-agent-rules.md` (25–27, after LH-05
   removes the `max == 24` coupling), each labeled "explicitly advisory prose (ARC-023)": **25** never
   quote a denylisted token even when documenting its removal — name the class, not the instance;
@@ -361,7 +361,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   the diff, not the summary; one agent per file for concurrent edits; an agent may override an
   instruction after verifying it is wrong and must say so. Also fixes rule 3's stale text if LH-08
   hasn't yet. **Empirical-first:** confirm rule-number uniqueness (numbering is non-sequential in file
-  order).
+  order). **Done:** rule 3 was already fixed by LH-08, so no re-touch needed here. Uniqueness confirmed
+  before AND after — 1-24 each appearing exactly once beforehand, 1-27 each exactly once after — and
+  `dedup-rule.test.ts`'s LH-05-derived assertion (uniqueness + rule 23 exists, not a hardcoded max)
+  passed unchanged, validating that earlier design choice. Each new rule grounded in this session's own
+  real incident (the org-token double-leak for 25, the case-sensitive-grep false "still open" for 26)
+  rather than a hypothetical, matching this file's existing citation convention.
 - [ ] **LH-11 — ADR ARC-041: a local supply channel for the ARC-031 privacy denylist (amends
   decision 3).** Closes P7's mechanical half. Route: adr. Size M. Bump: n/a. **Operator-gated
   (Q-003).** Proposes: `resolvePrivateTokens()` may additionally read a file **outside** the repository
