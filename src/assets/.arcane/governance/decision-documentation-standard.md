@@ -72,7 +72,7 @@ Arcane separates framework-level decisions from org-specific ones using two pref
 2. Confirms no collision with other entities
 3. Identifies any docs, scripts, or prompts that reference the old name
 
-This check was added after [[governance/rcas/RCA-001-naming-collision|RCA-001]] discovered that ADR-061 named a product without checking whether the ops repo already used that name. **Enforcement: explicitly advisory prose (ARC-023) — no script or spell gate verifies that an ADR introducing a new name actually contains a "Naming impact" section or performed its three checks; `spell-scry` can run the grep-and-collision check manually, but nothing requires it before such an ADR is written.**
+This check was added after [[docs/rcas/RCA-001-naming-collision|RCA-001]] discovered that ADR-061 named a product without checking whether the ops repo already used that name. **Enforcement: explicitly advisory prose (ARC-023) — no script or spell gate verifies that an ADR introducing a new name actually contains a "Naming impact" section or performed its three checks; `spell-scry` can run the grep-and-collision check manually, but nothing requires it before such an ADR is written.**
 
 ### Tier 2: Companion Detail Docs
 

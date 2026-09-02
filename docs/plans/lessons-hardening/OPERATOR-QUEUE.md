@@ -51,11 +51,12 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   decision 3: whether `resolvePrivateTokens()` may read the org-token privacy denylist from a file
   outside the repository (e.g. `~/.arcane/org-tokens`) in addition to the `ARCANE_ORG_TOKENS` CI
   secret, closing the gap that let a real client name leak into shipped content twice in immediate
-  succession on 2026-09-01 (`a8d8263`/`513f6d8`) with no local way to catch it before pushing. (This
-  line was already corrected once, in LH-02's own still-unmerged PR #174 — Q-002 below — but every
-  epic since branched from a `main` that doesn't have that fix yet, since LH-02 hasn't merged.
-  Reapplied here rather than left stale a second time; LH-02's own copy of this same fix becomes a
-  harmless no-op, or a trivial conflict to resolve, whenever #174 is finally rebased and merged.)
+  succession on 2026-09-01 (`a8d8263`/`513f6d8` — the second leak was the first fix's own closure
+  note re-quoting the name it described removing) with no local way to catch it before pushing.
+  (This line was already corrected once, in LH-02's own then-still-unmerged PR #174 — Q-002 below
+  — but every epic since branched from a `main` that didn't have that fix yet, since LH-02 hadn't
+  merged. Reapplied here rather than left stale a second time; this is that predicted trivial
+  conflict, resolved now that #174 is finally being rebased.)
 - **Why:** Accepting an ADR is never within any delegation's grant in this repository — always an
   explicit operator decision, regardless of autonomy level elsewhere.
 - **Preconditions:** LH-11's PR is open with the ADR drafted `Proposed`, including its own
