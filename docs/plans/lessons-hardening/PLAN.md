@@ -1,6 +1,6 @@
 ---
 title: Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory
-status: active
+status: complete — Q-002 (RCA-001 merge) pending operator
 created: 2026-09-02
 baseline: b0992c1 (main)
 owner: operator (payini)
@@ -424,10 +424,61 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 4 — Close
 
-- [ ] **LH-13 — Program Definition-of-Done audit and close.** Route: process. Size S. Walk the 7
-  DoD criteria above with evidence; flip warn-mode checks to fail where the criterion held; update
-  RCA-001's Preventive Actions statuses; mark `IDEAS.md`/`TODO.md`; run `spell-check-drift` last;
-  `spell-close-session`.
+- [x] **LH-13 — Program Definition-of-Done audit and close.** Route: process. Size S. **Done:**
+  walked all 7 DoD criteria against the live tree rather than assuming any of them:
+  1. All three scripts exist and run in `ci.yml`. Class A of `check:stale-claims` is real fail-mode
+     already (re-run now: zero mismatches). `check:citations` and `check:followups` **stay in warn
+     mode** — their own stated flip criterion (5 sessions, zero false positives) is unmet; only this
+     one session has exercised either against the live tree, so flipping now would be asserting a
+     sample size of one. Re-ran both for real evidence rather than assuming clean: `check:citations`
+     is fully clean repo-wide after fixing one bare `path:NNN`-shaped example string this very audit's
+     own ledger entry had introduced (caught by the tool it was describing — fixed on sight). `check:
+     followups --report` returns 20 hits, all false positives on direct inspection: 18 are Become
+     Current-era content quoting already-resolved historical claims or LH-09's own meta-references to
+     its test fixture (none a live untracked deferral), and 2 are on this program's own ledger —
+     one matches "followup" only because it substring-matches inside the tool's own filename
+     (`check-followups.ts`), the other misses a same-row tracker token because a wide markdown table
+     row exceeds the 150-character window. A genuine, disclosed limitation, not evidence to flip on.
+  2. Appended a new dated section to [docs/verification-ledger.md](../../verification-ledger.md)
+     ("Lessons Hardening corrections (LH-02 → LH-12)", 7 rows) via `spell-verification-ledger` —
+     every row's correction is already shipped inline in its own Correction column.
+  3. `grep -nE "toHaveLength\((1[0-9]|[2-9][0-9])\)" test/*.test.ts` returns no unjustified hits;
+     `check:spell-catalog` passes.
+  4. `ci.yml` runs `npm run test:coverage` (LH-04); passing on `main`.
+  5. Coverage Map below: every ID resolves to `[x]`, a **Park** with reason, or the single Q-002
+     block. `TODO.md` audited directly (`grep -n "^- \[ \]" TODO.md`, 8 hits): 6 pre-date this program
+     and are unrelated (EF-18, the push-safety follow-on questions, lore/copy/naming items, the
+     tracking-mode resolution-order item already Parked above); the RCA-artifact-path item is already
+     `[x]` on LH-02's own unmerged branch — blocked on Q-002 like everything else there, not a new
+     gap; the ARC-014 citation-bug item genuinely has no epic to route to (found incidentally while
+     drafting an unrelated ADR) — disclosed explicitly in its own TODO.md entry as a deliberate,
+     unrouted exception rather than silently left or force-fit. **Also found and fixed while auditing
+     this criterion:** `OPERATOR-QUEUE.md`'s own Q-001 line still read `[ ] open` after the operator's
+     merge — verified directly against `gh pr view 172` (merged) rather than assumed, and corrected on
+     the record. A live instance of this program's own top pattern (P1, stale status claims), caught
+     in this program's own queue at closing time.
+  6. `docs/rcas/RCA-001-*.md` exists (on the still-open PR #174); pushed an additional commit there
+     giving all nine Preventive Actions a real merged-PR reference now that LH-03…LH-12 are done, plus
+     a closing note. Q-002 itself is **not** done — correctly: RCA review is never auto-committed, and
+     that is the one item this program hands to the operator, not a gap in this epic.
+  7. Ran `spell-check-drift` (scope `all`) directly against the live tree: Decision-ID sequence is
+     41/41, sequential, no duplicates; every `ARC-NNN` reference in this program's own docs resolves
+     within range; canonical-vs-installed parity already covered by `check:self-host-parity` (158/158
+     match); no `ventures/`/hub artifacts (not a hub repo — N/A); Class B stale-phrase hits (12) all
+     verified false positives (self-referential phrase-list definitions or already-resolved historical
+     quotes). One real process finding, not a doc contradiction: zero `journal/2026-09-02-*.md` files
+     exist despite 12 epics shipping today — this program ran as one continuous session rather than
+     KICKOFF.md's literal "one epic, one session, one close" shape, per the operator's own "continue
+     autonomously... do the whole thing" instruction; each epic's outcome was instead recorded directly
+     in this file's own "Done:" notes. Disclosed here rather than silently noted; the journal entry
+     this session still owes gets written now, honestly, as part of this epic's own close-session step
+     below, covering the whole day's arc rather than backdating 12 entries that would misrepresent 12
+     discrete sessions that never happened. **Verdict: GO** — zero unresolved Critical/High findings.
+     `check:citations` confirmed at zero bare citations repo-wide, not just under this program's own
+     directory.
+
+  Warn-mode checks: **none flip** — both `check:citations` and `check:followups` stay warn per their
+  own stated criterion, honestly unmet after one session, not silently left ambiguous.
 
 **Dependencies:** LH-00 → all · LH-01 already done (ships with LH-00) · LH-07 → LH-08/09 (shared
 `living-docs.ts`) · LH-08 before LH-10 (soft, so rule 3 is caught live) · LH-11 → LH-12 · LH-13 last.
