@@ -19,43 +19,48 @@
 ## Current Priorities
 
 1. **The "Become Current" master plan is complete.** [docs/plans/become-current/PLAN.md](../docs/plans/become-current/PLAN.md) (merged 2026-08-30, [PR #86](https://github.com/codemagicianhq/arcane/pull/86)) sequenced 33 epics (BC-00 through BC-32) covering every open `TODO.md` item, every unmarked `IDEAS.md` entry, all non-shipped intake findings, and every Accepted-ADR mechanism gap found by the 2026-08-30 audit. **All 33 shipped as of 2026-09-01**, closing with Phase 5's own Definition-of-Done audit (PLAN.md's 7 criteria walked explicitly, evidenced). This program is no longer active backlog — there is no next eligible epic to pick up.
-2. **Everything genuinely still open is operator-scoped, not agent-actionable.** [TODO.md](../TODO.md)'s `## Parked — Needs Operator` section and [OPERATOR-QUEUE.md](../docs/plans/become-current/OPERATOR-QUEUE.md)'s Q-009 (cross-repo `arcane-website` wiring), Q-010 (distribution channel go/no-go, 3 of 4 channels unevaluated), and Q-011 (7 consolidated items with no forcing function — an external artifact only the operator can supply, a creative/brand judgment call, or a real design decision) name the complete remainder. A fresh session should read those two sections before assuming there is engineering work waiting.
-3. **ARC-020 stays Proposed, with its full remainder still open — NOT folded into BC-11/ARC-038** (corrected 2026-09-02; the two ADRs sit on different axes: ARC-020's remainder is manifest *data fields*, ARC-038 is governance-*content* architecture — see [OPERATOR-QUEUE.md Q-005](../docs/plans/become-current/OPERATOR-QUEUE.md#q-005--arc-020-broad-schema-still-open-not-subsumed-by-bc-11)). Two prior amendments (ARC-030, ARC-032) already resolved narrower slices; the operator's own direction is to close the rest incrementally, one field group per future epic that needs it — not as a dedicated epic.
-4. **ARC-028 (concurrency and isolation model) is Accepted**, named **session workspace**. Do not hardcode a version number here — it goes stale (this line itself said `0.33.1` while `main` was already at `0.33.2`, corrected 2026-09-02); run `spell-open-session`'s own two-axis version check for the current reading instead.
-5. **Watch for the worktree-misdirect tool bug** (Edit/Write silently landing in the primary checkout instead of the active linked worktree — [journal/2026-08-22-ef-batch-closeout.md](../journal/2026-08-22-ef-batch-closeout.md)). Not recurred in recent sessions, but verify independently every time rather than trusting a clean streak.
+2. **The follow-on "Lessons Hardening" program is complete except one operator item.** [docs/plans/lessons-hardening/PLAN.md](../docs/plans/lessons-hardening/PLAN.md) (LH-00 merged 2026-09-02, [PR #172](https://github.com/codemagicianhq/arcane/pull/172)) mechanically hardened the 12 recurring correction patterns Become Current's own record surfaced. **LH-00 through LH-13 all shipped 2026-09-02** in one continuous session — every epic's own PR is merged and CI-green on `main` except [PR #174](https://github.com/codemagicianhq/arcane/pull/174) (LH-02, containing this repo's first RCA), which stays open by design: RCA review is never auto-committed, so it is [OPERATOR-QUEUE.md Q-002](../docs/plans/lessons-hardening/OPERATOR-QUEUE.md#q-002--approve-and-merge-rca-001), this program's one remaining item. `check:citations` and `check:followups` ship in warn mode (their own 5-session zero-false-positive flip criterion is unmet after one session); `check:stale-claims` Class A is real fail-mode already.
+3. **Everything else genuinely still open is operator-scoped, not agent-actionable.** [TODO.md](../TODO.md)'s `## Parked — Needs Operator` section, Become Current's own [OPERATOR-QUEUE.md](../docs/plans/become-current/OPERATOR-QUEUE.md) Q-009 (cross-repo `arcane-website` wiring), Q-010 (distribution channel go/no-go, 3 of 4 channels unevaluated), and Q-011 (7 consolidated items with no forcing function), plus Lessons Hardening's own Q-002 above, name the complete remainder. A fresh session should read those sections before assuming there is engineering work waiting.
+4. **ARC-020 stays Proposed, with its full remainder still open — NOT folded into BC-11/ARC-038** (corrected 2026-09-02; the two ADRs sit on different axes: ARC-020's remainder is manifest *data fields*, ARC-038 is governance-*content* architecture — see [OPERATOR-QUEUE.md Q-005](../docs/plans/become-current/OPERATOR-QUEUE.md#q-005--arc-020-broad-schema-still-open-not-subsumed-by-bc-11)). Two prior amendments (ARC-030, ARC-032) already resolved narrower slices; the operator's own direction is to close the rest incrementally, one field group per future epic that needs it — not as a dedicated epic.
+5. **ARC-028 (concurrency and isolation model) is Accepted**, named **session workspace**. Do not hardcode a version number here — it goes stale (this line itself said `0.33.1` while `main` was already at `0.33.2`, corrected 2026-09-02); run `spell-open-session`'s own two-axis version check for the current reading instead.
+6. **Watch for the worktree-misdirect tool bug** (Edit/Write silently landing in the primary checkout instead of the active linked worktree — [journal/2026-08-22-ef-batch-closeout.md](../journal/2026-08-22-ef-batch-closeout.md)). Not recurred in recent sessions, but verify independently every time rather than trusting a clean streak.
 
 ---
 
 ## Next Session Handoff
 
 > Auto-generated by spell-close-session. Consumed by spell-open-session. Do not edit manually.
-> Generated: 2026-09-01
-> ✓ Consumed: 2026-09-02
+> Generated: 2026-09-02
 
-- **Active task:** None in progress. The Become Current program (33 epics, BC-00 through
-  BC-32, plus its own Phase 5 Definition-of-Done audit) is complete. This close-session
-  commit (journal entry + this handoff) is the only thing left to land.
-- **Last completed step:** Independently re-verified all 5 PRs opened this window
-  (`#165`–`#169`) as `MERGED` via a fresh `gh pr list --state all` call — not assumed from
-  earlier tool output — immediately before writing this handoff. Wrote
-  [journal/2026-09-01-become-current-program-completion.md](../journal/2026-09-01-become-current-program-completion.md).
+- **Active task:** None in progress. The Lessons Hardening program (LH-00 through LH-13) is
+  complete except [OPERATOR-QUEUE.md Q-002](../docs/plans/lessons-hardening/OPERATOR-QUEUE.md#q-002--approve-and-merge-rca-001)
+  (approve/merge RCA-001, [PR #174](https://github.com/codemagicianhq/arcane/pull/174)) — an
+  operator-only step by design, not agent-actionable. This close-session commit (journal entry +
+  this handoff) is the only thing left to land.
+- **Last completed step:** Merged [PR #186](https://github.com/codemagicianhq/arcane/pull/186)
+  (LH-13); independently re-verified all of PR #172–#186 via a fresh `gh pr list --state all`
+  call and confirmed CI green on `main`'s resulting HEAD (`1eab53e`) via `gh run list --branch
+  main` — not assumed from earlier tool output. Wrote
+  [journal/2026-09-02-lessons-hardening-program.md](../journal/2026-09-02-lessons-hardening-program.md).
   About to open a `--docs-only` PR for this close-session commit itself.
-- **Next concrete action:** None required from the program itself. A future session should
-  read [TODO.md](../TODO.md)'s `## Parked — Needs Operator` section and
-  [OPERATOR-QUEUE.md](../docs/plans/become-current/OPERATOR-QUEUE.md)'s Q-009/Q-010/Q-011
-  first — that is the complete remainder, and every item there needs an operator decision
-  this program cannot make on its own (an external artifact, a brand/creative call, or a
-  real design question with no forcing function). Do not treat any of them as agent-actionable
-  backlog.
-- **Active files:** `journal/2026-09-01-become-current-program-completion.md`,
-  `ai-context/system-prompt-context.md` — staged on `sessions/2026-09-01-close-session`, not
-  yet merged.
-- **Branch:** `sessions/2026-09-01-close-session`.
-- **Blockers:** None.
-- **Pending Verification:** None.
-- **Notes:** The three worktree/branch cleanup items the prior two handoffs both flagged
-  (`claude/jolly-curran-505074`, `claude/gracious-dijkstra-a5a4bb`, and
-  `docs/runnable-fences-selfhosted-agents`) are all confirmed fully removed this window —
-  `git branch -a | grep -E "jolly-curran|gracious-dijkstra|runnable-fences"` returns zero
-  matches, both locally and in remote-tracking refs. No worktree or branch cleanup remains
-  outstanding from either prior handoff.
+- **Next concrete action:** None required from Lessons Hardening itself — nothing agent-
+  actionable remains. A future session should read
+  [OPERATOR-QUEUE.md](../docs/plans/lessons-hardening/OPERATOR-QUEUE.md)'s Q-002 first, then (for
+  unrelated, still-open Become Current remainder) `TODO.md`'s `## Parked — Needs Operator` section
+  and Become Current's own OPERATOR-QUEUE.md Q-009/Q-010/Q-011. Do not treat any of these as
+  agent-actionable backlog — each needs an operator decision this program cannot make on its own.
+- **Active files:** `journal/2026-09-02-lessons-hardening-program.md`,
+  `ai-context/system-prompt-context.md` — staged on `sessions/2026-09-02-close-session`, not yet
+  merged.
+- **Branch:** `sessions/2026-09-02-close-session`.
+- **Blockers:** Q-002 — RCA-001's own review/merge requires the operator; structural (RCAs are
+  never auto-committed), not a bug or an oversight.
+- **Pending Verification:** None — every PR dispatched this session (#172–#186) resolved to
+  `succeeded` (merged, CI-green) before this handoff was written, except PR #174 which is a
+  standing, deliberate operator-block (see Blockers) rather than in-flight async work.
+- **Notes:** This entire program (LH-00 through LH-13) ran as one continuous session rather than
+  `KICKOFF.md`'s literal "one epic, one session, one close" shape, per the operator's own
+  "continue autonomously... do the whole thing" instruction — disclosed in this session's journal
+  entry's Lessons Learned rather than silently departed from. `check:citations` and
+  `check:followups` stay in warn mode; see `PLAN.md`'s own Criterion 1 for the stated flip
+  criterion and why it's unmet.
