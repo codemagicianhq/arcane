@@ -453,20 +453,35 @@
 
 - [ ] **MEDIUM: 5 spells sharing a `tracking_mode`/`external_provider` declaration have independently diverged resolution LOGIC, not just wording.** Found 2026-09-01 (BC-32) while extracting the declaration into a shared fragment ([ARC-039](DECISIONS.md#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) decision 2): `spell-open-session` and `spell-plan` resolve tracking config in a 4-source order (root `.arcane.json` → self-hosted manifest → PRD frontmatter → ask, per EF-14); `spell-scope` checks only PRD frontmatter or asks, skipping `.arcane.json` and the self-hosted manifest entirely; `spell-suggest-feature` and `spell-full-cycle` each carry their own distinct qualifier wording on top of a similar-but-not-identical shape. The ADR that motivated the fragment extraction assumed these 5 duplicated one resolution-order paragraph "almost identically" — checked directly rather than accepted, only the bare 2-line enum is byte-identical (once normalized); the surrounding resolution logic had already drifted independently. Extracted just the genuinely-shared 2 lines rather than forcing false uniformity onto real behavioral differences (see `src/assets/.github/prompts/_fragments/tracking-mode-declaration.md`). **Open question for whoever owns these spells' design:** should `spell-scope` (and possibly `spell-suggest-feature`/`spell-full-cycle`) check `.arcane.json` first like `spell-open-session`/`spell-plan` do, for consistency with EF-14's resolution order? This is a real behavior decision, not a mechanical fix, so it wasn't made as a drive-by here.
 
+- [ ] **MEDIUM: README.md's spell/agent/governance-doc counts are hand-typed and already drifted twice (38→41 spells, 23→25 governance docs) inside one program.** Found 2026-09-02 planning the Lessons Hardening program. Fixed by hand this pass (`README.md`); the durable fix is generating these counts from `registry.ts`/the asset tree the same way `check:spell-catalog` already guards the catalog JSON. Routes to LH-05.
+
+- [ ] **MEDIUM: `universal-agent-rules.md` rule 3 still claims "no secret-scanner exists in this repo yet (tracked as future work, BC-30)."** Found 2026-09-02. BC-30 shipped `src/modules/secrets-scan.ts` plus the `.husky/pre-commit` step; the distributed governance doc was never updated after. Not fixed in this pass (it's the live proof case a later fix needs). Routes to LH-08.
+
+- [ ] **LOW: `rca-process-standard.md` says RCA artifacts live in `governance/rcas/`, but `portable-bootstrap.md` forbids creating a duplicate root `governance/` tree.** Found 2026-09-02; recorded as `unverifiable` in `docs/verification-ledger.md`'s 2026-09-02 entry — a genuine contradiction between two governance docs, not resolvable by re-checking either alone. Routes to LH-02 (also the artifact this repo's first RCA needs a real path for).
+
+- [ ] **LOW: `.gitignore`'s `~/.arcane/` pattern is a no-op — gitignore does not tilde-expand, so it never matches anything.** Found 2026-09-02. Left as-is pending LH-11's ADR (a local org-token denylist file may want exactly this path, in which case the pattern gets a real purpose instead of being deleted).
+
+- [ ] **MEDIUM: `scripts/check-version-bump.ts` only diffs `merge-base..HEAD`, so running it before committing reports a false "no bump required."** Found 2026-09-02. `spell-bump.prompt.md` Step 1 runs the gate in exactly that false-negative order; `spell-commit-work.prompt.md` never mentions it at all. Routes to LH-06.
+
 ## Parked — Needs Operator
 
 Every item below needs a human decision this program cannot make on its own — an external artifact
 only the operator can supply, a creative/brand judgment call, or a genuinely open engineering
-question with no forcing function. Per the Become Current program's Definition of Done (PLAN.md
-criterion 2): everything else in this file is either done or covered by an epic; these seven are
-the only unchecked items, consolidated at [OPERATOR-QUEUE.md Q-011](docs/plans/become-current/OPERATOR-QUEUE.md#q-011--phase-5-dod-closure-the-7-items-with-no-forcing-function-consolidated).
-Full detail stays where each item already sits above; this is a pointer, not a duplicate.
+question with no forcing function. At the Become Current program's 2026-09-01 close, these seven
+topics (eight checkboxes — one item below has a still-open sub-item alongside a shipped one) were
+the only unchecked items in this file, consolidated at [OPERATOR-QUEUE.md Q-011](docs/plans/become-current/OPERATOR-QUEUE.md#q-011--phase-5-dod-closure-the-7-items-with-no-forcing-function-consolidated).
+**This is no longer the only open work in the file** — the Lessons Hardening program (immediately
+above) added its own tracked items on 2026-09-02, each routed to a specific epic; only the section
+below has no such route. Full detail for these seven stays where each item already sits above; this
+is a pointer, not a duplicate. Pointers below cite by quoted title, not line number — a line number
+in this exact section drifted within a day of being written (see `docs/verification-ledger.md`'s
+2026-09-02 entry).
 
-- EF-18 (line 47) — blocked on a genuine independent batch-002 submission.
-- Push-safety's 4 design questions (line 53) — open, no forcing function.
-- Prospero's insignia lore capture (line 260) — creative/narrative, operator's voice.
-- "The Arcanos" branding copy pass (line 294) — brand/copy judgment call.
-- naming-conventions.md reword (line 297) — explicitly "owner's call" in its own text.
-- Test-flakiness finding (line 443) — one of its two sub-items (`testTimeout`) already shipped; the parent stays unchecked because its other sub-item does.
-- Windows `ENOTEMPTY` rmdir race investigation (line 446, the remaining sub-item of the above) — open-ended environment investigation, no forcing function.
-- Tracking-mode resolution-order inconsistency (line 448) — a real design decision, not a mechanical fix.
+- EF-18 ("external findings have no verification and consent intake workflow") — blocked on a genuine independent batch-002 submission.
+- Push-safety's 4 design questions ("Four follow-on questions from `features/push-safety/PRD.md`'s research") — open, no forcing function.
+- Prospero's insignia lore capture ("Lore capture — Prospero's insignia") — creative/narrative, operator's voice.
+- "The Arcanos" branding copy pass ("Copy pass: branded surfaces say 'the Arcanos'…") — brand/copy judgment call.
+- naming-conventions.md reword ("reword 'the more boring its name' → 'the plainer/clearer its name'") — explicitly "owner's call" in its own text.
+- Test-flakiness finding ("MEDIUM: pre-existing, unrelated test flakiness under full-suite load") — one of its two sub-items (`testTimeout`) already shipped; the parent stays unchecked because its other sub-item does.
+- Windows `ENOTEMPTY` rmdir race investigation ("Investigate the Windows `ENOTEMPTY` rmdir race…", the remaining sub-item of the above) — open-ended environment investigation, no forcing function.
+- Tracking-mode resolution-order inconsistency ("MEDIUM: 5 spells sharing a `tracking_mode`/`external_provider` declaration…") — a real design decision, not a mechanical fix.
