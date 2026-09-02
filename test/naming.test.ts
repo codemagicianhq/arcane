@@ -91,7 +91,7 @@ describe("applyRandomNames", () => {
     const roles = Array.from({ length: 35 }, (_, i) => `role-${i}`);
     expect(() => applyRandomNames(roles)).not.toThrow();
     const result = applyRandomNames(roles);
-    expect(result).toHaveLength(35);
+    expect(result).toHaveLength(roles.length);
   });
 
   it("returns an empty array for empty input", () => {

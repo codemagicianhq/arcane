@@ -10,10 +10,11 @@ const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance")
  * identical one, so merge unique content before removing either side.
  */
 describe("universal-agent-rules.md: rule 23 (diff before deleting a duplicate, I4/BC-27a)", () => {
-  it("states the rule under a numbered heading with the correct next-available number", async () => {
+  it("states the rule under a uniquely-numbered heading (LH-05: no longer pinned to max===24, since LH-10 adds rules 25-27 after this)", async () => {
     const rules = await readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8");
     const numbers = [...rules.matchAll(/^(\d+)\. \*\*/gm)].map((m) => Number(m[1]));
-    expect(Math.max(...numbers)).toBe(24);
+    expect(new Set(numbers).size).toBe(numbers.length);
+    expect(numbers).toContain(23);
     expect(rules).toContain('23. **Diff before deleting a "duplicate."');
   });
 

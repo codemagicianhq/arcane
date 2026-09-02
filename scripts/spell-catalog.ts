@@ -5,9 +5,12 @@ import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import { getAllComponents } from "../src/modules/registry.js";
 import { MARKER_START, MARKER_END } from "../src/modules/merger.js";
+import { AGENT_ROLES } from "../src/config/agent-roles.js";
 
 const PROMPT_PREFIX = ".github/prompts/";
 const PROMPT_SUFFIX = ".prompt.md";
+const GOVERNANCE_PREFIX = ".arcane/governance/";
+const GOVERNANCE_SUFFIX = ".md";
 
 export interface SpellCatalogEntry {
   id: string;
@@ -24,6 +27,9 @@ export interface SpellCatalogGroup {
 
 export interface SpellCatalog {
   totalSpells: number;
+  totalAgents: number;
+  totalGovernanceDocs: number;
+  governanceDocs: string[];
   groups: SpellCatalogGroup[];
 }
 
@@ -75,8 +81,19 @@ async function loadFrontmatter(
 export async function generateSpellCatalog(assetsDir: string): Promise<SpellCatalog> {
   const groups: SpellCatalogGroup[] = [];
   let totalSpells = 0;
+  const governanceFiles = new Set<string>();
+  const governanceDocs: string[] = [];
 
   for (const component of getAllComponents()) {
+    for (const file of component.files) {
+      if (file.startsWith(GOVERNANCE_PREFIX) && file.endsWith(GOVERNANCE_SUFFIX)) {
+        if (!governanceFiles.has(file)) {
+          governanceDocs.push(file.slice(GOVERNANCE_PREFIX.length, -GOVERNANCE_SUFFIX.length));
+        }
+        governanceFiles.add(file);
+      }
+    }
+
     if (!component.name.startsWith("spells-")) continue;
 
     const promptFiles = component.files.filter(
@@ -94,7 +111,13 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
     totalSpells += spells.length;
   }
 
-  return { totalSpells, groups };
+  return {
+    totalSpells,
+    totalAgents: AGENT_ROLES.length,
+    totalGovernanceDocs: governanceFiles.size,
+    governanceDocs,
+    groups,
+  };
 }
 
 export function renderJsonArtifact(catalog: SpellCatalog): string {
@@ -119,18 +142,69 @@ export function renderReadmeBlock(catalog: SpellCatalog): string {
   ].join("\n");
 }
 
-export function spliceReadmeBlock(readme: string, block: string): string {
-  const startIdx = readme.indexOf(MARKER_START);
-  const endIdx = readme.indexOf(MARKER_END);
+export function spliceReadmeBlock(
+  readme: string,
+  block: string,
+  startMarker: string = MARKER_START,
+  endMarker: string = MARKER_END,
+): string {
+  const startIdx = readme.indexOf(startMarker);
+  const endIdx = readme.indexOf(endMarker);
   if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) {
-    throw new Error(
-      `README.md is missing well-formed ${MARKER_START}/${MARKER_END} markers around the spell catalogue block`,
-    );
+    throw new Error(`README.md is missing well-formed ${startMarker}/${endMarker} markers`);
   }
 
-  const before = readme.slice(0, startIdx + MARKER_START.length);
+  const before = readme.slice(0, startIdx + startMarker.length);
   const after = readme.slice(endIdx);
   return `${before}\n${block}\n${after}`;
+}
+
+/**
+ * A second, distinctly-named block marker for the governance-standards
+ * `<details>` block. MARKER_START/MARKER_END above is a single unnamed pair
+ * already claimed by the spell catalogue block -- `readme.indexOf` would
+ * find whichever comes first in the file if this block reused it, silently
+ * splicing the wrong content into one of the two regions.
+ */
+export const GOVERNANCE_MARKER_START = "<!-- arcane:governance:start -->";
+export const GOVERNANCE_MARKER_END = "<!-- arcane:governance:end -->";
+
+export function renderGovernanceBlock(catalog: SpellCatalog): string {
+  const slugs = catalog.governanceDocs.map((slug) => `\`${slug}\``).join(" · ");
+  return [
+    "<details>",
+    `<summary><b>⚖️ The governance standards (${catalog.totalGovernanceDocs})</b></summary>`,
+    "",
+    slugs,
+    "",
+    "</details>",
+  ].join("\n");
+}
+
+/**
+ * Named inline counters embedded in otherwise-static README prose (the
+ * tagline, the "What's in the box" table) -- distinct from
+ * MARKER_START/MARKER_END above, which is a single unnamed block-level pair
+ * already claimed by the spell catalogue `<details>` block and can't be
+ * reused for a second region without the two colliding on the same
+ * `indexOf`. Each `<!--count:NAME-->N<!--/count:NAME-->` pair is replaced
+ * independently and can repeat (the same NAME may appear more than once in
+ * the file); a name with no matching pair anywhere is a hard error rather
+ * than a silent no-op, so a typo'd or removed marker fails loudly instead of
+ * quietly leaving stale prose in place.
+ */
+export function spliceNamedCounts(content: string, counts: Record<string, number>): string {
+  let result = content;
+  for (const [name, value] of Object.entries(counts)) {
+    const pattern = new RegExp(`(<!--count:${name}-->)\\d+(<!--\\/count:${name}-->)`, "g");
+    if (!new RegExp(pattern.source).test(result)) {
+      throw new Error(
+        `No <!--count:${name}-->N<!--/count:${name}--> marker found anywhere in the content.`,
+      );
+    }
+    result = result.replace(pattern, `$1${value}$2`);
+  }
+  return result;
 }
 
 function normalizeLineEndings(content: string): string {
@@ -170,10 +244,22 @@ export async function runSpellCatalogCheck(
 
   const readmePath = join(rootDir, "README.md");
   const readme = await readFile(readmePath, "utf8");
-  const block = renderReadmeBlock(catalog);
-  const expectedReadme = spliceReadmeBlock(readme, block);
+  let expectedReadme = spliceReadmeBlock(readme, renderReadmeBlock(catalog));
+  expectedReadme = spliceReadmeBlock(
+    expectedReadme,
+    renderGovernanceBlock(catalog),
+    GOVERNANCE_MARKER_START,
+    GOVERNANCE_MARKER_END,
+  );
+  expectedReadme = spliceNamedCounts(expectedReadme, {
+    spells: catalog.totalSpells,
+    agents: catalog.totalAgents,
+    governance: catalog.totalGovernanceDocs,
+  });
   if (normalizeLineEndings(readme) !== normalizeLineEndings(expectedReadme)) {
-    drifted.push("README.md's spell catalogue block does not match the registry.");
+    drifted.push(
+      "README.md's spell catalogue block, governance-standards block, and/or spell/agent/governance counts do not match the registry.",
+    );
     if (mode === "fix") {
       await writeFile(readmePath, expectedReadme, "utf8");
       repaired.push("README.md");

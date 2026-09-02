@@ -30,7 +30,7 @@ npm install -g arcane-cli   #  then:  spell init
 
 <div align="center">
 
-**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 41 spells** &nbsp;·&nbsp; **🤖 12 agents** &nbsp;·&nbsp; **⚖️ 25 governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
+**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 <!--count:spells-->41<!--/count:spells--> spells** &nbsp;·&nbsp; **🤖 <!--count:agents-->12<!--/count:agents--> agents** &nbsp;·&nbsp; **⚖️ <!--count:governance-->25<!--/count:governance--> governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
 
 </div>
 
@@ -113,9 +113,9 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 
 | Layer | What you get |
 | --- | --- |
-| 📜 **Spells** | **38** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
-| ⚖️ **Governance** | **23** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
-| 🤖 **Agents** | **12** ready-made agent personas with roles, clusters, and a gamified autonomy model — assign work and power levels per repo. |
+| 📜 **Spells** | **<!--count:spells-->41<!--/count:spells-->** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
+| ⚖️ **Governance** | **<!--count:governance-->25<!--/count:governance-->** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
+| 🤖 **Agents** | **<!--count:agents-->12<!--/count:agents-->** ready-made agent personas with roles, clusters, and a gamified autonomy model — assign work and power levels per repo. |
 | 🛠️ **CLI** | `spell init / add / update / status / uninstall` — install by profile or à la carte, and keep everything in sync as new versions ship. |
 
 <!-- arcane:start -->
@@ -135,12 +135,14 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 </details>
 <!-- arcane:end -->
 
+<!-- arcane:governance:start -->
 <details>
 <summary><b>⚖️ The governance standards (25)</b></summary>
 
-`universal-agent-rules` · `development-methodology` · `git-conventions` · `testing-standards` · `cicd-standards` · `decision-documentation-standard` · `naming-conventions` · `agent-policies` · `agent-approved-paths` · `agent-work-queue-model` · `threat-model` · `hardening-checklist` · `authentication-strategy` · `compliance-standards` · `product-excellence-standards` · `rca-process-standard` · `poc-management-pattern` · `spell-authoring-standards` · `new-business-setup` · `portable-bootstrap` · `framework-decisions` · `records-conventions` · `external-verification-standards` · `web-discoverability-standards` · `mobile-release-standards`
+`git-conventions` · `testing-standards` · `framework-decisions` · `decision-documentation-standard` · `agent-work-queue-model` · `naming-conventions` · `agent-policies` · `threat-model` · `hardening-checklist` · `authentication-strategy` · `new-business-setup` · `agent-approved-paths` · `portable-bootstrap` · `development-methodology` · `cicd-standards` · `poc-management-pattern` · `product-excellence-standards` · `spell-authoring-standards` · `rca-process-standard` · `universal-agent-rules` · `records-conventions` · `external-verification-standards` · `web-discoverability-standards` · `mobile-release-standards` · `compliance-standards`
 
 </details>
+<!-- arcane:governance:end -->
 
 ---
 
