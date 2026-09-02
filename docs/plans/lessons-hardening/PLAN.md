@@ -250,7 +250,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   registry, which would have caught this the first time. **Done:** all of the above shipped together;
   full suite + coverage thresholds pass; operator's call on owning the README tagline's wording (not
   its count, which is now generated either way) noted in-PR, not blocking.
-- [ ] **LH-06 — Build-gate correctness (2 PRs).** Closes G1 + G2. (a) `scripts/check-version-bump.ts
+- [x] **LH-06 — Build-gate correctness (2 PRs).** Closes G1 + G2. (a) `scripts/check-version-bump.ts
   --staged`: union the merge-base diff with `git diff --cached --name-only` (+ `--working-tree`); CI
   default unchanged; `spell-bump` Step 1 switches to staged mode; `spell-commit-work` Step 2 gains a
   distributable-change halt; `.husky/pre-push` runs `check:version-bump` (everything is committed
@@ -261,6 +261,14 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (a) / judgment (b). **(a) done:** shipped as its own PR — offline-mode testing found a real second
   silent-skip path (`getVersion("origin/main")` failing separately from the merge-base lookup) the
   plan text hadn't named; both now warn loudly rather than either failing wrong or passing silent.
+  **(b) done:** the existing `main().catch(...)` wrapper in `self-host-parity.ts` already turns any
+  thrown `MalformedFragmentMarkersError` into a CI-failing, printed error — no additional wiring
+  needed, just the new guard itself. **Judgment on the bump: none.** `src/modules/spell-compiler.ts`
+  isn't a named bump trigger (`src/assets/`, `registry.ts`, `profiles.ts`) and this PR touches no
+  `src/assets/` content; `check-version-bump.ts --staged` was run directly against the real staged
+  diff and confirmed "no bump required" rather than asserting it. Verified against all 5 real
+  `tracking-mode-declaration` consumers before shipping the stricter guard — none already had the
+  defect it now catches, so nothing broke.
 - [ ] **LH-07 — Line-citation hygiene.** Closes P2 (13× + 3 caught live in LH-01), promotes the
   2026-08-31 `IDEAS.md` idea. Route: direct. Size M. Bump: patch. **Mechanism:** (1) citation grammar
   in `agent-output.instructions.md` → Doc-ID Link Format: `path`; `path#anchor`; `path ("unique quoted

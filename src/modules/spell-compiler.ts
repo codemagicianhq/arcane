@@ -131,8 +131,15 @@ function fragmentMarkers(name: string): { start: string; end: string } {
  *
  * A file that does not reference this fragment at all is returned
  * unchanged (most consuming files reference exactly one of several
- * fragments in the library). Mismatched or reversed markers throw --
- * fixing a malformed span is a decision only a person should make.
+ * fragments in the library). Mismatched, reversed, or inconsistently
+ * indented markers all throw -- fixing a malformed span is a decision
+ * only a person should make. (LH-06b: the indentation check was added
+ * after finding the START/END pair had actually drifted out of sync
+ * in a real consuming file, silently re-indenting the fragment to the
+ * START's column while leaving a differently-indented END marker
+ * sitting in the output -- exactly the kind of malformed span this
+ * function already refuses to silently paper over for the other two
+ * cases, just not yet for this one.)
  */
 export function expandFragment(content: string, name: string, fragmentContent: string): string {
   const { start, end } = fragmentMarkers(name);
@@ -159,6 +166,14 @@ export function expandFragment(content: string, name: string, fragmentContent: s
   // slicing from endIdx (the marker text) rather than its line start would
   // silently drop it and dedent the closing marker to column 0.
   const endLineStart = content.lastIndexOf("\n", endIdx) + 1;
+  const endIndent = content.slice(endLineStart, endIdx);
+  if (endIndent !== indent) {
+    throw new MalformedFragmentMarkersError(
+      `Fragment markers for "${name}" have inconsistent indentation: ` +
+        `start is indented ${JSON.stringify(indent)}, end is indented ${JSON.stringify(endIndent)}. ` +
+        `Author both markers at the same indentation before re-running.`,
+    );
+  }
 
   const before = content.slice(0, startIdx + start.length);
   const after = content.slice(endLineStart);

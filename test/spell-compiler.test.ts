@@ -216,6 +216,26 @@ describe("expandFragment / referencesFragment", () => {
         );
     });
 
+    it("throws MalformedFragmentMarkersError when the end marker's indentation differs from the start's (LH-06b)", () => {
+        // A silent mis-indent here previously re-indented the fragment body to
+        // the START's column while leaving a differently-indented END marker
+        // sitting in the output -- a malformed span this function already
+        // refuses to paper over for missing/reversed markers, just not yet
+        // for this one. Verified against all 5 real tracking-mode-declaration
+        // consumers (spell-full-cycle/open-session/plan/scope/suggest-feature)
+        // before shipping this guard: none of them actually have this defect.
+        const content = [
+            "1. Tracking configuration:",
+            "   <!-- fragment:tracking-mode-declaration:start -->",
+            "   stale",
+            "  <!-- fragment:tracking-mode-declaration:end -->",
+            "   - next bullet",
+        ].join("\n");
+        expect(() =>
+            expandFragment(content, "tracking-mode-declaration", "new content"),
+        ).toThrow(MalformedFragmentMarkersError);
+    });
+
     it("referencesFragment is true only for a file that has the start marker", () => {
         expect(referencesFragment(`<!-- fragment:${FRAGMENT}:start -->`, FRAGMENT)).toBe(true);
         expect(referencesFragment("nothing", FRAGMENT)).toBe(false);
