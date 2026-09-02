@@ -43,7 +43,7 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   request time.
 - **Rollback:** revert the merge commit; the RCA record stays as a historical artifact per
   `records-conventions.md` rather than being deleted.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-02 — merged by the operator ([PR #174](https://github.com/codemagicianhq/arcane/pull/174), `v0.34.1`). Rebased onto `main` first (12 intervening epics had accumulated a real content/version conflict against this long-open branch — see Q-003 below for the one substantive text collision); re-verified the full check suite after, then pushed with `--force-with-lease` before the operator's review. This was Lessons Hardening's last open item — the program is now fully complete.
 
 ## Q-003 — Accept, revise, or reject ARC-041
 
@@ -53,10 +53,11 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   secret, closing the gap that let a real client name leak into shipped content twice in immediate
   succession on 2026-09-01 (`a8d8263`/`513f6d8` — the second leak was the first fix's own closure
   note re-quoting the name it described removing) with no local way to catch it before pushing.
-  (This line was already corrected once, in LH-02's own then-still-unmerged PR #174 — Q-002 below
+  (This line was already corrected once, in LH-02's own then-still-unmerged PR #174 — Q-002 above
   — but every epic since branched from a `main` that didn't have that fix yet, since LH-02 hadn't
-  merged. Reapplied here rather than left stale a second time; this is that predicted trivial
-  conflict, resolved now that #174 is finally being rebased.)
+  merged. Reapplied here rather than left stale a second time; this was the one substantive text
+  collision when #174 was finally rebased and merged, resolved by combining both sides' detail
+  rather than picking one.)
 - **Why:** Accepting an ADR is never within any delegation's grant in this repository — always an
   explicit operator decision, regardless of autonomy level elsewhere.
 - **Preconditions:** LH-11's PR is open with the ADR drafted `Proposed`, including its own

@@ -160,7 +160,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 1 — Root cause record and test substrate
 
-- [ ] **LH-02 — RCA-001 and the RCA artifact path.** Closes the shared root cause behind patterns
+- [x] **LH-02 — RCA-001 and the RCA artifact path.** Closes the shared root cause behind patterns
   P1/P2/P4/P5/P11 (static text nothing re-derives) plus a second root-cause row for P7 (a CI-only gate
   with no local enforcement path). Route: direct. Size S. Bump: patch (`rca-process-standard.md`
   ships). **Mechanism:** amend the standard's Artifact Location from `governance/rcas/` to
@@ -170,8 +170,10 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `docs/rcas/RCA-001-<slug>.md` in the standard's own template, Preventive Actions naming LH-03…LH-10 by
   ID. **Operator-merged (Q-002)** — RCAs are never auto-committed. **Empirical-first:** grep `src/`,
   `test/` for `governance/rcas` references before renaming anything — done, zero `.ts` hits, pure
-  prose rename. **[PR #174](https://github.com/codemagicianhq/arcane/pull/174) open, awaiting
-  operator review/merge (Q-002).**
+  prose rename. **[PR #174](https://github.com/codemagicianhq/arcane/pull/174) operator-reviewed
+  and merged 2026-09-02 (`v0.34.1`, Q-002 done)** — rebased onto `main` first to resolve the
+  content/version conflict its long-open window had accumulated against 12 intervening epics (see
+  `OPERATOR-QUEUE.md`'s Q-002 entry for that resolution).
 - [x] **LH-03 — Test-suite resilience helpers.** Closes P3 (13×: vitest 5000ms default under
   full-suite contention, Windows `ENOTEMPTY` temp-dir races) and P5 (8×: line-wrap-fragile
   `toContain` assertions). Owns `TODO.md`'s parked Windows `ENOTEMPTY` sub-item. Route: direct. Size M.
