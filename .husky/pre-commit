@@ -1,1 +1,1 @@
-npm run lint && npm run typecheck && npm run doctor:leaks
+npm run check:staged-org-tokens && npm run lint && npm run typecheck && npm run doctor:leaks

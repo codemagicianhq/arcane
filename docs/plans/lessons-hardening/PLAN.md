@@ -397,10 +397,30 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   unmerged (Q-002 open), so every epic since branched from a `main` that never had that fix. Reapplied
   the correction here rather than leave it stale a second time; LH-02's own copy becomes a no-op or a
   trivial conflict whenever #174 is finally rebased and merged.
-- [ ] **LH-12 — Local denylist implementation.** **Parked until ARC-041 Accepted.** Route: direct.
-  Size M. Bump: minor by judgment. Reuses `denylist-scan.ts`'s `scanFile` per staged path and
+- [x] **LH-12 — Local denylist implementation.** **Parked until ARC-041 Accepted** — unblocked in the
+  very same session, since the operator's decision was already recorded. Route: direct. Size M. Bump:
+  minor by judgment. Reuses `denylist-scan.ts`'s `scanFile` per staged path and
   `org-token-lint.ts`'s `resolvePrivateTokens` (add the file source beside the env source). Tests
-  mirror `test/org-token-lint.test.ts`'s spawn-the-real-gate shape.
+  mirror `test/org-token-lint.test.ts`'s spawn-the-real-gate shape. **Done:** `resolvePrivateTokens()`
+  made async, gained a second source (`$ARCANE_ORG_TOKENS_FILE` else `~/.arcane/org-tokens`) with a
+  structural in-repo refusal (`git rev-parse --show-toplevel` compared against the resolved path, not
+  just a `.gitignore` convention); new `scripts/check-staged-org-tokens.ts` wired into
+  `.husky/pre-commit`, staged-files-only, a no-op when nothing is configured; `spell ward` gained
+  `--terms-file`, same delimiter convention, merged with (not replacing) `--terms`. Bump: minor,
+  applied by judgment — the automated `check-version-bump.ts` gate correctly reported "no bump
+  required" (it only watches `src/assets/`/`registry.ts`/`profiles.ts`, not the CLI's own compiled
+  behavior), confirmed directly rather than skipped; a new CLI flag is "minor" per `spell-bump`'s own
+  table, judgment the automated gate structurally cannot make on its own. **Two real bugs caught by the
+  test suite itself, not assumed fixed:** the async conversion broke 2 existing
+  `test/org-token-lint.test.ts` call sites that called the now-`Promise`-returning function without
+  `await` — TypeScript's own typecheck stayed clean (the surrounding types accepted the mismatch
+  structurally) but both tests failed hard at runtime once actually run, exactly the "a green
+  typecheck is not evidence of correctness" lesson this whole program is about. A second bug caught
+  before it shipped: the first "resolves inside a repo" test wrote its fixture file inside a separate
+  fixture repo while calling `resolvePrivateTokens()` with no `cwd` argument, meaning the real check
+  ran against `process.cwd()` (this repo, not the fixture) — the test would have passed for the wrong
+  reason. Added an explicit `cwd` parameter to `resolvePrivateTokens()` for testability and fixed the
+  test to pass the fixture's own directory.
 
 ### Wave 4 — Close
 

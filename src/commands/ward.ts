@@ -1,7 +1,9 @@
+import { readFile } from "node:fs/promises";
 import { runWard, type WardExclusion } from "../modules/ward.js";
 
 export interface WardCliOptions {
   terms?: string;
+  termsFile?: string;
   gate?: boolean;
 }
 
@@ -11,6 +13,30 @@ function parseTerms(raw?: string): string[] {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean);
+}
+
+/**
+ * ARC-041: --terms-file escapes the shell-history exposure a --terms value
+ * has on any multi-user or logged machine. Same delimiter convention as
+ * resolvePrivateTokens() (comma and/or newline) -- one format across every
+ * place this framework accepts a local denylist, nothing new to document.
+ */
+function parseTermsFileContent(raw: string): string[] {
+  return raw
+    .split(/[,\r\n]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+async function readTermsFile(filePath: string): Promise<string[]> {
+  try {
+    return parseTermsFileContent(await readFile(filePath, "utf8"));
+  } catch (error: unknown) {
+    console.warn(
+      `⚠ arcane: could not read --terms-file "${filePath}": ${(error as Error).message}`,
+    );
+    return [];
+  }
 }
 
 /**
@@ -26,7 +52,10 @@ export async function runWardCli(
   options: WardCliOptions = {},
   exclusions: WardExclusion[] = [],
 ): Promise<void> {
-  const terms = parseTerms(options.terms);
+  const terms = [
+    ...parseTerms(options.terms),
+    ...(options.termsFile ? await readTermsFile(options.termsFile) : []),
+  ];
   const report = await runWard(targetDir, { terms, exclusions });
 
   console.log("\nspell ward — scanning for leaked identifiers\n");

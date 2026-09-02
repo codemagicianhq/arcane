@@ -208,7 +208,7 @@ async function main() {
   // docs, tests and decision records included. ARC-031.
   const privacyFindings = await scanRepository(
     REPO_SCAN_DIR,
-    createOrgTokenRules(resolvePrivateTokens()),
+    createOrgTokenRules(await resolvePrivateTokens()),
   );
   const orgFindings = dedupeFindings(portabilityFindings, privacyFindings);
   if (orgFindings.length > 0) {
