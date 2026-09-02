@@ -38,7 +38,7 @@ An RCA is **recommended** (but optional) for:
 
 ## RCA Template
 
-**Every RCA follows this structure. Artifacts are stored in `governance/rcas/` with the filename `RCA-NNN-short-slug.md` (sequential numbering, matching the related ADR when applicable). Enforcement: explicitly advisory prose (ARC-023) — no script validates RCA filenames, sequential numbering, or template structure.**
+**Every RCA follows this structure. Artifacts are stored in `docs/rcas/` with the filename `RCA-NNN-short-slug.md` (sequential numbering, matching the related ADR when applicable). Enforcement: explicitly advisory prose (ARC-023) — no script validates RCA filenames, sequential numbering, or template structure.**
 
 ```markdown
 ---
@@ -104,7 +104,7 @@ Bullet points — what the team now knows that it didn't before.
 ### 1. Initiate
 
 When a trigger condition is met:
-- Create the RCA artifact file in `governance/rcas/`
+- Create the RCA artifact file in `docs/rcas/`
 - Fill in the Incident Summary and Timeline sections
 - Record the ADR that establishes the RCA (if applicable)
 
@@ -147,13 +147,13 @@ RCAs do not have formal severity levels. The trigger conditions above determine 
 ## Artifact Location
 
 ```
-governance/
+docs/
   rcas/
     RCA-001-naming-collision.md
     RCA-002-...
 ```
 
-**Why `governance/rcas/`?** RCAs are governance artifacts (process improvement), not journals (session logs) or decisions (ADRs). They complement ADRs by explaining *how a decision failed* rather than *what was decided*.
+**Why `docs/rcas/`, not `governance/rcas/`?** RCAs are project/domain documents (a record of what happened in *this* repository), not a framework-managed standard — [[portable-bootstrap#where-documents-live|portable-bootstrap.md's "Where Documents Live"]] reserves `.arcane/governance/` for framework-managed standards and explicitly forbids a duplicate root `governance/` tree; `docs/` is the same explicit-descriptive-path convention it names for project/domain documents. RCAs remain governance artifacts in *purpose* (process improvement, not a journal or a decision) — they complement ADRs by explaining *how a decision failed* rather than *what was decided* — just not in *filesystem location*. Enforcement: explicitly advisory prose (ARC-023) — no script checks that an RCA file actually lives under `docs/rcas/` rather than elsewhere.
 
 ## Maintenance
 

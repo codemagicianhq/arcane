@@ -17,7 +17,12 @@ in a section written the same day; a note pointing at a section that doesn't exi
 *this very program* that found its own drift again within 24 hours). The root cause is structural, not
 carelessness: **facts about the tree get written as static text that nothing re-derives.** A second
 root cause: the org-token privacy gate is CI-only, so the natural way to document a leak's removal
-re-triggers it — three times in one session.
+re-triggers it — confirmed twice in immediate succession on 2026-09-01 (commits `a8d8263`/`513f6d8`:
+a real client name leaked into shipped docs, then the closure note describing that fix re-quoted the
+same name), with an earlier, related-but-distinct precedent in BC-06 (a canonical-URL citation fix
+that separately tripped the same portability gate). Corrected here during LH-02's own empirical-first
+check — the "three times in one session" figure this line originally carried didn't survive a direct
+`git log` check against the actual fix commits.
 
 This program converts that inventory into mechanical enforcement wherever feasible, honestly labeled
 advisory where it isn't (per ARC-023's enforcement-mode ethos), and parks what has no forcing function.
@@ -138,11 +143,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 0 — Bootstrap
 
-- [ ] **LH-00 — Commit this plan.** This document + KICKOFF.md + OPERATOR-QUEUE.md + the
+- [x] **LH-00 — Commit this plan.** This document + KICKOFF.md + OPERATOR-QUEUE.md + the
   `lessons-hardening-plan` delegation record, via PR (the IDEAS.md citation-drift status flip already
   shipped in LH-01/PR #171, not here — corrected on the record during LH-00's own commit prep).
   Merging it activates the delegation grant. Route: direct. Size S. Bump: no (docs only, outside
-  `src/assets/`). **Operator merges this one** — see Authority & Delegation above.
+  `src/assets/`). **Operator merges this one** — see Authority & Delegation above. **Done:**
+  [PR #172](https://github.com/codemagicianhq/arcane/pull/172), merged 2026-09-02 by the operator.
 - [x] **LH-01 — Phase 0 capture and live-drift fix (scoreboard entry).** The actual work
   ([PR #171](https://github.com/codemagicianhq/arcane/pull/171)) already shipped ahead of this plan
   existing, exactly as Become Current's own BC-00 commit-the-plan pattern allows for prerequisite
