@@ -322,7 +322,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   subject — command-line/chat usage — still has no mechanical check by construction; now accurately
   notes BC-30's executable-check backstop for the narrower config-file sub-case, instead of claiming no
   scanner exists at all).
-- [ ] **LH-09 — Follow-up promotion gate.** Closes P9 (6×: findings buried in closure prose, never
+- [x] **LH-09 — Follow-up promotion gate.** Closes P9 (6×: findings buried in closure prose, never
   promoted; shipments never linked back to their TODO item). Route: direct. Size M. Bump: patch.
   **Mechanism:** `scripts/check-followups.ts` — in journals <30 days old, active plans' PLAN/
   OPERATOR-QUEUE, `TODO.md`, and the ledger's Correction column, any block containing a deferral phrase
@@ -333,7 +333,22 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `spell-commit-work` Step 4 gains a "TODO linkage" assist. **Rollout:** warn→fail on LH-07's
   criterion. **Empirical-first:** measure precision over the last ten journals + Become Current's own
   PLAN/OPERATOR-QUEUE; the WD-nn "filed as a separate, out-of-scope follow-up" sentence is the known
-  true positive.
+  true positive. **Done, with a real precision finding along the way:** built on a "block = whole
+  paragraph" design first, then measured the true-positive's actual document directly — the WD-nn
+  sentence sits inside one 12,674-character paragraph that also mentions "ARC-023" 314 characters away
+  as unrelated general framing, which a whole-paragraph check would have treated as "tracked" and
+  missed the exact case this tool exists to catch. Switched to a 150-character window around each
+  deferral-phrase match instead, verified against the real sentence before shipping (caught: yes;
+  ARC-023 correctly excluded as too far away: yes). A second, smaller precision gap found scanning the
+  real corpus: a bare "TODO item"/"IDEAS entry" mention in prose didn't match a `.md`-only tracker
+  pattern — broadened to match the bare word too. Remaining noise on the real tree (report-only,
+  never blocking) is mostly quotes of now-resolved historical claims and one genuine keyword ambiguity
+  ("left open" meaning an un-closed file handle, not a deferred decision) — acceptable for an
+  explicitly-advisory tool per ARC-023, not something this pass tried to eliminate entirely. Ships in
+  `ci.yml` in warn mode (`continue-on-error: true`); a `--check` mode exists (mirroring `check-
+  citations`/`check-stale-claims`'s own shape) so flipping to blocking later, once precision is
+  validated across sessions per this epic's own rollout criterion, is a one-line CI change, not new
+  code.
 
 ### Wave 3 — Conduct rules and ADR-gated work
 
