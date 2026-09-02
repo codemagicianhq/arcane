@@ -96,6 +96,9 @@ jobs:
         run: npm run check:citations
         continue-on-error: true
 
+      - name: Check stale claims (LH-08; Class A blocks, Class B is report-only)
+        run: npm run check:stale-claims
+
       - name: Lint
         run: npm run lint
 
