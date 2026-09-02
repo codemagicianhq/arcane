@@ -10,6 +10,7 @@ import {
   hashFile,
   ensureDir,
 } from "../src/modules/copier.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 describe("copier", () => {
   let tempDir: string;
@@ -22,7 +23,7 @@ describe("copier", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await removeFixtureDir(tempDir);
   });
 
   // ─── validateTargetPath ───────────────────────────────────────────────────

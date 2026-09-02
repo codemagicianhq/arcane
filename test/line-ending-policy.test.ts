@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { runGit } from "./helpers/git-fixture.js";
+import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
 const POLICY_PATH = join(process.cwd(), ".gitattributes");
@@ -40,7 +40,7 @@ async function createFixture(autoCrlf: boolean) {
 
 afterEach(async () => {
     await Promise.all(
-        tempDirs.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })),
+        tempDirs.splice(0).map((root) => removeFixtureDir(root)),
     );
 });
 
@@ -50,8 +50,8 @@ describe.each([true, false])("repository line-ending policy (core.autocrlf=%s)",
         const pngBefore = await fs.readFile(join(root, "assets", "sample.png"));
         const gifBefore = await fs.readFile(join(root, "assets", "sample.gif"));
 
-        await fs.rm(join(root, "docs"), { recursive: true });
-        await fs.rm(join(root, "assets"), { recursive: true });
+        await removeFixtureDir(join(root, "docs"));
+        await removeFixtureDir(join(root, "assets"));
         runGit(root, ["checkout", "--", "docs/sample.md", "assets/sample.png", "assets/sample.gif"]);
 
         const text = await fs.readFile(join(root, "docs", "sample.md"));

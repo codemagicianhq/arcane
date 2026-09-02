@@ -7,6 +7,7 @@ import { INCIDENT_QUEUE, type IncidentRecord } from "../src/config/incidents.js"
 import { checkIncidentReleaseGate } from "../src/commands/doctor.js";
 import { evaluateIncidentGate } from "../src/modules/incident-gate.js";
 import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const tempDirs: string[] = [];
 const TSX = resolveTsxCli();
@@ -26,7 +27,7 @@ function incident(overrides: Partial<IncidentRecord> = {}): IncidentRecord {
 
 afterEach(async () => {
   await Promise.all(
-    tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+    tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
   );
 });
 

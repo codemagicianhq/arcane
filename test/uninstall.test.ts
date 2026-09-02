@@ -12,6 +12,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 vi.mock("@inquirer/prompts", () => ({
@@ -66,7 +68,7 @@ describe("spell uninstall — handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
     vi.clearAllMocks();
   });
 
@@ -344,7 +346,7 @@ describe.skipIf(!BIN)("spell uninstall — built CLI integration", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("exits 1 with helpful message when not initialized", () => {
@@ -380,7 +382,7 @@ describe.skipIf(!BIN)("spell uninstall — built CLI integration", () => {
     expect(result.stdout).toContain("Uninstalled");
     expect(await fileExists(join(tmpDir, "governance/testing-standards.md"))).toBe(false);
     expect(await fileExists(join(tmpDir, ".arcane.json"))).toBe(false);
-  }, 30_000);
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("--dry-run lists files to remove without deleting them", async () => {
     await fs.mkdir(join(tmpDir, "governance"), { recursive: true });
@@ -406,5 +408,5 @@ describe.skipIf(!BIN)("spell uninstall — built CLI integration", () => {
     expect(result.stdout).toContain("[dry-run]");
     expect(await fileExists(join(tmpDir, "governance/testing-standards.md"))).toBe(true);
     expect(await fileExists(join(tmpDir, ".arcane.json"))).toBe(true);
-  }, 30_000);
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });

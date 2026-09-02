@@ -1,13 +1,13 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { writeFile, rm } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkMcpConfig } from "../src/commands/doctor.js";
-import { createFixtureDir } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 
 let dir: string | undefined;
 
 afterEach(async () => {
-  if (dir) await rm(dir, { recursive: true, force: true });
+  if (dir) await removeFixtureDir(dir);
   dir = undefined;
 });
 

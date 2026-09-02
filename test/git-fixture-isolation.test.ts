@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
-import { createFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 
 /**
  * EF-34 negative regression: point GIT_DIR at a decoy repository (simulating
@@ -19,7 +19,7 @@ import { createFixtureDir, runGit } from "./helpers/git-fixture.js";
 const tempDirs: string[] = [];
 
 afterEach(async () => {
-    await Promise.all(tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
+    await Promise.all(tempDirs.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 function realGit(dir: string, args: string[]): string {

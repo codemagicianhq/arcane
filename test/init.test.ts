@@ -12,6 +12,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 // vitest hoists vi.mock() to avoid real stdin interaction in tests
@@ -79,7 +81,7 @@ describe("spell init — handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   // ─── Profile validation ────────────────────────────────────────────────────
@@ -265,7 +267,7 @@ describe("spell init — handler", () => {
     ).rejects.toThrow();
 
     // Clean the manifest so we can re-init
-    await fs.rm(join(tmpDir, ".arcane.json"), { force: true });
+    await removeFixtureDir(join(tmpDir, ".arcane.json"));
 
     // With force, should succeed
     await expect(
@@ -320,9 +322,9 @@ describe.skipIf(!BIN)("spell init — built CLI", () => {
       const files = await fs.readdir(tmpDir);
       expect(files).toHaveLength(0);
     } finally {
-      await fs.rm(tmpDir, { recursive: true, force: true });
+      await removeFixtureDir(tmpDir);
     }
-  }, 30_000);
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("spell init --profile full --dry-run exit code is 0", () => {
     const result = spawnSync(

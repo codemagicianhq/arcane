@@ -42,6 +42,14 @@ Files registered by `src/modules/registry.ts` under root `.github/`, `.arcane/`,
 - CI runs `check:self-host-parity` and fails on missing or substantive content drift.
 - Line-ending-only differences are normalized during comparison and do not fail the gate.
 
+### Writing tests
+
+`test/helpers/` provides shared building blocks — use them instead of hand-rolling the same fix twice; `npm run lint` enforces the first two:
+
+- **Fixture cleanup:** `createFixtureDir`/`removeFixtureDir` (`test/helpers/fixture-dir.ts`, re-exported from `test/helpers/git-fixture.ts`). `removeFixtureDir` retries through the transient `EBUSY`/`ENOTEMPTY` window a virus scanner or search indexer can hold a just-closed handle open for — a direct `rm`/`rmSync`/`fs.rm`/`fs.rmSync` call anywhere under `test/` outside `test/helpers/` itself is a lint error.
+- **Named test timeouts:** `HEAVY_TEST_TIMEOUT` / `VERY_HEAVY_TEST_TIMEOUT` / `NETWORK_TEST_TIMEOUT` (`test/helpers/timeouts.ts`) for tests with real subprocess, filesystem, or network cost that trips vitest's default 5000ms under full-suite contention. A numeric literal as `it`/`test`'s third argument is a lint error — add a new named constant with its own reason if none of the three fit, never a bare number. Never raise vitest's global `testTimeout`; that masks a genuine hang anywhere else in the suite.
+- **Prose assertions:** `normalizeProse`/`expectProseToContain`/`lineContaining`/`blockContaining`/`expectNotNegated` (`test/helpers/prose.ts`) for asserting against hard-wrapped markdown (governance docs, prompts) without breaking every time the source re-wraps a sentence.
+
 ## Pull request guidelines
 
 1. **Branch** off `main` (`type/short-description`, e.g. `feat/spell-foo`).

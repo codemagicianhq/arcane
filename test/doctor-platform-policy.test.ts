@@ -1,12 +1,12 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { rm } from "node:fs/promises";
 import { checkPlatformBranchPolicy } from "../src/commands/doctor.js";
-import { runGit as fixtureGit, createFixtureDir } from "./helpers/git-fixture.js";
+import { runGit as fixtureGit, createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
+import { NETWORK_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 let dir: string | undefined;
 
 afterEach(async () => {
-  if (dir) await rm(dir, { recursive: true, force: true });
+  if (dir) await removeFixtureDir(dir);
   dir = undefined;
 });
 
@@ -54,5 +54,5 @@ describe("checkPlatformBranchPolicy — integration (T11/BC-17)", () => {
     expect(result.blocking).toBe(false);
     expect(typeof result.message).toBe("string");
     expect(result.message.length).toBeGreaterThan(0);
-  }, 20000);
+  }, NETWORK_TEST_TIMEOUT);
 });

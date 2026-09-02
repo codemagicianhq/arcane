@@ -13,7 +13,8 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
-import { runGit } from "./helpers/git-fixture.js";
+import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // ─── Mock version-check module (used by runStatus) ───────────────────────────
 // Must be hoisted before any imports that transitively pull in version-check.
@@ -80,7 +81,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
   });
 
   afterAll(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   // ── Step 1: spell init ──────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       expect(names).toContain("git-conventions");
       expect(names).toContain("testing-standards");
       expect(names).toContain("framework-decisions");
-    }, 30_000);
+    }, VERY_HEAVY_TEST_TIMEOUT);
 
     it("copies lite-profile files to the target directory", async () => {
       // Spot-check one file from each lite-profile component
@@ -213,7 +214,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       expect(component?.fileHashes?.[".arcane/governance/git-conventions.md"]).toMatch(
         /^[0-9a-f]{64}$/,
       );
-    }, 30_000);
+    }, VERY_HEAVY_TEST_TIMEOUT);
 
     it("bumps the manifest version after update", async () => {
       const raw = await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8");
@@ -234,7 +235,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
 
       // The non-manifest file must still be there
       await expect(fs.access(survivorPath)).resolves.toBeUndefined();
-    }, 30_000);
+    }, VERY_HEAVY_TEST_TIMEOUT);
 
     it("removes all manifest-tracked files", async () => {
       await expect(

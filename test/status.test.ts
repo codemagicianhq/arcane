@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // ─── Mock version-check so tests never hit the network ───────────────────────
 vi.mock("../src/modules/version-check.js", () => ({
@@ -65,7 +66,7 @@ describe("spell status — handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
     vi.clearAllMocks();
   });
 
@@ -352,7 +353,7 @@ describe.skipIf(!BIN)("spell status — built CLI integration", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("exits 1 with helpful message when not initialized", () => {

@@ -7,6 +7,7 @@ import {
     MARKER_START,
     mergeIntoFile,
 } from "../src/modules/merger.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const REPOSITORY_ROOT = process.cwd();
 const INSTRUCTION_PATHS = [
@@ -18,7 +19,7 @@ const tempDirs: string[] = [];
 
 afterEach(async () => {
     await Promise.all(
-        tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+        tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
     );
 });
 

@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createFixtureDir } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 import { copyAssets, copyDir } from "../scripts/copy-assets.js";
 import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
 
@@ -19,7 +19,7 @@ async function fixtureDirs() {
 }
 
 afterEach(async () => {
-  await Promise.all(tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
+  await Promise.all(tempDirs.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 describe("copyAssets pruning", () => {
@@ -38,7 +38,7 @@ describe("copyAssets pruning", () => {
 
     // orphan.prompt.md's source is removed -- exactly the spell-eas-ios-deploy
     // scenario: no counterpart under src/assets/, so it must not survive.
-    await fs.rm(join(src, "orphan.prompt.md"));
+    await removeFixtureDir(join(src, "orphan.prompt.md"));
 
     const second = await copyAssets(src, dest);
     expect(second.violations).toHaveLength(0);
@@ -56,7 +56,7 @@ describe("copyAssets pruning", () => {
     await copyAssets(src, dest);
     await expect(fs.access(join(dest, "prompts", "spell-a.md"))).resolves.toBeUndefined();
 
-    await fs.rm(join(src, "prompts"), { recursive: true, force: true });
+    await removeFixtureDir(join(src, "prompts"));
 
     await copyAssets(src, dest);
     await expect(fs.access(join(dest, "prompts"))).rejects.toThrow();

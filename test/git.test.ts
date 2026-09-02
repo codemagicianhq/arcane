@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { inspectGitRepository } from "../src/modules/git.js";
-import { createFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
 
@@ -14,7 +14,7 @@ async function createTempDir() {
 
 afterEach(async () => {
     await Promise.all(
-        tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+        tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
     );
 });
 

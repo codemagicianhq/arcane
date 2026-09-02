@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const { inspectGitRepositoryMock } = vi.hoisted(() => ({
   inspectGitRepositoryMock: vi.fn(),
@@ -95,7 +96,7 @@ describe("spell init — hub question", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   // Say no to agent setup in every test here -- it's an unrelated interactive
@@ -150,7 +151,7 @@ describe("spell init — tracking mode (EF-14)", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("governance-only profile gets a silent internal/null default, no question asked", async () => {
@@ -238,7 +239,7 @@ describe("spell update — manifest retrofit wizard", () => {
 
   afterEach(async () => {
     process.stdin.isTTY = realIsTTY;
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("asks the role retrofit question when the installed manifest predates it", async () => {
@@ -353,7 +354,7 @@ describe("offerRegistryScaffold", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("no-ops silently when business_root does not exist", async () => {
@@ -417,7 +418,7 @@ describe("spell update without a TTY", () => {
 
   afterEach(async () => {
     process.stdin.isTTY = realIsTTY;
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   // Regression: @inquirer throws ExitPromptError on closed stdin. That crashed

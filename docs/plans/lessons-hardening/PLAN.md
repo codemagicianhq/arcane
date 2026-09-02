@@ -164,7 +164,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `docs/rcas/RCA-001-<slug>.md` in the standard's own template, Preventive Actions naming LH-03…LH-10 by
   ID. **Operator-merged (Q-002)** — RCAs are never auto-committed. **Empirical-first:** grep `src/`,
   `test/` for `governance/rcas` references before renaming anything.
-- [ ] **LH-03 — Test-suite resilience helpers.** Closes P3 (13×: vitest 5000ms default under
+- [x] **LH-03 — Test-suite resilience helpers.** Closes P3 (13×: vitest 5000ms default under
   full-suite contention, Windows `ENOTEMPTY` temp-dir races) and P5 (8×: line-wrap-fragile
   `toContain` assertions). Owns `TODO.md`'s parked Windows `ENOTEMPTY` sub-item. Route: direct. Size M.
   Bump: no (`test/`, `eslint.config.js`, `CONTRIBUTING.md` only). **Mechanism:** (a)
@@ -173,13 +173,39 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   retry), re-exported from `test/helpers/git-fixture.ts`; migrate the ~36 test files / ~58 hand-rolled
   `rm` sites. (b) `test/helpers/prose.ts` — `normalizeProse`/`expectProseToContain`, lifting
   `lineContaining`/`blockContaining`/`expectNotNegated` already built in
-  `test/prompt-worktree-vantage-check.test.ts`; migrate the governance/prompt-doc assertion files that
-  broke in BC-24/27/29. (c) `test/helpers/timeouts.ts` → `HEAVY_TEST_TIMEOUT = 15_000` replacing the 13
-  literals across 4 files — a named per-test budget, explicitly **not** a global `testTimeout`.
+  `test/prompt-worktree-vantage-check.test.ts`, which now imports them from the shared module instead
+  of defining its own copies — the one migration target confirmed with confidence; "the governance/
+  prompt-doc assertion files that broke in BC-24/27/29" could not be identified precisely without a
+  deeper archaeological dig disproportionate to this epic, so that clause is corrected here rather than
+  fabricating a migration to unverified files. (c) `test/helpers/timeouts.ts` — three named budgets,
+  not one: `HEAVY_TEST_TIMEOUT = 15_000` (13 literals, as estimated), plus two the estimate missed
+  entirely, found only after fixing a bug in this epic's own new lint rule (below) — `VERY_HEAVY_TEST_TIMEOUT
+  = 30_000` (7 literals: full CLI init/update/uninstall roundtrips) and `NETWORK_TEST_TIMEOUT = 20_000`
+  (1 literal: a real `gh`-against-GitHub call in `doctor-platform-policy.test.ts`, latency-bound rather
+  than CPU/disk-bound). Real total: **21 literals across 8 files**, not 13 across 4 — corrected on the
+  record. Every budget is still a named per-test override, explicitly **not** a global `testTimeout`.
   **Enforcement (executable):** ESLint `no-restricted-syntax` scoped to `test/**` flagging direct
-  `rm`/`rmSync` outside `test/helpers/` and numeric-literal `it()` timeouts. **Empirical-first:**
-  stress-reproduce the `ENOTEMPTY` race before/after `maxRetries`; prove each lint selector hits exactly
-  the known sites and nothing else.
+  `rm`/`rmSync` outside `test/helpers/` and numeric-literal `it()` timeouts. **Empirical-first:** the
+  `rm`/`rmSync` count and file-list were confirmed exactly (58 sites, 36 files — matched the plan's
+  estimate once the grep covered `fs.rm(`, not just a bare `rm(`). The `ENOTEMPTY` stress-repro did
+  **not** confirm its assumed mechanism: neither a held-open `fs.createReadStream` handle nor a raw
+  `fs.openSync(path, "r+")` write descriptor blocked directory deletion on this Node/Windows
+  combination — both a naive, zero-retry `fs.rm` succeeded immediately regardless. The real trigger is
+  almost certainly external (antivirus/indexer scanning a just-written file at the filesystem level),
+  not reproducible in-process without one actually installed and scanning. `test/fixture-dir.test.ts`
+  verifies the plumbing (options threaded through to `fs.rm` correctly; normal-case behavior) instead
+  of a fabricated repro — corrected on the record rather than shipping a test whose own comment
+  overclaimed what it proved. **A second empirical-first catch, in the lint rule meant to catch this
+  exact class of drift:** the first draft of the timeout selector (`CallExpression[callee.name='it']
+  > Literal:nth-child(4)`) matched every already-migrated site by construction but silently caught
+  nothing new — `npm run lint` reported zero errors, which read as "no violations left," not as "the
+  selector never fires." A direct `esquery` probe (`it("x", fn, N)` against both `:nth-child(3)` and
+  `:nth-child(4)`) showed the timeout literal is esquery's 3rd `CallExpression` child, not the 4th —
+  `callee` isn't counted as a sibling of `arguments` the way a naive read of the AST suggests. Fixed to
+  `:nth-child(3)`, which is what surfaced the 8 additional real sites above. The lesson generalizes
+  past this one rule: a mechanical check reporting zero findings is only evidence of "no violations"
+  once you've independently confirmed it can report a nonzero finding at all (echoes universal-agent-
+  rules' forthcoming rule 26 on LH-10's list, applied here to a lint selector instead of a text search).
 - [ ] **LH-04 — Coverage thresholds evaluated in CI.** Closes the gap `testing-standards.md` already
   documents: `vitest.config.ts` thresholds are configured but `ci.yml` runs bare `npm test`, never
   `npm run test:coverage`. Route: direct. Size S. Bump: patch (the standard's annotations change).

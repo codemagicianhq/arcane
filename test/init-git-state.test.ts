@@ -8,7 +8,7 @@ import {
 import { checkPullRebase } from "../src/commands/doctor.js";
 import { isSecretsPrecommitHookInstalled } from "../src/modules/secrets-scan.js";
 import { isClosedPrWarningHookInstalled } from "../src/modules/push-safety.js";
-import { createFixtureDir, runGit as fixtureGit } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir, runGit as fixtureGit } from "./helpers/git-fixture.js";
 
 // This file deliberately does NOT mock src/modules/git.js -- these tests
 // need real git behavior (a real unborn repo, real repository-local config)
@@ -26,7 +26,7 @@ async function createTempDir() {
 
 afterEach(async () => {
   await Promise.all(
-    tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+    tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
   );
 });
 

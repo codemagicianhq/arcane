@@ -3,8 +3,9 @@ import { promises as fs } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { runGit } from "./helpers/git-fixture.js";
+import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 const tempDirs: string[] = [];
 const TSX = resolveTsxCli();
@@ -42,7 +43,7 @@ function runGate(dir: string) {
 
 afterEach(async () => {
     await Promise.all(
-        tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+        tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
     );
 });
 
@@ -59,7 +60,7 @@ describe("distributable version bump gate", () => {
         expect(result.status).toBe(1);
         expect(result.stdout).toContain("src/assets/fixture.md");
         expect(result.stderr).toContain("Version bump required");
-    }, 15_000);
+    }, HEAVY_TEST_TIMEOUT);
 
     it.skipIf(!TSX)("passes a PR with only non-distributable changes and no version bump", async () => {
         const dir = await createPullRequestFixture();
@@ -71,7 +72,7 @@ describe("distributable version bump gate", () => {
 
         expect(result.status).toBe(0);
         expect(result.stdout).toContain("No distributable paths changed");
-    }, 15_000);
+    }, HEAVY_TEST_TIMEOUT);
 
     it("keeps the required CI job wired to the real gate with full history", async () => {
         const workflow = await fs.readFile(

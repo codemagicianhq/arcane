@@ -10,7 +10,7 @@ import {
   removeSecretsPrecommitHook,
 } from "../src/modules/secrets-scan.js";
 import { readHooksPath, hookFilePath } from "../src/modules/push-safety.js";
-import { runGit as fixtureGit, createFixtureDir } from "./helpers/git-fixture.js";
+import { runGit as fixtureGit, createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 
 function ruleFor(label: string) {
   const rule = SECRETS_RULES.find((r) => r.label === label);
@@ -93,7 +93,7 @@ describe("secrets pre-commit hook (ARC-037 decision 2 / decision 4b)", () => {
   let dir: string | undefined;
 
   afterEach(async () => {
-    if (dir) await fs.rm(dir, { recursive: true, force: true });
+    if (dir) await removeFixtureDir(dir);
     dir = undefined;
   });
 

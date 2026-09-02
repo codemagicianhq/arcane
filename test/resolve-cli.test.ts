@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { findBuiltCli, resolveBuiltCli, resolveTsxCli } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // These tests fabricate the exact directory shape a git worktree of this
 // repo has: a nested directory with its own package.json but no dist/ or
@@ -15,7 +16,7 @@ const tempDirs: string[] = [];
 
 afterEach(async () => {
   await Promise.all(
-    tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+    tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
   );
 });
 
