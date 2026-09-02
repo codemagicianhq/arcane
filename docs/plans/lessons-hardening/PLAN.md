@@ -300,7 +300,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   fixture-based, not the live tree). One pre-existing test broke on this epic's own rewrite —
   `test/prompt-handoff-durability.test.ts` had hardcoded the old `TODO.md:NNN` placeholder text — fixed
   to assert the new stable-locator wording instead.
-- [ ] **LH-08 — Shipped-state staleness scan.** Closes P11 (6×) + the status-claim half of P1;
+- [x] **LH-08 — Shipped-state staleness scan.** Closes P11 (6×) + the status-claim half of P1;
   proof case = `universal-agent-rules.md` rule 3 (filed in `TODO.md` by LH-01). Route: direct. Size M.
   Bump: patch. **Mechanism, two classes:** **A (gate)** — every `ARC-NNN (Proposed|Accepted|
   Superseded)` claim in living docs vs. the real `**Status:**` in `DECISIONS.md`; `EF-NN` claims vs.
@@ -309,7 +309,19 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   governance/prompt content and living root docs; `spell-check-drift` gains one bullet telling the
   agent to run `check:stale-claims --report` and triage — every other drift detector stays prose.
   **Empirical-first:** class A must be zero-false-positive on `main` before becoming a CI step; class B
-  must catch rule 3 live.
+  must catch rule 3 live. **Done, with one real scope correction:** the corpus has exactly ONE
+  `ARC-NNN (Status)` parenthetical claim anywhere in the living-docs set (ARC-020, and it was already
+  accurate) and ZERO `EF-NN (status)`-shaped claims — TODO.md tracks EF items by checkbox state and
+  markdown links, never an inline "(shipped)"-style annotation, so that shape doesn't exist in this
+  corpus at all. Class A does not implement EF-NN-vs-intake-frontmatter matching; building it would be
+  enforcement for a pattern this repo doesn't have. Class A passed zero-false-positive on `main`
+  immediately, so it shipped as a real, blocking CI step (not warn mode) from the start — `check:stale-
+  claims` in `ci.yml`, no `continue-on-error`. Class B caught rule 3 live on the first `--report` run
+  and confirmed it gone after the fix (corrected rule 3's Enforcement line: stays `explicitly advisory
+  prose` as its primary classification per ARC-023's own "one primary mode" rule, since the rule's real
+  subject — command-line/chat usage — still has no mechanical check by construction; now accurately
+  notes BC-30's executable-check backstop for the narrower config-file sub-case, instead of claiming no
+  scanner exists at all).
 - [ ] **LH-09 — Follow-up promotion gate.** Closes P9 (6×: findings buried in closure prose, never
   promoted; shipments never linked back to their TODO item). Route: direct. Size M. Bump: patch.
   **Mechanism:** `scripts/check-followups.ts` — in journals <30 days old, active plans' PLAN/

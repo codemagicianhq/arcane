@@ -1,6 +1,6 @@
 {
   "name": "arcane-cli",
-  "version": "0.33.6",
+  "version": "0.33.7",
   "description": "Arcane framework CLI — scaffold and manage governance files in consuming repositories",
   "keywords": [
     "arcane",
@@ -47,6 +47,7 @@
     "check:adr-references": "tsx scripts/check-distributed-adr-references.ts",
     "check:version-bump": "tsx scripts/check-version-bump.ts",
     "check:citations": "tsx scripts/check-citations.ts --report",
+    "check:stale-claims": "tsx scripts/check-stale-claims.ts --check",
     "check:review-round": "tsx scripts/check-review-round.ts",
     "doctor:leaks": "tsx src/index.ts doctor --leaks",
     "prepare": "husky"
