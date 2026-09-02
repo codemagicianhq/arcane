@@ -99,6 +99,10 @@ jobs:
       - name: Check stale claims (LH-08; Class A blocks, Class B is report-only)
         run: npm run check:stale-claims
 
+      - name: Check follow-up promotion (warn mode, LH-09)
+        run: npm run check:followups
+        continue-on-error: true
+
       - name: Lint
         run: npm run lint
 

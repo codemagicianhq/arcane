@@ -74,6 +74,7 @@ Workflow:
    - Is this part of a larger initiative or a standalone change?
    - **Commit-splitting heuristic:** within one author partition, if the changes span clearly unrelated concerns (e.g., a feature change + an unrelated refactor + a dependency bump), recommend splitting them into multiple focused commits, each with its own message, rather than a single mixed commit. A single commit is fine when one author's changes serve one purpose. When splitting, stage and commit each concern separately.
    - **Wiki-link check:** For any new `.md` files being committed, verify each has at least one outbound `[[...]]` wiki-link connecting it to the knowledge graph. Orphaned docs (no outbound links) break Obsidian's graph view. If missing, add a `Related:` or `See also:` line before committing. See the CLAUDE.md wiki-link conventions for the correct format.
+   - **TODO linkage assist (LH-09; only when this repo has its own `TODO.md` convention with backticked paths):** run `git diff --cached --name-only` and check whether any staged path also appears backticked in an open (`- [ ]`) `TODO.md` item. If so, print a one-line reminder naming the matching item so the author can close or update it in the same commit — advisory only, never blocks the commit.
 
 4.5. **Resolve execution authority before any commit or merge command:**
 
