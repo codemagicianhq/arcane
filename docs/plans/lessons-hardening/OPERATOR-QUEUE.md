@@ -56,6 +56,18 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   behalf in the same PR once you've decided).
 - **Rollback:** an accepted ADR can later be superseded via a new ADR entry, per
   `decision-documentation-standard.md`'s own supersession convention — nothing here is irreversible.
+- **Operator pre-decision (recorded 2026-09-02, via conversation, ahead of LH-11 drafting the ADR —
+  the operator asked to front-load blocking decisions before an unattended overnight run):**
+  - Adopt at all: **yes**.
+  - Default path: **yes** — try `~/.arcane/org-tokens` when `ARCANE_ORG_TOKENS_FILE` is unset.
+  - File format: not a real open question — `resolvePrivateTokens()` already splits
+    `ARCANE_ORG_TOKENS` on `/[,\r\n]+/` ([scripts/org-token-lint.ts](../../../scripts/org-token-lint.ts),
+    function `resolvePrivateTokens`); the local file reuses that identical delimiter convention rather
+    than inventing a new format.
+  - This note records the decision's substance only. LH-11 still drafts the ADR text and its own
+    empirical-first findings (the `.gitignore` no-op check, the staged-scan cost measurement) — per
+    the "Exact commands" line above, LH-11 may flip `Status:` to `Accepted` and check this item done
+    in the same PR, citing this note, since the operator already decided.
 - **Status:** [ ] open
 
 <!-- The loop appends Q-004+ below this line. -->
