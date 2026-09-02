@@ -23,7 +23,7 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   `gh pr merge <PR#> --rebase`.
 - **Rollback:** revert the merge commit, or edit/remove the `lessons-hardening-plan` entry from
   `.arcane/delegations.json` at any later point to revoke the grant without touching history.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-02 — merged by the operator ([PR #172](https://github.com/codemagicianhq/arcane/pull/172)), activating the `lessons-hardening-plan` delegation. **Found stale during LH-13's closing audit:** this line still read `[ ] open` after the merge — verified directly against `gh pr view 172` rather than assumed — a fresh, live instance of the exact static-status-drift pattern (P1) this program exists to catch, caught in this program's own queue at closing time.
 
 ## Q-002 — Approve and merge RCA-001
 
