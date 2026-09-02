@@ -33,6 +33,23 @@ executed LH-02 through LH-13 without stopping.
    epic since branched from a `main` that never received this PR's own fixes, discovered and
    reapplied on the record three separate times (LH-02 itself, LH-04, LH-11) rather than assumed
    fixed. A closing commit was pushed to this same still-open PR during LH-13 (below).
+   **Operator reviewed and merged 2026-09-02 (`v0.34.1`, Q-002 done)** — after 12 intervening
+   epics, the branch had accumulated a real merge conflict (not just the earlier text-drift
+   near-misses): `OPERATOR-QUEUE.md`'s Q-003 paragraph (both sides had edited it — merged by
+   combining both), and `package.json`/`package-lock.json` (pure version conflict, `0.33.3` vs.
+   `main`'s `0.34.0`). Rebased onto `main`, resolved both, ran `npm version patch` → `0.34.1` per
+   Q-002's own entry anticipating exactly this scenario, re-verified the full check suite, pushed
+   with `--force-with-lease`, then the operator reviewed and merged directly.
+14. **Recorded Q-002's closure** — [PR #189](https://github.com/codemagicianhq/arcane/pull/189):
+    flipped LH-02's checkbox, `OPERATOR-QUEUE.md`'s Q-002 status, a stale "PR awaits operator
+    review" clause in `TODO.md`, and `system-prompt-context.md`'s priorities, all to reflect the
+    actual merged state rather than leaving them describing a moment that had passed.
+15. **Reviewed and merged a Dependabot security PR** —
+    [PR #188](https://github.com/codemagicianhq/arcane/pull/188), `@humanfs/node` 0.16.7 → 0.16.8
+    (fixes a moderate symlink-following advisory in `copy()`/`copyAll()`). Verified before merging:
+    dev-only, transitive via `eslint` (`npm ls @humanfs/node`), patch-level, pure bugfix, diff
+    scoped to exactly the lockfile entries. Dependabot's own rebase needed a `@dependabot rebase`
+    comment and a short wait before the PR reported clean.
 3. **LH-03 — test-suite resilience helpers** —
    [PR #175](https://github.com/codemagicianhq/arcane/pull/175). Retrying fixture cleanup, prose-
    assertion helpers, named per-test timeout constants (no global `testTimeout`), an ESLint rule
@@ -128,14 +145,34 @@ stayed typecheck-clean while breaking two test call sites at runtime — the sam
 is not evidence of correctness" lesson Become Current closed on, now caught a second time by
 actually running the suite rather than trusting the compiler.
 
+**The "unmerged PR accumulates drift" pattern predicted its own real conflict, and the prediction
+held exactly.** LH-02's PR sitting open across 12 subsequent epics was flagged as a risk all
+session (three text-drift near-misses reapplied on the record). When the operator finally asked
+"does the PR have a merge conflict?", the answer was yes — in precisely the two places that risk
+implied: a shared scoreboard paragraph both sides had edited, and a version number `main` had
+since moved past. Resolving it was mechanical exactly because the risk had already been named and
+understood in advance, not discovered cold.
+
+**A stale "Next Session Handoff" can outlive its own close-session commit.** The handoff written
+right after LH-13 was accurate at the moment it was written, then went stale within the same
+conversation as Q-002 resolved, a closure PR merged, and a Dependabot fix landed — none of which
+triggered a fresh close-session pass until the operator directly asked "is session closed?".
+Nothing enforces re-running close-session mid-conversation; the trigger has to be either a natural
+stopping point or, as here, someone asking. This is the same class of drift the whole program
+exists to catch, just in the one artifact (`spell-close-session`'s own output) that has no
+external check watching it.
+
+**`ScheduleWakeup` still gets reached for reflexively on a bare notification, and it's not specific
+to one background primitive.** A prior session's memory already recorded this mistake for
+`run_in_background` Bash tasks. It recurred here against a `Monitor` notification instead — same
+underlying pull (a `<task-notification>` arrives, nothing needs doing, and calling *some*
+scheduling tool feels like the correct way to close the turn), different trigger. Caught both
+times only because the tool's own response said "there was no pending wakeup to cancel" — a
+silent success would have gone unnoticed. Updated the memory to name the actual trigger (any
+`<task-notification>` requiring no action) rather than the narrower one it only half-covered.
+
 ### Open Items Carried Forward
 
-- **Q-002 — approve and merge RCA-001.** [PR #174](https://github.com/codemagicianhq/arcane/pull/174)
-  is open, CI-green, and complete (including LH-13's closing update to its Preventive Actions
-  table). Correctly not self-merged — RCAs are never auto-committed. This is the program's one
-  remaining item; registered natively in
-  [OPERATOR-QUEUE.md Q-002](../docs/plans/lessons-hardening/OPERATOR-QUEUE.md#q-002--approve-and-merge-rca-001),
-  not a new tracking surface.
 - **The ARC-014 citation bug in `DECISIONS.md`'s ARC-031 "Related" line** (found while drafting
   ARC-041) has no epic to route to — disclosed explicitly in its own `TODO.md` entry as a
   deliberate, unrouted exception needing its own future investigation, not silently dropped.
@@ -144,3 +181,7 @@ actually running the suite rather than trusting the compiler.
   5-session zero-false-positive flip criterion is honestly unmet after one session (this one), not
   silently left ambiguous. `(untracked: the criterion itself, already written in PLAN.md, is the
   tracker — no separate TODO.md item needed to remember a self-stated threshold)`.
+
+Everything else this program named is closed: Lessons Hardening (LH-00 through LH-13, all 15 PRs
+merged) and its one operator item (Q-002) are both done. Neither `TODO.md` nor either program's
+`OPERATOR-QUEUE.md` has an open Lessons Hardening item left.
