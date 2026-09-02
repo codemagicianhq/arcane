@@ -29,4 +29,12 @@ if command -v gh >/dev/null 2>&1; then
   fi
 fi
 
+# LH-06a: the same check CI already requires, run here first because it's
+# cheap and catches a missing version bump before spending minutes on the
+# full suite below -- and before the push even happens, not just before
+# merge. Default (non-staged) mode is the correct basis here: everything
+# relevant is already committed by the time a push runs, unlike spell-bump's
+# pre-commit use of --staged.
+npm run check:version-bump
+
 npm test
