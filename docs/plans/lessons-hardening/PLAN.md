@@ -169,7 +169,9 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `governance/` tree" rule — see `docs/verification-ledger.md`'s 2026-09-02 `unverifiable` row); write
   `docs/rcas/RCA-001-<slug>.md` in the standard's own template, Preventive Actions naming LH-03…LH-10 by
   ID. **Operator-merged (Q-002)** — RCAs are never auto-committed. **Empirical-first:** grep `src/`,
-  `test/` for `governance/rcas` references before renaming anything.
+  `test/` for `governance/rcas` references before renaming anything — done, zero `.ts` hits, pure
+  prose rename. **[PR #174](https://github.com/codemagicianhq/arcane/pull/174) open, awaiting
+  operator review/merge (Q-002).**
 - [x] **LH-03 — Test-suite resilience helpers.** Closes P3 (13×: vitest 5000ms default under
   full-suite contention, Windows `ENOTEMPTY` temp-dir races) and P5 (8×: line-wrap-fragile
   `toContain` assertions). Owns `TODO.md`'s parked Windows `ENOTEMPTY` sub-item. Route: direct. Size M.
