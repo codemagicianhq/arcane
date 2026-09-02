@@ -104,15 +104,21 @@ push that will fail.
 
 | # | Action | Target Doc | Status |
 |---|--------|-----------|--------|
-| PA-1 | LH-03 — test-suite resilience helpers (retrying fixture cleanup, prose-assertion helpers, named per-test timeout budgets instead of hand-rolled literals), enforced by an ESLint rule scoped to `test/**`. | `test/helpers/`, [[testing-standards]] | Planned |
-| PA-2 | LH-04 — evaluate `vitest.config.ts`'s coverage thresholds in CI instead of configuring them and never checking them. | [[testing-standards]], `.github/workflows/ci.yml` | Planned |
-| PA-3 | LH-05 — derive counts (spell/agent/governance totals, test expectations) from the registry instead of hand-typing them in prose and tests. | `README.md`, `scripts/spell-catalog.ts` | Planned |
-| PA-4 | LH-06 — fix the two build gates this incident's own Phase 0 pass hit live: `check-version-bump`'s pre-commit false pass, and `expandFragment`'s untested indentation assumption. | `scripts/check-version-bump.ts`, `src/modules/spell-compiler.ts` | Planned |
-| PA-5 | LH-07 — a stable-locator citation grammar (heading anchor or unique quoted phrase, never a bare `file:line` in a living doc) plus a mechanical validator. | [[agent-output.instructions]], `scripts/check-citations.ts` | Planned |
-| PA-6 | LH-08 — scan shipped governance/prompt content and living root docs for stale "not yet built"/status claims against the real tree. | `scripts/check-stale-claims.ts` | Planned |
-| PA-7 | LH-09 — require every "filed as a follow-up"/"deferred"/"out of scope" sentence in a journal, plan, or TODO to carry a tracker token or an explicit `(untracked: reason)` opt-out. | `.github/prompts/spell-close-session.prompt.md` | Planned |
-| PA-8 | LH-10 — three advisory conduct rules: never quote a denylisted token even while documenting its removal; a zero-match search is evidence about the pattern, not the thing; dispatched-agent supervision. | [[universal-agent-rules]] | Planned |
-| PA-9 | LH-11/LH-12 — propose (ADR) and, if accepted, implement a local, out-of-repo org-token file source for `resolvePrivateTokens()`, closing RC-2 without weakening ARC-031's "the denylist must not leak itself" guarantee. | `DECISIONS.md` (ARC-041), `scripts/org-token-lint.ts` | Planned |
+| PA-1 | LH-03 — test-suite resilience helpers (retrying fixture cleanup, prose-assertion helpers, named per-test timeout budgets instead of hand-rolled literals), enforced by an ESLint rule scoped to `test/**`. | `test/helpers/`, [[testing-standards]] | Done — [PR #175](https://github.com/codemagicianhq/arcane/pull/175) |
+| PA-2 | LH-04 — evaluate `vitest.config.ts`'s coverage thresholds in CI instead of configuring them and never checking them. | [[testing-standards]], `.github/workflows/ci.yml` | Done — [PR #176](https://github.com/codemagicianhq/arcane/pull/176) |
+| PA-3 | LH-05 — derive counts (spell/agent/governance totals, test expectations) from the registry instead of hand-typing them in prose and tests. | `README.md`, `scripts/spell-catalog.ts` | Done — [PR #177](https://github.com/codemagicianhq/arcane/pull/177) |
+| PA-4 | LH-06 — fix the two build gates this incident's own Phase 0 pass hit live: `check-version-bump`'s pre-commit false pass, and `expandFragment`'s untested indentation assumption. | `scripts/check-version-bump.ts`, `src/modules/spell-compiler.ts` | Done — [PR #178](https://github.com/codemagicianhq/arcane/pull/178) (LH-06a), [PR #179](https://github.com/codemagicianhq/arcane/pull/179) (LH-06b) |
+| PA-5 | LH-07 — a stable-locator citation grammar (heading anchor or unique quoted phrase, never a bare `file:line` in a living doc) plus a mechanical validator. | [[agent-output.instructions]], `scripts/check-citations.ts` | Done — [PR #180](https://github.com/codemagicianhq/arcane/pull/180) |
+| PA-6 | LH-08 — scan shipped governance/prompt content and living root docs for stale "not yet built"/status claims against the real tree. | `scripts/check-stale-claims.ts` | Done — [PR #181](https://github.com/codemagicianhq/arcane/pull/181) |
+| PA-7 | LH-09 — require every "filed as a follow-up"/"deferred"/"out of scope" sentence in a journal, plan, or TODO to carry a tracker token or an explicit `(untracked: reason)` opt-out. | `.github/prompts/spell-close-session.prompt.md` | Done — [PR #182](https://github.com/codemagicianhq/arcane/pull/182) |
+| PA-8 | LH-10 — three advisory conduct rules: never quote a denylisted token even while documenting its removal; a zero-match search is evidence about the pattern, not the thing; dispatched-agent supervision. | [[universal-agent-rules]] | Done — [PR #183](https://github.com/codemagicianhq/arcane/pull/183) |
+| PA-9 | LH-11/LH-12 — propose (ADR) and, if accepted, implement a local, out-of-repo org-token file source for `resolvePrivateTokens()`, closing RC-2 without weakening ARC-031's "the denylist must not leak itself" guarantee. | `DECISIONS.md` (ARC-041), `scripts/org-token-lint.ts` | Done — [PR #184](https://github.com/codemagicianhq/arcane/pull/184) (ARC-041, Accepted), [PR #185](https://github.com/codemagicianhq/arcane/pull/185) (LH-12) |
+
+**Program closure (LH-13, 2026-09-02):** all nine Preventive Actions above are Done — every
+epic this RCA named (LH-03 through LH-12) shipped and merged to `main`. This RCA itself remains
+open pending Q-002: RCAs are never auto-committed by the executing session (per
+[[rca-process-standard]]), so operator review and merge of this PR is the one item this program
+could not close on its own.
 
 ## Lessons Learned
 
