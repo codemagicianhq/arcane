@@ -1,7 +1,8 @@
 ---
 title: Become Current — Master Execution Plan
-status: active
+status: complete
 created: 2026-08-30
+completed: 2026-09-01
 baseline: fdf853e (main)
 owner: operator (payini)
 executor: Arcane autonomous loop (one epic per session)
@@ -233,7 +234,10 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   content, exactly what that gate exists to block. Corrected to a bare, unlinked ID for shipped spell
   prompts/instructions; full URLs stay correct only for governance docs and runtime output. Root cause
   of missing it locally: `npm run build` (the only place the org-token lint runs) wasn't in the local
-  verification loop — added to this run's operating lessons below. I10 only partially addressed (ARC/EF
+  verification loop — added to this run's operating lessons below. **[Correction, 2026-09-02: no such
+  section was ever written in this file; the lesson lives instead in `docs/verification-ledger.md`'s
+  2026-09-02 entry and the Lessons Hardening program (`docs/plans/lessons-hardening/`) it fed.]** I10
+  only partially addressed (ARC/EF
   cross-repo-hazard shape, not journal-class checking or full anchor-resolution) — left `status: new`
   in IDEAS.md rather than `promoted`, with the remainder noted inline. One new gap found and filed
   rather than fixed here (scope discipline): the org-token portability scan only walks
