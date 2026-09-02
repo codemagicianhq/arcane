@@ -78,6 +78,31 @@ stale number is invisible until someone tries.
 it resolves to, say so and cite the ID as plain text rather than inventing a link that
 looks real but goes nowhere.
 
+### Stable-Locator Citation Grammar
+
+The same "don't force the reader to go find it themselves" principle applies to citing a
+specific spot inside a file, not just a Decision-ID. A bare `path:NNN` line-number citation
+drifts the moment either file is edited — confirmed live, repeatedly: 13+ instances in one
+program's own corrections record, and three more caught within 24 hours of being written,
+during the very audit that counted the first 13.
+
+**Required format, in a living doc** (anything meant to stay accurate as the tree changes —
+`TODO.md`, `IDEAS.md`, `DECISIONS.md`, `ai-context/`, the verification ledger, an active plan,
+or a shipped governance doc/prompt):
+- `path` — the whole file is the referent, no specific spot claimed.
+- `path#anchor` — a heading anchor that slugifies to a real heading in that file.
+- `path ("unique quoted phrase")` — a phrase that occurs exactly once in that file, so a reader
+  (or a script) can always re-locate it even after the file has been edited and re-wrapped.
+- `path:NNN` **alone is never sufficient** in a living doc — only acceptable alongside one of
+  the three forms above (a secondary, human-convenience pointer next to a quoted phrase or
+  anchor), since a bare line number is exactly the kind of static fact this framework exists to
+  stop treating as durable. Enforcement: executable check (ARC-023) — `npm run check:citations`
+  scans the living-docs set for a bare `path:NNN` with no accompanying anchor or quoted phrase.
+
+**Ephemeral output is exempt** (chat, a PR description, a commit message, a session handoff): a
+bare `path:NNN` there is fine — the reader is looking at the current tree in the same sitting,
+so drift has no time to happen before it is read.
+
 ## Merge Strategy
 
 All PRs must use **Rebase and fast-forward**. Never squash. Never merge commit. See

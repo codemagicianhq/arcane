@@ -92,6 +92,10 @@ jobs:
       - name: Verify spell catalog
         run: npm run check:spell-catalog
 
+      - name: Check citation hygiene (warn mode, LH-07)
+        run: npm run check:citations
+        continue-on-error: true
+
       - name: Lint
         run: npm run lint
 

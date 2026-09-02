@@ -43,9 +43,16 @@ describe("spell-close-session step 4b: durable registration (R1, R2)", () => {
 });
 
 describe("spell-close-session handoff fields name their durable home (R3)", () => {
-  it("Active task and Next concrete action point at step 4b's registered location", () => {
-    expect(closeSession).toContain("If incomplete, name where step 4b registered it (e.g. `TODO.md:NNN`).");
-    expect(closeSession).toContain('Never write "continue work." Name where step 4b registered it (e.g. `TODO.md:NNN`).');
+  it("Active task and Next concrete action point at step 4b's registered location, by stable locator (LH-07)", () => {
+    expect(closeSession).toContain(
+      'If incomplete, name where step 4b registered it (e.g. `path ("the item\'s own quoted title")`',
+    );
+    expect(closeSession).toContain(
+      'Never write "continue work." Name where step 4b registered it (e.g. `path ("the item\'s own quoted title")`',
+    );
+    // LH-07: a bare line-number placeholder here would itself model the
+    // exact anti-pattern this repo's citation grammar exists to stop.
+    expect(closeSession).not.toContain("TODO.md:NNN");
   });
 
   it("Notes field description states the pointer-only rule inline (R4)", () => {
