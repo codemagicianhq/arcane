@@ -95,22 +95,32 @@ describe("registry", () => {
       expect(names).not.toContain("agent-definitions");
     });
 
-    it("contains every governance component including framework decisions", () => {
+    it("contains every real .arcane/governance/*.md component, derived from the registry (LH-05)", () => {
+      // Was a hand-copied list of .toContain() calls plus a hardcoded
+      // toHaveLength(25) -- passed by coincidence, not correctness:
+      // governance-only was actually missing records-conventions (a real
+      // governance file) while separately including agent-output-instructions
+      // (a real component, but not one of the .arcane/governance/ files), and
+      // the two miscounts canceled out to the same total of 25. Derived from
+      // the registry instead so a future addition/removal of a real
+      // governance file can't silently drift out of sync with this profile
+      // the same way again.
       const names = getProfile("governance-only").map((c) => c.name);
-      expect(names).toContain("agent-output-instructions");
-      expect(names).toContain("git-conventions");
-      expect(names).toContain("threat-model");
-      expect(names).toContain("portable-bootstrap");
-      expect(names).toContain("development-methodology");
-      expect(names).toContain("cicd-standards");
-      expect(names).toContain("universal-agent-rules");
-      expect(names).toContain("spell-authoring-standards");
-      expect(names).toContain("framework-decisions");
-      expect(names).toContain("external-verification-standards");
-      expect(names).toContain("web-discoverability-standards");
-      expect(names).toContain("mobile-release-standards");
-      expect(names).toContain("compliance-standards");
-      expect(names).toHaveLength(25);
+      const realGovernanceComponentNames = getAllComponents()
+        .filter((c) => c.files.some((f) => f.startsWith(".arcane/governance/") && f.endsWith(".md")))
+        .map((c) => c.name);
+
+      expect(realGovernanceComponentNames.length).toBeGreaterThan(0);
+      for (const componentName of realGovernanceComponentNames) {
+        expect(names).toContain(componentName);
+      }
+
+      // agent-output-instructions ships alongside the real governance docs
+      // deliberately (Copilot enforcement rules are process/PR governance in
+      // spirit, just not a .arcane/governance/ file) -- the only intentional
+      // addition beyond the derived set above.
+      const extras = names.filter((name) => !realGovernanceComponentNames.includes(name));
+      expect(extras).toEqual(["agent-output-instructions"]);
     });
   });
 

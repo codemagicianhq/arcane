@@ -219,18 +219,37 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 ### Wave 2 — Mechanical gates
 
-- [ ] **LH-05 — Derived counts.** Closes P4 (12×: the spell count alone moved 33→41 inside one
-  program, with 5 separate manual "bump the literal" test fixes). Route: direct. Size S-M. Bump: no.
-  **Mechanism:** replace literal counts with registry-derived expectations preserving each test's
-  stated intent — `docs-profile-registry-split.test.ts`, `registry.test.ts`, `dedup-rule.test.ts`
-  (`max == 24` → assert uniqueness + rule 23 exists, so LH-10's new rules don't break it). README
-  tagline + governance-doc list: extend `scripts/spell-catalog.ts` to render spell/agent/governance
-  counts into a named marker span using `expandFragment` from `src/modules/spell-compiler.ts` —
-  `check:spell-catalog --check/--fix` then guards it for free. Precedent: `cli-unknown-command` test
-  already derives from `program.commands` (BC-08). **Enforcement:** ESLint selector flagging
-  `toHaveLength(<numeric ≥10>)` in tests without a justified `eslint-disable`. **Empirical-first:**
-  evaluate every derived expression against the current tree (41/40/25/12) before deleting a literal.
-  Ask the operator in-PR whether they want to own the README tagline sentence.
+- [x] **LH-05 — Derived counts.** Closes P4 (12×: the spell count alone moved 33→41 inside one
+  program, with 5 separate manual "bump the literal" test fixes). Route: direct. Size S-M. **Bump:
+  patch, not "no" as planned** — corrected once the empirical-first pass found a real bug requiring a
+  `src/config/profiles.ts` edit (a named bump trigger per Standing Constraints), not just tests/docs.
+  **Mechanism, as actually built (one correction from the plan text):** replace literal counts with
+  registry-derived expectations preserving each test's stated intent — `registry.test.ts` (see Done
+  note), `dedup-rule.test.ts` (`max == 24` → assert uniqueness + rule 23 exists, so LH-10's new rules
+  don't break it). `docs-profile-registry-split.test.ts` **deliberately NOT touched** — its own comment
+  explains the two literals are an intentional sentinel (a member of an existing group growing should
+  reach the profile automatically; a whole new group being silently included should not, and a
+  registry-derived count can't tell those apart), so "preserving each test's stated intent" here means
+  leaving it literal, not deriving it; given a justified `eslint-disable-next-line` for the new lint
+  rule below instead. README tagline + "What's in the box" table + governance-doc list: extended
+  `scripts/spell-catalog.ts` — **not** `expandFragment` from `spell-compiler.ts` as planned (that's for
+  shared prose fragments across multiple prompt files, the wrong shape for a single computed number);
+  reused the file's own existing marker-splice pattern instead, since `MARKER_START`/`MARKER_END` is a
+  single unnamed pair already claimed by the spell-catalogue block, added new named ones
+  (`<!--count:NAME-->`/`<!--/count:NAME-->` inline, `<!-- arcane:governance:start/end -->` block-level)
+  rather than colliding two regions on the same `indexOf`. `check:spell-catalog --check/--fix` guards
+  all of it now. **Enforcement:** ESLint selector flagging `toHaveLength(N>=10)` — verified it actually
+  fires (an `esquery` probe confirmed `[value>=10]` numeric comparison works) before trusting it, the
+  same discipline LH-03's own selector bug taught. **Empirical-first, and it found a real bug:**
+  evaluating the derived expressions against the tree (41 spells/12 agents confirmed; 25 governance
+  files confirmed) surfaced that `registry.test.ts`'s old `toHaveLength(25)` for the `governance-only`
+  profile was passing by coincidence, not correctness — the profile was missing a real governance file
+  (`records-conventions`) while separately including a non-governance-folder component
+  (`agent-output-instructions`), and the two miscounts canceled out to the same total. Fixed
+  `profiles.ts` (added the missing entry) and rewrote the test to derive its expectation from the
+  registry, which would have caught this the first time. **Done:** all of the above shipped together;
+  full suite + coverage thresholds pass; operator's call on owning the README tagline's wording (not
+  its count, which is now generated either way) noted in-PR, not blocking.
 - [ ] **LH-06 — Build-gate correctness (2 PRs).** Closes G1 + G2. (a) `scripts/check-version-bump.ts
   --staged`: union the merge-base diff with `git diff --cached --name-only` (+ `--working-tree`); CI
   default unchanged; `spell-bump` Step 1 switches to staged mode; `spell-commit-work` Step 2 gains a

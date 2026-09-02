@@ -242,7 +242,16 @@ describe("backwards compatibility of the split", () => {
     "%s still ships the 40 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in both formats",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
+      // LH-05: deliberately NOT derived from the registry -- see the comment
+      // block above this test. A member of an EXISTING group growing should
+      // reach these profiles automatically without a code change; a whole
+      // NEW group being silently included should not. Only a literal, bumped
+      // by hand alongside a dated comment explaining why, can tell those two
+      // cases apart -- a registry-derived count cannot, since both look
+      // identical from the registry's own point of view.
+      // eslint-disable-next-line no-restricted-syntax
       expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(40);
+      // eslint-disable-next-line no-restricted-syntax
       expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(40);
     },
   );

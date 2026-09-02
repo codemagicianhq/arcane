@@ -20,6 +20,21 @@ const TEST_RESTRICTED_SYNTAX = [
       "Use a named per-test timeout constant from ./helpers/timeouts.js (e.g. HEAVY_TEST_TIMEOUT) " +
       "instead of a numeric literal, so the budget has a name and a reason instead of a bare number.",
   },
+  {
+    // LH-05: a toHaveLength(N>=10) is often a derivable registry/spell/
+    // agent/governance count rather than one worth hardcoding (P4 -- 12x
+    // recurrence, the spell count alone moved 33->41 inside one program with
+    // 5 separate manual "bump the literal" test fixes). A genuinely
+    // intentional literal (e.g. a deliberate sentinel that forces a reviewed
+    // bump when membership changes, not silent auto-absorption -- see
+    // docs-profile-registry-split.test.ts) stays a literal behind a
+    // justified eslint-disable-next-line comment.
+    selector: "CallExpression[callee.property.name='toHaveLength'] > Literal[value>=10]",
+    message:
+      "toHaveLength(N>=10) -- derive N from the registry/source of truth instead of hardcoding it, " +
+      "or add a justified eslint-disable-next-line no-restricted-syntax comment if the literal is " +
+      "deliberately not auto-derived.",
+  },
 ];
 
 export default tseslint.config(
