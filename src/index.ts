@@ -158,8 +158,12 @@ program
     "--terms <terms>",
     "Comma-separated denylist terms, in addition to the built-in vendor-identifier list. Seed this from your OWN identity too, not just org/venture names -- usernames, machine names, and personal handles leak the same way a private venture name does (I1)",
   )
+  .option(
+    "--terms-file <path>",
+    "Read denylist terms from a file instead of --terms, to avoid shell-history exposure (ARC-041). Same comma/newline-separated format as ARCANE_ORG_TOKENS.",
+  )
   .option("--gate", "Exit non-zero if any leak is found (for CI)")
-  .action(async (opts: { terms?: string; gate?: boolean }) => {
+  .action(async (opts: { terms?: string; termsFile?: string; gate?: boolean }) => {
     await runWardCli(process.cwd(), opts);
   });
 

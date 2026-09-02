@@ -1,5 +1,7 @@
-import { readdir } from "node:fs/promises";
-import { join } from "node:path";
+import { readdir, readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { join, resolve as resolvePath, sep } from "node:path";
+import { homedir } from "node:os";
 import {
   createDenylistRules,
   scanFile,
@@ -25,10 +27,68 @@ function addToken(tokens: Map<string, string>, value: string | undefined) {
 }
 
 /**
+ * The repository's own toplevel directory, or null outside a git repo (or
+ * when `git` itself is unavailable). Used only to refuse a local org-token
+ * file path that resolves inside the repository -- never to locate the
+ * repository for any other purpose.
+ */
+function repoToplevel(cwd: string): string | null {
+  try {
+    return execFileSync("git", ["rev-parse", "--show-toplevel"], {
+      cwd,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * True when `candidatePath` resolves to somewhere inside `repoRoot`. Both
+ * sides are normalized/resolved first so `..`-segments, a trailing slash, or
+ * relative-vs-absolute spelling can't produce a false "outside."
+ */
+function isInsideRepo(candidatePath: string, repoRoot: string): boolean {
+  const resolvedCandidate = resolvePath(candidatePath);
+  const resolvedRoot = resolvePath(repoRoot);
+  return resolvedCandidate === resolvedRoot || resolvedCandidate.startsWith(resolvedRoot + sep);
+}
+
+/**
+ * Reads a local org-token file, refusing (with a loud warning, never a
+ * throw) any path that resolves inside the current repository -- ARC-041's
+ * structural guard: a gitignored in-repo file can still be force-added
+ * (`git add -f`) or accidentally un-ignored later, exactly the hole a CI-only
+ * secret already avoids by never living in the repository at all. Missing
+ * file, unreadable file, or no repo detected are all silent no-ops (an empty
+ * string) -- this is a best-effort local convenience, not a required input.
+ */
+async function readLocalTokenFile(filePath: string, cwd = process.cwd()): Promise<string> {
+  const toplevel = repoToplevel(cwd);
+  if (toplevel !== null && isInsideRepo(filePath, toplevel)) {
+    console.warn(
+      `⚠ arcane: ignoring local org-token file "${filePath}" -- it resolves inside this repository ` +
+        `(${toplevel}). A local denylist file must live outside the repo it protects (ARC-041); a ` +
+        `gitignored in-repo file can still be force-added or accidentally un-ignored later.`,
+    );
+    return "";
+  }
+  try {
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+/**
  * Private tokens: names that must appear NOWHERE in the repository -- real
  * venture, customer, or machine names supplied out-of-band via
  * ARCANE_ORG_TOKENS (a CI secret, so the denylist itself stays private while
- * the enforcement is public).
+ * the enforcement is public), or, locally, a file outside the repository
+ * (ARC-041): `$ARCANE_ORG_TOKENS_FILE` if set, else `~/.arcane/org-tokens`.
+ * The env var always wins when set, matching CI's existing behavior exactly;
+ * the file sources are additive, local-only convenience, never required.
  *
  * These are deliberately separate from the package-derived tokens below.
  * "Code Magician" and "codemagicianhq" legitimately appear all over this
@@ -36,11 +96,20 @@ function addToken(tokens: Map<string, string>, value: string | undefined) {
  * baked into the *distributed* spells. A private venture name has no such
  * carve-out: it is not allowed anywhere, in any file.
  */
-export function resolvePrivateTokens(
+export async function resolvePrivateTokens(
   configuredTokens = process.env["ARCANE_ORG_TOKENS"] ?? "",
-): string[] {
+  cwd = process.cwd(),
+): Promise<string[]> {
+  let raw = configuredTokens;
+  if (raw.trim() === "") {
+    const explicitFile = process.env["ARCANE_ORG_TOKENS_FILE"];
+    raw = explicitFile
+      ? await readLocalTokenFile(explicitFile, cwd)
+      : await readLocalTokenFile(join(homedir(), ".arcane", "org-tokens"), cwd);
+  }
+
   const tokens = new Map<string, string>();
-  for (const token of configuredTokens.split(/[,\r\n]+/)) {
+  for (const token of raw.split(/[,\r\n]+/)) {
     addToken(tokens, token);
   }
   return [...tokens.values()];

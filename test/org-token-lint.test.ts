@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -12,7 +12,8 @@ import {
   scanRepository,
 } from "../scripts/org-token-lint.js";
 import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
-import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { removeFixtureDir, createFixtureDir } from "./helpers/fixture-dir.js";
+import { runGit } from "./helpers/git-fixture.js";
 
 const tempDirs: string[] = [];
 const TSX = resolveTsxCli();
@@ -134,10 +135,10 @@ async function createRepoFixture(files: Record<string, string>) {
 }
 
 describe("private-token repository scan", () => {
-  it("separates private tokens from package-derived org tokens", () => {
+  it("separates private tokens from package-derived org tokens", async () => {
     const configured = "ordovica-real-name,another-venture";
 
-    const privateOnly = resolvePrivateTokens(configured);
+    const privateOnly = await resolvePrivateTokens(configured);
     const combined = resolveOrgTokens(
       { author: "Code Magician LLC", repository: "https://github.com/codemagicianhq/arcane" },
       configured,
@@ -169,7 +170,7 @@ describe("private-token repository scan", () => {
   it("returns nothing when no private denylist is configured", async () => {
     const root = await createRepoFixture({ "DECISIONS.md": "realventure everywhere\n" });
 
-    expect(await scanRepository(root, createOrgTokenRules(resolvePrivateTokens("")))).toEqual([]);
+    expect(await scanRepository(root, createOrgTokenRules(await resolvePrivateTokens("")))).toEqual([]);
   });
 
   it("skips generated and vendored directories", async () => {
@@ -208,5 +209,106 @@ describe("private-token repository scan", () => {
       { file: "DECISIONS.md", line: 5, rule: "org-token-1" },
       { file: "README.md", line: 9, rule: "org-token-2" },
     ]);
+  });
+});
+
+// ─── Local, out-of-repo denylist file (ARC-041, LH-12) ───────────────────────
+// The CI secret is fine for CI, but nothing local could ever check content
+// against it before a push -- confirmed live, twice, in this session's own
+// history (RCA-001). These tests exercise the real function against a real
+// file and a real git repo, the same "spawn/build the real thing" standard
+// the rest of this file already holds itself to -- never mocking homedir()
+// or git itself.
+
+describe("resolvePrivateTokens: local out-of-repo file source (ARC-041)", () => {
+  const savedEnv: Record<string, string | undefined> = {};
+
+  function stashEnv(...keys: string[]) {
+    for (const key of keys) savedEnv[key] = process.env[key];
+  }
+
+  afterEach(() => {
+    for (const [key, value] of Object.entries(savedEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  it("reads tokens from $ARCANE_ORG_TOKENS_FILE when ARCANE_ORG_TOKENS is unset", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+
+    const dir = await fs.mkdtemp(join(tmpdir(), "org-token-local-file-"));
+    tempDirs.push(dir);
+    const filePath = join(dir, "org-tokens");
+    await fs.writeFile(filePath, "ordovica-real-name,another-venture\n", "utf8");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = filePath;
+
+    const tokens = await resolvePrivateTokens();
+    expect(tokens).toEqual(["ordovica-real-name", "another-venture"]);
+  });
+
+  it("the env var wins over the file when both are set", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+
+    const dir = await fs.mkdtemp(join(tmpdir(), "org-token-local-file-"));
+    tempDirs.push(dir);
+    const filePath = join(dir, "org-tokens");
+    await fs.writeFile(filePath, "from-the-file\n", "utf8");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = filePath;
+
+    const tokens = await resolvePrivateTokens("from-the-env-var");
+    expect(tokens).toEqual(["from-the-env-var"]);
+  });
+
+  it("returns an empty list, not a throw, when the file doesn't exist", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+    process.env["ARCANE_ORG_TOKENS_FILE"] = join(tmpdir(), "definitely-does-not-exist-org-tokens");
+
+    await expect(resolvePrivateTokens()).resolves.toEqual([]);
+  });
+
+  it("refuses a file that resolves inside a real repository, warns, and returns empty rather than reading it", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+
+    const repoDir = await createFixtureDir("org-token-local-file-inside-repo");
+    tempDirs.push(repoDir);
+    runGit(repoDir, ["init", "-b", "main"]);
+    const insidePath = join(repoDir, "org-tokens");
+    await fs.writeFile(insidePath, "should-never-be-read\n", "utf8");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = insidePath;
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // Explicit cwd, pointed at the fixture repo -- resolvePrivateTokens()
+      // resolves the "is this inside a repo" check relative to its cwd
+      // argument (process.cwd() by default), not the target file's own
+      // directory, so the fixture repo has to be named explicitly here.
+      const tokens = await resolvePrivateTokens(undefined, repoDir);
+      expect(tokens).toEqual([]);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("resolves inside this repository"));
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("does not refuse a file that merely resolves OUTSIDE any repository", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+
+    // A plain mkdtemp directory (no `git init`) is not inside any repository
+    // this process can see -- repoToplevel() itself resolves relative to
+    // process.cwd(), so this proves the refusal is genuinely path-based, not
+    // a blanket "always refuse a temp directory."
+    const dir = await fs.mkdtemp(join(tmpdir(), "org-token-local-file-outside-"));
+    tempDirs.push(dir);
+    const filePath = join(dir, "org-tokens");
+    await fs.writeFile(filePath, "a-real-outside-token\n", "utf8");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = filePath;
+
+    const tokens = await resolvePrivateTokens();
+    expect(tokens).toEqual(["a-real-outside-token"]);
   });
 });

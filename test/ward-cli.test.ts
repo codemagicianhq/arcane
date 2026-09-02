@@ -73,3 +73,37 @@ describe("runWardCli: --terms parsing", () => {
     await expect(runWardCli(dir, {})).resolves.not.toThrow();
   });
 });
+
+describe("runWardCli: --terms-file (ARC-041)", () => {
+  it("reads comma-and-newline-separated terms from a file", async () => {
+    dir = await createFixtureDir("ward-cli-terms-file");
+    await writeFile(join(dir, "a.md"), "mentions realventure here", "utf8");
+    const termsFile = join(dir, "org-tokens");
+    await writeFile(termsFile, "firstterm,realventure\nthirdterm\n", "utf8");
+
+    await runWardCli(dir, { termsFile, gate: true });
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("merges --terms-file with --terms rather than one replacing the other", async () => {
+    dir = await createFixtureDir("ward-cli-terms-file-merge");
+    await writeFile(join(dir, "a.md"), "mentions fromfile here", "utf8");
+    await writeFile(join(dir, "b.md"), "mentions fromflag here", "utf8");
+    const termsFile = join(dir, "org-tokens");
+    await writeFile(termsFile, "fromfile\n", "utf8");
+
+    await runWardCli(dir, { terms: "fromflag", termsFile, gate: true });
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("warns and continues, rather than crashing, when --terms-file does not exist", async () => {
+    dir = await createFixtureDir("ward-cli-terms-file-missing");
+    await writeFile(join(dir, "a.md"), "plain content", "utf8");
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(
+      runWardCli(dir, { termsFile: join(dir, "does-not-exist") }),
+    ).resolves.not.toThrow();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("could not read --terms-file"));
+  });
+});
