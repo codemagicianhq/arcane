@@ -34,7 +34,13 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   regardless of the standing delegation.
 - **Preconditions:** LH-02 has shipped its PR with the RCA content and required checks green.
 - **Exact commands:** review `docs/rcas/RCA-001-*.md` for accuracy against the corrections it cites,
-  then `gh pr merge <PR#> --rebase`.
+  then `gh pr merge <PR#> --rebase`. **If the loop has shipped other `src/assets/`-touching epics
+  while this one waited** (expected, since RCA review is the one thing that can't be rushed to keep
+  the rest of the program moving): the loop rebases this PR onto current `main` and re-runs
+  `npm version patch` before asking again, so its version bump lands on whatever patch number is
+  actually next rather than colliding with one already claimed and merged — this is normal, not a
+  sign anything went wrong. LH-02's own PR description will say which version it bumped to at
+  request time.
 - **Rollback:** revert the merge commit; the RCA record stays as a historical artifact per
   `records-conventions.md` rather than being deleted.
 - **Status:** [ ] open
