@@ -15,6 +15,7 @@ import {
   ManifestInvalidFieldError,
 } from "../src/modules/manifest.js";
 import type { ArcaneManifest, InstalledComponent } from "../src/types.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 describe("manifest", () => {
   let tempDir: string;
@@ -24,7 +25,7 @@ describe("manifest", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await removeFixtureDir(tempDir);
   });
 
   // ─── createManifest ───────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ describe("manifest", () => {
         const dir = await fs.mkdtemp(join(tmpdir(), "manifest-profile-"));
         const manifest = await createManifest(dir, profile, "0.1.0");
         expect(manifest.profile).toBe(profile);
-        await fs.rm(dir, { recursive: true, force: true });
+        await removeFixtureDir(dir);
       }
     });
   });
@@ -416,7 +417,7 @@ describe("docs-mode manifest fields (EF-07 / EF-12)", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await removeFixtureDir(tempDir);
   });
 
   async function write(extra: Record<string, unknown>): Promise<void> {
@@ -492,7 +493,7 @@ describe("resolveSecretsScanExcludePrefixes (ARC-037)", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await removeFixtureDir(tempDir);
   });
 
   it("returns the root manifest's configured list", async () => {

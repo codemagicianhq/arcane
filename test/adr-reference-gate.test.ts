@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const NPM_CLI = process.env["npm_execpath"];
 const tempDirs: string[] = [];
@@ -42,7 +43,7 @@ function runGate(assets: string) {
 
 afterEach(async () => {
     await Promise.all(
-        tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+        tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
     );
 });
 

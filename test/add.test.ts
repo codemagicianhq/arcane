@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // ─── Module under test ────────────────────────────────────────────────────────
 const { runAdd } = await import("../src/commands/add.js");
@@ -50,7 +51,7 @@ describe("spell add — handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
     vi.restoreAllMocks();
   });
 
@@ -234,7 +235,7 @@ describe.skipIf(!BIN)("spell add — built CLI integration", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("exits 1 with helpful message when not initialized", () => {

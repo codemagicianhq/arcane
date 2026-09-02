@@ -13,7 +13,8 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import type { ArcaneManifest } from "../src/types.js";
 import { hashFile } from "../src/modules/copier.js";
-import { runGit } from "./helpers/git-fixture.js";
+import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
+import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const {
@@ -145,7 +146,7 @@ describe("spell update — handler", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
     vi.restoreAllMocks();
   });
 
@@ -415,7 +416,7 @@ describe("spell update — handler", () => {
       "old managed content",
     );
     await expect(readManifestFile(tmpDir)).resolves.toMatchObject({ version: "0.2.0" });
-  }, 15_000); // real runInit (~90 files, now hashed too) + real runUpdate; the default 5s margin is too tight under full-suite contention.
+  }, HEAVY_TEST_TIMEOUT); // real runInit (~90 files, now hashed too) + real runUpdate; the default 5s margin is too tight under full-suite contention.
 
   // These two tests use an ISOLATED fixture assets dir, not the real
   // src/assets/ -- editing the real repo's own governance content in place
@@ -427,7 +428,7 @@ describe("spell update — handler", () => {
   const isolatedAssetsDirs: string[] = [];
 
   afterEach(async () => {
-    await Promise.all(isolatedAssetsDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
+    await Promise.all(isolatedAssetsDirs.splice(0).map((dir) => removeFixtureDir(dir)));
   });
 
   async function isolatedAssetsDir(content: string): Promise<string> {
@@ -514,12 +515,12 @@ describe("spell update — handler", () => {
 
   it("backfills a missing continuity file during update", async () => {
     await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
-    await fs.rm(join(tmpDir, "TODO.md"));
+    await removeFixtureDir(join(tmpDir, "TODO.md"));
 
     await runUpdate({}, tmpDir, ASSETS_DIR, "0.2.0");
 
     await expect(fs.readFile(join(tmpDir, "TODO.md"), "utf8")).resolves.toContain("# TODO");
-  }, 15_000); // real runInit (~90 files, now hashed too) + real runUpdate; see the note on the test above.
+  }, HEAVY_TEST_TIMEOUT); // real runInit (~90 files, now hashed too) + real runUpdate; see the note on the test above.
 
   // ─── Dry-run ───────────────────────────────────────────────────────────────
 
@@ -813,7 +814,7 @@ describe.skipIf(!BIN)("spell update — built CLI integration", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("exits 1 with helpful message when not initialized", () => {
@@ -927,5 +928,5 @@ describe.skipIf(!BIN)("spell update — built CLI integration", () => {
     // File not touched
     const content = await fs.readFile(join(tmpDir, file), "utf8");
     expect(content).toBe("old content");
-  }, 30_000);
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });

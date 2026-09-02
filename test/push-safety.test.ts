@@ -2,7 +2,8 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { runGit as fixtureGit, createFixtureDir } from "./helpers/git-fixture.js";
+import { runGit as fixtureGit, createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import {
   installPrePushHook,
   removePrePushHook,
@@ -208,7 +209,7 @@ describe("enforcement is verified, not assumed", () => {
     await installPrePushHook(work);
     expect(await isHookEnforced(work)).toBe(true);
 
-    await fs.rm(await hookFilePath(work));
+    await removeFixtureDir(await hookFilePath(work));
 
     expect(await isHookEnforced(work)).toBe(false);
     // And prove the consequence, not just the flag.
@@ -496,7 +497,7 @@ describe("awkward but legal remote configurations", () => {
     for (const remote of ["origin", "my_remote", "team.backup"]) {
       expect(tryPush(work, ["--no-verify", remote, "main"]).ok).toBe(false);
     }
-  }, 15_000);
+  }, HEAVY_TEST_TIMEOUT);
 
   it("keeps `origin` and `Origin` apart instead of collapsing them onto one key", async () => {
     // Trailing key segments are case-INSENSITIVE, so the flat key lost one of
@@ -517,7 +518,7 @@ describe("awkward but legal remote configurations", () => {
     expect(normalize(fixtureGit(work, ["remote", "get-url", "--push", "Origin"]))).toBe(
       normalize(upper),
     );
-  }, 15_000);
+  }, HEAVY_TEST_TIMEOUT);
 
   it("blocks BOTH urls of a mirror remote and restores both", async () => {
     // `git remote set-url --push` refuses a remote with multiple push URLs
@@ -534,7 +535,7 @@ describe("awkward but legal remote configurations", () => {
 
     await restorePushUrls(work);
     expect(configValues(work, "remote.origin.pushurl")).toHaveLength(2);
-  }, 15_000);
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not pin a pushurl that was never there", async () => {
     // A remote with no pushurl key pushes to its fetch URL. Writing the resolved
@@ -547,7 +548,7 @@ describe("awkward but legal remote configurations", () => {
     await restorePushUrls(work);
 
     expect(configValues(work, "remote.origin.pushurl")).toEqual([]);
-  }, 15_000);
+  }, HEAVY_TEST_TIMEOUT);
 
   it("survives a remote renamed while blocked", async () => {
     // `git remote rename` moves the whole `remote.<name>.*` section, custom keys
@@ -562,7 +563,7 @@ describe("awkward but legal remote configurations", () => {
     expect(results).toEqual([{ remote: "upstream", status: "restored" }]);
     expect(await blockedRemotes(work)).toEqual([]);
     expect(tryPush(work, ["upstream", "main"]).ok).toBe(true);
-  }, 15_000);
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not enshrine the sentinel as the original when disabled twice", async () => {
     const { work, bare } = await repoWithRemote();
@@ -574,7 +575,7 @@ describe("awkward but legal remote configurations", () => {
     expect(fixtureGit(work, ["remote", "get-url", "--push", "origin"]).replace(/\\/g, "/")).toBe(
       bare.replace(/\\/g, "/"),
     );
-  }, 15_000);
+  }, HEAVY_TEST_TIMEOUT);
 });
 
 describe("push URLs configured outside this repository", () => {
@@ -749,7 +750,7 @@ describe("the hook must exist where git actually looks", () => {
     await installPrePushHook(work);
 
     const worktree = await createFixtureDir("push-safety-linked-");
-    await fs.rm(worktree, { recursive: true, force: true });
+    await removeFixtureDir(worktree);
     fixtureGit(work, ["worktree", "add", worktree, "-b", "topic/x"]);
 
     expect(await isHookEnforced(worktree)).toBe(true);

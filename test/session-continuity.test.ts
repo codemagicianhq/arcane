@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 vi.mock("@inquirer/prompts", () => ({
@@ -43,7 +44,7 @@ describe("doctor — self-hosted source manifest", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("accepts only the explicit self-hosted source manifest", async () => {
@@ -140,7 +141,7 @@ describe("session-continuity — init scaffolding", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("spell init with lite profile creates all session-continuity files", async () => {
@@ -224,7 +225,7 @@ describe("session-continuity — doctor --fix", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
+    await removeFixtureDir(tmpDir);
   });
 
   it("checkSessionContinuity reports missing files", async () => {

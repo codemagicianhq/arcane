@@ -1,14 +1,14 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkDelegations } from "../src/commands/doctor.js";
-import { createFixtureDir } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 import type { DelegationsFile } from "../src/types.js";
 
 let dir: string | undefined;
 
 afterEach(async () => {
-  if (dir) await rm(dir, { recursive: true, force: true });
+  if (dir) await removeFixtureDir(dir);
   dir = undefined;
 });
 

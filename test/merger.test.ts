@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, writeFile, readFile, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import {
@@ -8,6 +8,7 @@ import {
   MARKER_END,
   MalformedMarkersError,
 } from "../src/modules/merger.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await rm(tmpDir, { recursive: true, force: true });
+  await removeFixtureDir(tmpDir);
 });
 
 async function writeTarget(name: string, content: string): Promise<string> {

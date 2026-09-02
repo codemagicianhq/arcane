@@ -9,6 +9,7 @@ import {
   checkForUpdate,
   getFeedUrl,
 } from "../src/modules/version-check.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const FAKE_FEED_URL = "https://registry.npmjs.org/";
 
@@ -23,7 +24,7 @@ describe("version-check", () => {
   });
 
   afterEach(async () => {
-    await fs.rm(tempDir, { recursive: true, force: true });
+    await removeFixtureDir(tempDir);
     vi.restoreAllMocks();
   });
 

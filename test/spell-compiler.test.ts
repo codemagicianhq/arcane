@@ -12,13 +12,14 @@ import {
     renderClaudeCommandStub,
 } from "../src/modules/spell-compiler.js";
 import { runFragmentParity, runStubParity } from "../scripts/self-host-parity.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const ASSETS_DIR = join(process.cwd(), "src", "assets");
 const tempDirs: string[] = [];
 
 afterEach(async () => {
     await Promise.all(
-        tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+        tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
     );
 });
 

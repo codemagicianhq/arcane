@@ -12,6 +12,7 @@ import {
   scanRepository,
 } from "../scripts/org-token-lint.js";
 import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const tempDirs: string[] = [];
 const TSX = resolveTsxCli();
@@ -62,7 +63,7 @@ function runGate(
 
 afterEach(async () => {
   await Promise.all(
-    tempDirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })),
+    tempDirs.splice(0).map((dir) => removeFixtureDir(dir)),
   );
 });
 

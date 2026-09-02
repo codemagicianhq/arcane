@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
-import { promises as fs } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+
+export { createFixtureDir, removeFixtureDir } from "./fixture-dir.js";
 
 // Deliberately the literal POSIX path, not `node:os`'s `devNull` -- Git for
 // Windows' MSYS path-translation layer has special-cased handling for
@@ -83,9 +82,4 @@ export function runGit(dir: string, args: string[]): string {
         }
     }
     return output;
-}
-
-/** Create a fresh `mkdtemp`'d directory for a fixture. Caller owns cleanup. */
-export async function createFixtureDir(prefix: string): Promise<string> {
-    return fs.mkdtemp(join(tmpdir(), `${prefix}-`));
 }

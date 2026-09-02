@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
-import { writeFile, rm } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { runWardCli } from "../src/commands/ward.js";
-import { createFixtureDir } from "./helpers/git-fixture.js";
+import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 
 let dir: string | undefined;
 let originalExitCode: number | string | undefined | null;
@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  if (dir) await rm(dir, { recursive: true, force: true });
+  if (dir) await removeFixtureDir(dir);
   dir = undefined;
   process.exitCode = originalExitCode ?? undefined;
   vi.restoreAllMocks();

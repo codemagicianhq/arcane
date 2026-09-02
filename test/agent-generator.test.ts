@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { mkdtemp, readFile, rm, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { stringify } from "yaml";
 import { syncAgents } from "../src/modules/agent-generator.js";
 import type { AgentDefinition, AgentRoster } from "../src/types.js";
 import { MARKER_START, MARKER_END } from "../src/modules/merger.js";
+import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await rm(tmpDir, { recursive: true, force: true });
+  await removeFixtureDir(tmpDir);
 });
 
 // ─── dry-run mode ─────────────────────────────────────────────────────────────
