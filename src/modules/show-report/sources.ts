@@ -33,14 +33,39 @@ export async function getVersionAtRef(cwd: string, ref: string): Promise<string 
   }
 }
 
-/** The most recent commit (reachable from `untilRef`) that touched `relPath`, or null if none. */
-export async function getLastCommitTouching(
-  cwd: string,
-  relPath: string,
-  untilRef = "HEAD",
-): Promise<string | null> {
-  const sha = await runGitTextOrNull(cwd, ["log", "-1", "--format=%H", untilRef, "--", relPath]);
-  return sha === null || sha === "" ? null : sha;
+/**
+ * The commit `main` stood at when a program's `completed` day ended: the most
+ * recent commit whose COMMITTER date falls on or before that day, regardless
+ * of which files it touched. Without a `completed` date (a program still in
+ * progress) the close is simply HEAD -- "as of now".
+ *
+ * Measured, not assumed, against both finished programs: Become Current's last
+ * PLAN.md-touching commit on its completed day sat at 0.33.0, while two
+ * version bumps landed later that same day without touching the plan -- the
+ * human record and the hand ledger both say 0.33.2, and only this definition
+ * reproduces it (and Lessons Hardening's 0.34.1). Anchoring to PLAN.md at all
+ * was the wrong idea: a finished plan gets edited again (SR-01's own backfill
+ * did it), and a program's version moves on commits that never touch it.
+ *
+ * Committer date, not author date, because it is the LANDING date: this repo
+ * rebase-merges every PR, so it is the merge time and monotonic along the log,
+ * while author dates are not (a PR authored at 03:19 can land above one
+ * authored at 06:46). `%cs` renders it in the commit's own recorded offset,
+ * so the calendar-day comparison gives the same answer on the operator's
+ * machine and on a UTC runner, where a `--until=<instant>` filter would not.
+ */
+export async function getCloseCommit(cwd: string, completedDate?: string): Promise<string | null> {
+  if (!completedDate) {
+    const head = await runGitTextOrNull(cwd, ["rev-parse", "HEAD"]);
+    return head === null || head === "" ? null : head;
+  }
+  const log = await runGitTextOrNull(cwd, ["log", "--format=%H%x09%cs", "HEAD"]);
+  if (log === null || log === "") return null;
+  for (const line of log.split("\n")) {
+    const [sha, landed] = line.split("\t");
+    if (sha && landed && landed <= completedDate) return sha;
+  }
+  return null;
 }
 
 /**

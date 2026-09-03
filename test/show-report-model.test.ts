@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { buildShowReportModel } from "../src/modules/show-report/model.js";
 
 let dir: string | undefined;
@@ -235,6 +236,87 @@ describe("show-report model: buildShowReportModel (end to end against a real git
     expect(model.needsYou).toEqual([]); // no OPERATOR-QUEUE.md file at all
     expect(model.corrections).toBeUndefined(); // no verification-ledger.md file at all
   });
+
+  it(
+    "the close is the commit main stood at when the completed day ended -- any path, by landing date -- so neither a later bump-only commit nor a later edit to the finished plan is misattributed",
+    async () => {
+      dir = await createFixtureDir("show-report-model-close-bound");
+      runGit(dir, ["init", "-b", "main"]);
+      runGit(dir, ["config", "user.name", "Arcane Tests"]);
+      runGit(dir, ["config", "user.email", "arcane-tests@example.invalid"]);
+      const on = (day: string) => ({ authorDate: `${day}T12:00:00`, committerDate: `${day}T12:00:00` });
+
+      await writePackageVersion(dir, "1.0.0");
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "chore: seed baseline"], on("2026-08-30"));
+      const baselineSha = runGit(dir, ["rev-parse", "HEAD"]);
+
+      const planWith = (completedLine: string) =>
+        [
+          "---",
+          "title: Bounded Program",
+          "status: complete",
+          "created: 2026-08-30",
+          completedLine,
+          `baseline: ${baselineSha} (main)`,
+          "---",
+          "",
+          "## Wave Plan",
+          "",
+          "- [x] **BP-01 — Only epic.** Done.",
+        ]
+          .filter((line) => line !== "")
+          .join("\n");
+
+      // 09-01: the plan's last epic ticks with the version at 1.0.5.
+      await writeFile(dir, PLAN_RELPATH, planWith("completed: 2026-09-02"));
+      await writePackageVersion(dir, "1.0.5");
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "docs: close the program"], on("2026-09-01"));
+
+      // 09-02 (still inside the completed day): a bump lands WITHOUT touching
+      // the plan -- the Become Current shape, where two bumps followed the
+      // last PLAN.md commit the same day and the real close is the higher one.
+      await writePackageVersion(dir, "1.0.6");
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "chore(release): bump version to 1.0.6"], on("2026-09-02"));
+
+      // 09-03: a later epic edits the finished plan (a backfill) after a bump to 1.1.0.
+      await writeFile(
+        dir,
+        PLAN_RELPATH,
+        `${planWith("completed: 2026-09-02")}\n  **Report:** Backfilled. · category: docs · glyph: 📝`,
+      );
+      await writePackageVersion(dir, "1.1.0");
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "docs: backfill a report line"], on("2026-09-03"));
+
+      const bounded = await buildShowReportModel({
+        rootDir: dir,
+        slug: "bounded",
+        planRelPath: PLAN_RELPATH,
+        queueRelPath: QUEUE_RELPATH,
+        ledgerProgramName: "Bounded Program",
+        compiledAt: "2026-09-03T00:00:00Z",
+        templateVersion: "0.0.0-test",
+      });
+      expect(bounded.program.versionSpan).toEqual({ from: "1.0.0", to: "1.0.6" });
+
+      // Without a completed date (an in-progress program) the close is HEAD: "as of now".
+      await writeFile(dir, PLAN_RELPATH, planWith(""));
+      const unbounded = await buildShowReportModel({
+        rootDir: dir,
+        slug: "bounded",
+        planRelPath: PLAN_RELPATH,
+        queueRelPath: QUEUE_RELPATH,
+        ledgerProgramName: "Bounded Program",
+        compiledAt: "2026-09-03T00:00:00Z",
+        templateVersion: "0.0.0-test",
+      });
+      expect(unbounded.program.versionSpan).toEqual({ from: "1.0.0", to: "1.1.0" });
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
 
   it("falls back to 'unknown' for status/baseline/started when frontmatter omits them entirely", async () => {
     dir = await createFixtureDir("show-report-model-bare-frontmatter");

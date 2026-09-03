@@ -33,7 +33,7 @@ import {
 import { parseOperatorQueue, type ParsedQueueEntry } from "./queue-parser.js";
 import { parseVerificationLedgerSection, type ParsedLedgerRow } from "./ledger-parser.js";
 import { parseAdrs, countAcceptedAdrsInWindow } from "./decisions-parser.js";
-import { getVersionAtRef, getLastCommitTouching, getCast } from "./sources.js";
+import { getVersionAtRef, getCloseCommit, getCast } from "./sources.js";
 
 export interface BuildShowReportModelOptions {
   rootDir: string;
@@ -193,7 +193,11 @@ export async function buildShowReportModel(options: BuildShowReportModelOptions)
   const cast = new Map<string, number>();
   if (frontmatter.baseline) {
     const baselineSha = extractSha(frontmatter.baseline);
-    const closeSha = await getLastCommitTouching(options.rootDir, options.planRelPath);
+    // A finished program's close is the commit `main` stood at when its own
+    // `completed:` day ended (any path, by landing date) -- see getCloseCommit
+    // for why neither "last commit touching PLAN.md" nor author dates hold up.
+    // An in-progress program has no bound: "as of now".
+    const closeSha = await getCloseCommit(options.rootDir, frontmatter.completed);
     if (closeSha) {
       const [from, to, castMap] = await Promise.all([
         getVersionAtRef(options.rootDir, baselineSha),

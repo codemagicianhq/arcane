@@ -32,7 +32,21 @@ const GIT_NULL_CONFIG = "/dev/null";
  * corruption of whatever repository invoked the test run.
  */
 
-function fixtureGitEnv(): NodeJS.ProcessEnv {
+/**
+ * The only GIT_* variables a fixture may set. They pin a commit's timestamps
+ * for date-sensitive tests (show-report's "version at close" resolves by
+ * committer date) and cannot redirect repository context -- the EF-34 leak
+ * class this module exists to shut out -- so admitting exactly these two
+ * after the blanket strip keeps the tripwire's guarantee intact.
+ */
+export interface FixtureGitDates {
+    /** ISO 8601, e.g. "2026-09-01T12:00:00". Sets GIT_AUTHOR_DATE. */
+    authorDate?: string;
+    /** ISO 8601. Sets GIT_COMMITTER_DATE -- the landing date `git log %cs` reports. */
+    committerDate?: string;
+}
+
+function fixtureGitEnv(dates: FixtureGitDates = {}): NodeJS.ProcessEnv {
     const env: NodeJS.ProcessEnv = { ...process.env };
     for (const key of Object.keys(env)) {
         if (key.startsWith("GIT_")) delete env[key];
@@ -43,11 +57,13 @@ function fixtureGitEnv(): NodeJS.ProcessEnv {
     // fix specifies.
     env.GIT_CONFIG_GLOBAL = GIT_NULL_CONFIG;
     env.GIT_CONFIG_SYSTEM = GIT_NULL_CONFIG;
+    if (dates.authorDate) env.GIT_AUTHOR_DATE = dates.authorDate;
+    if (dates.committerDate) env.GIT_COMMITTER_DATE = dates.committerDate;
     return env;
 }
 
-function rawGit(dir: string, args: string[]): string {
-    const result = spawnSync("git", args, { cwd: dir, encoding: "utf8", env: fixtureGitEnv() });
+function rawGit(dir: string, args: string[], dates: FixtureGitDates = {}): string {
+    const result = spawnSync("git", args, { cwd: dir, encoding: "utf8", env: fixtureGitEnv(dates) });
     if (result.status !== 0) {
         throw new Error(result.stderr || `git ${args.join(" ")} failed`);
     }
@@ -66,8 +82,8 @@ function normalizePath(p: string): string {
  * `--absolute-git-dir`) that the resulting repository resolves inside `dir` --
  * the EF-34 tripwire. Throws loudly if it does not.
  */
-export function runGit(dir: string, args: string[]): string {
-    const output = rawGit(dir, args);
+export function runGit(dir: string, args: string[], dates: FixtureGitDates = {}): string {
+    const output = rawGit(dir, args, dates);
     if (args[0] === "init") {
         const absoluteGitDir = rawGit(dir, ["rev-parse", "--absolute-git-dir"]);
         if (!normalizePath(absoluteGitDir).startsWith(normalizePath(dir))) {
