@@ -1,6 +1,6 @@
 {
   "name": "arcane-cli",
-  "version": "0.34.1",
+  "version": "0.34.2",
   "description": "Arcane framework CLI — scaffold and manage governance files in consuming repositories",
   "keywords": [
     "arcane",
