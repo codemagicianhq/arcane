@@ -59,6 +59,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) | Content-Preserving Updates and Vendor-Neutral Governance Content | 2026-08-31 | Accepted   |
 | [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Accepted   |
 | [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
+| [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
 
 ---
 
@@ -734,7 +735,7 @@ being committed (only a build-time secrets scan in `copy-assets.ts`).
 
 **Date:** 2026-07-05
 **Status:** Accepted
-**Related:** [[DECISIONS#ARC-009|ARC-009]], [[DECISIONS#ARC-014|ARC-014]]
+**Related:** [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy), [ARC-014](#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts)
 
 **Context:**
 

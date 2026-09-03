@@ -43,13 +43,16 @@ drift check treats hub artifacts appearing here as a Critical finding.
 
 ## Current Goals
 
-- Close out external intake batch-001. Two items remain: [EF-18](docs/intake/batch-001/EF-18.md)
-  (blocked on a genuine independent batch-002 submission — operator input, not effort) and
-  [EF-35](docs/intake/batch-001/EF-35.md) (secret detection, routed to an ADR).
-- Close the merge-gate gap filed as [EF-36](docs/intake/batch-001/EF-36.md), which has already
-  shipped a HIGH defect to npm once.
-- Convert accepted-but-unimplemented decisions into enforcement. [ARC-012](DECISIONS.md#arc-012--generated-distributable-artifacts-require-a-parity-guard)
-  is the standing example of a decision rediscovered independently because nothing enforced it.
+- External intake batch-001 is closed except [EF-18](docs/intake/batch-001/EF-18.md), blocked on a
+  genuine independent batch-002 submission — operator input, not effort. EF-35 (secret detection)
+  shipped as [ARC-037](DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop)
+  (BC-30), and EF-36 (auto-merge racing an open review round) shipped as [ARC-035](DECISIONS.md#arc-035--auto-merge-requires-a-clear-review-round)
+  (PR #88).
+- [ARC-012](DECISIONS.md#arc-012--generated-distributable-artifacts-require-a-parity-guard) enforcement
+  shipped (BC-04's YAML-to-agent-render parity test) — no longer a standing gap.
+- **Show Report** is planned and saved as a draft ([docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md),
+  `status: draft`) but deliberately not started. SR-00 (program activation) is the next concrete
+  action, gated on an explicit operator go.
 
 ## Constraints
 
