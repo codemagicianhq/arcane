@@ -1,0 +1,382 @@
+<!doctype html>
+<!--
+  show-report template v0 (interim) -- SR-02.
+  The hand-written completion-ledger CSS/markup from this repository's own
+  two prior programs, converted to the Mustache grammar so the data contract
+  and the --check/--fix automation are real today. The v0 look is a
+  placeholder: the shipped design comes from arcane-ui's static-export
+  build (SR-05b) and drops into this same file slot in SR-06, at which point
+  the header below records the arcane-ui version and license notice it was
+  compiled from. Nothing here is arcane-ui source; this CSS was authored in
+  this MIT repository.
+  Rendered by: src/modules/show-report/render.ts (mustache). Zero runtime JS.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{masthead.title}}</title>
+<style>
+  :root {
+    --bg: #eef0f4;
+    --surface: #ffffff;
+    --ink: #1a1d2b;
+    --ink-soft: #565b72;
+    --ink-faint: #8a8fa3;
+    --accent: #b8802e;
+    --accent-2: #3e7a72;
+    --line: #dadde3;
+    --row-alt: #f6f7f9;
+    --shadow: rgba(26, 29, 43, 0.06);
+    --needs: #a6503a;
+    --needs-bg: #f7e6e1;
+
+    --cat-spell: #b8802e;      --cat-spell-bg: #f6ead6;
+    --cat-feature: #3e7a72;    --cat-feature-bg: #dcede9;
+    --cat-governance: #7a5c8a; --cat-governance-bg: #ece2f0;
+    --cat-decision: #4a5d8a;   --cat-decision-bg: #e0e4f0;
+    --cat-fix: #a6503a;        --cat-fix-bg: #f3ded8;
+    --cat-process: #6b7a3f;    --cat-process-bg: #e6ead9;
+    --cat-docs: #6b7290;       --cat-docs-bg: #e6e7ee;
+    --cat-platform: #39525a;   --cat-platform-bg: #dde4e5;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141c;
+      --surface: #181b26;
+      --ink: #ede9e0;
+      --ink-soft: #9da3b8;
+      --ink-faint: #6c728a;
+      --accent: #d9a44e;
+      --accent-2: #6fafa5;
+      --line: #2a2e3d;
+      --row-alt: #1d202c;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --needs: #e08a71;
+      --needs-bg: #3a2620;
+
+      --cat-spell: #e0b064;      --cat-spell-bg: #3a2e1a;
+      --cat-feature: #7fc2b8;    --cat-feature-bg: #17322e;
+      --cat-governance: #c19bd4; --cat-governance-bg: #2f2438;
+      --cat-decision: #8fa3d6;   --cat-decision-bg: #202942;
+      --cat-fix: #e08a71;        --cat-fix-bg: #3a2620;
+      --cat-process: #a3b876;    --cat-process-bg: #2a3020;
+      --cat-docs: #adb2c9;       --cat-docs-bg: #262a38;
+      --cat-platform: #7fa3ac;   --cat-platform-bg: #1c2c2f;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12141c;
+    --surface: #181b26;
+    --ink: #ede9e0;
+    --ink-soft: #9da3b8;
+    --ink-faint: #6c728a;
+    --accent: #d9a44e;
+    --accent-2: #6fafa5;
+    --line: #2a2e3d;
+    --row-alt: #1d202c;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --needs: #e08a71;
+    --needs-bg: #3a2620;
+
+    --cat-spell: #e0b064;      --cat-spell-bg: #3a2e1a;
+    --cat-feature: #7fc2b8;    --cat-feature-bg: #17322e;
+    --cat-governance: #c19bd4; --cat-governance-bg: #2f2438;
+    --cat-decision: #8fa3d6;   --cat-decision-bg: #202942;
+    --cat-fix: #e08a71;        --cat-fix-bg: #3a2620;
+    --cat-process: #a3b876;    --cat-process-bg: #2a3020;
+    --cat-docs: #adb2c9;       --cat-docs-bg: #262a38;
+    --cat-platform: #7fa3ac;   --cat-platform-bg: #1c2c2f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+
+  a { color: var(--accent-2); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  code { font-family: "IBM Plex Mono", monospace; font-size: 0.92em; }
+
+  .page { max-width: 920px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  header.masthead { margin-bottom: 2.25rem; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.6rem;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.85rem);
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .dek { font-size: 1.02rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.5rem; }
+
+  dl.stat-rail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin: 0;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; }
+
+  .stat dd {
+    margin: 0;
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .stat dt { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .needs-you {
+    margin-top: 1.25rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid var(--needs);
+    background: var(--needs-bg);
+  }
+  .needs-you h2 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--needs); font-family: "IBM Plex Sans", sans-serif; }
+  .needs-you ul { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; }
+  .needs-you li { margin: 0.2rem 0; }
+  .needs-you.none { border-color: var(--line); background: var(--surface); color: var(--ink-soft); }
+  .needs-you.none h2 { color: var(--accent-2); }
+
+  .outcome { margin: 1rem 0 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin: 1.75rem 0 0.25rem;
+    padding: 1.5rem 0 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--ink-soft); }
+  .swatch { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
+
+  section.phase { margin-top: 2.5rem; }
+
+  .phase-label { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .phase-label h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .phase-label .rule { flex: 1; height: 1px; background: var(--line); }
+  .phase-note { font-size: 0.82rem; color: var(--ink-faint); margin: -0.4rem 0 0.9rem; }
+
+  ol.ledger {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(180px, 26%) 1fr auto;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-top: 1px solid var(--line);
+    align-items: center;
+  }
+  .row:first-child { border-top: none; }
+  .row:nth-child(even) { background: var(--row-alt); }
+
+  .item-title { display: flex; align-items: flex-start; gap: 0.55rem; font-weight: 600; font-size: 0.94rem; color: var(--ink); }
+  .item-title .emoji { font-size: 1.05rem; line-height: 1.3; flex: none; }
+  .item-title a { color: inherit; text-decoration: none; }
+  .item-title a:hover { text-decoration: underline; }
+  .item-id { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; color: var(--ink-faint); margin-left: 0.4rem; font-weight: 500; }
+
+  .item-desc { font-size: 0.87rem; color: var(--ink-soft); max-width: 58ch; }
+  .item-desc.unwritten { color: var(--ink-faint); font-style: italic; }
+
+  .pill {
+    justify-self: end;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.spell      { color: var(--cat-spell);      background: var(--cat-spell-bg); }
+  .pill.feature    { color: var(--cat-feature);    background: var(--cat-feature-bg); }
+  .pill.governance { color: var(--cat-governance); background: var(--cat-governance-bg); }
+  .pill.decision   { color: var(--cat-decision);   background: var(--cat-decision-bg); }
+  .pill.fix        { color: var(--cat-fix);        background: var(--cat-fix-bg); }
+  .pill.process    { color: var(--cat-process);    background: var(--cat-process-bg); }
+  .pill.docs       { color: var(--cat-docs);       background: var(--cat-docs-bg); }
+  .pill.platform   { color: var(--cat-platform);   background: var(--cat-platform-bg); }
+
+  .parked-list, .cast-list { margin: 0; padding-left: 1.1rem; font-size: 0.87rem; color: var(--ink-soft); }
+  .parked-list li, .cast-list li { margin: 0.3rem 0; }
+  .parked-list strong { color: var(--ink); }
+
+  footer.colophon {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 1fr; gap: 0.4rem; }
+    .pill { justify-self: start; }
+  }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    .page { padding: 0; max-width: none; }
+    ol.ledger, dl.stat-rail, .needs-you { box-shadow: none; }
+    a { color: inherit; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+</head>
+<body>
+<div class="page">
+<main>
+
+  <header class="masthead">
+    <p class="eyebrow">{{masthead.eyebrow}}</p>
+    <h1>{{masthead.title}}</h1>
+    <p class="dek">{{masthead.dek}}</p>
+
+    <dl class="stat-rail">
+      {{#stats}}
+      <div class="stat"><dd>{{value}}</dd><dt>{{label}}</dt></div>
+      {{/stats}}
+    </dl>
+
+    {{#needsYouCount}}
+    <section class="needs-you" aria-labelledby="needs-you-heading">
+      <h2 id="needs-you-heading">Needs you: {{needsYouCount}}</h2>
+      <ul>
+        {{#needsYou}}
+        <li><strong>{{id}}</strong> — {{title}}{{#href}} · <a href="{{href}}">open</a>{{/href}}</li>
+        {{/needsYou}}
+      </ul>
+    </section>
+    {{/needsYouCount}}
+    {{^needsYouCount}}
+    <section class="needs-you none" aria-labelledby="needs-you-heading">
+      <h2 id="needs-you-heading">Nothing needs you</h2>
+    </section>
+    {{/needsYouCount}}
+
+    {{#hasOutcome}}<p class="outcome">{{outcome}}</p>{{/hasOutcome}}
+
+    <ul class="legend" aria-label="Category legend">
+      {{#legend}}
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-{{key}})" aria-hidden="true"></span>{{label}}</li>
+      {{/legend}}
+    </ul>
+  </header>
+
+  {{#sections}}
+  <section class="phase" aria-labelledby="{{id}}-heading">
+    <div class="phase-label"><h2 id="{{id}}-heading">{{title}}</h2><span class="rule" aria-hidden="true"></span></div>
+    {{#hasNote}}<p class="phase-note">{{note}}</p>{{/hasNote}}
+    <ol class="ledger">
+      {{#rows}}
+      <li class="row">
+        <div class="item-title">{{#hasGlyph}}<span class="emoji" aria-hidden="true">{{glyph}}</span>{{/hasGlyph}}<span>{{#hasHref}}<a href="{{href}}">{{title}}</a>{{/hasHref}}{{^hasHref}}{{title}}{{/hasHref}}<span class="item-id">{{id}}</span></span></div>
+        {{#isUnwritten}}<div class="item-desc unwritten">unwritten</div>{{/isUnwritten}}
+        {{^isUnwritten}}<div class="item-desc">{{{descriptionHtml}}}</div>{{/isUnwritten}}
+        <span class="pill {{category}}">{{categoryLabel}}</span>
+      </li>
+      {{/rows}}
+    </ol>
+  </section>
+  {{/sections}}
+
+  {{#hasCorrections}}
+  {{#corrections}}
+  <section class="phase" aria-labelledby="corrections-heading">
+    <div class="phase-label"><h2 id="corrections-heading">Calibration</h2><span class="rule" aria-hidden="true"></span></div>
+    <p class="phase-note">{{checked}} claims checked · {{corrected}} corrected · {{unverifiable}} unverifiable. {{scopeNote}}</p>
+    <ol class="ledger">
+      {{#highlights}}
+      <li class="row">
+        <div class="item-title"><span>{{title}}</span></div>
+        {{#isUnwritten}}<div class="item-desc unwritten">unwritten</div>{{/isUnwritten}}
+        {{^isUnwritten}}<div class="item-desc">{{{descriptionHtml}}}</div>{{/isUnwritten}}
+        <span class="pill {{category}}">{{categoryLabel}}</span>
+      </li>
+      {{/highlights}}
+    </ol>
+  </section>
+  {{/corrections}}
+  {{/hasCorrections}}
+
+  {{#hasParked}}
+  <section class="phase" aria-labelledby="parked-heading">
+    <div class="phase-label"><h2 id="parked-heading">Parked — needs operator</h2><span class="rule" aria-hidden="true"></span></div>
+    <ul class="parked-list">
+      {{#parked}}
+      <li><strong>{{title}}</strong> — {{reason}}</li>
+      {{/parked}}
+    </ul>
+  </section>
+  {{/hasParked}}
+
+  {{#hasCast}}
+  <section class="phase" aria-labelledby="cast-heading">
+    <div class="phase-label"><h2 id="cast-heading">Cast</h2><span class="rule" aria-hidden="true"></span></div>
+    <p class="phase-note">Self-reported from commit trailers in this program's version window.</p>
+    <ul class="cast-list">
+      {{#cast}}
+      <li>{{name}} — {{commits}} commits</li>
+      {{/cast}}
+    </ul>
+  </section>
+  {{/hasCast}}
+
+</main>
+
+  <footer class="colophon">
+    Compiled {{compiledAtDate}} from <code>{{sourcesJoined}}</code>. Program <code>{{program.slug}}</code>, status <code>{{program.status}}</code>{{#hasVersionSpan}}, <code>{{program.versionSpan.from}}</code> → <code>{{program.versionSpan.to}}</code>{{/hasVersionSpan}}. Template <code>{{colophon.templateVersion}}</code>. Every stat above is derived, never hand-typed.
+  </footer>
+
+</div>
+</body>
+</html>

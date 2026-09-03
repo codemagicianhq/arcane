@@ -1,0 +1,602 @@
+<!doctype html>
+<!--
+  show-report template v0 (interim) -- SR-02.
+  The hand-written completion-ledger CSS/markup from this repository's own
+  two prior programs, converted to the Mustache grammar so the data contract
+  and the --check/--fix automation are real today. The v0 look is a
+  placeholder: the shipped design comes from arcane-ui's static-export
+  build (SR-05b) and drops into this same file slot in SR-06, at which point
+  the header below records the arcane-ui version and license notice it was
+  compiled from. Nothing here is arcane-ui source; this CSS was authored in
+  this MIT repository.
+  Rendered by: src/modules/show-report/render.ts (mustache). Zero runtime JS.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Become Current — Master Execution Plan</title>
+<style>
+  :root {
+    --bg: #eef0f4;
+    --surface: #ffffff;
+    --ink: #1a1d2b;
+    --ink-soft: #565b72;
+    --ink-faint: #8a8fa3;
+    --accent: #b8802e;
+    --accent-2: #3e7a72;
+    --line: #dadde3;
+    --row-alt: #f6f7f9;
+    --shadow: rgba(26, 29, 43, 0.06);
+    --needs: #a6503a;
+    --needs-bg: #f7e6e1;
+
+    --cat-spell: #b8802e;      --cat-spell-bg: #f6ead6;
+    --cat-feature: #3e7a72;    --cat-feature-bg: #dcede9;
+    --cat-governance: #7a5c8a; --cat-governance-bg: #ece2f0;
+    --cat-decision: #4a5d8a;   --cat-decision-bg: #e0e4f0;
+    --cat-fix: #a6503a;        --cat-fix-bg: #f3ded8;
+    --cat-process: #6b7a3f;    --cat-process-bg: #e6ead9;
+    --cat-docs: #6b7290;       --cat-docs-bg: #e6e7ee;
+    --cat-platform: #39525a;   --cat-platform-bg: #dde4e5;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141c;
+      --surface: #181b26;
+      --ink: #ede9e0;
+      --ink-soft: #9da3b8;
+      --ink-faint: #6c728a;
+      --accent: #d9a44e;
+      --accent-2: #6fafa5;
+      --line: #2a2e3d;
+      --row-alt: #1d202c;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --needs: #e08a71;
+      --needs-bg: #3a2620;
+
+      --cat-spell: #e0b064;      --cat-spell-bg: #3a2e1a;
+      --cat-feature: #7fc2b8;    --cat-feature-bg: #17322e;
+      --cat-governance: #c19bd4; --cat-governance-bg: #2f2438;
+      --cat-decision: #8fa3d6;   --cat-decision-bg: #202942;
+      --cat-fix: #e08a71;        --cat-fix-bg: #3a2620;
+      --cat-process: #a3b876;    --cat-process-bg: #2a3020;
+      --cat-docs: #adb2c9;       --cat-docs-bg: #262a38;
+      --cat-platform: #7fa3ac;   --cat-platform-bg: #1c2c2f;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12141c;
+    --surface: #181b26;
+    --ink: #ede9e0;
+    --ink-soft: #9da3b8;
+    --ink-faint: #6c728a;
+    --accent: #d9a44e;
+    --accent-2: #6fafa5;
+    --line: #2a2e3d;
+    --row-alt: #1d202c;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --needs: #e08a71;
+    --needs-bg: #3a2620;
+
+    --cat-spell: #e0b064;      --cat-spell-bg: #3a2e1a;
+    --cat-feature: #7fc2b8;    --cat-feature-bg: #17322e;
+    --cat-governance: #c19bd4; --cat-governance-bg: #2f2438;
+    --cat-decision: #8fa3d6;   --cat-decision-bg: #202942;
+    --cat-fix: #e08a71;        --cat-fix-bg: #3a2620;
+    --cat-process: #a3b876;    --cat-process-bg: #2a3020;
+    --cat-docs: #adb2c9;       --cat-docs-bg: #262a38;
+    --cat-platform: #7fa3ac;   --cat-platform-bg: #1c2c2f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+
+  a { color: var(--accent-2); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  code { font-family: "IBM Plex Mono", monospace; font-size: 0.92em; }
+
+  .page { max-width: 920px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  header.masthead { margin-bottom: 2.25rem; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.6rem;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.85rem);
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .dek { font-size: 1.02rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.5rem; }
+
+  dl.stat-rail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin: 0;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; }
+
+  .stat dd {
+    margin: 0;
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .stat dt { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .needs-you {
+    margin-top: 1.25rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid var(--needs);
+    background: var(--needs-bg);
+  }
+  .needs-you h2 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--needs); font-family: "IBM Plex Sans", sans-serif; }
+  .needs-you ul { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; }
+  .needs-you li { margin: 0.2rem 0; }
+  .needs-you.none { border-color: var(--line); background: var(--surface); color: var(--ink-soft); }
+  .needs-you.none h2 { color: var(--accent-2); }
+
+  .outcome { margin: 1rem 0 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin: 1.75rem 0 0.25rem;
+    padding: 1.5rem 0 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--ink-soft); }
+  .swatch { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
+
+  section.phase { margin-top: 2.5rem; }
+
+  .phase-label { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .phase-label h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .phase-label .rule { flex: 1; height: 1px; background: var(--line); }
+  .phase-note { font-size: 0.82rem; color: var(--ink-faint); margin: -0.4rem 0 0.9rem; }
+
+  ol.ledger {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(180px, 26%) 1fr auto;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-top: 1px solid var(--line);
+    align-items: center;
+  }
+  .row:first-child { border-top: none; }
+  .row:nth-child(even) { background: var(--row-alt); }
+
+  .item-title { display: flex; align-items: flex-start; gap: 0.55rem; font-weight: 600; font-size: 0.94rem; color: var(--ink); }
+  .item-title .emoji { font-size: 1.05rem; line-height: 1.3; flex: none; }
+  .item-title a { color: inherit; text-decoration: none; }
+  .item-title a:hover { text-decoration: underline; }
+  .item-id { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; color: var(--ink-faint); margin-left: 0.4rem; font-weight: 500; }
+
+  .item-desc { font-size: 0.87rem; color: var(--ink-soft); max-width: 58ch; }
+  .item-desc.unwritten { color: var(--ink-faint); font-style: italic; }
+
+  .pill {
+    justify-self: end;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.spell      { color: var(--cat-spell);      background: var(--cat-spell-bg); }
+  .pill.feature    { color: var(--cat-feature);    background: var(--cat-feature-bg); }
+  .pill.governance { color: var(--cat-governance); background: var(--cat-governance-bg); }
+  .pill.decision   { color: var(--cat-decision);   background: var(--cat-decision-bg); }
+  .pill.fix        { color: var(--cat-fix);        background: var(--cat-fix-bg); }
+  .pill.process    { color: var(--cat-process);    background: var(--cat-process-bg); }
+  .pill.docs       { color: var(--cat-docs);       background: var(--cat-docs-bg); }
+  .pill.platform   { color: var(--cat-platform);   background: var(--cat-platform-bg); }
+
+  .parked-list, .cast-list { margin: 0; padding-left: 1.1rem; font-size: 0.87rem; color: var(--ink-soft); }
+  .parked-list li, .cast-list li { margin: 0.3rem 0; }
+  .parked-list strong { color: var(--ink); }
+
+  footer.colophon {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 1fr; gap: 0.4rem; }
+    .pill { justify-self: start; }
+  }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    .page { padding: 0; max-width: none; }
+    ol.ledger, dl.stat-rail, .needs-you { box-shadow: none; }
+    a { color: inherit; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+</head>
+<body>
+<div class="page">
+<main>
+
+  <header class="masthead">
+    <p class="eyebrow">Show Report</p>
+    <h1>Become Current — Master Execution Plan</h1>
+    <p class="dek">complete — 33 of 33 epics shipped</p>
+
+    <dl class="stat-rail">
+      <div class="stat"><dd>33/33</dd><dt>epics shipped</dt></div>
+      <div class="stat"><dd>37</dd><dt>pull requests</dt></div>
+      <div class="stat"><dd>0.22.1 → 0.33.2</dd><dt>version span</dt></div>
+      <div class="stat"><dd>5</dd><dt>ADRs accepted</dt></div>
+    </dl>
+
+    <section class="needs-you" aria-labelledby="needs-you-heading">
+      <h2 id="needs-you-heading">Needs you: 3</h2>
+      <ul>
+        <li><strong>Q-009</strong> — Point `arcane-website` at the new `docs/spell-catalog.json` artifact</li>
+        <li><strong>Q-010</strong> — Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions</li>
+        <li><strong>Q-011</strong> — Phase 5 DoD closure: the 7 items with no forcing function, consolidated</li>
+      </ul>
+    </section>
+
+    <p class="outcome">23 of 23 items dispositioned — 20 routed to an epic, 3 parked</p>
+
+    <ul class="legend" aria-label="Category legend">
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-spell)" aria-hidden="true"></span>New Spell</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-feature)" aria-hidden="true"></span>New Feature</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-governance)" aria-hidden="true"></span>Governance</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-decision)" aria-hidden="true"></span>Decision (ADR)</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-fix)" aria-hidden="true"></span>Bug Fix</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-process)" aria-hidden="true"></span>Process</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-docs)" aria-hidden="true"></span>Docs</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-platform)" aria-hidden="true"></span>Platform</li>
+    </ul>
+  </header>
+
+  <section class="phase" aria-labelledby="wave-1-heading">
+    <div class="phase-label"><h2 id="wave-1-heading">Wave 0 — Bootstrap</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📜</span><span><a href="https://github.com/codemagicianhq/arcane/pull/86">Commit this plan</a><span class="item-id">BC-00</span></span></div>
+        
+        <div class="item-desc">Landed the 33-epic execution plan itself, activating the standing autonomy grant that let the rest of the program run session after session without needing per-step approval.</div>
+        <span class="pill process">Process</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-2-heading">
+    <div class="phase-label"><h2 id="wave-2-heading">Wave 1 — Platform &amp; release integrity</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔀</span><span><a href="https://github.com/codemagicianhq/arcane/pull/88">Review-Round Merge Gate</a><span class="item-id">BC-01</span></span></div>
+        
+        <div class="item-desc">Auto-merge now waits for a dedicated CI check confirming no unresolved change-request review remains on a pull request, closing the exact gap that had let a defective release ship before.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🧹</span><span><a href="https://github.com/codemagicianhq/arcane/pull/90">Build-Output Pruning</a><span class="item-id">BC-02</span></span></div>
+        
+        <div class="item-desc">The release build now deletes files that were removed from source instead of letting them linger in the shipped package forever, and a related bug that could silently corrupt this repo&#39;s own build during testing was found and fixed alongside it.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🌿</span><span><a href="https://github.com/codemagicianhq/arcane/pull/92">Content-Verified Branch Cleanup</a><span class="item-id">BC-03</span></span></div>
+        
+        <div class="item-desc">Established a safe standard procedure for deleting old branches — checking their actual content, not just merge history — and used it to clear three branches confirmed fully landed, flagging the rest for the operator to decide.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🎭</span><span><a href="https://github.com/codemagicianhq/arcane/pull/45">Agent Roster Integrity</a><span class="item-id">BC-04</span></span></div>
+        
+        <div class="item-desc">Found and fixed an agent template that had been silently shipping broken placeholder text, and added an automated check plus a non-zero exit on sync failures so a corrupted roster file can never ship unnoticed again.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-3-heading">
+    <div class="phase-label"><h2 id="wave-3-heading">Wave 2 — Ledger, status &amp; doc-link hygiene</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📒</span><span><a href="https://github.com/codemagicianhq/arcane/pull/21">Ledger &amp; status reconciliation</a><span class="item-id">BC-05</span></span></div>
+        
+        <div class="item-desc">Reconciled stale status markers across TODO.md, feature PRDs, and intake records with verified PR references instead of guesses, and corrected a feature doc that still falsely claimed nothing had shipped despite real work landing.</div>
+        <span class="pill process">Process</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔗</span><span><a href="https://github.com/codemagicianhq/arcane/pull/98">Doc-ID link integrity</a><span class="item-id">BC-06</span></span></div>
+        
+        <div class="item-desc">Extended the documentation-link checker to catch references that look like they stay within the project but actually point across repositories, and fixed four real instances it found — including two introduced earlier the same night.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🌅</span><span><a href="https://github.com/codemagicianhq/arcane/pull/100">Fresh-session instruction probe</a><span class="item-id">BC-07</span></span></div>
+        
+        <div class="item-desc">Verified a brand-new session really does inherit this repo&#39;s working protocol automatically, confirmed the agent roster still doesn&#39;t exist, and fixed a stale line-number citation found live during the check.</div>
+        <span class="pill process">Process</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">💬</span><span><a href="https://github.com/codemagicianhq/arcane/pull/102">Friendlier Unknown-Command Message</a><span class="item-id">BC-08</span></span></div>
+        
+        <div class="item-desc">Typing an unrecognized CLI command now prints guidance and exits with an error instead of silently falling through to the welcome screen, with its command list generated live instead of a hardcoded, already-stale count.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🐙</span><span><a href="https://github.com/codemagicianhq/arcane/pull/104">GitHub as a First-Class Tracker</a><span class="item-id">BC-09</span></span></div>
+        
+        <div class="item-desc">GitHub Issues is now a fully supported tracking provider alongside Azure DevOps and Jira, with real issue create/view/close support wired into five spells instead of being treated as an unsupported fallback.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-4-heading">
+    <div class="phase-label"><h2 id="wave-4-heading">Wave 3 — ADR drafts (draft → PR → park acceptance → continue)</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔍</span><span><a href="https://github.com/codemagicianhq/arcane/pull/106">Secret-Detection Design</a><span class="item-id">BC-10</span></span></div>
+        
+        <div class="item-desc">Drafted the design for catching leaked credentials and org names before they ship — a pre-commit scan plus a repository-wide CI backstop — correcting two inaccurate premises about what scanning already existed along the way.</div>
+        <span class="pill decision">Decision (ADR)</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🎨</span><span><a href="https://github.com/codemagicianhq/arcane/pull/108">Vendor-Neutral Customization Design</a><span class="item-id">BC-11</span></span></div>
+        
+        <div class="item-desc">Drafted the design for letting a hand-edited governance file survive a future update instead of being silently overwritten, after a research spike found the file assumed to need vendor-neutral treatment was the wrong one.</div>
+        <span class="pill decision">Decision (ADR)</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">⚙️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/110">Spell-Compiler Design</a><span class="item-id">BC-12</span></span></div>
+        
+        <div class="item-desc">Drafted the design for generating each spell&#39;s Claude Code stub straight from its real source file instead of hand-maintaining both, deliberately scoped to build time only — and found the &quot;66 hand-maintained files&quot; premise was already stale by the time this ran.</div>
+        <span class="pill decision">Decision (ADR)</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📋</span><span><a href="https://github.com/codemagicianhq/arcane/pull/112">Decision Acceptance Brief</a><span class="item-id">BC-13</span></span></div>
+        
+        <div class="item-desc">Prepared a full accept/revise/reject brief for the long-pending ARC-029 decision, verifying the incident that motivated it directly against the original record rather than relaying a compressed summary, and flagged that accepting it won&#39;t by itself schedule its own follow-up work.</div>
+        <span class="pill process">Process</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-5-heading">
+    <div class="phase-label"><h2 id="wave-5-heading">Wave 4 — Feature epics (serial `chain` builds)</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📊</span><span><a href="https://github.com/codemagicianhq/arcane/pull/123">Generated State Diagrams</a><span class="item-id">BC-14</span></span></div>
+        
+        <div class="item-desc">Spells that already compute their own state — version drift, branch/PR topology, review flow — now render it as a real generated diagram instead of prose, rolled out across the CLI and multiple spells over six sequential releases.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🤝</span><span><a href="https://github.com/codemagicianhq/arcane/pull/125">Session-Handoff Durability</a><span class="item-id">BC-15</span></span></div>
+        
+        <div class="item-desc">Work named in a session handoff is now also registered somewhere durable, so a single overwrite can no longer lose it — and a real bug in the fresh-install scaffold that could falsely trigger the new detection was found and fixed along the way.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🧭</span><span><a href="https://github.com/codemagicianhq/arcane/pull/127">Spell Routing Layer</a><span class="item-id">BC-16</span></span></div>
+        
+        <div class="item-desc">Every AI client now sees a routing table on load telling it which spell to invoke for common workflows, backed by proactive-trigger descriptions on every spell command and a new standing lifecycle rule — a fourth, hook-based enforcement layer was deliberately deferred.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🛡️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/129">Doctor Platform-Policy Check</a><span class="item-id">BC-17</span></span></div>
+        
+        <div class="item-desc"><code>spell doctor</code> now checks a repo&#39;s live branch-protection rules against what governance says they should be, verified against this repo&#39;s own real GitHub Rulesets — the Azure DevOps path is implemented but not live-tested, since no ADO remote exists to check it against.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔄</span><span><a href="https://github.com/codemagicianhq/arcane/pull/131">New Spell: Sync Pull Request</a><span class="item-id">BC-18</span></span></div>
+        
+        <div class="item-desc">A new dedicated spell handles the recovery path when the mandatory pre-PR rebase hits a real conflict, covering clean syncs, conflicting rebases, stale-lease rejection, and ambiguous handoffs, with both <code>spell-create-pull-request</code> and <code>spell-ship</code> now routing conflicts to it.</div>
+        <span class="pill spell">New Spell</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">👤</span><span><a href="https://github.com/codemagicianhq/arcane/pull/133">Delegation UX (solo-operator mode)</a><span class="item-id">BC-19</span></span></div>
+        
+        <div class="item-desc">Autonomous self-approval permissions are now recorded explicitly in a per-repo file, listable via <code>spell doctor</code> and revocable by editing it, replacing an implicit assumption — this program&#39;s own standing authority grant became the mechanism&#39;s first real record.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔧</span><span><a href="https://github.com/codemagicianhq/arcane/pull/135">Full-Cycle Coordination Fixes</a><span class="item-id">BC-20</span></span></div>
+        
+        <div class="item-desc">Closed real coordination gaps in the end-to-end feature spell — migration-number collisions, missing real-data migration guidance, and honest documentation that no actual agent roster ships despite the delegation language — after confirming one of the three planned fixes had already shipped separately and didn&#39;t need repeating.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🕵️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/138">New Spells: Ward &amp; Scry</a><span class="item-id">BC-21</span></span></div>
+        
+        <div class="item-desc">Two new spells shipped: <code>ward</code> scans a repo for leaked third-party names and trademarks, and <code>scry</code> clears a brand-new name for use — checking both the outside world and this repo&#39;s own history for collisions — before you commit to it.</div>
+        <span class="pill spell">New Spell</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔌</span><span>MCP resilience<span class="item-id">BC-22</span></span></div>
+        
+        <div class="item-desc">A new standing rule: one abnormal MCP tool failure now marks that server down for the rest of the session instead of retrying blindly, backed by an optional <code>.mcp.json</code> scaffold and a new <code>spell doctor</code> check for per-server timeouts.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📚</span><span>Registry-driven spell catalog<span class="item-id">BC-23</span></span></div>
+        
+        <div class="item-desc">The spell catalog the README lists is now generated directly from the source registry instead of hand-maintained, catching a real drift where the README undercounted the actual 38 shipped spells — with a new CI check guarding against it drifting again.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔬</span><span>Research-doc capability<span class="item-id">BC-24</span></span></div>
+        
+        <div class="item-desc">Research findings and technical spikes now have an official home and naming convention instead of being scattered ad hoc, reusing the existing <code>spell-document</code> spell rather than building a redundant dedicated one.</div>
+        <span class="pill docs">Docs</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📱</span><span>New Spell: EAS Store Deploy<span class="item-id">BC-25</span></span></div>
+        
+        <div class="item-desc">A new dedicated spell ships an app to the App Store and Google Play via Expo Application Services, backed by a new store-specific standards doc covering the durable facts that had no existing home.</div>
+        <span class="pill spell">New Spell</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">✅</span><span>Compliance standards + spell<span class="item-id">BC-26</span></span></div>
+        
+        <div class="item-desc">A new spell runs a read-only compliance self-assessment against GDPR, CCPA, SOC 2, and HIPAA — backed by a new standards doc that is explicit it&#39;s not legal advice — and stops at reporting findings rather than attempting to fix them automatically.</div>
+        <span class="pill spell">New Spell</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🏛️</span><span>Governance tail batch<span class="item-id">BC-27</span></span></div>
+        
+        <div class="item-desc">A batch of governance fixes: a new rule requiring a diff before deleting a &quot;duplicate,&quot; broadened leak-scan guidance to cover personal identifiers, a new spell that captures verification claims and corrections as a structured record, and a commit-trailer model that now omits an agent&#39;s role rather than guessing it when the roster can&#39;t confirm it.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📡</span><span>Delivery-Channels Research<span class="item-id">BC-28</span></span></div>
+        
+        <div class="item-desc">A research spike ran two live smoke tests on this machine — confirming that npm&#39;s own <code>node_modules</code> traversal picks up prompt files, and that a symlink-like junction can be followed — after finding the epic&#39;s own starting description had actually mischaracterized what the idea was asking about.</div>
+        <span class="pill process">Process</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-6-heading">
+    <div class="phase-label"><h2 id="wave-6-heading">Wave 5 — Unparked implementations &amp; the big backfill</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🏷️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/154">Enforcement-Mode Labeling</a><span class="item-id">BC-29</span></span></div>
+        
+        <div class="item-desc">Every one of the 25 governance docs now states plainly whether each of its rules is actually enforced by a check or just advisory prose, closing a gap where only one rule in the whole repo carried that label before — the pass also surfaced several pre-existing doc contradictions, like a rule requiring &quot;3 issues minimum&quot; that the actual review spell no longer requires.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔒</span><span>Secret detection implementation<span class="item-id">BC-30</span></span></div>
+        
+        <div class="item-desc">Built the secret-detection design for real: a pre-commit hook and a repository-wide CI backstop now both scan for leaked credentials and org names using one shared rule set, installed automatically by <code>spell init</code> — along the way, fixing a real latent crash where a malformed config file could take down the whole <code>spell doctor</code> run.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🧩</span><span>Customization implementation<span class="item-id">BC-31</span></span></div>
+        
+        <div class="item-desc"><code>spell update</code> no longer blindly overwrites a governance file you&#39;ve hand-edited — it now three-way-merges your changes with the new version and flags real conflicts — and the CI/CD standards doc split into a vendor-neutral core plus an Azure DevOps-specific profile so the same pattern can support other platforms later.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🪄</span><span>Spell-compiler implementation<span class="item-id">BC-32</span></span></div>
+        
+        <div class="item-desc">Every Claude Code spell stub now generates directly from its real source file instead of being hand-maintained separately, catching and fixing two real title-drift bugs in the process, plus a starter shared-fragment mechanism for text repeated across a handful of spells.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="phase" aria-labelledby="corrections-heading">
+    <div class="phase-label"><h2 id="corrections-heading">Calibration</h2><span class="rule" aria-hidden="true"></span></div>
+    <p class="phase-note">15 claims checked · 13 corrected · 1 unverifiable. Become Current corrections logged in docs/verification-ledger.md</p>
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span>TODO.md: &quot;R3 (lifecycle-operations rule) is genuinely still open&quot;</span></div>
+        
+        <div class="item-desc">The first grep was case-sensitive and missed rule 22&#39;s capitalized &quot;Lifecycle operations run through their spell…&quot; — R3 was already shipped. TODO item closed in full; error named on the record.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span>ARC-039 (I15&#39;s premise): &quot;36 (not 33) spell command stubs exist&quot;</span></div>
+        
+        <div class="item-desc">41, not 36 — the count grew again in the day between the ADR&#39;s drafting and its implementation.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span>ARC-039 decision 2: &quot;5 files duplicate a resolution-order paragraph, worded a...</span></div>
+        
+        <div class="item-desc">Only a bare 2-line tracking_mode/external_provider enum is byte-identical; spell-scope skips the .arcane.json source entirely that the other four check — the surrounding logic had already diverged. Extracted only the genuinely-shared 2 lines.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="phase" aria-labelledby="parked-heading">
+    <div class="phase-label"><h2 id="parked-heading">Parked — needs operator</h2><span class="rule" aria-hidden="true"></span></div>
+    <ul class="parked-list">
+      <li><strong>EF-18 / spell-intake (T3)</strong> — A genuine independent batch-002 submission. The PRD&#39;s own Won&#39;t-Have forbids implementation before it. When it exists, run the manual intake per MH-01..08, then this becomes a chain epic.</li>
+      <li><strong>Naming reword (T21)</strong> — Marked &quot;owner&#39;s call&quot;: approve &quot;boring&quot; → &quot;plainer/clearer&quot; in both trees, or veto. One word from you unparks a 10-minute PR.</li>
+      <li><strong>Prospero insignia lore (T17)</strong> — Your content: the emblem&#39;s description/story for prospero-image-prompt.md + Arcanos Codex.</li>
+      <li><strong>Website copy &quot;the Arcanos&quot; (T19)</strong> — Cross-repo (arcane-website): change &quot;SUMMON THE ROSTER&quot; headline there; not executable from this repo.</li>
+      <li><strong>ADR acceptances</strong> — Review each Proposed ADR PR; accept/revise/reject. Dependent epics (BC-30/31/32) unpark on acceptance.</li>
+      <li><strong>Everything in OPERATOR-QUEUE.md</strong> — Platform mutations, content-holding branch decisions, auto-merge re-enable.</li>
+    </ul>
+  </section>
+
+  <section class="phase" aria-labelledby="cast-heading">
+    <div class="phase-label"><h2 id="cast-heading">Cast</h2><span class="rule" aria-hidden="true"></span></div>
+    <p class="phase-note">Self-reported from commit trailers in this program's version window.</p>
+    <ul class="cast-list">
+      <li>claude — 46 commits</li>
+    </ul>
+  </section>
+
+</main>
+
+  <footer class="colophon">
+    Compiled 2026-09-01 from <code>docs/plans/become-current/PLAN.md, docs/plans/become-current/OPERATOR-QUEUE.md, docs/verification-ledger.md</code>. Program <code>become-current</code>, status <code>complete</code>, <code>0.22.1</code> → <code>0.33.2</code>. Template <code>v0-interim</code>. Every stat above is derived, never hand-typed.
+  </footer>
+
+</div>
+</body>
+</html>

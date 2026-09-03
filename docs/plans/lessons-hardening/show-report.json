@@ -289,7 +289,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 22,
+      "commits": 21,
       "source": "commit-trailer"
     },
     {
@@ -304,7 +304,7 @@
       "docs/plans/lessons-hardening/OPERATOR-QUEUE.md",
       "docs/verification-ledger.md"
     ],
-    "compiledAt": "2026-09-03T16:16:19.216Z",
-    "templateVersion": "pending"
+    "compiledAt": "2026-09-02",
+    "templateVersion": "v0-interim"
   }
 }

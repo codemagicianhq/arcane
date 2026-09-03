@@ -1,6 +1,6 @@
 {
   "name": "arcane-cli",
-  "version": "0.34.2",
+  "version": "0.34.3",
   "description": "Arcane framework CLI — scaffold and manage governance files in consuming repositories",
   "keywords": [
     "arcane",
@@ -44,6 +44,8 @@
     "fix:self-host-parity": "tsx scripts/self-host-parity.ts --fix",
     "check:spell-catalog": "tsx scripts/spell-catalog.ts --check",
     "fix:spell-catalog": "tsx scripts/spell-catalog.ts --fix",
+    "check:report": "tsx scripts/report.ts --check --all",
+    "fix:report": "tsx scripts/report.ts --fix --all",
     "check:adr-references": "tsx scripts/check-distributed-adr-references.ts",
     "check:version-bump": "tsx scripts/check-version-bump.ts",
     "check:citations": "tsx scripts/check-citations.ts --report",
@@ -59,11 +61,13 @@
     "chalk": "^5.6.2",
     "commander": "^12.0.0",
     "gradient-string": "^3.0.0",
+    "mustache": "^4.2.0",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@types/gradient-string": "^1.1.6",
+    "@types/mustache": "^4.2.6",
     "@types/node": "^20.0.0",
     "@vitest/coverage-v8": "^3.2.7",
     "eslint": "^9.0.0",

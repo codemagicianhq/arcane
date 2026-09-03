@@ -541,7 +541,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 47,
+      "commits": 46,
       "source": "commit-trailer"
     }
   ],
@@ -551,7 +551,7 @@
       "docs/plans/become-current/OPERATOR-QUEUE.md",
       "docs/verification-ledger.md"
     ],
-    "compiledAt": "2026-09-03T16:16:19.216Z",
-    "templateVersion": "pending"
+    "compiledAt": "2026-09-01",
+    "templateVersion": "v0-interim"
   }
 }

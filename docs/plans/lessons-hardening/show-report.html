@@ -1,0 +1,480 @@
+<!doctype html>
+<!--
+  show-report template v0 (interim) -- SR-02.
+  The hand-written completion-ledger CSS/markup from this repository's own
+  two prior programs, converted to the Mustache grammar so the data contract
+  and the --check/--fix automation are real today. The v0 look is a
+  placeholder: the shipped design comes from arcane-ui's static-export
+  build (SR-05b) and drops into this same file slot in SR-06, at which point
+  the header below records the arcane-ui version and license notice it was
+  compiled from. Nothing here is arcane-ui source; this CSS was authored in
+  this MIT repository.
+  Rendered by: src/modules/show-report/render.ts (mustache). Zero runtime JS.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory</title>
+<style>
+  :root {
+    --bg: #eef0f4;
+    --surface: #ffffff;
+    --ink: #1a1d2b;
+    --ink-soft: #565b72;
+    --ink-faint: #8a8fa3;
+    --accent: #b8802e;
+    --accent-2: #3e7a72;
+    --line: #dadde3;
+    --row-alt: #f6f7f9;
+    --shadow: rgba(26, 29, 43, 0.06);
+    --needs: #a6503a;
+    --needs-bg: #f7e6e1;
+
+    --cat-spell: #b8802e;      --cat-spell-bg: #f6ead6;
+    --cat-feature: #3e7a72;    --cat-feature-bg: #dcede9;
+    --cat-governance: #7a5c8a; --cat-governance-bg: #ece2f0;
+    --cat-decision: #4a5d8a;   --cat-decision-bg: #e0e4f0;
+    --cat-fix: #a6503a;        --cat-fix-bg: #f3ded8;
+    --cat-process: #6b7a3f;    --cat-process-bg: #e6ead9;
+    --cat-docs: #6b7290;       --cat-docs-bg: #e6e7ee;
+    --cat-platform: #39525a;   --cat-platform-bg: #dde4e5;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12141c;
+      --surface: #181b26;
+      --ink: #ede9e0;
+      --ink-soft: #9da3b8;
+      --ink-faint: #6c728a;
+      --accent: #d9a44e;
+      --accent-2: #6fafa5;
+      --line: #2a2e3d;
+      --row-alt: #1d202c;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --needs: #e08a71;
+      --needs-bg: #3a2620;
+
+      --cat-spell: #e0b064;      --cat-spell-bg: #3a2e1a;
+      --cat-feature: #7fc2b8;    --cat-feature-bg: #17322e;
+      --cat-governance: #c19bd4; --cat-governance-bg: #2f2438;
+      --cat-decision: #8fa3d6;   --cat-decision-bg: #202942;
+      --cat-fix: #e08a71;        --cat-fix-bg: #3a2620;
+      --cat-process: #a3b876;    --cat-process-bg: #2a3020;
+      --cat-docs: #adb2c9;       --cat-docs-bg: #262a38;
+      --cat-platform: #7fa3ac;   --cat-platform-bg: #1c2c2f;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12141c;
+    --surface: #181b26;
+    --ink: #ede9e0;
+    --ink-soft: #9da3b8;
+    --ink-faint: #6c728a;
+    --accent: #d9a44e;
+    --accent-2: #6fafa5;
+    --line: #2a2e3d;
+    --row-alt: #1d202c;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --needs: #e08a71;
+    --needs-bg: #3a2620;
+
+    --cat-spell: #e0b064;      --cat-spell-bg: #3a2e1a;
+    --cat-feature: #7fc2b8;    --cat-feature-bg: #17322e;
+    --cat-governance: #c19bd4; --cat-governance-bg: #2f2438;
+    --cat-decision: #8fa3d6;   --cat-decision-bg: #202942;
+    --cat-fix: #e08a71;        --cat-fix-bg: #3a2620;
+    --cat-process: #a3b876;    --cat-process-bg: #2a3020;
+    --cat-docs: #adb2c9;       --cat-docs-bg: #262a38;
+    --cat-platform: #7fa3ac;   --cat-platform-bg: #1c2c2f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+
+  a { color: var(--accent-2); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+  code { font-family: "IBM Plex Mono", monospace; font-size: 0.92em; }
+
+  .page { max-width: 920px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  header.masthead { margin-bottom: 2.25rem; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.6rem;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.85rem);
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .dek { font-size: 1.02rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 1.5rem; }
+
+  dl.stat-rail {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.75rem;
+    margin: 0;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 0.15rem; margin: 0; }
+
+  .stat dd {
+    margin: 0;
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .stat dt { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); }
+
+  .needs-you {
+    margin-top: 1.25rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid var(--needs);
+    background: var(--needs-bg);
+  }
+  .needs-you h2 { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--needs); font-family: "IBM Plex Sans", sans-serif; }
+  .needs-you ul { margin: 0; padding-left: 1.1rem; font-size: 0.88rem; }
+  .needs-you li { margin: 0.2rem 0; }
+  .needs-you.none { border-color: var(--line); background: var(--surface); color: var(--ink-soft); }
+  .needs-you.none h2 { color: var(--accent-2); }
+
+  .outcome { margin: 1rem 0 0; font-size: 0.92rem; color: var(--ink-soft); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin: 1.75rem 0 0.25rem;
+    padding: 1.5rem 0 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--ink-soft); }
+  .swatch { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
+
+  section.phase { margin-top: 2.5rem; }
+
+  .phase-label { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.9rem; }
+  .phase-label h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink);
+    margin: 0;
+    white-space: nowrap;
+  }
+  .phase-label .rule { flex: 1; height: 1px; background: var(--line); }
+  .phase-note { font-size: 0.82rem; color: var(--ink-faint); margin: -0.4rem 0 0.9rem; }
+
+  ol.ledger {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: minmax(180px, 26%) 1fr auto;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    border-top: 1px solid var(--line);
+    align-items: center;
+  }
+  .row:first-child { border-top: none; }
+  .row:nth-child(even) { background: var(--row-alt); }
+
+  .item-title { display: flex; align-items: flex-start; gap: 0.55rem; font-weight: 600; font-size: 0.94rem; color: var(--ink); }
+  .item-title .emoji { font-size: 1.05rem; line-height: 1.3; flex: none; }
+  .item-title a { color: inherit; text-decoration: none; }
+  .item-title a:hover { text-decoration: underline; }
+  .item-id { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; color: var(--ink-faint); margin-left: 0.4rem; font-weight: 500; }
+
+  .item-desc { font-size: 0.87rem; color: var(--ink-soft); max-width: 58ch; }
+  .item-desc.unwritten { color: var(--ink-faint); font-style: italic; }
+
+  .pill {
+    justify-self: end;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.28rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.spell      { color: var(--cat-spell);      background: var(--cat-spell-bg); }
+  .pill.feature    { color: var(--cat-feature);    background: var(--cat-feature-bg); }
+  .pill.governance { color: var(--cat-governance); background: var(--cat-governance-bg); }
+  .pill.decision   { color: var(--cat-decision);   background: var(--cat-decision-bg); }
+  .pill.fix        { color: var(--cat-fix);        background: var(--cat-fix-bg); }
+  .pill.process    { color: var(--cat-process);    background: var(--cat-process-bg); }
+  .pill.docs       { color: var(--cat-docs);       background: var(--cat-docs-bg); }
+  .pill.platform   { color: var(--cat-platform);   background: var(--cat-platform-bg); }
+
+  .parked-list, .cast-list { margin: 0; padding-left: 1.1rem; font-size: 0.87rem; color: var(--ink-soft); }
+  .parked-list li, .cast-list li { margin: 0.3rem 0; }
+  .parked-list strong { color: var(--ink); }
+
+  footer.colophon {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 640px) {
+    .row { grid-template-columns: 1fr; gap: 0.4rem; }
+    .pill { justify-self: start; }
+  }
+
+  @media print {
+    body { background: #fff; color: #000; }
+    .page { padding: 0; max-width: none; }
+    ol.ledger, dl.stat-rail, .needs-you { box-shadow: none; }
+    a { color: inherit; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+</head>
+<body>
+<div class="page">
+<main>
+
+  <header class="masthead">
+    <p class="eyebrow">Show Report</p>
+    <h1>Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory</h1>
+    <p class="dek">complete — 14 of 14 epics shipped</p>
+
+    <dl class="stat-rail">
+      <div class="stat"><dd>14/14</dd><dt>epics shipped</dt></div>
+      <div class="stat"><dd>3</dd><dt>pull requests</dt></div>
+      <div class="stat"><dd>0.33.2 → 0.34.1</dd><dt>version span</dt></div>
+      <div class="stat"><dd>1</dd><dt>ADRs accepted</dt></div>
+    </dl>
+
+    <section class="needs-you none" aria-labelledby="needs-you-heading">
+      <h2 id="needs-you-heading">Nothing needs you</h2>
+    </section>
+
+    <p class="outcome">27 of 27 items dispositioned — 20 routed to an epic, 7 parked</p>
+
+    <ul class="legend" aria-label="Category legend">
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-spell)" aria-hidden="true"></span>New Spell</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-feature)" aria-hidden="true"></span>New Feature</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-governance)" aria-hidden="true"></span>Governance</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-decision)" aria-hidden="true"></span>Decision (ADR)</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-fix)" aria-hidden="true"></span>Bug Fix</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-process)" aria-hidden="true"></span>Process</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-docs)" aria-hidden="true"></span>Docs</li>
+      <li class="legend-item"><span class="swatch" style="background:var(--cat-platform)" aria-hidden="true"></span>Platform</li>
+    </ul>
+  </header>
+
+  <section class="phase" aria-labelledby="wave-1-heading">
+    <div class="phase-label"><h2 id="wave-1-heading">Wave 0 — Bootstrap</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📜</span><span><a href="https://github.com/codemagicianhq/arcane/pull/172">Commit this plan</a><span class="item-id">LH-00</span></span></div>
+        
+        <div class="item-desc">Landed the Lessons Hardening plan itself, along with its delegation record — merged directly by the operator rather than autonomously, activating the standing grant for the rest of the program.</div>
+        <span class="pill process">Process</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🌱</span><span><a href="https://github.com/codemagicianhq/arcane/pull/171">Phase 0 Capture &amp; Drift Fixes</a><span class="item-id">LH-01</span></span></div>
+        
+        <div class="item-desc">Captured this program&#39;s Phase 0 findings as a tracking entry for work that had already shipped — the first 15-row section of a new verification ledger, plus live-drift fixes across TODO.md, the Become Current plan, and two other root docs.</div>
+        <span class="pill process">Process</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-2-heading">
+    <div class="phase-label"><h2 id="wave-2-heading">Wave 1 — Root cause record and test substrate</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🕵️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Root-Cause Analysis Process</a><span class="item-id">LH-02</span></span></div>
+        
+        <div class="item-desc">Wrote this repo&#39;s first formal root-cause analysis, tracing a dozen &quot;we believed X, checked, X was wrong&quot; corrections back to one structural cause — facts written as static text nothing re-derives — and fixed a standing contradiction about where RCA documents are even supposed to live.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🧪</span><span>Test-suite resilience helpers<span class="item-id">LH-03</span></span></div>
+        
+        <div class="item-desc">New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile string-matching patterns across the test suite, with a new lint rule enforcing it going forward — which itself had a bug caught and fixed after it silently matched nothing, missing 8 real violations the original estimate hadn&#39;t found.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📈</span><span>Coverage Thresholds Enforced<span class="item-id">LH-04</span></span></div>
+        
+        <div class="item-desc">CI now actually runs the coverage-threshold check instead of only having it configured and silently unenforced — verified real coverage already cleared the bar (85.53%) before flipping the gate on.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-3-heading">
+    <div class="phase-label"><h2 id="wave-3-heading">Wave 2 — Mechanical gates</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔢</span><span>Derived Counts, Not Hardcoded<span class="item-id">LH-05</span></span></div>
+        
+        <div class="item-desc">Spell, agent, and governance counts throughout the README and tests now compute from the real registry instead of being hand-typed numbers that silently drift as the project grows — which caught a real bug where a profile&#39;s test was passing by coincidence, with a missing file and an extra one canceling out to the same total.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🚧</span><span>Build-Gate Correctness<span class="item-id">LH-06</span></span></div>
+        
+        <div class="item-desc">Fixed two build gates that were quietly wrong: the version-bump check now looks at actually-staged changes instead of running too early to see them, and a mismatched template marker now fails the build instead of shipping malformed content — with a second, previously-unnoticed silent-skip path found and closed along the way.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔗</span><span>Line-citation hygiene<span class="item-id">LH-07</span></span></div>
+        
+        <div class="item-desc">Living docs now cite by a stable anchor or quoted phrase instead of a bare line number that drifts the moment the file is next edited — with a checker watching for it, which found 34 real violations, more than the original estimate, including a second citation shape the first pass had missed entirely.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🕰️</span><span>Shipped-state staleness scan<span class="item-id">LH-08</span></span></div>
+        
+        <div class="item-desc">A new check catches governance content whose &quot;not yet built&quot; or status claims no longer match reality, shipped as an immediately-blocking CI gate rather than a slow warn-mode rollout since the live corpus had zero false positives from the very first run.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📌</span><span>Follow-up promotion gate<span class="item-id">LH-09</span></span></div>
+        
+        <div class="item-desc">A new check flags any &quot;we&#39;ll deal with that later&quot; left in a journal, plan, or the ledger that doesn&#39;t carry a real tracker reference, refined mid-build after a whole-paragraph match missed the exact known case it was built to catch, fixed by scanning a tight window around each deferral phrase instead.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-4-heading">
+    <div class="phase-label"><h2 id="wave-4-heading">Wave 3 — Conduct rules and ADR-gated work</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">📏</span><span>Advisory conduct rules batch<span class="item-id">LH-10</span></span></div>
+        
+        <div class="item-desc">Three new standing rules, each grounded in a real incident from this program itself: never quote a denylisted name even while documenting its removal, treat a zero-match search as evidence about the search rather than the thing, and review a dispatched agent&#39;s actual diff rather than trusting its summary.</div>
+        <span class="pill governance">Governance</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🔐</span><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Local Denylist Source Approved</a><span class="item-id">LH-11</span></span></div>
+        
+        <div class="item-desc">Accepted the design letting the org-token privacy denylist be supplied from a file outside the repo — with a hard structural refusal of any in-repo path — closing the exact gap that let a real client name leak twice with no local way to catch it before pushing; the operator had already decided the open questions live, so this shipped as Accepted rather than another Proposed round.</div>
+        <span class="pill decision">Decision (ADR)</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🗝️</span><span>Local Denylist, Shipped<span class="item-id">LH-12</span></span></div>
+        
+        <div class="item-desc">Built the local org-token design for real: a pre-commit scan of staged files plus a matching <code>--terms-file</code> flag on <code>spell ward</code>, so the leak scanner never needs a name typed into shell history — the test suite itself caught two real bugs along the way, including one that would have passed for the wrong reason had a fixture not been checked directly.</div>
+        <span class="pill feature">New Feature</span>
+      </li>
+    </ol>
+  </section>
+  <section class="phase" aria-labelledby="wave-5-heading">
+    <div class="phase-label"><h2 id="wave-5-heading">Wave 4 — Close</h2><span class="rule" aria-hidden="true"></span></div>
+    
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span class="emoji" aria-hidden="true">🎯</span><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Program Close-Out Audit</a><span class="item-id">LH-13</span></span></div>
+        
+        <div class="item-desc">Audited all seven Definition-of-Done criteria directly against the live repository rather than assuming any of them, catching and fixing a stale status line in the operator&#39;s own queue and a bare citation the audit&#39;s own ledger entry had just introduced — then ran a real drift check and closed the program GO with zero Critical or High findings.</div>
+        <span class="pill process">Process</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="phase" aria-labelledby="corrections-heading">
+    <div class="phase-label"><h2 id="corrections-heading">Calibration</h2><span class="rule" aria-hidden="true"></span></div>
+    <p class="phase-note">7 claims checked · 7 corrected · 0 unverifiable. Lessons Hardening corrections logged in docs/verification-ledger.md</p>
+    <ol class="ledger">
+      <li class="row">
+        <div class="item-title"><span>TODO.md&#39;s new ARC-014 citation, copied from ARC-031&#39;s own &quot;Related&quot; line, cor...</span></div>
+        
+        <div class="item-desc">ARC-014&#39;s real title is &quot;Spell Authoring Standards: A Quality Rubric for Spell Prompts&quot; — unrelated to org-tokens. Pre-existing bug in ARC-031 itself, not introduced by LH-11. Fixed the new ADR to use plain prose instead of the copied link; routed the pre-existing bug as its own TODO.md item (root ADR number not yet identified).</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span>resolvePrivateTokens()&#39;s test suite passes after converting the function to a...</span></div>
+        
+        <div class="item-desc">Typecheck stayed green, but two un-awaited call sites in test/org-token-lint.test.ts failed at runtime (Received: Promise {}; TypeError: tokens.map is not a function). Fixed both call sites with await.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+      <li class="row">
+        <div class="item-title"><span>The new &quot;refuses a file inside a real repository&quot; test exercises the in-repo ...</span></div>
+        
+        <div class="item-desc">resolvePrivateTokens() had no cwd parameter yet, so the check silently ran against process.cwd() (the real checkout) rather than the fixture — the test passed without exercising the refusal logic at all. Added an optional cwd parameter threaded through to readLocalTokenFile; test now passes the fixture dir explicitly.</div>
+        <span class="pill fix">Bug Fix</span>
+      </li>
+    </ol>
+  </section>
+
+  <section class="phase" aria-labelledby="parked-heading">
+    <div class="phase-label"><h2 id="parked-heading">Parked — needs operator</h2><span class="rule" aria-hidden="true"></span></div>
+    <ul class="parked-list">
+      <li><strong>Pattern 6</strong> — already codified in spell-close-session</li>
+      <li><strong>Pattern 12</strong> — working as intended.</li>
+      <li><strong>git cherry patch-id false negatives</strong> — fully solved (git-conventions.md → Content-Verified</li>
+      <li><strong>IDEAS.md&#39;s 2026-08-15 doc-ID-resolver remainder</strong> — zero violations found; LH-07&#39;s validator is</li>
+      <li><strong>TODO.md&#39;s tracking-mode resolution-order inconsistency</strong> — an operator design decision, already</li>
+      <li><strong>Become Current&#39;s Q-009/Q-010</strong> — cross-repo and distribution strategy, outside this program.</li>
+      <li><strong>Pattern 8 beyond LH-10&#39;s advisory rule</strong> — no subagent registry ships in this repo; nothing to gate</li>
+      <li><strong>FEEDBACK.md</strong> — not created. This repo *is* Arcane; spell-feedback.prompt.md&#39;s own maintainer-side</li>
+    </ul>
+  </section>
+
+  <section class="phase" aria-labelledby="cast-heading">
+    <div class="phase-label"><h2 id="cast-heading">Cast</h2><span class="rule" aria-hidden="true"></span></div>
+    <p class="phase-note">Self-reported from commit trailers in this program's version window.</p>
+    <ul class="cast-list">
+      <li>claude — 21 commits</li>
+      <li>Claude Code — 1 commits</li>
+    </ul>
+  </section>
+
+</main>
+
+  <footer class="colophon">
+    Compiled 2026-09-02 from <code>docs/plans/lessons-hardening/PLAN.md, docs/plans/lessons-hardening/OPERATOR-QUEUE.md, docs/verification-ledger.md</code>. Program <code>lessons-hardening</code>, status <code>complete</code>, <code>0.33.2</code> → <code>0.34.1</code>. Template <code>v0-interim</code>. Every stat above is derived, never hand-typed.
+  </footer>
+
+</div>
+</body>
+</html>
