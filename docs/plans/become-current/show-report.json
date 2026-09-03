@@ -1,0 +1,557 @@
+{
+  "schemaVersion": 1,
+  "program": {
+    "id": "become-current",
+    "slug": "become-current",
+    "title": "Become Current — Master Execution Plan",
+    "status": "complete",
+    "baseline": "fdf853e (main)",
+    "started": "2026-08-30",
+    "completed": "2026-09-01",
+    "versionSpan": {
+      "from": "0.22.1",
+      "to": "0.33.2"
+    }
+  },
+  "masthead": {
+    "eyebrow": "Show Report",
+    "title": "Become Current — Master Execution Plan",
+    "dek": "complete — 33 of 33 epics shipped"
+  },
+  "stats": [
+    {
+      "id": "epics",
+      "value": "33/33",
+      "label": "epics shipped",
+      "derived": true
+    },
+    {
+      "id": "prs",
+      "value": 37,
+      "label": "pull requests",
+      "derived": true
+    },
+    {
+      "id": "version-span",
+      "value": "0.22.1 → 0.33.2",
+      "label": "version span",
+      "derived": true
+    },
+    {
+      "id": "adrs",
+      "value": 5,
+      "label": "ADRs accepted",
+      "derived": true
+    }
+  ],
+  "outcome": "23 of 23 items dispositioned — 20 routed to an epic, 3 parked",
+  "needsYou": [
+    {
+      "id": "Q-009",
+      "title": "Point `arcane-website` at the new `docs/spell-catalog.json` artifact",
+      "reason": "wiring the website repo to fetch and render this file (e.g. via the raw GitHub URL for"
+    },
+    {
+      "id": "Q-010",
+      "title": "Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions",
+      "reason": "Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions"
+    },
+    {
+      "id": "Q-011",
+      "title": "Phase 5 DoD closure: the 7 items with no forcing function, consolidated",
+      "reason": "PLAN.md's Definition of Done criterion 2 requires `TODO.md` to carry no unchecked item"
+    }
+  ],
+  "sections": [
+    {
+      "id": "wave-1",
+      "title": "Wave 0 — Bootstrap",
+      "rows": [
+        {
+          "id": "BC-00",
+          "title": "Commit this plan",
+          "description": "Landed the 33-epic execution plan itself, activating the standing autonomy grant that let the rest of the program run session after session without needing per-step approval.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/86",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/86"
+          ],
+          "glyph": "📜"
+        }
+      ]
+    },
+    {
+      "id": "wave-2",
+      "title": "Wave 1 — Platform & release integrity",
+      "rows": [
+        {
+          "id": "BC-01",
+          "title": "Review-Round Merge Gate",
+          "description": "Auto-merge now waits for a dedicated CI check confirming no unresolved change-request review remains on a pull request, closing the exact gap that had let a defective release ship before.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "href": "https://github.com/codemagicianhq/arcane/pull/88",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/88"
+          ],
+          "glyph": "🔀"
+        },
+        {
+          "id": "BC-02",
+          "title": "Build-Output Pruning",
+          "description": "The release build now deletes files that were removed from source instead of letting them linger in the shipped package forever, and a related bug that could silently corrupt this repo's own build during testing was found and fixed alongside it.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "href": "https://github.com/codemagicianhq/arcane/pull/90",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/90"
+          ],
+          "glyph": "🧹"
+        },
+        {
+          "id": "BC-03",
+          "title": "Content-Verified Branch Cleanup",
+          "description": "Established a safe standard procedure for deleting old branches — checking their actual content, not just merge history — and used it to clear three branches confirmed fully landed, flagging the rest for the operator to decide.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "href": "https://github.com/codemagicianhq/arcane/pull/92",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/92"
+          ],
+          "glyph": "🌿"
+        },
+        {
+          "id": "BC-04",
+          "title": "Agent Roster Integrity",
+          "description": "Found and fixed an agent template that had been silently shipping broken placeholder text, and added an automated check plus a non-zero exit on sync failures so a corrupted roster file can never ship unnoticed again.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "href": "https://github.com/codemagicianhq/arcane/pull/45",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/94",
+            "https://github.com/codemagicianhq/arcane/pull/45"
+          ],
+          "glyph": "🎭"
+        }
+      ]
+    },
+    {
+      "id": "wave-3",
+      "title": "Wave 2 — Ledger, status & doc-link hygiene",
+      "rows": [
+        {
+          "id": "BC-05",
+          "title": "Ledger & status reconciliation",
+          "description": "Reconciled stale status markers across TODO.md, feature PRDs, and intake records with verified PR references instead of guesses, and corrected a feature doc that still falsely claimed nothing had shipped despite real work landing.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/21",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/96",
+            "https://github.com/codemagicianhq/arcane/pull/19",
+            "https://github.com/codemagicianhq/arcane/pull/20",
+            "https://github.com/codemagicianhq/arcane/pull/21"
+          ],
+          "glyph": "📒"
+        },
+        {
+          "id": "BC-06",
+          "title": "Doc-ID link integrity",
+          "description": "Extended the documentation-link checker to catch references that look like they stay within the project but actually point across repositories, and fixed four real instances it found — including two introduced earlier the same night.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "href": "https://github.com/codemagicianhq/arcane/pull/98",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/98"
+          ],
+          "glyph": "🔗"
+        },
+        {
+          "id": "BC-07",
+          "title": "Fresh-session instruction probe",
+          "description": "Verified a brand-new session really does inherit this repo's working protocol automatically, confirmed the agent roster still doesn't exist, and fixed a stale line-number citation found live during the check.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/100",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/100"
+          ],
+          "glyph": "🌅"
+        },
+        {
+          "id": "BC-08",
+          "title": "Friendlier Unknown-Command Message",
+          "description": "Typing an unrecognized CLI command now prints guidance and exits with an error instead of silently falling through to the welcome screen, with its command list generated live instead of a hardcoded, already-stale count.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "href": "https://github.com/codemagicianhq/arcane/pull/102",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/102"
+          ],
+          "glyph": "💬"
+        },
+        {
+          "id": "BC-09",
+          "title": "GitHub as a First-Class Tracker",
+          "description": "GitHub Issues is now a fully supported tracking provider alongside Azure DevOps and Jira, with real issue create/view/close support wired into five spells instead of being treated as an unsupported fallback.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/104",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/104"
+          ],
+          "glyph": "🐙"
+        }
+      ]
+    },
+    {
+      "id": "wave-4",
+      "title": "Wave 3 — ADR drafts (draft → PR → park acceptance → continue)",
+      "rows": [
+        {
+          "id": "BC-10",
+          "title": "Secret-Detection Design",
+          "description": "Drafted the design for catching leaked credentials and org names before they ship — a pre-commit scan plus a repository-wide CI backstop — correcting two inaccurate premises about what scanning already existed along the way.",
+          "descriptionState": "authored",
+          "category": "decision",
+          "href": "https://github.com/codemagicianhq/arcane/pull/106",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/106"
+          ],
+          "glyph": "🔍"
+        },
+        {
+          "id": "BC-11",
+          "title": "Vendor-Neutral Customization Design",
+          "description": "Drafted the design for letting a hand-edited governance file survive a future update instead of being silently overwritten, after a research spike found the file assumed to need vendor-neutral treatment was the wrong one.",
+          "descriptionState": "authored",
+          "category": "decision",
+          "href": "https://github.com/codemagicianhq/arcane/pull/108",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/108"
+          ],
+          "glyph": "🎨"
+        },
+        {
+          "id": "BC-12",
+          "title": "Spell-Compiler Design",
+          "description": "Drafted the design for generating each spell's Claude Code stub straight from its real source file instead of hand-maintaining both, deliberately scoped to build time only — and found the \"66 hand-maintained files\" premise was already stale by the time this ran.",
+          "descriptionState": "authored",
+          "category": "decision",
+          "href": "https://github.com/codemagicianhq/arcane/pull/110",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/110"
+          ],
+          "glyph": "⚙️"
+        },
+        {
+          "id": "BC-13",
+          "title": "Decision Acceptance Brief",
+          "description": "Prepared a full accept/revise/reject brief for the long-pending ARC-029 decision, verifying the incident that motivated it directly against the original record rather than relaying a compressed summary, and flagged that accepting it won't by itself schedule its own follow-up work.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/112",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/112"
+          ],
+          "glyph": "📋"
+        }
+      ]
+    },
+    {
+      "id": "wave-5",
+      "title": "Wave 4 — Feature epics (serial `chain` builds)",
+      "rows": [
+        {
+          "id": "BC-14",
+          "title": "Generated State Diagrams",
+          "description": "Spells that already compute their own state — version drift, branch/PR topology, review flow — now render it as a real generated diagram instead of prose, rolled out across the CLI and multiple spells over six sequential releases.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/123",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/114",
+            "https://github.com/codemagicianhq/arcane/pull/115",
+            "https://github.com/codemagicianhq/arcane/pull/117",
+            "https://github.com/codemagicianhq/arcane/pull/119",
+            "https://github.com/codemagicianhq/arcane/pull/121",
+            "https://github.com/codemagicianhq/arcane/pull/123"
+          ],
+          "glyph": "📊"
+        },
+        {
+          "id": "BC-15",
+          "title": "Session-Handoff Durability",
+          "description": "Work named in a session handoff is now also registered somewhere durable, so a single overwrite can no longer lose it — and a real bug in the fresh-install scaffold that could falsely trigger the new detection was found and fixed along the way.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/125",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/125"
+          ],
+          "glyph": "🤝"
+        },
+        {
+          "id": "BC-16",
+          "title": "Spell Routing Layer",
+          "description": "Every AI client now sees a routing table on load telling it which spell to invoke for common workflows, backed by proactive-trigger descriptions on every spell command and a new standing lifecycle rule — a fourth, hook-based enforcement layer was deliberately deferred.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/127",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/127"
+          ],
+          "glyph": "🧭"
+        },
+        {
+          "id": "BC-17",
+          "title": "Doctor Platform-Policy Check",
+          "description": "`spell doctor` now checks a repo's live branch-protection rules against what governance says they should be, verified against this repo's own real GitHub Rulesets — the Azure DevOps path is implemented but not live-tested, since no ADO remote exists to check it against.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/129",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/129"
+          ],
+          "glyph": "🛡️"
+        },
+        {
+          "id": "BC-18",
+          "title": "New Spell: Sync Pull Request",
+          "description": "A new dedicated spell handles the recovery path when the mandatory pre-PR rebase hits a real conflict, covering clean syncs, conflicting rebases, stale-lease rejection, and ambiguous handoffs, with both `spell-create-pull-request` and `spell-ship` now routing conflicts to it.",
+          "descriptionState": "authored",
+          "category": "spell",
+          "href": "https://github.com/codemagicianhq/arcane/pull/131",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/131"
+          ],
+          "glyph": "🔄"
+        },
+        {
+          "id": "BC-19",
+          "title": "Delegation UX (solo-operator mode)",
+          "description": "Autonomous self-approval permissions are now recorded explicitly in a per-repo file, listable via `spell doctor` and revocable by editing it, replacing an implicit assumption — this program's own standing authority grant became the mechanism's first real record.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/133",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/133"
+          ],
+          "glyph": "👤"
+        },
+        {
+          "id": "BC-20",
+          "title": "Full-Cycle Coordination Fixes",
+          "description": "Closed real coordination gaps in the end-to-end feature spell — migration-number collisions, missing real-data migration guidance, and honest documentation that no actual agent roster ships despite the delegation language — after confirming one of the three planned fixes had already shipped separately and didn't need repeating.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "href": "https://github.com/codemagicianhq/arcane/pull/135",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/135"
+          ],
+          "glyph": "🔧"
+        },
+        {
+          "id": "BC-21",
+          "title": "New Spells: Ward & Scry",
+          "description": "Two new spells shipped: `ward` scans a repo for leaked third-party names and trademarks, and `scry` clears a brand-new name for use — checking both the outside world and this repo's own history for collisions — before you commit to it.",
+          "descriptionState": "authored",
+          "category": "spell",
+          "href": "https://github.com/codemagicianhq/arcane/pull/138",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/137",
+            "https://github.com/codemagicianhq/arcane/pull/138"
+          ],
+          "glyph": "🕵️"
+        },
+        {
+          "id": "BC-22",
+          "title": "MCP resilience",
+          "description": "A new standing rule: one abnormal MCP tool failure now marks that server down for the rest of the session instead of retrying blindly, backed by an optional `.mcp.json` scaffold and a new `spell doctor` check for per-server timeouts.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "refs": [],
+          "glyph": "🔌"
+        },
+        {
+          "id": "BC-23",
+          "title": "Registry-driven spell catalog",
+          "description": "The spell catalog the README lists is now generated directly from the source registry instead of hand-maintained, catching a real drift where the README undercounted the actual 38 shipped spells — with a new CI check guarding against it drifting again.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "📚"
+        },
+        {
+          "id": "BC-24",
+          "title": "Research-doc capability",
+          "description": "Research findings and technical spikes now have an official home and naming convention instead of being scattered ad hoc, reusing the existing `spell-document` spell rather than building a redundant dedicated one.",
+          "descriptionState": "authored",
+          "category": "docs",
+          "refs": [],
+          "glyph": "🔬"
+        },
+        {
+          "id": "BC-25",
+          "title": "New Spell: EAS Store Deploy",
+          "description": "A new dedicated spell ships an app to the App Store and Google Play via Expo Application Services, backed by a new store-specific standards doc covering the durable facts that had no existing home.",
+          "descriptionState": "authored",
+          "category": "spell",
+          "refs": [],
+          "glyph": "📱"
+        },
+        {
+          "id": "BC-26",
+          "title": "Compliance standards + spell",
+          "description": "A new spell runs a read-only compliance self-assessment against GDPR, CCPA, SOC 2, and HIPAA — backed by a new standards doc that is explicit it's not legal advice — and stops at reporting findings rather than attempting to fix them automatically.",
+          "descriptionState": "authored",
+          "category": "spell",
+          "refs": [],
+          "glyph": "✅"
+        },
+        {
+          "id": "BC-27",
+          "title": "Governance tail batch",
+          "description": "A batch of governance fixes: a new rule requiring a diff before deleting a \"duplicate,\" broadened leak-scan guidance to cover personal identifiers, a new spell that captures verification claims and corrections as a structured record, and a commit-trailer model that now omits an agent's role rather than guessing it when the roster can't confirm it.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "refs": [],
+          "glyph": "🏛️"
+        },
+        {
+          "id": "BC-28",
+          "title": "Delivery-Channels Research",
+          "description": "A research spike ran two live smoke tests on this machine — confirming that npm's own `node_modules` traversal picks up prompt files, and that a symlink-like junction can be followed — after finding the epic's own starting description had actually mischaracterized what the idea was asking about.",
+          "descriptionState": "authored",
+          "category": "process",
+          "refs": [],
+          "glyph": "📡"
+        }
+      ]
+    },
+    {
+      "id": "wave-6",
+      "title": "Wave 5 — Unparked implementations & the big backfill",
+      "rows": [
+        {
+          "id": "BC-29",
+          "title": "Enforcement-Mode Labeling",
+          "description": "Every one of the 25 governance docs now states plainly whether each of its rules is actually enforced by a check or just advisory prose, closing a gap where only one rule in the whole repo carried that label before — the pass also surfaced several pre-existing doc contradictions, like a rule requiring \"3 issues minimum\" that the actual review spell no longer requires.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "href": "https://github.com/codemagicianhq/arcane/pull/154",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/150",
+            "https://github.com/codemagicianhq/arcane/pull/151",
+            "https://github.com/codemagicianhq/arcane/pull/152",
+            "https://github.com/codemagicianhq/arcane/pull/153",
+            "https://github.com/codemagicianhq/arcane/pull/154"
+          ],
+          "glyph": "🏷️"
+        },
+        {
+          "id": "BC-30",
+          "title": "Secret detection implementation",
+          "description": "Built the secret-detection design for real: a pre-commit hook and a repository-wide CI backstop now both scan for leaked credentials and org names using one shared rule set, installed automatically by `spell init` — along the way, fixing a real latent crash where a malformed config file could take down the whole `spell doctor` run.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🔒"
+        },
+        {
+          "id": "BC-31",
+          "title": "Customization implementation",
+          "description": "`spell update` no longer blindly overwrites a governance file you've hand-edited — it now three-way-merges your changes with the new version and flags real conflicts — and the CI/CD standards doc split into a vendor-neutral core plus an Azure DevOps-specific profile so the same pattern can support other platforms later.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🧩"
+        },
+        {
+          "id": "BC-32",
+          "title": "Spell-compiler implementation",
+          "description": "Every Claude Code spell stub now generates directly from its real source file instead of being hand-maintained separately, catching and fixing two real title-drift bugs in the process, plus a starter shared-fragment mechanism for text repeated across a handful of spells.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🪄"
+        }
+      ]
+    }
+  ],
+  "corrections": {
+    "checked": 15,
+    "corrected": 13,
+    "unverifiable": 1,
+    "scopeNote": "Become Current corrections logged in docs/verification-ledger.md",
+    "highlights": [
+      {
+        "id": "correction-1",
+        "title": "TODO.md: \"R3 (lifecycle-operations rule) is genuinely still open\"",
+        "description": "The first grep was case-sensitive and missed rule 22's capitalized \"Lifecycle operations run through their spell…\" — R3 was already shipped. TODO item closed in full; error named on the record.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      },
+      {
+        "id": "correction-2",
+        "title": "ARC-039 (I15's premise): \"36 (not 33) spell command stubs exist\"",
+        "description": "41, not 36 — the count grew again in the day between the ADR's drafting and its implementation.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      },
+      {
+        "id": "correction-3",
+        "title": "ARC-039 decision 2: \"5 files duplicate a resolution-order paragraph, worded a...",
+        "description": "Only a bare 2-line tracking_mode/external_provider enum is byte-identical; spell-scope skips the .arcane.json source entirely that the other four check — the surrounding logic had already diverged. Extracted only the genuinely-shared 2 lines.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      }
+    ]
+  },
+  "parked": [
+    {
+      "title": "EF-18 / spell-intake (T3)",
+      "reason": "A genuine independent batch-002 submission. The PRD's own Won't-Have forbids implementation before it. When it exists, run the manual intake per MH-01..08, then this becomes a chain epic."
+    },
+    {
+      "title": "Naming reword (T21)",
+      "reason": "Marked \"owner's call\": approve \"boring\" → \"plainer/clearer\" in both trees, or veto. One word from you unparks a 10-minute PR."
+    },
+    {
+      "title": "Prospero insignia lore (T17)",
+      "reason": "Your content: the emblem's description/story for prospero-image-prompt.md + Arcanos Codex."
+    },
+    {
+      "title": "Website copy \"the Arcanos\" (T19)",
+      "reason": "Cross-repo (arcane-website): change \"SUMMON THE ROSTER\" headline there; not executable from this repo."
+    },
+    {
+      "title": "ADR acceptances",
+      "reason": "Review each Proposed ADR PR; accept/revise/reject. Dependent epics (BC-30/31/32) unpark on acceptance."
+    },
+    {
+      "title": "Everything in OPERATOR-QUEUE.md",
+      "reason": "Platform mutations, content-holding branch decisions, auto-merge re-enable."
+    }
+  ],
+  "cast": [
+    {
+      "name": "claude",
+      "commits": 47,
+      "source": "commit-trailer"
+    }
+  ],
+  "colophon": {
+    "sources": [
+      "docs/plans/become-current/PLAN.md",
+      "docs/plans/become-current/OPERATOR-QUEUE.md",
+      "docs/verification-ledger.md"
+    ],
+    "compiledAt": "2026-09-03T16:16:19.216Z",
+    "templateVersion": "pending"
+  }
+}

@@ -136,6 +136,10 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   2026-08-30 (`6021ca7`). Checkbox was left unticked after merge — corrected 2026-08-31 while
   starting BC-01.
 
+  **Report:** Landed the 33-epic execution plan itself, activating the standing autonomy grant
+  that let the rest of the program run session after session without needing per-step approval. ·
+  category: process · glyph: 📜
+
 ### Wave 1 — Platform & release integrity
 
 - [x] **BC-01 — ARC-035 review-round merge gate.** Sources: TODO.md:42 · EF-36 · DECISIONS.md:1493.
@@ -151,6 +155,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (the check reporting green on a live PR) is satisfied; ruleset-wiring payload prepared in
   `docs/plans/become-current/q-001-ruleset-{before,after}.json`, application still queued to the
   operator (platform-settings mutation, outside the delegation grant).
+
+  title: Review-Round Merge Gate
+  **Report:** Auto-merge now waits for a dedicated CI check confirming no unresolved
+  change-request review remains on a pull request, closing the exact gap that had let a defective
+  release ship before. · category: governance · glyph: 🔀
 - [x] **BC-02 — `dist/assets` pruning.** Sources: TODO.md:88 (T9, line renumbered by BC-01's edits —
   corrected here). Route: direct. Size S. Bump: no.
   Prune `dist/assets/` before copy (or temp-dir-and-swap) in `scripts/copy-assets.ts` (`copyDir`
@@ -162,6 +171,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (`main()` called unconditionally at module scope, so importing the new exports for testing
   silently rebuilt this repo's real `dist/assets/` and raced `test/init.test.ts`'s built-CLI
   tests) was found and fixed in the same PR — see the TODO.md entry for the full detail.
+
+  title: Build-Output Pruning
+  **Report:** The release build now deletes files that were removed from source instead of
+  letting them linger in the shipped package forever, and a related bug that could silently
+  corrupt this repo's own build during testing was found and fixed alongside it. · category: fix ·
+  glyph: 🧹
 - [x] **BC-03 — Branch hygiene: content-verified sweep.** Sources: TODO.md:94-101 (T12 a+b; c → BC-17,
   line renumbered by BC-01/02's edits — corrected here). Route: direct. Size M. Bump: yes (close-session
   prompt). Implement content-level verification (`git cherry` + diff, never ancestry alone) as an
@@ -177,6 +192,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   recommendations for the remaining 4 branches appended to
   [OPERATOR-QUEUE.md Q-003](OPERATOR-QUEUE.md#q-003--four-content-holding-local-branches-land-or-abandon),
   including a newly-found 6th instance of EF-34-class fixture contamination.
+
+  title: Content-Verified Branch Cleanup
+  **Report:** Established a safe standard procedure for deleting old branches — checking their
+  actual content, not just merge history — and used it to clear three branches confirmed fully
+  landed, flagging the rest for the operator to decide. · category: governance · glyph: 🌿
 - [x] **BC-04 — Roster integrity batch (incl. ARC-012).** Sources: TODO.md:12 (T1), :107 (T14),
   :149 (T16), :161 (T20/ARC-012) — lines renumbered by BC-01/02/03's edits, corrected here.
   Route: direct. Size M. Bump: **yes** (one PR, one bump).
@@ -190,13 +210,18 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   (`5a8ecd6`), `v0.22.4`. All four shipped. (a) `SyncResult.hasUnresolvedRoles` + non-zero exit
   in both CLI commands. (b) `test/agent-roster-parity.test.ts` — **found and fixed real, live drift**:
   `mercurio.agent.md` had shipped the literal `[object Object]` defect since before the mobile-dev
-  bug's own fix (PR #45), invisible until this test existed. (c) `epithet` landed on the roster entry
+  bug's own fix ([PR #45](https://github.com/codemagicianhq/arcane/pull/45)), invisible until this test existed. (c) `epithet` landed on the roster entry
   (schema v2), not the agent YAML — a deliberate deviation from this line's own phrasing, since an
   epithet is naming-strategy-bound ("the Archmage" is Merlin's, not "architecture-lead"'s) and putting
   it on the definition would leak Arcanos flavor into the deliberately epithet-less `generic` strategy.
   (d) documented in `naming-conventions.md`'s new Agent Definition Schema section. A pre-existing,
   unrelated CI race (`test/init.test.ts`'s redundant build `beforeAll` colliding with other test
   files) surfaced while shipping this PR and was fixed in the same PR — see TODO.md's new entry.
+
+  title: Agent Roster Integrity
+  **Report:** Found and fixed an agent template that had been silently shipping broken
+  placeholder text, and added an automated check plus a non-zero exit on sync failures so a
+  corrupted roster file can never ship unnoticed again. · category: fix · glyph: 🎭
 
 ### Wave 2 — Ledger, status & doc-link hygiene
 
@@ -215,12 +240,16 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   entry tracking ARC-029 (Proposed since EF-34, currently tracked nowhere).
   **Done:** [PR #96](https://github.com/codemagicianhq/arcane/pull/96) merged 2026-08-31 via rebase
   (`f99e49c`). All seven shipped. (a) found real PR references via `gh pr list --search <sha>`
-  against actual merge commits (PR #19/#20/#21) rather than inventing them — a prior session had
+  against actual merge commits ([PR #19](https://github.com/codemagicianhq/arcane/pull/19)/[PR #20](https://github.com/codemagicianhq/arcane/pull/20)/[PR #21](https://github.com/codemagicianhq/arcane/pull/21)) rather than inventing them — a prior session had
   explicitly declined to guess here; also found EF-24's "shipped" status means the ADR text shipped,
   not that ARC-023's own retroactive-classification completion bar is met (it isn't — that's BC-29).
   (b) corrected; the four follow-on questions are new TODO items. (c)/(d) corrected. (e) re-pointed
   rather than fabricated an intake stub for a citation with no genuine record. (f)/(g) done.
   Bump: no, confirmed by `check:version-bump`.
+
+  **Report:** Reconciled stale status markers across TODO.md, feature PRDs, and intake records
+  with verified PR references instead of guesses, and corrected a feature doc that still falsely
+  claimed nothing had shipped despite real work landing. · category: process · glyph: 📒
 - [x] **BC-06 — Doc-ID link integrity.** Sources: IDEAS.md:17 (I9), :18 (I10), :19 (I11), :25 (I16)
   + T28's `src/assets` citer. Route: direct. Size M. Bump: **yes**.
   **Done:** [PR #98](https://github.com/codemagicianhq/arcane/pull/98) merged 2026-08-31 via rebase
@@ -242,6 +271,10 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   in IDEAS.md rather than `promoted`, with the remainder noted inline. One new gap found and filed
   rather than fixed here (scope discipline): the org-token portability scan only walks
   `.github/prompts/`, not `.github/instructions/`, though both ship identically — see TODO.md.
+
+  **Report:** Extended the documentation-link checker to catch references that look like they
+  stay within the project but actually point across repositories, and fixed four real instances it
+  found — including two introduced earlier the same night. · category: governance · glyph: 🔗
 - [x] **BC-07 — Fresh-session instruction probe.** Sources: TODO.md:46 (T6). Route: process. Size S.
   **Done:** [PR #100](https://github.com/codemagicianhq/arcane/pull/100) merged 2026-08-31 via rebase
   (`188d4fb`). Bump: n/a, no `src/assets` changes. All three facts confirmed from checked evidence:
@@ -252,12 +285,21 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   search targeted the wrong text shape and nearly reported the example as removed). Full narrative in
   [journal/2026-08-31-bc07-fresh-session-probe.md](../../../journal/2026-08-31-bc07-fresh-session-probe.md).
   New IDEAS.md idea filed for the generalizable line-number-citation-drift problem, not fixed here.
+
+  **Report:** Verified a brand-new session really does inherit this repo's working protocol
+  automatically, confirmed the agent roster still doesn't exist, and fixed a stale line-number
+  citation found live during the check. · category: process · glyph: 🌅
 - [x] **BC-08 — CLI unknown-command guidance.** Sources: IDEAS.md:14 (I6). Route: direct. Size S.
   Bump: no. **Done:** [PR #102](https://github.com/codemagicianhq/arcane/pull/102) merged 2026-08-31
   via rebase (`eab0a3f`). `spell <unrecognized>` now prints guidance + exits 1 instead of silently
   falling through to the welcome screen at exit 0 (confirmed live before the fix). Command list
   generated from `program.commands` rather than the idea's hardcoded "6" — already stale by the time
   this ran (8 real commands today; `unblock-push`/`agents` shipped after that count was written).
+
+  title: Friendlier Unknown-Command Message
+  **Report:** Typing an unrecognized CLI command now prints guidance and exits with an error
+  instead of silently falling through to the welcome screen, with its command list generated live
+  instead of a hardcoded, already-stale count. · category: fix · glyph: 💬
 - [x] **BC-09 — GitHub as first-class `external_provider`.** Sources: IDEAS.md:10 (I2). Route:
   direct. Size M. Bump: yes (type union + init wording + spell guidance). Extends the ARC-032 union;
   keep `readManifest` rejection behavior consistent.
@@ -268,6 +310,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   full-cycle) plus a new development-methodology.md GitHub Issues Conventions section — recorded as
   an ARC-032 implementation note distinguishing the two rather than presenting this as a plain
   revert. `readManifest`'s rejection behavior unchanged in shape, only the accepted set grew.
+
+  title: GitHub as a First-Class Tracker
+  **Report:** GitHub Issues is now a fully supported tracking provider alongside Azure DevOps and
+  Jira, with real issue create/view/close support wired into five spells instead of being treated
+  as an unsupported fallback. · category: feature · glyph: 🐙
 
 ### Wave 3 — ADR drafts (draft → PR → park acceptance → continue)
 
@@ -285,6 +332,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   already shipped, not still unbuilt as this line above implied. The false-positive fixture is
   `test/copy-assets.test.ts:74`, not `org-token-lint.test.ts` as this line above also named —
   corrected in the ADR itself. Bump: n/a, no `src/assets` changes.
+
+  title: Secret-Detection Design
+  **Report:** Drafted the design for catching leaked credentials and org names before they ship —
+  a pre-commit scan plus a repository-wide CI backstop — correcting two inaccurate premises about
+  what scanning already existed along the way. · category: decision · glyph: 🔍
 - [x] **BC-11 — Customization & vendor-neutrality spike + ADR.** Sources: TODO.md:158 (T22) ·
   ARC-020 (Proposed; broad schema open) · IDEAS.md:22 (I14 prior art: copier 3-way merge,
   `ng update` schematics; per-file content hashes prerequisite). Route: adr (research spike first,
@@ -298,6 +350,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   current instance is `cicd-standards.md`) and corrected OPERATOR-QUEUE.md Q-005's standing assumption
   that this ADR would subsume ARC-020's remainder (it doesn't — different axis: data fields vs.
   content architecture). Bump: n/a, no `src/assets` changes.
+
+  title: Vendor-Neutral Customization Design
+  **Report:** Drafted the design for letting a hand-edited governance file survive a future update
+  instead of being silently overwritten, after a research spike found the file assumed to need
+  vendor-neutral treatment was the wrong one. · category: decision · glyph: 🎨
 - [x] **BC-12 — Spell-compiler ADR.** Sources: IDEAS.md:13 (I5), :23 (I15 — 66 hand-maintained
   files → 33 + generator; ARC-027 doesn't cover commands-vs-prompts drift). Route: adr. Size M.
   Must resolve the D2 Gold vanilla-repo tension I5 names. Implementation = BC-32.
@@ -310,6 +367,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   corrected: verified all 36 `.claude/commands/` files are already thin `@`-include shims, so the real
   gap was narrower than described (stub generation, not body-drift de-duplication). All three
   ADR-drafting epics (BC-10/BC-11/BC-12) are now done. Bump: n/a, no `src/assets` changes.
+
+  title: Spell-Compiler Design
+  **Report:** Drafted the design for generating each spell's Claude Code stub straight from its
+  real source file instead of hand-maintaining both, deliberately scoped to build time only — and
+  found the "66 hand-maintained files" premise was already stale by the time this ran. · category:
+  decision · glyph: ⚙️
 - [x] **BC-13 — ARC-029 acceptance packet.** Sources: DECISIONS.md:1150 (Proposed, untracked).
   **Done:** [PR #112](https://github.com/codemagicianhq/arcane/pull/112) merged 2026-08-31 via rebase
   (`feaca4a`). Full acceptance brief now at OPERATOR-QUEUE.md Q-004, replacing its placeholder.
@@ -319,6 +382,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   changes.
   Route: process. Size S. Prepare a one-page accept/revise/reject brief; append to OPERATOR-QUEUE.
   (Tracking entry added by BC-05.)
+
+  title: Decision Acceptance Brief
+  **Report:** Prepared a full accept/revise/reject brief for the long-pending ARC-029 decision,
+  verifying the incident that motivated it directly against the original record rather than
+  relaying a compressed summary, and flagged that accepting it won't by itself schedule its own
+  follow-up work. · category: process · glyph: 📋
 
 ### Wave 4 — Feature epics (serial `chain` builds)
 
@@ -356,6 +425,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     `spell-security-review` gained a new trust-boundary/data-flow diagram under the same rule-8
     classification (none existed previously — a scope finding, disclosed in the PR).
   - **Epic complete** — all 6 of 6 total PRs (including the precursor) done.
+
+  title: Generated State Diagrams
+  **Report:** Spells that already compute their own state — version drift, branch/PR topology,
+  review flow — now render it as a real generated diagram instead of prose, rolled out across the
+  CLI and multiple spells over six sequential releases. · category: feature · glyph: 📊
 - [x] **BC-15 — Handoff durability (R1-R8).** Sources: `features/handoff-durability/PRD.md` (draft).
   Route: chain. Size M. Bump: yes. Prompt-only by its own constraints; must not shift the bold-colon
   anchors `test/prompt-pending-verification.test.ts` keys on; adds
@@ -371,6 +445,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   BC-05e's own scope (the dangling `EF-37` intake citation) was already resolved by BC-05 itself; this
   PR's own missing-work-item-ID open question was the separate, still-open half, closed here by filing
   a `TODO.md` entry (internal tracking mode) in the same PR.
+
+  title: Session-Handoff Durability
+  **Report:** Work named in a session handoff is now also registered somewhere durable, so a
+  single overwrite can no longer lose it — and a real bug in the fresh-install scaffold that could
+  falsely trigger the new detection was found and fixed along the way. · category: feature ·
+  glyph: 🤝
 - [x] **BC-16 — Spell routing layer (R1-R3).** Sources: TODO.md:163 (T24). Route: chain. Size L.
   Bump: yes. R1 routing table injected via `agent-generator.ts` marker merge into all three L1
   surfaces; R2 frontmatter `description:` with proactive triggers on every
@@ -384,7 +464,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   instructions.md` updated by hand alongside the code fix, since this repo has no installed agent
   roster and the generator path never runs here. **Process note:** the implementation commit briefly
   landed on `main` before being caught and moved to this session branch pre-push — disclosed in
-  PR #127's own description; no content was lost and `main` was never pushed in that state.
+  [PR #127](https://github.com/codemagicianhq/arcane/pull/127)'s own description; no content was lost and `main` was never pushed in that state.
+
+  title: Spell Routing Layer
+  **Report:** Every AI client now sees a routing table on load telling it which spell to invoke
+  for common workflows, backed by proactive-trigger descriptions on every spell command and a new
+  standing lifecycle rule — a fourth, hook-based enforcement layer was deliberately deferred. ·
+  category: feature · glyph: 🧭
 - [x] **BC-17 — `doctor` platform-policy verification.** Sources: TODO.md:90 (T11, absorbing T12c).
   Route: chain. Size M. Verify live branch/merge policy against the declared ladder on both
   providers; must read GitHub **Rulesets** (the classic `/branches/main/protection` endpoint
@@ -399,6 +485,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   live-verified** (no ADO remote exists to test against) — disclosed in the PRD and TODO.md. 22 new
   tests. TODO.md's T11 item stays open: its title also names `ward`, which doesn't exist as a shipped
   spell yet (T18/BC-21) — only the `doctor` half, this epic's actual scope, is done.
+
+  title: Doctor Platform-Policy Check
+  **Report:** `spell doctor` now checks a repo's live branch-protection rules against what
+  governance says they should be, verified against this repo's own real GitHub Rulesets — the
+  Azure DevOps path is implemented but not live-tested, since no ADO remote exists to check it
+  against. · category: feature · glyph: 🛡️
 - [x] **BC-18 — `spell-sync-pull-request`.** Sources: TODO.md:49 (T7; explicit route). Route: chain
   (`spell-plan` → `spell-architect` → implement). Size L. Bump: yes. Fixtures: clean sync,
   conflicting rebase, stale lease rejection, ambiguous-conflict handoff, GitHub/ADO post-push
@@ -410,6 +502,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   invented. All 5 named fixtures addressed explicitly in the prompt; both routing pointers added.
   Fixed the expected `test/docs-profile-registry-split.test.ts` count bump (35→36) per that test's own
   documented precedent for an existing group growing. 16 new tests.
+
+  title: New Spell: Sync Pull Request
+  **Report:** A new dedicated spell handles the recovery path when the mandatory pre-PR rebase
+  hits a real conflict, covering clean syncs, conflicting rebases, stale-lease rejection, and
+  ambiguous handoffs, with both `spell-create-pull-request` and `spell-ship` now routing conflicts
+  to it. · category: spell · glyph: 🔄
 - [x] **BC-19 — Delegation UX (solo-operator mode).** Sources: TODO.md:101 (T13). Route: chain.
   Size M. Bump: yes. Delegations explicit, listable (`spell doctor`), revocable per repo; migrate
   this plan's Authority section into the mechanism as its first record.
@@ -420,6 +518,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   This very section above now references that file rather than restating it — migrated in the same
   commit that added the record, so this loop's own standing authority was never ambiguous even
   transiently. 11 new tests.
+
+  **Report:** Autonomous self-approval permissions are now recorded explicitly in a per-repo file,
+  listable via `spell doctor` and revocable by editing it, replacing an implicit assumption — this
+  program's own standing authority grant became the mechanism's first real record. · category:
+  feature · glyph: 👤
 - [x] **BC-20 — Full-cycle cross-epic coordination.** Sources: TODO.md:160-161 (T23). Route: direct
   (prompt/governance edits + tests). Size M. Bump: yes. Ship the three fix ideas (migration-number
   re-derivation at write time; real-data migration gate guidance; serialize-migrations doc) plus the
@@ -430,6 +533,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   serialize-migrations fix idea (3) was already shipped via ARC-028 (2026-08-15), predating this
   plan — verified fresh before implementing rather than assumed from this summary's own wording; only
   fix ideas (1)/(2) and the four sub-findings needed shipping. 11 new tests.
+
+  title: Full-Cycle Coordination Fixes
+  **Report:** Closed real coordination gaps in the end-to-end feature spell — migration-number
+  collisions, missing real-data migration guidance, and honest documentation that no actual agent
+  roster ships despite the delegation language — after confirming one of the three planned fixes
+  had already shipped separately and didn't need repeating. · category: fix · glyph: 🔧
 - [x] **BC-21 — `ward` + `scry` spells.** Sources: TODO.md:151 (T18). Route: chain. Size L. Bump:
   yes. `ward` (leak scan, vendor-identifier denylist mandatory) + `scry` (name clearance: outward
   four-check **and** the inward repo-local collision pass ARC-028 proved necessary). Soft-depends on
@@ -448,6 +557,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     different operation. 11 new tests.
   - Soft-dependency respected: `ward` scans identifiers/trademarks only, never secret/credential
     patterns — that scope stays reserved for BC-10's still-Proposed ARC-037, not implemented here.
+
+  title: New Spells: Ward & Scry
+  **Report:** Two new spells shipped: `ward` scans a repo for leaked third-party names and
+  trademarks, and `scry` clears a brand-new name for use — checking both the outside world and
+  this repo's own history for collisions — before you commit to it. · category: spell · glyph: 🕵️
 - [x] **BC-22 — MCP resilience.** Sources: IDEAS.md:16 (I8), :20 (I12). Route: direct. Size M.
   Bump: yes. Fail-fast/fallback governance rule (one abnormal failure marks a server down for the
   session) + `.mcp.json` scaffold with per-server `timeout` via init/doctor.
@@ -459,6 +573,10 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   doctor` check `checkMcpConfig` (per-server timeout, silent pass when no `.mcp.json` exists). Both
   IDEAS.md sources (I8, I12) marked promoted. 16 new tests (patch bump — a new doctor check + optional
   scaffold, not a new spell, matching BC-17's precedent).
+
+  **Report:** A new standing rule: one abnormal MCP tool failure now marks that server down for
+  the rest of the session instead of retrying blindly, backed by an optional `.mcp.json` scaffold
+  and a new `spell doctor` check for per-server timeouts. · category: governance · glyph: 🔌
 - [x] **BC-23 — Registry-driven spell catalog.** Sources: TODO.md:179-190 (T15, corrected — the
   "130-141" citation had drifted). Route: direct. Size M. Bump: likely (registry).
   **Done 2026-08-31:** new `scripts/spell-catalog.ts` (`--check`/`--fix`, ARC-027-shaped) derives
@@ -472,6 +590,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   guess:** actual scope never touches `src/assets/`, `registry.ts`, or `profiles.ts` — confirmed by
   `check:version-bump` — and ships no consumer-facing capability, so no bump. Full detail in
   TODO.md's own closure note on this item.
+
+  **Report:** The spell catalog the README lists is now generated directly from the source
+  registry instead of hand-maintained, catching a real drift where the README undercounted the
+  actual 38 shipped spells — with a new CI check guarding against it drifting again. · category:
+  feature · glyph: 📚
 - [x] **BC-24 — Research-doc capability.** Sources: TODO.md:293-303 (T25, corrected — "165-175" had
   drifted). Route: chain. Size M. Bump: yes.
   **Done 2026-08-31:** PRD at [features/research-doc-capability/PRD.md](../../../features/research-doc-capability/PRD.md).
@@ -479,6 +602,10 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   `portable-bootstrap.md`'s new "Research Reports" section — plus `spell-todo` routing (c). Optional
   `spell-research` (b) skipped: `spell-document` was already sufficient once the location existed and
   was named, matching this entry's own gate. Full detail in TODO.md's closure note on the T25 item.
+
+  **Report:** Research findings and technical spikes now have an official home and naming
+  convention instead of being scattered ad hoc, reusing the existing `spell-document` spell rather
+  than building a redundant dedicated one. · category: docs · glyph: 🔬
 - [x] **BC-25 — `spell-eas-store-deploy`.** Sources: TODO.md:82-115 (T8, confirmed accurate). Route:
   chain. Size L. Bump: yes.
   **Done 2026-08-31:** PRD at [features/eas-store-deploy/PRD.md](../../../features/eas-store-deploy/PRD.md).
@@ -486,6 +613,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   existing home, cited by ID from the new `spell-eas-store-deploy` (joined `spells-build`) alongside
   `EV-01`/`EV-02`/`EV-03`/`EV-06` from `external-verification-standards.md` — never restated. Minor
   version bump (new spell). Full detail in TODO.md's closure note on the T8 item.
+
+  title: New Spell: EAS Store Deploy
+  **Report:** A new dedicated spell ships an app to the App Store and Google Play via Expo
+  Application Services, backed by a new store-specific standards doc covering the durable facts
+  that had no existing home. · category: spell · glyph: 📱
 - [x] **BC-26 — Compliance standards + spell.** Sources: TODO.md:354 (T26, corrected — "177" had
   drifted). Route: chain. Size L. Bump: yes.
   **Done 2026-08-31:** PRD at [features/compliance-standards/PRD.md](../../../features/compliance-standards/PRD.md).
@@ -493,6 +625,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   applicability — explicit not-legal-advice framing) + new `spell-compliance` (joined `spells-build`),
   a read-only self-assessment with no apply/fix phase — citing `CS-nn` by ID, never restating. Minor
   version bump (new spell). Full detail in TODO.md's closure note on the T26 item.
+
+  **Report:** A new spell runs a read-only compliance self-assessment against GDPR, CCPA, SOC 2,
+  and HIPAA — backed by a new standards doc that is explicit it's not legal advice — and stops at
+  reporting findings rather than attempting to fix them automatically. · category: spell ·
+  glyph: ✅
 - [x] **BC-27 — Governance tail batch.** Sources: IDEAS.md:9 (I1), :11 (I3), :12 (I4), :15 (I7).
   Route: direct, one PR per sub-item where they touch different trees. Size M. (a) I4 dedup rule:
   diff before deleting "duplicates" — governance edit. (b) I1 org-token gate seeds operator-identity
@@ -541,6 +678,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     before editing, so the fix landed everywhere the old model was referenced, not just at its
     definition site. 11 new tests. Caught and fixed the same line-wrap-crossing test mistake as
     BC-27a, in the same file family, before it shipped.
+
+  **Report:** A batch of governance fixes: a new rule requiring a diff before deleting a
+  "duplicate," broadened leak-scan guidance to cover personal identifiers, a new spell that
+  captures verification claims and corrections as a structured record, and a commit-trailer model
+  that now omits an agent's role rather than guessing it when the roster can't confirm it. ·
+  category: governance · glyph: 🏛️
 - [x] **BC-28 — Delivery-channels spike.** Sources: IDEAS.md:21 (I13). Route: process (spike). Size M.
   **Done 2026-08-31: this entry's own "MCP prompts; Claude Code plugin" characterization was wrong**,
   checked directly against IDEAS.md's actual I13 text — the two named smoke tests are about
@@ -556,6 +699,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   question queued at [OPERATOR-QUEUE.md Q-010](OPERATOR-QUEUE.md#q-010) — the other three landscape-
   scan channels (MCP prompts, Claude Code plugin marketplaces, Agent Skills, Microsoft APM) remain
   entirely unevaluated, named there as an explicit gap rather than silently folded into this result.
+
+  title: Delivery-Channels Research
+  **Report:** A research spike ran two live smoke tests on this machine — confirming that npm's
+  own `node_modules` traversal picks up prompt files, and that a symlink-like junction can be
+  followed — after finding the epic's own starting description had actually mischaracterized what
+  the idea was asking about. · category: process · glyph: 📡
 
 ### Wave 5 — Unparked implementations & the big backfill
 
@@ -709,6 +858,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     always understood to be governance-docs-only is a real, unresolved question this epic does not
     decide unilaterally — flagging it here rather than silently declaring total completion. If the
     broader scope applies, it is unscoped, unsized, unbatched work — a new epic, not a BC-29 sub-item.
+
+  title: Enforcement-Mode Labeling
+  **Report:** Every one of the 25 governance docs now states plainly whether each of its rules is
+  actually enforced by a check or just advisory prose, closing a gap where only one rule in the
+  whole repo carried that label before — the pass also surfaced several pre-existing doc
+  contradictions, like a rule requiring "3 issues minimum" that the actual review spell no longer
+  requires. · category: governance · glyph: 🏷️
 - [x] **BC-30 — Secret detection implementation.** Depends: BC-10 ADR **Accepted** (2026-09-01,
   operator accept call — [OPERATOR-QUEUE.md Q-006](docs/plans/become-current/OPERATOR-QUEUE.md#q-006--acceptrevisereject-adr-arc-037-secret-and-org-leak-detection)).
   Route: chain, 2 batches matching the ADR's own two separate deliverables. Size M-L per the ADR's
@@ -765,6 +921,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     this work -- it needs the SAME pre-push hook FILE to carry conditional logic, which is a
     different, not-yet-designed change, though the prerequisite this batch's own generalization
     unblocks is noted there.
+
+  **Report:** Built the secret-detection design for real: a pre-commit hook and a repository-wide
+  CI backstop now both scan for leaked credentials and org names using one shared rule set,
+  installed automatically by `spell init` — along the way, fixing a real latent crash where a
+  malformed config file could take down the whole `spell doctor` run. · category: feature ·
+  glyph: 🔒
 - [x] **BC-31 — Customization implementation.** Depends: BC-11 ADR **Accepted** (2026-09-01,
   operator accept call — [OPERATOR-QUEUE.md Q-007](docs/plans/become-current/OPERATOR-QUEUE.md#q-007--acceptreviserreject-adr-arc-038-content-preserving-updates-and-vendor-neutral-governance-content)).
   Route: chain, 2 batches matching the ADR's own decisions 1 (mechanics) and 2+3 (content) —
@@ -817,6 +979,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
     itself, not just surviving the restructuring. Closes TODO.md's original 2026-07-14
     vendor-neutral/customization backlog item in full (parts a, b, and c all disposed of, across
     both batches of this epic). This also closes out BC-31 as a whole.
+
+  **Report:** `spell update` no longer blindly overwrites a governance file you've hand-edited —
+  it now three-way-merges your changes with the new version and flags real conflicts — and the
+  CI/CD standards doc split into a vendor-neutral core plus an Azure DevOps-specific profile so the
+  same pattern can support other platforms later. · category: feature · glyph: 🧩
 - [x] **BC-32 — Spell-compiler implementation.** Depends: BC-12 ADR **Accepted**. Route: chain.
   Size L, minor bump (`v0.33.0`). **Done 2026-09-01:** `renderClaudeCommandStub()` generates all
   `.claude/commands/spell-*.md` stubs from prompt frontmatter (41 spells today, not the 66→33
@@ -828,6 +995,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   full resolution-order paragraph; the deeper inconsistency is a disclosed `TODO.md` item, not
   silently fixed. Two new self-host-parity axes. Full implementation notes: `DECISIONS.md` → ARC-039
   Implementation note (2026-09-01, BC-32).
+
+  **Report:** Every Claude Code spell stub now generates directly from its real source file
+  instead of being hand-maintained separately, catching and fixing two real title-drift bugs in
+  the process, plus a starter shared-fragment mechanism for text repeated across a handful of
+  spells. · category: feature · glyph: 🪄
 
 ---
 
