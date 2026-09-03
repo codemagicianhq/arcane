@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * scripts/report.ts (SR-02) -- Show Report generator and parity gate.
+ * scripts/report.ts (SR-02) -- this repository's Show Report parity gate.
  *
  *   --check   regenerate every program's show-report.{json,html} in memory and
  *             compare (line-ending-normalized) against the committed files;
@@ -14,153 +14,43 @@
  *             says so, rather than pretending to fetch anything.
  *   --all | --program <slug>   which docs/plans/<slug>/PLAN.md to process.
  *
- * Mirrors scripts/spell-catalog.ts's --check/--fix shape (ARC-012's parity
- * guard for committed generated artifacts).
+ * The generation core lives in src/modules/show-report/generate.ts (SR-03),
+ * shared with the consumer-facing `spell report` command; this file only adds
+ * the repository-specific template location and the --check/--fix CLI.
  */
 
-import { readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildShowReportModel } from "../src/modules/show-report/model.js";
-import { renderShowReport } from "../src/modules/show-report/render.js";
-import { parseEpics, parseFrontmatter } from "../src/modules/show-report/plan-parser.js";
+import {
+  discoverPrograms,
+  runReportGeneration,
+  type SkippedPlan,
+} from "../src/modules/show-report/generate.js";
+import { isShallowRepository } from "../src/modules/show-report/sources.js";
 
+export {
+  TEMPLATE_VERSION,
+  deterministicCompiledAt,
+  discoverPrograms,
+  programNameFromTitle,
+} from "../src/modules/show-report/generate.js";
+
+/** The canonical template in this repository's source tree (the published CLI reads dist/assets/ instead). */
 export const TEMPLATE_RELPATH = "src/assets/report/show-report.template.html";
 
-/**
- * Recorded in colophon.templateVersion. "v0-interim" is the hand-CSS template
- * this epic ships; SR-06 replaces it with the arcane-ui version the compiled
- * template was built from.
- */
-export const TEMPLATE_VERSION = "v0-interim";
-
-export interface ReportProgram {
-  slug: string;
-  planRelPath: string;
-  queueRelPath: string;
-  ledgerProgramName: string;
-}
-
-export interface ReportDiscovery {
-  programs: ReportProgram[];
-  /** Plans found but skipped, with the reason -- reported, never silent. */
-  skipped: { slug: string; reason: string }[];
-}
+export type ReportMode = "check" | "fix";
 
 export interface ReportCheckResult {
   drifted: string[];
   repaired: string[];
-  skipped: { slug: string; reason: string }[];
+  skipped: SkippedPlan[];
 }
-
-/** `"Lessons Hardening — Mechanical Enforcement ..."` -> `"Lessons Hardening"`, the form ledger headings use. */
-export function programNameFromTitle(title: string): string {
-  return title.split(" — ")[0]!.trim();
-}
-
-/**
- * Deterministic compile date: the most recent date the plan itself records.
- * Wall-clock would make --check fail on every run. Limitation, disclosed: for
- * a still-active program this is its activation/creation date, so the
- * ADRs-accepted window (model.ts) ends there until the plan gains a
- * `completed:` date.
- */
-export function deterministicCompiledAt(frontmatter: {
-  completed?: string;
-  activated?: string;
-  created?: string;
-}): string {
-  return frontmatter.completed ?? frontmatter.activated ?? frontmatter.created ?? "unknown";
-}
-
-export async function discoverPrograms(rootDir: string): Promise<ReportDiscovery> {
-  const plansDir = join(rootDir, "docs", "plans");
-  let entries;
-  try {
-    entries = (await readdir(plansDir, { withFileTypes: true })).filter((e) => e.isDirectory());
-  } catch (error: unknown) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { programs: [], skipped: [] };
-    throw error;
-  }
-
-  const programs: ReportProgram[] = [];
-  const skipped: { slug: string; reason: string }[] = [];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    const slug = entry.name;
-    const planRelPath = `docs/plans/${slug}/PLAN.md`;
-    let planContent: string;
-    try {
-      planContent = await readFile(join(rootDir, planRelPath), "utf8");
-    } catch {
-      skipped.push({ slug, reason: "no PLAN.md" });
-      continue;
-    }
-    const epics = parseEpics(planContent);
-    if (epics.length === 0) {
-      // A plan whose epics live in a table (like show-report's own) parses to
-      // zero rows; an empty report for it would be noise, not information.
-      skipped.push({ slug, reason: "no parseable `- [x] **ID — Title.**` epic bullets" });
-      continue;
-    }
-    const frontmatter = parseFrontmatter(planContent);
-    programs.push({
-      slug,
-      planRelPath,
-      queueRelPath: `docs/plans/${slug}/OPERATOR-QUEUE.md`,
-      ledgerProgramName: programNameFromTitle(frontmatter.title ?? slug),
-    });
-  }
-  return { programs, skipped };
-}
-
-function normalizeLineEndings(content: string): string {
-  return content.replace(/\r\n?/g, "\n");
-}
-
-async function readOptionalFile(path: string): Promise<string | null> {
-  try {
-    return await readFile(path, "utf8");
-  } catch (error: unknown) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw error;
-  }
-}
-
-export interface GeneratedReport {
-  json: string;
-  html: string;
-}
-
-export async function generateReport(
-  rootDir: string,
-  program: ReportProgram,
-  templateHtml: string,
-): Promise<GeneratedReport> {
-  const planContent = await readFile(join(rootDir, program.planRelPath), "utf8");
-  const frontmatter = parseFrontmatter(planContent);
-  const model = await buildShowReportModel({
-    rootDir,
-    slug: program.slug,
-    planRelPath: program.planRelPath,
-    queueRelPath: program.queueRelPath,
-    ledgerProgramName: program.ledgerProgramName,
-    compiledAt: deterministicCompiledAt(frontmatter),
-    templateVersion: TEMPLATE_VERSION,
-  });
-  return {
-    json: `${JSON.stringify(model, null, 2)}\n`,
-    html: renderShowReport(model, templateHtml),
-  };
-}
-
-export type ReportMode = "check" | "fix";
 
 export async function runReportCheck(
   mode: ReportMode,
   rootDir: string,
   only?: string,
 ): Promise<ReportCheckResult> {
-  const templateHtml = await readFile(join(rootDir, TEMPLATE_RELPATH), "utf8");
   const discovery = await discoverPrograms(rootDir);
   const programs = only ? discovery.programs.filter((p) => p.slug === only) : discovery.programs;
   if (only && programs.length === 0) {
@@ -168,29 +58,13 @@ export async function runReportCheck(
       `No program "${only}" with parseable epics under docs/plans/ (skipped: ${discovery.skipped.map((s) => `${s.slug} (${s.reason})`).join("; ") || "none"}).`,
     );
   }
-
-  const drifted: string[] = [];
-  const repaired: string[] = [];
-
-  for (const program of programs) {
-    const generated = await generateReport(rootDir, program, templateHtml);
-    const outputs: [string, string][] = [
-      [`docs/plans/${program.slug}/show-report.json`, generated.json],
-      [`docs/plans/${program.slug}/show-report.html`, generated.html],
-    ];
-    for (const [relPath, expected] of outputs) {
-      const actual = await readOptionalFile(join(rootDir, relPath));
-      if (actual === null || normalizeLineEndings(actual) !== normalizeLineEndings(expected)) {
-        drifted.push(`${relPath} does not match a regeneration from its sources.`);
-        if (mode === "fix") {
-          await writeFile(join(rootDir, relPath), expected, "utf8");
-          repaired.push(relPath);
-        }
-      }
-    }
-  }
-
-  return { drifted, repaired, skipped: discovery.skipped };
+  const result = await runReportGeneration({
+    rootDir,
+    templatePath: join(rootDir, TEMPLATE_RELPATH),
+    mode: mode === "fix" ? "write" : "check",
+    programs,
+  });
+  return { ...result, skipped: discovery.skipped };
 }
 
 async function main(): Promise<void> {
@@ -213,6 +87,18 @@ async function main(): Promise<void> {
   }
   const mode: ReportMode = modeFlag === "--check" ? "check" : "fix";
   const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+  // A shallow clone cannot see the history the version span and cast derive
+  // from; the regeneration would omit them and every report would read as
+  // "drifted". Say what is actually wrong instead.
+  if (mode === "check" && (await isShallowRepository(rootDir))) {
+    console.error(
+      "Show report: cannot verify in a shallow clone -- the version span and cast are derived from git history. Fetch it (`git fetch --unshallow`, or actions/checkout with fetch-depth: 0) and re-run.",
+    );
+    process.exitCode = 1;
+    return;
+  }
+
   const result = await runReportCheck(mode, rootDir, only);
 
   for (const s of result.skipped) console.log(`Show report: skipped ${s.slug} -- ${s.reason}.`);

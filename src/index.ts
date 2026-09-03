@@ -10,6 +10,7 @@ import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
+import { runReport } from "./commands/report.js";
 import { runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import type { Profile, AgentInitOptions, AgentProfileId, NamingStrategy, AgentSyncOptions } from "./types.js";
@@ -165,6 +166,23 @@ program
   .option("--gate", "Exit non-zero if any leak is found (for CI)")
   .action(async (opts: { terms?: string; termsFile?: string; gate?: boolean }) => {
     await runWardCli(process.cwd(), opts);
+  });
+
+// ─── spell report ─────────────────────────────────────────────────────────────
+
+program
+  .command("report")
+  .description(
+    "Generate a program's Show Report (show-report.json + .html) from docs/plans/<slug>/PLAN.md, OPERATOR-QUEUE.md and the verification ledger -- offline, no network (ARC-042)",
+  )
+  .option("--plan <path>", "Report on one PLAN.md instead of auto-discovering docs/plans/*/PLAN.md")
+  .option("--out <dir>", "Write show-report.{json,html} into this directory instead of next to the plan")
+  .option(
+    "--refresh",
+    "Accepted for forward compatibility; external-data snapshotting is not implemented yet, so this regenerates from local sources",
+  )
+  .action(async (opts: { plan?: string; out?: string; refresh?: boolean }) => {
+    await runReport(process.cwd(), opts, ASSETS_DIR);
   });
 
 // ─── spell agents ─────────────────────────────────────────────────────────────
