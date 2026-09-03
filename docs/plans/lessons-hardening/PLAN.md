@@ -1,6 +1,6 @@
 ---
 title: Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory
-status: complete — Q-002 (RCA-001 merge) pending operator
+status: complete
 created: 2026-09-02
 baseline: b0992c1 (main)
 owner: operator (payini)
@@ -450,7 +450,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
      (`check-followups.ts`), the other misses a same-row tracker token because a wide markdown table
      row exceeds the 150-character window. A genuine, disclosed limitation, not evidence to flip on.
   2. Appended a new dated section to [docs/verification-ledger.md](../../verification-ledger.md)
-     ("Lessons Hardening corrections (LH-02 → LH-12)", 7 rows) via `spell-verification-ledger` —
+     ("Lessons Hardening corrections (LH-02 → LH-12)", 8 rows) via `spell-verification-ledger` —
      every row's correction is already shipped inline in its own Correction column.
   3. `grep -nE "toHaveLength\((1[0-9]|[2-9][0-9])\)" test/*.test.ts` returns no unjustified hits;
      `check:spell-catalog` passes.
