@@ -2,6 +2,7 @@
 title: Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory
 status: complete
 created: 2026-09-02
+completed: 2026-09-02
 baseline: b0992c1 (main)
 owner: operator (payini)
 executor: Arcane autonomous loop (one epic per session)
@@ -145,10 +146,14 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
 - [x] **LH-00 — Commit this plan.** This document + KICKOFF.md + OPERATOR-QUEUE.md + the
   `lessons-hardening-plan` delegation record, via PR (the IDEAS.md citation-drift status flip already
-  shipped in LH-01/PR #171, not here — corrected on the record during LH-00's own commit prep).
+  shipped in LH-01/[PR #171](https://github.com/codemagicianhq/arcane/pull/171), not here — corrected on the record during LH-00's own commit prep).
   Merging it activates the delegation grant. Route: direct. Size S. Bump: no (docs only, outside
   `src/assets/`). **Operator merges this one** — see Authority & Delegation above. **Done:**
   [PR #172](https://github.com/codemagicianhq/arcane/pull/172), merged 2026-09-02 by the operator.
+
+  **Report:** Landed the Lessons Hardening plan itself, along with its delegation record — merged
+  directly by the operator rather than autonomously, activating the standing grant for the rest of
+  the program. · category: process · glyph: 📜
 - [x] **LH-01 — Phase 0 capture and live-drift fix (scoreboard entry).** The actual work
   ([PR #171](https://github.com/codemagicianhq/arcane/pull/171)) already shipped ahead of this plan
   existing, exactly as Become Current's own BC-00 commit-the-plan pattern allows for prerequisite
@@ -157,6 +162,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   verification ledger's first section (15 rows), `TODO.md`/`PLAN.md`(become-current)/
   `system-prompt-context.md`/`README.md` live-drift fixes, 5 new TODO items + 1 idea routed to their
   epics below.
+
+  title: Phase 0 Capture & Drift Fixes
+  **Report:** Captured this program's Phase 0 findings as a tracking entry for work that had
+  already shipped — the first 15-row section of a new verification ledger, plus live-drift fixes
+  across TODO.md, the Become Current plan, and two other root docs. · category: process ·
+  glyph: 🌱
 
 ### Wave 1 — Root cause record and test substrate
 
@@ -174,6 +185,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   and merged 2026-09-02 (`v0.34.1`, Q-002 done)** — rebased onto `main` first to resolve the
   content/version conflict its long-open window had accumulated against 12 intervening epics (see
   `OPERATOR-QUEUE.md`'s Q-002 entry for that resolution).
+
+  title: Root-Cause Analysis Process
+  **Report:** Wrote this repo's first formal root-cause analysis, tracing a dozen "we believed X,
+  checked, X was wrong" corrections back to one structural cause — facts written as static text
+  nothing re-derives — and fixed a standing contradiction about where RCA documents are even
+  supposed to live. · category: governance · glyph: 🕵️
 - [x] **LH-03 — Test-suite resilience helpers.** Closes P3 (13×: vitest 5000ms default under
   full-suite contention, Windows `ENOTEMPTY` temp-dir races) and P5 (8×: line-wrap-fragile
   `toContain` assertions). Owns `TODO.md`'s parked Windows `ENOTEMPTY` sub-item. Route: direct. Size M.
@@ -216,6 +233,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   past this one rule: a mechanical check reporting zero findings is only evidence of "no violations"
   once you've independently confirmed it can report a nonzero finding at all (echoes universal-agent-
   rules' forthcoming rule 26 on LH-10's list, applied here to a lint selector instead of a text search).
+
+  **Report:** New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile
+  string-matching patterns across the test suite, with a new lint rule enforcing it going forward —
+  which itself had a bug caught and fixed after it silently matched nothing, missing 8 real
+  violations the original estimate hadn't found. · category: feature · glyph: 🧪
 - [x] **LH-04 — Coverage thresholds evaluated in CI.** Closes the gap `testing-standards.md` already
   documents: `vitest.config.ts` thresholds are configured but `ci.yml` runs bare `npm test`, never
   `npm run test:coverage`. Route: direct. Size S. Bump: patch (the standard's annotations change).
@@ -226,6 +248,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   exit 0) — took the pass branch. `ci.yml`'s Test step now runs `npm run test:coverage`; both
   `testing-standards.md` annotations relabeled "evaluated in CI." Pre-push hook stays `npm test` (no
   coverage collection there — that budget belongs to CI, not every local push).
+
+  title: Coverage Thresholds Enforced
+  **Report:** CI now actually runs the coverage-threshold check instead of only having it
+  configured and silently unenforced — verified real coverage already cleared the bar (85.53%)
+  before flipping the gate on. · category: fix · glyph: 📈
 
 ### Wave 2 — Mechanical gates
 
@@ -260,6 +287,12 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   registry, which would have caught this the first time. **Done:** all of the above shipped together;
   full suite + coverage thresholds pass; operator's call on owning the README tagline's wording (not
   its count, which is now generated either way) noted in-PR, not blocking.
+
+  title: Derived Counts, Not Hardcoded
+  **Report:** Spell, agent, and governance counts throughout the README and tests now compute from
+  the real registry instead of being hand-typed numbers that silently drift as the project grows —
+  which caught a real bug where a profile's test was passing by coincidence, with a missing file
+  and an extra one canceling out to the same total. · category: fix · glyph: 🔢
 - [x] **LH-06 — Build-gate correctness (2 PRs).** Closes G1 + G2. (a) `scripts/check-version-bump.ts
   --staged`: union the merge-base diff with `git diff --cached --name-only` (+ `--working-tree`); CI
   default unchanged; `spell-bump` Step 1 switches to staged mode; `spell-commit-work` Step 2 gains a
@@ -279,6 +312,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   diff and confirmed "no bump required" rather than asserting it. Verified against all 5 real
   `tracking-mode-declaration` consumers before shipping the stricter guard — none already had the
   defect it now catches, so nothing broke.
+
+  title: Build-Gate Correctness
+  **Report:** Fixed two build gates that were quietly wrong: the version-bump check now looks at
+  actually-staged changes instead of running too early to see them, and a mismatched template
+  marker now fails the build instead of shipping malformed content — with a second,
+  previously-unnoticed silent-skip path found and closed along the way. · category: fix ·
+  glyph: 🚧
 - [x] **LH-07 — Line-citation hygiene.** Closes P2 (13× + 3 caught live in LH-01), promotes the
   2026-08-31 `IDEAS.md` idea. Route: direct. Size M. Bump: patch. **Mechanism:** (1) citation grammar
   in `agent-output.instructions.md` → Doc-ID Link Format: `path`; `path#anchor`; `path ("unique quoted
@@ -310,6 +350,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   fixture-based, not the live tree). One pre-existing test broke on this epic's own rewrite —
   `test/prompt-handoff-durability.test.ts` had hardcoded the old `TODO.md:NNN` placeholder text — fixed
   to assert the new stable-locator wording instead.
+
+  **Report:** Living docs now cite by a stable anchor or quoted phrase instead of a bare line number
+  that drifts the moment the file is next edited — with a checker watching for it, which found 34
+  real violations, more than the original estimate, including a second citation shape the first
+  pass had missed entirely. · category: feature · glyph: 🔗
 - [x] **LH-08 — Shipped-state staleness scan.** Closes P11 (6×) + the status-claim half of P1;
   proof case = `universal-agent-rules.md` rule 3 (filed in `TODO.md` by LH-01). Route: direct. Size M.
   Bump: patch. **Mechanism, two classes:** **A (gate)** — every `ARC-NNN (Proposed|Accepted|
@@ -332,6 +377,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   subject — command-line/chat usage — still has no mechanical check by construction; now accurately
   notes BC-30's executable-check backstop for the narrower config-file sub-case, instead of claiming no
   scanner exists at all).
+
+  **Report:** A new check catches governance content whose "not yet built" or status claims no
+  longer match reality, shipped as an immediately-blocking CI gate rather than a slow warn-mode
+  rollout since the live corpus had zero false positives from the very first run. · category:
+  feature · glyph: 🕰️
 - [x] **LH-09 — Follow-up promotion gate.** Closes P9 (6×: findings buried in closure prose, never
   promoted; shipments never linked back to their TODO item). Route: direct. Size M. Bump: patch.
   **Mechanism:** `scripts/check-followups.ts` — in journals <30 days old, active plans' PLAN/
@@ -360,6 +410,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   validated across sessions per this epic's own rollout criterion, is a one-line CI change, not new
   code.
 
+  **Report:** A new check flags any "we'll deal with that later" left in a journal, plan, or the
+  ledger that doesn't carry a real tracker reference, refined mid-build after a whole-paragraph
+  match missed the exact known case it was built to catch, fixed by scanning a tight window around
+  each deferral phrase instead. · category: feature · glyph: 📌
+
 ### Wave 3 — Conduct rules and ADR-gated work
 
 - [x] **LH-10 — Advisory conduct rules batch.** Closes P7's prose half, P8 (6×), P10 (3×). Route:
@@ -377,6 +432,11 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   passed unchanged, validating that earlier design choice. Each new rule grounded in this session's own
   real incident (the org-token double-leak for 25, the case-sensitive-grep false "still open" for 26)
   rather than a hypothetical, matching this file's existing citation convention.
+
+  **Report:** Three new standing rules, each grounded in a real incident from this program itself:
+  never quote a denylisted name even while documenting its removal, treat a zero-match search as
+  evidence about the search rather than the thing, and review a dispatched agent's actual diff
+  rather than trusting its summary. · category: governance · glyph: 📏
 - [x] **LH-11 — ADR ARC-041: a local supply channel for the ARC-031 privacy denylist (amends
   decision 3).** Closes P7's mechanical half. Route: adr. Size M. Bump: n/a. **Operator-gated
   (Q-003).** Proposes: `resolvePrivateTokens()` may additionally read a file **outside** the repository
@@ -403,10 +463,17 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   epic's scope. Also closed the TODO.md item recording the `.gitignore` `~/.arcane/` no-op finding,
   now that ARC-041 gives that exact pattern a real purpose. **A third live-drift instance, found while
   editing OPERATOR-QUEUE.md for Q-003's closure:** Q-003's own "What" text still said the org-token
-  leak recurred "three times in one session" — LH-02's own fix for this exact text (PR #174) is still
+  leak recurred "three times in one session" — LH-02's own fix for this exact text ([PR #174](https://github.com/codemagicianhq/arcane/pull/174)) is still
   unmerged (Q-002 open), so every epic since branched from a `main` that never had that fix. Reapplied
   the correction here rather than leave it stale a second time; LH-02's own copy becomes a no-op or a
   trivial conflict whenever #174 is finally rebased and merged.
+
+  title: Local Denylist Source Approved
+  **Report:** Accepted the design letting the org-token privacy denylist be supplied from a file
+  outside the repo — with a hard structural refusal of any in-repo path — closing the exact gap
+  that let a real client name leak twice with no local way to catch it before pushing; the operator
+  had already decided the open questions live, so this shipped as Accepted rather than another
+  Proposed round. · category: decision · glyph: 🔐
 - [x] **LH-12 — Local denylist implementation.** **Parked until ARC-041 Accepted** — unblocked in the
   very same session, since the operator's decision was already recorded. Route: direct. Size M. Bump:
   minor by judgment. Reuses `denylist-scan.ts`'s `scanFile` per staged path and
@@ -431,6 +498,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   ran against `process.cwd()` (this repo, not the fixture) — the test would have passed for the wrong
   reason. Added an explicit `cwd` parameter to `resolvePrivateTokens()` for testability and fixed the
   test to pass the fixture's own directory.
+
+  title: Local Denylist, Shipped
+  **Report:** Built the local org-token design for real: a pre-commit scan of staged files plus a
+  matching `--terms-file` flag on `spell ward`, so the leak scanner never needs a name typed into
+  shell history — the test suite itself caught two real bugs along the way, including one that
+  would have passed for the wrong reason had a fixture not been checked directly. · category:
+  feature · glyph: 🗝️
 
 ### Wave 4 — Close
 
@@ -467,7 +541,7 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
      merge — verified directly against `gh pr view 172` (merged) rather than assumed, and corrected on
      the record. A live instance of this program's own top pattern (P1, stale status claims), caught
      in this program's own queue at closing time.
-  6. `docs/rcas/RCA-001-*.md` exists (on the still-open PR #174); pushed an additional commit there
+  6. `docs/rcas/RCA-001-*.md` exists (on the still-open [PR #174](https://github.com/codemagicianhq/arcane/pull/174)); pushed an additional commit there
      giving all nine Preventive Actions a real merged-PR reference now that LH-03…LH-12 are done, plus
      a closing note. Q-002 itself is **not** done — correctly: RCA review is never auto-committed, and
      that is the one item this program hands to the operator, not a gap in this epic.
@@ -489,6 +563,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
 
   Warn-mode checks: **none flip** — both `check:citations` and `check:followups` stay warn per their
   own stated criterion, honestly unmet after one session, not silently left ambiguous.
+
+  title: Program Close-Out Audit
+  **Report:** Audited all seven Definition-of-Done criteria directly against the live repository
+  rather than assuming any of them, catching and fixing a stale status line in the operator's own
+  queue and a bare citation the audit's own ledger entry had just introduced — then ran a real
+  drift check and closed the program GO with zero Critical or High findings. · category: process ·
+  glyph: 🎯
 
 **Dependencies:** LH-00 → all · LH-01 already done (ships with LH-00) · LH-07 → LH-08/09 (shared
 `living-docs.ts`) · LH-08 before LH-10 (soft, so rule 3 is caught live) · LH-11 → LH-12 · LH-13 last.

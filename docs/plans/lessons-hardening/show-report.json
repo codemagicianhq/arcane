@@ -1,0 +1,310 @@
+{
+  "schemaVersion": 1,
+  "program": {
+    "id": "lessons-hardening",
+    "slug": "lessons-hardening",
+    "title": "Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory",
+    "status": "complete",
+    "baseline": "b0992c1 (main)",
+    "started": "2026-09-02",
+    "completed": "2026-09-02",
+    "versionSpan": {
+      "from": "0.33.2",
+      "to": "0.34.1"
+    }
+  },
+  "masthead": {
+    "eyebrow": "Show Report",
+    "title": "Lessons Hardening — Mechanical Enforcement for the Become Current Corrections Inventory",
+    "dek": "complete — 14 of 14 epics shipped"
+  },
+  "stats": [
+    {
+      "id": "epics",
+      "value": "14/14",
+      "label": "epics shipped",
+      "derived": true
+    },
+    {
+      "id": "prs",
+      "value": 3,
+      "label": "pull requests",
+      "derived": true
+    },
+    {
+      "id": "version-span",
+      "value": "0.33.2 → 0.34.1",
+      "label": "version span",
+      "derived": true
+    },
+    {
+      "id": "adrs",
+      "value": 1,
+      "label": "ADRs accepted",
+      "derived": true
+    }
+  ],
+  "outcome": "27 of 27 items dispositioned — 20 routed to an epic, 7 parked",
+  "needsYou": [],
+  "sections": [
+    {
+      "id": "wave-1",
+      "title": "Wave 0 — Bootstrap",
+      "rows": [
+        {
+          "id": "LH-00",
+          "title": "Commit this plan",
+          "description": "Landed the Lessons Hardening plan itself, along with its delegation record — merged directly by the operator rather than autonomously, activating the standing grant for the rest of the program.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/172",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/171",
+            "https://github.com/codemagicianhq/arcane/pull/172"
+          ],
+          "glyph": "📜"
+        },
+        {
+          "id": "LH-01",
+          "title": "Phase 0 Capture & Drift Fixes",
+          "description": "Captured this program's Phase 0 findings as a tracking entry for work that had already shipped — the first 15-row section of a new verification ledger, plus live-drift fixes across TODO.md, the Become Current plan, and two other root docs.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/171",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/171"
+          ],
+          "glyph": "🌱"
+        }
+      ]
+    },
+    {
+      "id": "wave-2",
+      "title": "Wave 1 — Root cause record and test substrate",
+      "rows": [
+        {
+          "id": "LH-02",
+          "title": "Root-Cause Analysis Process",
+          "description": "Wrote this repo's first formal root-cause analysis, tracing a dozen \"we believed X, checked, X was wrong\" corrections back to one structural cause — facts written as static text nothing re-derives — and fixed a standing contradiction about where RCA documents are even supposed to live.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "href": "https://github.com/codemagicianhq/arcane/pull/174",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/174"
+          ],
+          "glyph": "🕵️"
+        },
+        {
+          "id": "LH-03",
+          "title": "Test-suite resilience helpers",
+          "description": "New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile string-matching patterns across the test suite, with a new lint rule enforcing it going forward — which itself had a bug caught and fixed after it silently matched nothing, missing 8 real violations the original estimate hadn't found.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🧪"
+        },
+        {
+          "id": "LH-04",
+          "title": "Coverage Thresholds Enforced",
+          "description": "CI now actually runs the coverage-threshold check instead of only having it configured and silently unenforced — verified real coverage already cleared the bar (85.53%) before flipping the gate on.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "refs": [],
+          "glyph": "📈"
+        }
+      ]
+    },
+    {
+      "id": "wave-3",
+      "title": "Wave 2 — Mechanical gates",
+      "rows": [
+        {
+          "id": "LH-05",
+          "title": "Derived Counts, Not Hardcoded",
+          "description": "Spell, agent, and governance counts throughout the README and tests now compute from the real registry instead of being hand-typed numbers that silently drift as the project grows — which caught a real bug where a profile's test was passing by coincidence, with a missing file and an extra one canceling out to the same total.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "refs": [],
+          "glyph": "🔢"
+        },
+        {
+          "id": "LH-06",
+          "title": "Build-Gate Correctness",
+          "description": "Fixed two build gates that were quietly wrong: the version-bump check now looks at actually-staged changes instead of running too early to see them, and a mismatched template marker now fails the build instead of shipping malformed content — with a second, previously-unnoticed silent-skip path found and closed along the way.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "refs": [],
+          "glyph": "🚧"
+        },
+        {
+          "id": "LH-07",
+          "title": "Line-citation hygiene",
+          "description": "Living docs now cite by a stable anchor or quoted phrase instead of a bare line number that drifts the moment the file is next edited — with a checker watching for it, which found 34 real violations, more than the original estimate, including a second citation shape the first pass had missed entirely.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🔗"
+        },
+        {
+          "id": "LH-08",
+          "title": "Shipped-state staleness scan",
+          "description": "A new check catches governance content whose \"not yet built\" or status claims no longer match reality, shipped as an immediately-blocking CI gate rather than a slow warn-mode rollout since the live corpus had zero false positives from the very first run.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🕰️"
+        },
+        {
+          "id": "LH-09",
+          "title": "Follow-up promotion gate",
+          "description": "A new check flags any \"we'll deal with that later\" left in a journal, plan, or the ledger that doesn't carry a real tracker reference, refined mid-build after a whole-paragraph match missed the exact known case it was built to catch, fixed by scanning a tight window around each deferral phrase instead.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "📌"
+        }
+      ]
+    },
+    {
+      "id": "wave-4",
+      "title": "Wave 3 — Conduct rules and ADR-gated work",
+      "rows": [
+        {
+          "id": "LH-10",
+          "title": "Advisory conduct rules batch",
+          "description": "Three new standing rules, each grounded in a real incident from this program itself: never quote a denylisted name even while documenting its removal, treat a zero-match search as evidence about the search rather than the thing, and review a dispatched agent's actual diff rather than trusting its summary.",
+          "descriptionState": "authored",
+          "category": "governance",
+          "refs": [],
+          "glyph": "📏"
+        },
+        {
+          "id": "LH-11",
+          "title": "Local Denylist Source Approved",
+          "description": "Accepted the design letting the org-token privacy denylist be supplied from a file outside the repo — with a hard structural refusal of any in-repo path — closing the exact gap that let a real client name leak twice with no local way to catch it before pushing; the operator had already decided the open questions live, so this shipped as Accepted rather than another Proposed round.",
+          "descriptionState": "authored",
+          "category": "decision",
+          "href": "https://github.com/codemagicianhq/arcane/pull/174",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/174"
+          ],
+          "glyph": "🔐"
+        },
+        {
+          "id": "LH-12",
+          "title": "Local Denylist, Shipped",
+          "description": "Built the local org-token design for real: a pre-commit scan of staged files plus a matching `--terms-file` flag on `spell ward`, so the leak scanner never needs a name typed into shell history — the test suite itself caught two real bugs along the way, including one that would have passed for the wrong reason had a fixture not been checked directly.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "refs": [],
+          "glyph": "🗝️"
+        }
+      ]
+    },
+    {
+      "id": "wave-5",
+      "title": "Wave 4 — Close",
+      "rows": [
+        {
+          "id": "LH-13",
+          "title": "Program Close-Out Audit",
+          "description": "Audited all seven Definition-of-Done criteria directly against the live repository rather than assuming any of them, catching and fixing a stale status line in the operator's own queue and a bare citation the audit's own ledger entry had just introduced — then ran a real drift check and closed the program GO with zero Critical or High findings.",
+          "descriptionState": "authored",
+          "category": "process",
+          "href": "https://github.com/codemagicianhq/arcane/pull/174",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/174"
+          ],
+          "glyph": "🎯"
+        }
+      ]
+    }
+  ],
+  "corrections": {
+    "checked": 7,
+    "corrected": 7,
+    "unverifiable": 0,
+    "scopeNote": "Lessons Hardening corrections logged in docs/verification-ledger.md",
+    "highlights": [
+      {
+        "id": "correction-1",
+        "title": "TODO.md's new ARC-014 citation, copied from ARC-031's own \"Related\" line, cor...",
+        "description": "ARC-014's real title is \"Spell Authoring Standards: A Quality Rubric for Spell Prompts\" — unrelated to org-tokens. Pre-existing bug in ARC-031 itself, not introduced by LH-11. Fixed the new ADR to use plain prose instead of the copied link; routed the pre-existing bug as its own TODO.md item (root ADR number not yet identified).",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      },
+      {
+        "id": "correction-2",
+        "title": "resolvePrivateTokens()'s test suite passes after converting the function to a...",
+        "description": "Typecheck stayed green, but two un-awaited call sites in test/org-token-lint.test.ts failed at runtime (Received: Promise {}; TypeError: tokens.map is not a function). Fixed both call sites with await.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      },
+      {
+        "id": "correction-3",
+        "title": "The new \"refuses a file inside a real repository\" test exercises the in-repo ...",
+        "description": "resolvePrivateTokens() had no cwd parameter yet, so the check silently ran against process.cwd() (the real checkout) rather than the fixture — the test passed without exercising the refusal logic at all. Added an optional cwd parameter threaded through to readLocalTokenFile; test now passes the fixture dir explicitly.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      }
+    ]
+  },
+  "parked": [
+    {
+      "title": "Pattern 6",
+      "reason": "already codified in spell-close-session"
+    },
+    {
+      "title": "Pattern 12",
+      "reason": "working as intended."
+    },
+    {
+      "title": "git cherry patch-id false negatives",
+      "reason": "fully solved (git-conventions.md → Content-Verified"
+    },
+    {
+      "title": "IDEAS.md's 2026-08-15 doc-ID-resolver remainder",
+      "reason": "zero violations found; LH-07's validator is"
+    },
+    {
+      "title": "TODO.md's tracking-mode resolution-order inconsistency",
+      "reason": "an operator design decision, already"
+    },
+    {
+      "title": "Become Current's Q-009/Q-010",
+      "reason": "cross-repo and distribution strategy, outside this program."
+    },
+    {
+      "title": "Pattern 8 beyond LH-10's advisory rule",
+      "reason": "no subagent registry ships in this repo; nothing to gate"
+    },
+    {
+      "title": "FEEDBACK.md",
+      "reason": "not created. This repo *is* Arcane; spell-feedback.prompt.md's own maintainer-side"
+    }
+  ],
+  "cast": [
+    {
+      "name": "claude",
+      "commits": 22,
+      "source": "commit-trailer"
+    },
+    {
+      "name": "Claude Code",
+      "commits": 1,
+      "source": "commit-trailer"
+    }
+  ],
+  "colophon": {
+    "sources": [
+      "docs/plans/lessons-hardening/PLAN.md",
+      "docs/plans/lessons-hardening/OPERATOR-QUEUE.md",
+      "docs/verification-ledger.md"
+    ],
+    "compiledAt": "2026-09-03T16:16:19.216Z",
+    "templateVersion": "pending"
+  }
+}
