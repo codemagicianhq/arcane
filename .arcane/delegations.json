@@ -46,6 +46,31 @@
       ],
       "status": "active",
       "revocation": "Edit or remove this entry and commit, or edit docs/plans/lessons-hardening/PLAN.md's own Authority & Delegation section (both are read together). This entry has no effect until it exists on main -- merging LH-00 is what activates it."
+    },
+    {
+      "id": "show-report-plan",
+      "grantedBy": "operator (payini)",
+      "grantedAt": "2026-09-03",
+      "scope": "Sessions executing epics defined in docs/plans/show-report/PLAN.md, in this repository (arcane-cli) only",
+      "permittedActions": [
+        "create-session-branches",
+        "commit",
+        "push",
+        "open-pull-requests",
+        "merge-own-pull-requests-via-sanctioned-strategies (merge or rebase, never squash)"
+      ],
+      "excludedActions": [
+        "github-or-ado-platform-settings-mutations (rulesets, required checks, allow_auto_merge, repo settings, secrets, webhooks)",
+        "delete-or-force-reset-any-branch-holding-content-not-on-main (content-verified via git cherry + diff, not ancestry)",
+        "manual-npm-publish-or-workflow-dispatch-of-publish-release-workflows",
+        "accept-an-adr (ARC-042 stays Proposed until the operator accepts via OPERATOR-QUEUE.md Q-002)",
+        "any-work-scoped-to-the-private-arcane-ui-repository (SR-05a, SR-05b -- different repo, different governance, different delegation)",
+        "sr-07-pipeline-automation-without-explicit-operator-confirmation",
+        "mark-anything-in-operator-queue-as-approved-or-done",
+        "anything-in-agent-policies-prohibited-list (MCP/security config, etc.)"
+      ],
+      "status": "active",
+      "revocation": "Edit or remove this entry and commit, or edit docs/plans/show-report/PLAN.md's own Authority & Delegation section (both are read together). This entry has no effect until it exists on main -- merging SR-00 is what activates it."
     }
   ]
 }

@@ -60,6 +60,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Accepted   |
 | [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
 | [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
+| [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Proposed   |
 
 ---
 
@@ -2261,3 +2262,106 @@ contributor with no local file configured sees exactly the CI-only behavior that
 adopt this at all (yes), file format (reuse the CI secret's own delimiter convention, not a new
 format), and home-directory default (yes, `~/.arcane/org-tokens` — see
 `docs/plans/lessons-hardening/OPERATOR-QUEUE.md` Q-003).
+
+---
+
+## ARC-042 — Show Report: Compiled-Template Distribution Model and Program Decisions
+
+**Date:** 2026-09-03
+**Status:** Proposed
+**Related:** [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (the public-repository, MIT-licensed model this decision's distribution choice must respect), [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate) (the privacy-gate class that bounds what report content may ever surface)
+**Sources:** [docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md), [docs/research/show-report-feasibility.md](docs/research/show-report-feasibility.md), [docs/research/show-report-design.md](docs/research/show-report-design.md), [docs/research/show-report-narrative.md](docs/research/show-report-narrative.md), [features/show-report/PRD.md](features/show-report/PRD.md)
+
+**Context:**
+
+After each autonomous program (Become Current, Lessons Hardening) the operator hand-built a
+"completion ledger" HTML page — a format the operator wants automated, rendered with the private
+`arcane-ui` design system for visual fidelity, and usable offline by open-source `arcane-cli` users
+with no proprietary runtime installed. Three roster agents researched feasibility, design, and
+narrative structure (memos above); the plan they informed settled on a **compiled-template**
+distribution model: `arcane-ui` pre-renders the report's React components once, offline, into a
+static Mustache template (markup plus a CSS subset, zero React, zero client JS); that artifact is
+vendored into public `arcane-cli`, which fills it from a JSON data model at report-generation time.
+This is one of three options weighed (a hosted render endpoint, and open-sourcing `arcane-ui` outright
+were the other two — both rejected below) and is the one that satisfies all three of the operator's
+stated constraints (fidelity, offline use, open-source distribution) at once. Program activation
+(SR-00) requires the operator to settle seven decisions before the remaining epics (SR-01 through
+SR-08) can build against a fixed contract; this ADR is where those seven are recorded for explicit
+accept/revise/reject, per [docs/plans/show-report/OPERATOR-QUEUE.md](docs/plans/show-report/OPERATOR-QUEUE.md) Q-002.
+
+**Decision:**
+
+1. **Licensing of the compiled template: recommend yes** — rendered markup plus a CSS subset derived
+   from proprietary `theme.css` ships inside MIT `arcane-cli`, with a license notice in the template
+   header naming Code Magician LLC and permitting use with Arcane. The rendered *output* (static HTML/
+   CSS, not the React source) is what ships; the component source, tokens, and design system stay
+   private in `arcane-ui`. **If declined:** fall back to open-sourcing a narrow
+   `@codemagician/arcane-ui-report` subset instead — the JSON contract and CLI surface are unchanged
+   either way, so this choice is reversible without a redesign.
+2. **Name: "Show Report"** (Circe's recommendation) over "Completion Report" — file, command, and
+   module names use `show-report` / `spell report` throughout.
+3. **Dependency: add `mustache` to `arcane-cli`** (MIT, ~10 KB, zero transitive deps) rather than
+   hand-rolling a template renderer — spec-conformant escaping matters more here than avoiding one
+   small dependency, and it keeps the zero-extra-install distribution model ARC-037 decision 8 already
+   committed this repository to.
+4. **Design tool: Claude Design, via the `/design-sync` skill and `DesignSync` tool** — SR-05a syncs
+   `arcane-ui`'s tokens and report-relevant exportable components into a design-system project
+   incrementally (one component at a time, never a wholesale replace); Show Report is designed there
+   against Circe's narrative structure and the frozen JSON model, in both the operator and share
+   lenses, light and dark, and print. The approved design is SR-05b's build spec.
+5. **Export-contract scope: register only Show Report now.** `arcane-ui`'s new static-export registry
+   (`src/export/registry.ts`, `exportable: true` metadata, a conformance test against known
+   server-render traps) is a general mechanism, but only the components Show Report actually needs are
+   registered at SR-05b. Auditing and registering the whole exportable subset up front is explicitly
+   deferred — smaller surface now, extended per-need later, not speculatively.
+6. **Fonts: no licensing action needed.** `arcane-ui`'s specified fonts (Chakra Petch, Rajdhani,
+   JetBrains Mono) are already served from Google Fonts under the SIL Open Font License — free for
+   embedding, redistribution, and commercial use with no attribution requirement. The compiled template
+   carries its own Google Fonts `<link>`, matching `arcane-ui`'s own "consumer-supplied fonts" decision
+   in `spec/HANDOFF.md`; no font files are vendored into either repository. Recorded here for the
+   permanent record, not because it was genuinely open.
+7. **`arcane-ui` release tagging: recommend yes** — tag every publish (`vX.Y.Z` on the publishing
+   commit), no release branches yet. This repository's automation (`check:report-template`, and SR-07's
+   pipeline-driven PR-on-template-change) needs to say "this template was compiled from `arcane-ui`
+   commit X, tagged vY.Z.W" and have that be independently reproducible — not just a version string in
+   a header comment. `arcane-ui` is trunk-based with zero git tags today; this decision is drafted in
+   full as its own `ARCUI-016`-shaped entry in `arcane-ui`'s own governance, in that repository's PRD
+   for SR-05b — recorded here only as a dependency this program needs answered before SR-06/SR-07.
+   Full release branches (`release/2.x`) are explicitly not adopted now — no evidence of a need to
+   maintain parallel version lines yet, and tags compose cleanly into that model later if the need
+   appears.
+
+**Reasoning:**
+
+- The compiled-template model is the only one of the three weighed options that gets exact visual
+  fidelity, zero network dependency for offline `arcane-cli` users, and open-source distribution all at
+  once — the other two each sacrifice one of the three (see Rejected alternatives).
+- Licensing the *rendered output* rather than the component source lets `arcane-ui` stay a private,
+  commercially-licensed product while still letting its design work reach every `arcane-cli` user,
+  mirroring how compiled/minified distributions of otherwise-proprietary tooling are commonly licensed
+  for their output alone.
+- Keeping the export-contract registration scoped to exactly what Show Report needs (decision 5) avoids
+  committing `arcane-ui` to a large, speculative export surface before a second consumer of the
+  mechanism exists to validate the general shape is right.
+
+**Rejected alternatives:**
+
+- **A hosted render endpoint** — rejected: introduces a network dependency that breaks offline use for
+  `arcane-cli` consumers, and sends report data (potentially including venture/client names — the same
+  class ARC-031 exists to keep out of shipped content) off-machine. Remains available later as an
+  optional hosted-publishing add-on, not the default path.
+- **Open-sourcing `arcane-ui` outright and rendering it locally in `arcane-cli`** — rejected as the
+  default: exact fidelity and zero network dependency, but adds a ~200 KB React runtime to every
+  `arcane-cli` install for a capability (one static document) that doesn't need a UI framework at
+  request time, and is a business decision with consequences well beyond this one report feature. Stays
+  the documented fallback only if decision 1's compiled-template licensing is declined.
+
+**Open questions (deferred to SR-05b/SR-06/SR-07 implementation, not blocking acceptance of the shape
+above):**
+
+- The exact `ARCUI-016`-shaped release-tagging ADR text is `arcane-ui`'s own governance artifact, not
+  this repository's — decision 7 above records only the dependency and the recommendation.
+- Whether the light color scheme's contrast retune (measured at 1.18–2.93:1 on light surfaces for
+  signal/accent tokens) is containable within SR-05b's scope, or whether Show Report ships dark-only
+  first with light tracked as its own follow-on `arcane-ui` item — the plan's own stated riskiest
+  assumption, not resolved by this ADR.

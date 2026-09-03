@@ -1,7 +1,8 @@
 ---
 title: Show Report — Generated Program-Completion Reports, Rendered with arcane-ui
-status: draft
+status: active
 created: 2026-09-02
+activated: 2026-09-03
 baseline: c3143e6 (main)
 owner: operator (payini)
 executor: Arcane autonomous loop (one epic per session) — activates when SR-00 is merged
@@ -9,7 +10,14 @@ executor: Arcane autonomous loop (one epic per session) — activates when SR-00
 
 # Show Report — Generated Program-Completion Reports, Rendered with arcane-ui
 
-> **Status: draft, saved 2026-09-02 for the next session.** Approved by the operator as a plan; deliberately *not* started. SR-00 turns this draft into a running program (PRD, ARC-042, KICKOFF/OPERATOR-QUEUE, delegation record, `status: active`). Until then nothing here authorizes autonomous execution. The intake this planning produced was already filed the same day: five ideas in `IDEAS.md` (2026-09-02 23:24 entries) and five items in `TODO.md` (the LOW/MEDIUM items dated 2026-09-02 at the end of Open Items); the three research memos are landed under `docs/research/` (see Sources).
+> **Status: active, as of SR-00 (2026-09-03).** Approved by the operator as a plan 2026-09-02;
+> SR-00 turned the draft into a running program — this PRD, ARC-042 drafted `Proposed`,
+> `KICKOFF.md`/`OPERATOR-QUEUE.md`, and the `show-report-plan` delegation record are all in place.
+> **The standing delegation itself is still inert until the operator merges SR-00's own PR** — see
+> Authority & Delegation below and `OPERATOR-QUEUE.md` Q-001. The intake this planning produced was
+> filed 2026-09-02: five ideas in `IDEAS.md` (23:24 entries) and five items in `TODO.md` (the
+> LOW/MEDIUM items dated 2026-09-02 at the end of Open Items — two already fixed 2026-09-03, see
+> `TODO.md`'s own notes); the three research memos are landed under `docs/research/` (see Sources).
 
 ## Context
 
@@ -150,6 +158,78 @@ Executed there via its own `spell-plan` → `spell-architect` cycle, branch `cop
 | SR-08 | Program DoD audit + close (walk the DoD with evidence, `spell-check-drift`, `spell-close-session`) | process · no | all | — |
 
 **Riskiest assumption:** that the light scheme's contrast retune (SR-05b) is contained — Adelaide measured signal/accent at 1.18–2.93:1 on light surfaces, so the light lens may need more token work than a report epic should carry; if so, ship dark-only first and track light as its own arcane-ui item.
+
+## Authority & Delegation
+
+This repository has no installed agent roster, and `agent-policies.md` fails closed: missing authority
+⇒ human execution required for commit and merge. As with Become Current and Lessons Hardening, the
+operator resolves that explicitly for this program:
+
+> **Standing delegation, recorded explicitly in [`.arcane/delegations.json`](../../../.arcane/delegations.json)
+> (id `show-report-plan`), listable via `spell doctor`, revocable by editing or removing that
+> entry:** sessions executing epics of this plan may — without per-action approval — create session
+> branches, commit, push, open PRs, and merge their own PRs into `main` via the sanctioned strategies
+> (merge/rebase, never squash), for work scoped to an epic defined in this plan, **in this
+> repository only**. **The grant activates only once the operator merges SR-00** — until then, work
+> on this plan is interactive/operator-merged, the same way Phase 0 was for both prior programs.
+
+**Explicitly outside the grant** (always queue, never perform) — `.arcane/delegations.json`'s
+`excludedActions` for this entry is the source of truth; summarized here for readability:
+
+- Any GitHub/ADO **platform-settings mutation**: rulesets, required checks, `allow_auto_merge`, repo
+  settings, secrets, webhooks.
+- Deleting or force-resetting any branch that holds content not on `main` (content-verified via
+  `git cherry` + diff, not ancestry).
+- Manual `npm publish` or `workflow_dispatch` of publish/release workflows (the automatic version-bump
+  → `release-drift.yml` → `publish.yml` chain is sanctioned and expected).
+- **Accepting an ADR** — ARC-042 (this program's own) is drafted `Proposed` and stays that way until
+  the operator accepts it via `OPERATOR-QUEUE.md` Q-002.
+- **Any work scoped to the private `arcane-ui` repository** (SR-05a, SR-05b) — a different repo,
+  different governance, different delegation; this grant covers `arcane-cli` only.
+- **SR-07's pipeline automation** — ships only after the operator's explicit confirmation, per the
+  epic's own "operator-confirmed" marker in the Epics table above.
+- Marking anything in `OPERATOR-QUEUE.md` as approved/done — operator-only.
+- Anything in `.arcane/governance/agent-policies.md`'s prohibited list (MCP/security config, etc.).
+
+## Standing Constraints (digest — full text in the cited sources)
+
+Identical invariants to Become Current and Lessons Hardening — these are repo-wide, not
+program-specific:
+
+- **Serial by construction.** Any change under `src/assets/`, to `src/modules/registry.ts`, or
+  `src/config/profiles.ts` requires a `package.json` version bump differing from `main`
+  (`scripts/check-version-bump.ts`). Epics touching `src/assets/` (notably SR-02, SR-06) run one at a
+  time, sequentially — never two concurrent worktree epics in this repo (ARC-028 R4).
+- **Every merged bump publishes.** `release-drift.yml` auto-creates the release on a `package.json`
+  version change on `main`; `publish.yml` publishes to npm with provenance. Batch each epic's
+  `src/assets/` changes into ONE PR.
+- **PR-only, no squash, rebase-before-PR.** Required checks: `Lint, typecheck, test, build`, `PR
+  branch is rebased on target`, `Review round clear`. Pre-PR guard: `git fetch origin && git rebase
+  origin/main && git push --force-with-lease`.
+- **Hooks are slow by design.** `.husky/pre-push` runs the full test suite; budget for long pushes.
+- **Session lifecycle.** Every iteration: `spell-open-session` → work → `spell-close-session`.
+  Session branches: `sessions/YYYY-MM-DD-<topic-slug>`.
+- **Attribution trailers** on every commit per [[git-conventions]].
+- **Working protocol** (root `CLAUDE.md`): verify before asserting; checked ≠ inferred ≠ told; a
+  green test suite is not itself evidence.
+- **Cross-repo boundary.** SR-05a/SR-05b execute under `arcane-ui`'s own governance and delegation,
+  not this one — see Authority & Delegation above and `KICKOFF.md` step 3.
+
+## Loop Protocol
+
+Full step-by-step protocol lives in [KICKOFF.md](KICKOFF.md), kept as the single source so the two
+never drift against each other (the exact class of bug this program's own SR-01 backfill work
+corrects elsewhere). Digest: open → select topmost unblocked in-repo epic → run its empirical-first
+step → execute per its Route → cite by stable locator → ship (PR, checks, merge under the grant) →
+record (`**Report:**` line, `PLAN.md` checkbox, `TODO.md`/`IDEAS.md`) → close. Halt conditions are
+listed in `KICKOFF.md`'s own closing paragraph.
+
+## Danger Gates & Operator Queue
+
+[OPERATOR-QUEUE.md](OPERATOR-QUEUE.md) is the single mutable surface between loop and operator. The
+loop **appends** fully-prepared entries; the operator executes/approves and marks them done. Seeded
+today with: **Q-001** (merge SR-00 — activates the grant above), **Q-002** (accept/revise/reject
+ARC-042).
 
 ## Decisions the operator owns (to be recorded in ARC-042 / OPERATOR-QUEUE at SR-00)
 
