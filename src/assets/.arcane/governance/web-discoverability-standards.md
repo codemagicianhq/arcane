@@ -18,6 +18,7 @@ How a web property becomes retrievable by search-engine crawlers and by the AI a
 - Any value that legitimately differs per environment — a canonical hostname, an "is this production" flag — must be resolved at runtime from the running environment, never baked into a shared build artifact (WD-04, WD-05).
 - Crawler traffic must never pass through endpoints carrying human-traffic side effects, and any crawler-facing content listing must reuse the application's own visibility rule rather than a hand-maintained copy of it (WD-06, WD-07).
 - Crawl control (robots exclusion) and index control (a response header) close different gaps and are both required on non-production origins; search-index presence, not a static convention file alone, is the real lever for AI-assistant retrieval (WD-09, WD-12).
+- AI assistants and answer engines reach a site through *retrieval* user-agents that are distinct from *training* crawlers; disallowing a retrieval agent removes the property from AI answers while a training opt-out does not — decide the two separately, and never let one edit silently cover both (WD-16). Measure the result through a dedicated AI-referrer channel, and keep sitemap `lastmod` tied to real content dates so freshness is a signal rather than a constant (WD-17, WD-18).
 
 ---
 
@@ -40,6 +41,9 @@ How a web property becomes retrievable by search-engine crawlers and by the AI a
 | WD-13 | User-supplied metadata text needs HTML-attribute escaping AND, for inline JSON-LD, "<"-character escaping. |
 | WD-14 | Share images follow the ~1.91:1 convention, keep a safe-content margin, and stay modest in file size. |
 | WD-15 | AI image generation can't reproduce exact type/logos — composite the real assets over generated artwork instead. |
+| WD-16 | Never disallow a *retrieval*-class AI user-agent when AI-assistant visibility is a goal; a *training*-crawler opt-out is a separate, explicit decision, declared as named per-agent groups. |
+| WD-17 | Measure AI-assistant referrals through a dedicated referrer channel, an access-log watch on retrieval-class user-agents, and each engine's own AI-visibility report. |
+| WD-18 | Sitemap `lastmod` values derive from each URL's real content change date — never one build-time constant shared by every URL. |
 
 ---
 
@@ -140,6 +144,8 @@ Disallow: /
 
 **Why:** see "Why two noindex mechanisms, not one" below.
 
+**Non-canonical production hostnames are not non-production origins.** A hosting platform commonly serves the production artifact on an auto-assigned default hostname (and often a `www` alias) in addition to the canonical origin, and a static host may be unable to vary response headers by hostname. Those origins serve the *real* artifact, so WD-09's dual suppression must never be applied to the artifact itself — it would noindex production. The mitigation is the one WD-01 already requires: a canonical tag on every route pointing at the canonical origin, plus registering only the canonical origin with each search console. Inventory such hostnames explicitly (spell-make-discoverable Phase 1) so their state is observed rather than assumed; a canonical tag is a hint an engine may decline, so an unlisted default hostname that has already been indexed is a finding, not noise.
+
 ---
 
 ## Why two noindex mechanisms, not one
@@ -166,7 +172,35 @@ Using only the robots-exclusion rule leaves the bare-URL-listing gap open. Using
 
 ### WD-12 — Search-index presence outweighs a static AI-readable file
 
-**Rule/observation: For the specific goal of being retrievable *by AI assistants* — as distinct from being found by a human searching directly — being present and current in a major search engine's index is a substantially stronger lever than any single static "AI-readable" convention file placed at a well-known path (for example, a plain-text site-description file such as the emerging `llms.txt` convention). Several AI assistants answer by drawing on a search engine's index rather than crawling the web independently, so an assistant's ability to surface a page is frequently bottlenecked on that page's search-index presence, not on whether a convention file exists at all. A convention file is still worth publishing — it costs little and helps the assistants that do read it directly — but it should not be mistaken for the primary lever. The everything-else in this document (WD-01 through WD-11) is the primary lever. Enforcement: structured spell gate (ARC-023) — spell-make-discoverable's Phase 2 Audit table (Search-engine registration, WD-12) reads the webmaster console's own coverage status verbatim before Phase 3's approval gate allows any fix to proceed.**
+**Rule/observation: For the specific goal of being retrievable *by AI assistants* — as distinct from being found by a human searching directly — being present and current in a major search engine's index is a substantially stronger lever than any single static "AI-readable" convention file placed at a well-known path (for example, a plain-text site-description file such as the emerging `llms.txt` convention). Several AI assistants answer by drawing on a search engine's index rather than crawling the web independently, so an assistant's ability to surface a page is frequently bottlenecked on that page's search-index presence, not on whether a convention file exists at all. A convention file is still worth publishing — it costs little and helps the assistants that do read it directly — but it should not be mistaken for the primary lever. The everything-else in this document (WD-01 through WD-11, and WD-16 through WD-18) is the primary lever. Enforcement: structured spell gate (ARC-023) — spell-make-discoverable's Phase 2 Audit table (Search-engine registration, WD-12) reads each relevant webmaster console's own coverage status verbatim before Phase 3's approval gate allows any fix to proceed.**
+
+Three refinements, each from measurement rather than from the conventions' own claims:
+
+- **The index that matters is often not the largest one.** Several AI answer engines and assistant search features build on a *second* engine's index rather than the one with the largest human query share. Coverage therefore has to be confirmed in the console of each engine whose index an AI answer engine draws on — and those consoles are also where the only citation-level AI-visibility reports live. Registering with the largest-share engine alone leaves the AI-retrieval path unverified.
+- **The measured audience for a convention file is coding agents, not answer engines.** Large-sample crawl logs show answer engines essentially never request `llms.txt`; the agents that do are IDE assistants and coding agents fetching documentation, which also commonly ask for a Markdown representation of a page. Publish the file for that audience, and where the property serves developer documentation, serve a Markdown representation of each documentation route alongside it — that is what those agents actually read.
+- **Structured data behaves the same way.** Inline JSON-LD earns rich results and gives entity-aware consumers a machine-readable anchor, but controlled measurement shows no independent effect on AI-assistant citation. Publish it for the former reasons; do not count it as an AI lever.
+
+---
+
+## AI retrieval, freshness, and measurement
+
+### WD-16 — Retrieval agents are never disallowed; training opt-out is a separate decision
+
+**Rule: A robots-exclusion file must never disallow a *retrieval*-class AI user-agent — the agents an AI assistant or answer engine fetches a page with at answer time, or builds its own search index with — when being retrievable by AI assistants is a goal of the property. Opting out of *training* crawlers (the agents that collect data for model training and have no effect on answer-time retrieval) is a legitimate, separate decision: record it explicitly, and declare any policy as named per-agent groups so the two classes are visibly distinct in the file. Classify each agent against its vendor's current published crawler documentation, never from memory — the names, and which class each belongs to, change. Enforcement: structured spell gate (ARC-023) — spell-make-discoverable's Phase 2 Audit table (Robots and sitemap policy, WD-16) parses the live `robots.txt` group by group and requires that no retrieval-class user-agent is matched by a `Disallow:` covering an intended-public route before Phase 3's approval gate allows any fix to proceed.**
+
+**Why:** Vendors publish separate user-agents for the two jobs, and the common failure is a well-intentioned "block the AI scrapers" edit that lists every AI agent name it can find. Human search rankings look untouched afterward — the ordinary search crawler was never in the list — while the property silently disappears from AI answers, because the retrieval agent was. Nothing in a search console reports that loss. A broad wildcard `Allow` is the correct posture for visibility, but it is fragile precisely because it is implicit: naming the retrieval agents as their own allow-groups makes the intent legible to the next editor and gives the audit something to assert against. Note that some user-initiated fetch agents disregard robots exclusion entirely; a `Disallow` aimed at them is a policy statement, not a control, and edge-level blocking is the actual mechanism if one is wanted.
+
+### WD-17 — Measure AI referrals, or the rest of this document is unverifiable
+
+**Rule: Give AI-assistant traffic its own measurement path: a dedicated referrer channel in the property's analytics matching the assistant hostnames that send clicks, an access-log watch on retrieval-class user-agents (so fetches that never become clicks are still visible), and each search console's AI-visibility report where one exists. Treat the resulting counts as a floor, never a total. Enforcement: explicitly advisory (ARC-023) — which analytics stack, which assistant hostnames, and which console reports exist is deployment-specific; spell-make-discoverable carries it as a Phase 6 acceptance-checklist line the operator verifies, not as a Phase 2 gate.**
+
+**Why:** Most AI-assistant exposure never produces a referred click — the answer is consumed inside the assistant, and much of what does click through arrives with no referrer and lands as direct traffic. Without a dedicated channel and a log-level view of the retrieval agents themselves, the effect of WD-01 through WD-16 is invisible: a property can be cited daily and show nothing in its analytics, or be silently dropped and show nothing either. The measurement is cheap and the alternative is guessing.
+
+### WD-18 — Sitemap `lastmod` tracks real content dates
+
+**Rule: Each sitemap `lastmod` value must derive from that URL's actual content change date — a content file's own date, the newest entry in a changelog the page renders, a commit timestamp — never a single build-time constant shared by every URL. Enforcement: structured spell gate (ARC-023) — spell-make-discoverable's Phase 2 Audit table (Robots and sitemap policy, WD-18) parses the live sitemap and fails the check when every `lastmod` carries one shared value, or when a sampled URL's `lastmod` predates content that demonstrably changed later, before Phase 3's approval gate allows any fix to proceed.**
+
+**Why:** Freshness is a measured citation factor for AI answer engines, and `lastmod` is the one freshness signal a crawler can read without fetching the page. A constant shared across every URL says either "nothing has changed since this date" or "everything changed at once" — both false — so an engine learns to ignore the field, and a page that genuinely changed yesterday looks as stale as one untouched for a year. The constant also tends to be set once at launch and never moved, which is the quiet failure mode: it passes every structural check while actively misreporting the property's freshness.
 
 ---
 
