@@ -60,7 +60,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) | Build-Time Spell Compiler: Generated Client Stubs and Shared Prose Fragments | 2026-08-31 | Accepted   |
 | [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
 | [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
-| [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Proposed   |
+| [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
 
 ---
 
@@ -2268,7 +2268,7 @@ format), and home-directory default (yes, `~/.arcane/org-tokens` — see
 ## ARC-042 — Show Report: Compiled-Template Distribution Model and Program Decisions
 
 **Date:** 2026-09-03
-**Status:** Proposed
+**Status:** Accepted (2026-09-03, operator accept call — [OPERATOR-QUEUE.md Q-002](docs/plans/show-report/OPERATOR-QUEUE.md#q-002--accept-revise-or-reject-arc-042); all seven decisions accepted as drafted after the operator explicitly weighed decision 2's name against the Naming Test and kept "Show Report" — it is already earned theater lingo, a stage manager's post-performance record, not a plain descriptive label). Implementation: SR-02 onward.
 **Related:** [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (the public-repository, MIT-licensed model this decision's distribution choice must respect), [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate) (the privacy-gate class that bounds what report content may ever surface)
 **Sources:** [docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md), [docs/research/show-report-feasibility.md](docs/research/show-report-feasibility.md), [docs/research/show-report-design.md](docs/research/show-report-design.md), [docs/research/show-report-narrative.md](docs/research/show-report-narrative.md), [features/show-report/PRD.md](features/show-report/PRD.md)
 
