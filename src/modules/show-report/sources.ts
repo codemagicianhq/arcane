@@ -20,6 +20,21 @@ async function runGitTextOrNull(cwd: string, args: string[]): Promise<string | n
   }
 }
 
+/**
+ * True for a shallow clone (`--depth`). In one, getCloseCommit /
+ * getVersionAtRef / getCast cannot see the history the version span and cast
+ * derive from, so they silently omit those fields -- and a parity check then
+ * reports the omission as "drift". Callers that gate on parity must treat a
+ * shallow clone as "cannot verify", never as drifted. Found the hard way:
+ * publish.yml's default fetch-depth: 1 checkout failed the golden test that
+ * ci.yml's full-history checkout had just passed, and v0.34.3 never reached
+ * npm because of it.
+ */
+export async function isShallowRepository(cwd: string): Promise<boolean> {
+  const out = await runGitTextOrNull(cwd, ["rev-parse", "--is-shallow-repository"]);
+  return out === "true";
+}
+
 /** Reads `package.json`'s `version` field as it existed at `ref`, without touching the working tree. */
 export async function getVersionAtRef(cwd: string, ref: string): Promise<string | null> {
   const content = await runGitTextOrNull(cwd, ["show", `${ref}:package.json`]);

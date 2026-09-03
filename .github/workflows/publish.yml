@@ -20,6 +20,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history, like ci.yml and release-drift.yml. The test suite this
+          # job runs includes show-report's golden parity test, whose version span
+          # and cast derive from git history; the default shallow checkout made it
+          # report spurious drift and failed the v0.34.3 publish (SR-03).
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

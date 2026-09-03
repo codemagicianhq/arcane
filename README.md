@@ -116,7 +116,7 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 | 📜 **Spells** | **<!--count:spells-->41<!--/count:spells-->** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
 | ⚖️ **Governance** | **<!--count:governance-->25<!--/count:governance-->** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
 | 🤖 **Agents** | **<!--count:agents-->12<!--/count:agents-->** ready-made agent personas with roles, clusters, and a gamified autonomy model — assign work and power levels per repo. |
-| 🛠️ **CLI** | `spell init / add / update / status / uninstall` — install by profile or à la carte, and keep everything in sync as new versions ship. |
+| 🛠️ **CLI** | `spell init / add / update / status / uninstall` — install by profile or à la carte, and keep everything in sync as new versions ship. `spell report` turns a program's `PLAN.md` into a Show Report — a generated completion page — offline. |
 
 <!-- arcane:start -->
 <details>
@@ -195,6 +195,9 @@ spell agents init
 # Keep your installed governance current
 spell status     # what's installed + available updates
 spell update     # pull the latest
+
+# When a program in docs/plans/<slug>/ has shipped, generate its Show Report -- offline
+spell report     # writes docs/plans/<slug>/show-report.{json,html}
 ```
 
 > **`spell` or `arcane`?** Both commands invoke the same CLI. `spell` ties to the Spell Loop; `arcane` is there for when you reach for the brand name. Use whichever you like.

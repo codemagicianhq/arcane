@@ -55,4 +55,13 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   `decision-documentation-standard.md`'s own supersession convention — nothing here is irreversible.
 - **Status:** [x] done 2026-09-03 — [ARC-042](../../../DECISIONS.md#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) accepted as drafted, all seven decisions. The operator explicitly reconsidered decision 2 (the name) against `naming-conventions.md`'s Naming Test — whether a coined Arcane-lingo name was warranted — and kept "Show Report": it is already earned theater lingo (a stage manager's post-performance record, mapping directly onto epics/corrections/dates/cast), it satisfies the Systems/Services tier's functional-clarity rule for technical payloads (`spell report`, `show-report.json`), and the autonomy corollary ("the more autonomous the tool, the more boring its name") points the same way for an unattended CI generator. Status flipped by the executing session on the operator's behalf per this entry's own "Exact commands" allowance.
 
-<!-- The loop appends Q-003+ below this line. -->
+## Q-003 — v0.34.3 exists as a tag and GitHub release but never reached npm
+
+- **What:** Informational, plus one optional platform action. SR-02's merge bumped `main` to `0.34.3`; `release-drift.yml` created the tag and release, but `publish.yml` (run `33788319964`) failed in its pre-publish test step, so npm still serves `0.34.2`. Cause, found and fixed in SR-03: `publish.yml`'s checkout used the default shallow clone while `ci.yml`'s test job uses `fetch-depth: 0`; show-report's golden parity test derives the version span and cast from git history, silently omitted them in the shallow clone, and reported the omission as drift. SR-03 sets `fetch-depth: 0` in `publish.yml`, makes the generator say "shallow clone" instead of "drifted", and ships as `0.35.0`, which publishes normally and supersedes `0.34.3`.
+- **Why:** Re-running a publish workflow and editing or deleting a GitHub release are both outside the delegation grant (workflow dispatch; platform mutation). Nothing is needed for correctness — versions need not be contiguous on npm — but the `v0.34.3` release page implies an artifact that does not exist.
+- **Preconditions:** SR-03 merged and `0.35.0` confirmed on npm (`npm view arcane-cli version`).
+- **Exact commands (optional):** annotate the release — `gh release edit v0.34.3 --notes "Never published to npm: the publish job failed on a shallow-checkout test defect fixed in v0.35.0 (SR-03). Use 0.35.0."` — or delete it and its tag (`gh release delete v0.34.3 --cleanup-tag`) if you prefer no orphan release. Do **not** re-run the `v0.34.3` publish: that tag's commit still carries the shallow-checkout `publish.yml`.
+- **Rollback:** `gh release edit` is reversible; deleting the tag is not (the commit itself remains on `main`).
+- **Status:** [ ] open
+
+<!-- The loop appends Q-004+ below this line. -->

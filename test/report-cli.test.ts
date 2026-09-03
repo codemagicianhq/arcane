@@ -10,14 +10,18 @@ import {
   programNameFromTitle,
   runReportCheck,
 } from "../scripts/report.js";
+import { isShallowRepository } from "../src/modules/show-report/sources.js";
 
 const ROOT_DIR = process.cwd();
 
 let dir: string | undefined;
+let shallowDir: string | undefined;
 
 afterEach(async () => {
   if (dir) await removeFixtureDir(dir);
+  if (shallowDir) await removeFixtureDir(shallowDir);
   dir = undefined;
+  shallowDir = undefined;
 });
 
 async function writeFile(root: string, relPath: string, content: string) {
@@ -26,16 +30,28 @@ async function writeFile(root: string, relPath: string, content: string) {
   await fs.writeFile(full, content, "utf8");
 }
 
-/** A minimal but complete program fixture: git history, PLAN.md with one epic, and the real v0 template. */
+/**
+ * A minimal but complete program fixture: git history, PLAN.md with one epic,
+ * and the real v0 template.
+ *
+ * Commit dates are pinned on or before the plan's own `completed: 2026-09-02`
+ * so the fixture is internally coherent: the close commit (the one `main`
+ * stood at when that day ended) exists, and the history-derived version span
+ * therefore resolves. Left unpinned, the commits carry today's real date, the
+ * close resolves to nothing, and the span is silently omitted -- which is
+ * correct behaviour on incoherent data, but makes the fixture useless for
+ * testing anything downstream of it.
+ */
 async function createProgramFixture(): Promise<string> {
   const root = await createFixtureDir("report-cli");
+  const on = (day: string) => ({ authorDate: `${day}T12:00:00`, committerDate: `${day}T12:00:00` });
   runGit(root, ["init", "-b", "main"]);
   runGit(root, ["config", "user.name", "Arcane Tests"]);
   runGit(root, ["config", "user.email", "arcane-tests@example.invalid"]);
 
   await writeFile(root, "package.json", JSON.stringify({ name: "fixture", version: "1.0.0" }, null, 2));
   runGit(root, ["add", "-A"]);
-  runGit(root, ["commit", "-m", "chore: seed baseline"]);
+  runGit(root, ["commit", "-m", "chore: seed baseline"], on("2026-09-01"));
   const baselineSha = runGit(root, ["rev-parse", "HEAD"]);
 
   await writeFile(
@@ -71,7 +87,7 @@ async function createProgramFixture(): Promise<string> {
   await fs.mkdir(join(root, "src", "assets", "report"), { recursive: true });
   await fs.copyFile(join(ROOT_DIR, TEMPLATE_RELPATH), join(root, TEMPLATE_RELPATH));
   runGit(root, ["add", "-A"]);
-  runGit(root, ["commit", "-m", "docs: add alpha plan", "-m", "Agent: claude"]);
+  runGit(root, ["commit", "-m", "docs: add alpha plan", "-m", "Agent: claude"], on("2026-09-02"));
   return root;
 }
 
@@ -182,10 +198,57 @@ describe("show-report CLI: runReportCheck --check/--fix", () => {
   );
 });
 
+describe("show-report: shallow-clone detection (the v0.34.3 publish failure)", () => {
+  it(
+    "reports false for a normal fixture repo and true for a real --depth 1 clone of it",
+    async () => {
+      dir = await createProgramFixture();
+      expect(await isShallowRepository(dir)).toBe(false);
+
+      // A real shallow clone, the way actions/checkout's default produces one.
+      const shallow = `${dir}-shallow`;
+      shallowDir = shallow;
+      runGit(dir, ["clone", "--depth", "1", `file://${dir.replace(/\\/g, "/")}`, shallow]);
+      expect(await isShallowRepository(shallow)).toBe(true);
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+
+  it(
+    "a shallow clone omits the history-derived versionSpan and cast, which a parity check would misread as drift",
+    async () => {
+      dir = await createProgramFixture();
+      await runReportCheck("fix", dir);
+      const full = JSON.parse(await fs.readFile(join(dir, "docs/plans/alpha/show-report.json"), "utf8")) as {
+        program: { versionSpan?: unknown };
+        cast: unknown[];
+      };
+      expect(full.program.versionSpan).toBeDefined();
+
+      const shallow = `${dir}-shallow2`;
+      shallowDir = shallow;
+      runGit(dir, ["clone", "--depth", "1", `file://${dir.replace(/\\/g, "/")}`, shallow]);
+      // Regenerating inside the shallow clone drops exactly those fields --
+      // hence `check` must say "cannot verify", not "drifted".
+      const result = await runReportCheck("check", shallow);
+      expect(result.drifted.length).toBeGreaterThan(0);
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+});
+
 describe("show-report golden: this repository's own committed reports", () => {
   it(
     "ARC-012-style parity: every committed docs/plans/*/show-report.{json,html} matches a regeneration from its sources",
-    async () => {
+    async ({ skip }) => {
+      // The version span and cast derive from git history; a shallow clone
+      // cannot see it and would report the resulting omission as drift. That
+      // is "cannot verify here", not a failure -- ci.yml's full-history
+      // checkout is where this guarantee is enforced. (publish.yml's shallow
+      // default checkout failed exactly this test for v0.34.3.)
+      if (await isShallowRepository(ROOT_DIR)) {
+        skip("shallow clone: the version span and cast need full git history (fetch-depth: 0)");
+      }
       const result = await runReportCheck("check", ROOT_DIR);
       expect(result.drifted).toEqual([]);
       // The two closed programs must be present; this program's own table-form plan is skipped by design.

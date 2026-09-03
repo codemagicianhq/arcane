@@ -50,9 +50,11 @@ drift check treats hub artifacts appearing here as a Critical finding.
   (PR #88).
 - [ARC-012](DECISIONS.md#arc-012--generated-distributable-artifacts-require-a-parity-guard) enforcement
   shipped (BC-04's YAML-to-agent-render parity test) — no longer a standing gap.
-- **Show Report** is planned and saved as a draft ([docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md),
-  `status: draft`) but deliberately not started. SR-00 (program activation) is the next concrete
-  action, gated on an explicit operator go.
+- **Show Report** is active ([docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md),
+  `status: active` since 2026-09-03, [ARC-042](DECISIONS.md#arc-042--show-report-compiled-template-distribution-model-and-program-decisions)
+  accepted). SR-00 through SR-02 shipped the same day: the data model, both closed programs'
+  generated `show-report.{json,html}`, the v0 renderer, and the `check:report` gate. Next in-repo:
+  SR-03 (`spell report`) and SR-04; SR-05a/b run in the private arcane-ui repository.
 
 ## Constraints
 
