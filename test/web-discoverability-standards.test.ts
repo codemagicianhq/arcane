@@ -71,6 +71,49 @@ describe("spell-make-discoverable Phase 2 vs web-discoverability-standards.md: r
     }
   });
 
+  it("WD-16's Phase 2 row classifies robots.txt user-agents as retrieval vs training and is a structured spell gate", () => {
+    const wd16Line = lineCiting(phase2Table(spell), "WD-16");
+    expect(wd16Line, "no Phase 2 row cites WD-16").toBeDefined();
+    expect(wd16Line).toMatch(/Disallow:/);
+    expect(wd16Line).toMatch(/retrieval/i);
+    expect(wd16Line).toMatch(/training/i);
+    const idIndex = standards.indexOf("### WD-16");
+    expect(idIndex, "WD-16 heading not found").toBeGreaterThan(-1);
+    expect(standards.slice(idIndex, idIndex + 1500)).toContain("Enforcement: structured spell gate (ARC-023)");
+  });
+
+  it("WD-18's Phase 2 row tests sitemap lastmod against real content dates and is a structured spell gate", () => {
+    const wd18Line = lineCiting(phase2Table(spell), "WD-18");
+    expect(wd18Line, "no Phase 2 row cites WD-18").toBeDefined();
+    expect(wd18Line).toMatch(/lastmod/);
+    expect(wd18Line).toMatch(/constant/);
+    const idIndex = standards.indexOf("### WD-18");
+    expect(idIndex, "WD-18 heading not found").toBeGreaterThan(-1);
+    expect(standards.slice(idIndex, idIndex + 1500)).toContain("Enforcement: structured spell gate (ARC-023)");
+  });
+
+  it("WD-17 (AI-referral measurement) is advisory: not cited in Phase 2, but carried on the Phase 6 acceptance checklist", () => {
+    const idIndex = standards.indexOf("### WD-17");
+    expect(idIndex, "WD-17 heading not found").toBeGreaterThan(-1);
+    expect(standards.slice(idIndex, idIndex + 1500)).toContain("explicitly advisory (ARC-023)");
+    expect(lineCiting(phase2Table(spell), "WD-17")).toBeUndefined();
+    const phase6 = spell.slice(spell.indexOf("## Phase 6 — Report"), spell.indexOf("## Rules"));
+    expect(phase6).toContain("`WD-17`");
+  });
+
+  it("WD-12's Phase 2 row requires coverage in each engine whose index an AI answer engine draws on, not only the largest-share engine", () => {
+    const wd12Line = lineCiting(phase2Table(spell), "WD-12");
+    expect(wd12Line, "no Phase 2 row cites WD-12").toBeDefined();
+    expect(wd12Line).toMatch(/each engine whose index an AI answer engine draws on/);
+    expect(wd12Line).toMatch(/AI-visibility report/);
+  });
+
+  it("WD-16, WD-17, and WD-18 are in the governance doc's rule index", () => {
+    for (const id of ["WD-16", "WD-17", "WD-18"]) {
+      expect(standards).toContain(`| ${id} |`);
+    }
+  });
+
   it("every WD-nn ID cited in the Phase 2 table exists in the governance doc's rule index (no dangling citation)", () => {
     const citedIds = [...phase2Table(spell).matchAll(/`(WD-\d\d)`/g)].map((m) => m[1]);
     expect(citedIds.length).toBeGreaterThan(0);

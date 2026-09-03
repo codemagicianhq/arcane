@@ -94,8 +94,24 @@ for each of `{NONPROD_ORIGINS}`:
   link, Open Graph / social-card tags, and any structured-data block —
   fetched with a plain HTTP client that does not execute JavaScript.
 - **`robots.txt`** — full raw contents, and whether it exists at all.
+- **AI user-agent policy in `robots.txt`** — every `User-agent:` group
+  present, and which vendor-published *retrieval* agents (the ones an AI
+  assistant or answer engine fetches with at answer time or indexes with)
+  versus *training* crawlers each group's rules match — checked against each
+  vendor's current crawler documentation, not memory, because the names
+  change.
+- **AI-readable convention files** — whether `/llms.txt` exists, its raw
+  contents, and whether documentation routes also serve a Markdown
+  representation.
+- **Non-canonical production hostnames** — every hostname the platform
+  serves the production artifact on besides `{SITE_ORIGIN}` (a
+  platform-assigned default hostname, a `www` alias), with the canonical tag
+  and robots meta of one sampled route on each. These are not
+  `{NONPROD_ORIGINS}` — they serve the real artifact — so record them
+  separately.
 - **`sitemap.xml`** (or wherever `robots.txt` points) — full raw contents,
-  and whether it parses as well-formed.
+  whether it parses as well-formed, and the set of distinct `lastmod` values
+  it carries.
 - **Non-production noindex signals** — for each `{NONPROD_ORIGINS}` host,
   the response headers and parsed `<head>` of one sampled route.
 - **DNS state at `{DNS_ZONE}`** relevant to search-engine registration —
@@ -133,6 +149,8 @@ rule ID for it.
 | *(supplementary)* | Does `robots.txt` contain a `Sitemap:` directive, and does fetching that URL return a well-formed sitemap? | The `Sitemap:` line and the fetched sitemap's parse result. |
 | `WD-07` | Does every URL listed in the sitemap satisfy `{PUBLIC_VISIBILITY_PREDICATE}`? | Any sitemap entries that fail the predicate. |
 | `WD-08` | Where `{PUBLIC_ASSET_PREFIX}` (or another specific public path referenced by page metadata) falls under a broader disallowed prefix in `robots.txt`, is an explicit `Allow:` rule declared for that specific path? | The relevant `Allow:`/`Disallow:` lines from `robots.txt`, and confirmation the specific path is fetchable by a crawler despite the broader disallow. |
+| `WD-16` | Parse `{SITE_ORIGIN}/robots.txt` group by group. Is any *retrieval*-class AI user-agent (per each vendor's current crawler documentation) matched by a `Disallow:` that covers an intended-public route? A training-crawler `Disallow:` is not a failure — record it as the operator's declared policy. | Every `User-agent:` group with its rules, each agent name classified as retrieval or training with the vendor page that says so, and the resolved allow/disallow verdict per retrieval agent for one sampled public route. |
+| `WD-18` | Parse the sitemap's `lastmod` values. Do they differ across URLs and track each URL's actual content change date — or does every entry carry one shared constant? | The distinct `lastmod` values with their counts, and for one sampled URL, the content's own change date (file date, changelog entry, or commit) next to its `lastmod`. |
 | *(supplementary)* | For a sampled route under `{RESTRICTED_PREFIX}`: is it absent from the sitemap, does it carry a noindex signal, and is it unreachable via any link from a route that satisfies `{PUBLIC_VISIBILITY_PREDICATE}`? | Sitemap membership (should be none), noindex signal, and an inbound-link check from the public route set. |
 
 **Non-production noindexing**
@@ -148,7 +166,7 @@ rule ID for it.
 | --- | --- | --- |
 | `WD-10` | Query `{DNS_ZONE}` directly (independent of any console) for the domain-ownership verification record this property's registration depends on. Is it present, and does it match the value the registration actually expects? | Raw DNS query result — record type, name, and full current value — captured before any write, per `EV-05`. |
 | `WD-11` | Is a crawl/recrawl notification path (e.g. IndexNow) wired for URLs that change, and has `{SITE_ORIGIN}` been submitted through the webmaster console for each target search engine? | Notification endpoint configuration (if any), and the submission status shown in each webmaster console. |
-| `WD-12` | In the webmaster console for the search engine with the largest share of query volume in the target market, does `{SITE_ORIGIN}` show confirmed index coverage with no outstanding manual-action or coverage blocker? | The console's own coverage/status readout, copied verbatim — this is what downstream AI-assistant retrieval actually depends on, not the site's own claim of being indexable. |
+| `WD-12` | In the webmaster console of the search engine with the largest share of query volume in the target market, **and** in the console of each engine whose index an AI answer engine draws on (these are frequently different engines), does `{SITE_ORIGIN}` show confirmed index coverage with no outstanding manual-action or coverage blocker? | Each console's own coverage/status readout, copied verbatim, plus its AI-visibility report (citations, grounding queries, or generative-AI impressions) where the console offers one — this is what downstream AI-assistant retrieval actually depends on, not the site's own claim of being indexable. |
 
 ## Phase 3 — Propose
 
@@ -181,6 +199,11 @@ Only with `--apply` **and** after Phase 3 approval. Typical fixes:
   `{RESTRICTED_PREFIX}` from the sitemap.
 - Add the missing noindex header and meta tag for `{NONPROD_ORIGINS}`,
   gated by `{ENV_SIGNAL}` so production never picks it up by accident.
+- Declare named per-agent `robots.txt` groups so retrieval and training
+  agents are visibly separate and a later edit cannot silently block both
+  (`WD-16`); derive sitemap `lastmod` from content dates (`WD-18`); publish
+  `/llms.txt` and, for documentation routes, a Markdown representation
+  (`WD-12`).
 - Fix the escaping gap found under `WD-13`.
 
 Each fix lands as its own commit, so any one of them can be reverted on its
@@ -236,6 +259,12 @@ user-verifiable acceptance checklist:
       sitemap contains no `{RESTRICTED_PREFIX}` or `{NONPROD_ORIGINS}` URLs.
 - [ ] Each `{NONPROD_ORIGINS}` host serves both a noindex header and a
       noindex meta tag on a sampled route.
+- [ ] `{SITE_ORIGIN}/robots.txt` disallows no retrieval-class AI user-agent
+      (`WD-16`), and the sitemap's `lastmod` values are not one shared
+      constant (`WD-18`).
+- [ ] The property's analytics has a dedicated AI-referrer channel and its
+      access log is watched for retrieval-class user-agents (`WD-17`) — so
+      the effect of everything above is measurable rather than assumed.
 - [ ] The DNS verification record at `{DNS_ZONE}`, re-queried
       independently, matches what the registration expects.
 - [ ] The webmaster console for each target search engine shows the
