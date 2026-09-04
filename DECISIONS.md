@@ -61,7 +61,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
 | [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
 | [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
-| [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Proposed   |
+| [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
 
 ---
 
@@ -2372,7 +2372,7 @@ above):**
 ## ARC-043 — Show Report Rows Carry No Emoji: Category Selects the Mark
 
 **Date:** 2026-09-03
-**Status:** Proposed (operator decided the substance live during SR-05a design review — "ok lets drop the emoji"; drafted here for the formal accept per [OPERATOR-QUEUE.md Q-004](docs/plans/show-report/OPERATOR-QUEUE.md#q-004--accept-revise-or-reject-arc-043), since accepting an ADR is never inside a delegation's grant). Implementation: shipped alongside this draft, since the schema freezes at SR-05b start and a later change would be a breaking one.
+**Status:** Accepted (2026-09-03, operator accept call — [OPERATOR-QUEUE.md Q-004](docs/plans/show-report/OPERATOR-QUEUE.md#q-004--accept-revise-or-reject-arc-043); all four decisions accepted as drafted, no revisions. The operator had already decided the substance live during the SR-05a design review — "ok lets drop the emoji" — so this ADR recorded it for the formal accept, since accepting an ADR is never inside a delegation's grant. Status flipped by the executing session on the operator's behalf per that entry's own "Exact commands" allowance.) Implementation: shipped ahead of the accept in `v0.36.0` ([PR #203](https://github.com/codemagicianhq/arcane/pull/203)), because the schema freezes at SR-05b start and a later removal would be a breaking change rather than a clean one.
 **Related:** [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) (the program this amends — the `show-report.json` contract and compiled-template model it fixed)
 **Sources:** [docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md), [docs/plans/show-report/ARCANE-UI-BRIEF.md](docs/plans/show-report/ARCANE-UI-BRIEF.md)
 

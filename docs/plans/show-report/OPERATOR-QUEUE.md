@@ -87,7 +87,7 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
   were deliberately left untouched.
 - **Rollback:** revert the implementing commit; the parser change is backward-compatible in both
   directions, so no plan file needs editing either way.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-03 — [ARC-043](../../../DECISIONS.md#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) **accepted as drafted**, all four decisions, no revisions ("accept ARC-043"). `Status:` flipped by the executing session on the operator's behalf per this entry's own "Exact commands" allowance, the same way Q-002 closed ARC-042. The implementation had already shipped in `v0.36.0` ([PR #203](https://github.com/codemagicianhq/arcane/pull/203)) ahead of the accept, deliberately and disclosed — the schema freezes at SR-05b start, so removing an optional field after that point would have been a breaking change instead of a clean one. Nothing further is owed here; the schema now has no `glyph` field and the `**Report:**` convention ends at `category:`.
 
 ## Q-005 — Decide the committed source of truth for coverage-at-close
 
