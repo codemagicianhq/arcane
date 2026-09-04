@@ -35,7 +35,7 @@ SR-05b has to carry, so read them before planning.
 
 | decision | what it means here |
 |---|---|
-| **Direction A ("Console") is the design** | HUD panels, a bordered stat rail, dense rows with category pills. Built out in dark and light against real Lessons Hardening data. Formalizing it in Claude Design from real components is SR-05a's remaining half. |
+| **Direction A ("Console") is the design** | HUD panels, a bordered stat rail, dense rows with category pills. **The design itself is committed at [`design/`](design/) in this repository — build from those files, not from this description.** `Main.dc.html` is dark, `Light.dc.html` is light and doubles as the print master; the two directions that lost are kept alongside them. See [design/README.md](design/README.md) for what in them is authoritative and what is a data snapshot. |
 | **No emoji anywhere** (ARC-043, Accepted) | `ShowReportRow.glyph` is gone from the schema. A row's mark comes from `category` alone — eight inline SVG symbols keyed `#cat-<category>`. |
 | **Icons and both `--cat-*` palettes ship as v0 from `arcane-cli`** | Use them as they are. Replacing them from arcane-ui's own icon set is welcome but optional, and is a template-only change because they are keyed by category, not authored per row. |
 | **Operator lens only** | The share lens is deferred to SR-05c. Do not build lens switching, Open Graph tags, or path stripping. |
@@ -48,11 +48,16 @@ SR-05b has to carry, so read them before planning.
 SR-05b (operator, 2026-09-04). It is product-wide breakage rather than report scope; details and
 numbers in the contrast section below.
 
-**SR-05a — design first.** Sync arcane-ui's tokens and the report-relevant exportable components
-into a Claude Design design-system project via the `/design-sync` skill + `DesignSync` tool —
-incrementally, one component at a time, never a wholesale replace. Formalize direction A there
-against Circe's structure and the real JSON model (operator lens; light + dark; print). The
-operator approves the design; **the approved design is the spec SR-05b builds.**
+**SR-05a — design first. Substantively done; the artefact is [`design/`](design/).** Direction A was
+drawn against the real JSON model in arcane-ui's own tokens, in dark and light, and approved. Those
+files are the spec SR-05b builds — there is no separate approval step still outstanding.
+
+The Claude Design pass (`/design-sync` + `DesignSync`, incremental, one component at a time, never a
+wholesale replace) is **optional and may be skipped** (operator, 2026-09-04). Its value would be
+formalizing the design against this repository's real components rather than a hand-built
+reproduction of them; its cost is a round trip that the committed artboards already substitute for.
+If it is skipped, SR-05b reads `design/` directly and the components it builds become the
+formalization. The brief's appendix keeps the starting prompt for whenever that pass happens.
 
 **SR-05b — then build.** Design may add fields; the **JSON schema freezes at SR-05b start**,
 additive changes only after that point.

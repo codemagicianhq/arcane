@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; background: #060708; }
+    a { color: #7fdfff; text-decoration: none; }
+    a:hover { color: #ffffff; text-decoration: underline; }
+  </style>
+</helmet>
+
+<div style="background: #060708; color: #c8d5e6; font-family: 'Rajdhani', system-ui, sans-serif; padding: 44px 56px 48px;">
+
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #7c95b5; margin-bottom: 20px;">Show Report · lessons-hardening</div>
+
+  <h1 style="font-family: 'Chakra Petch', system-ui, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.12; letter-spacing: .04em; text-transform: uppercase; color: #e4eaf0; margin: 0 0 14px; max-width: 20ch; text-wrap: balance;">Lessons Hardening</h1>
+
+  <p style="font-size: 17px; line-height: 1.5; color: #9fb8d6; margin: 0 0 34px; max-width: 60ch;">Mechanical enforcement for the Become Current corrections inventory. Complete — 14 of 14 epics shipped, 27 of 27 items dispositioned, nothing waiting on you.</p>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; padding: 20px 0; border-top: 1px solid #2a3e58; border-bottom: 1px solid #2a3e58; margin-bottom: 40px;">
+    <div><div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 24px; color: #e4eaf0;">14/14</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #7c95b5; margin-top: 5px;">Epics shipped</div></div>
+    <div><div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 24px; color: #e4eaf0;">3</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #7c95b5; margin-top: 5px;">Pull requests</div></div>
+    <div><div style="font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; font-size: 18px; color: #e4eaf0; padding-top: 4px;">0.33.2 → 0.34.1</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #7c95b5; margin-top: 6px;">Version span</div></div>
+    <div><div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 24px; color: #e4eaf0;">1</div><div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #7c95b5; margin-top: 5px;">ADRs accepted</div></div>
+  </div>
+
+  <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 22px;">
+    <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #9fb8d6; margin: 0; white-space: nowrap;">Wave 1 · Root cause record and test substrate</h2>
+    <span style="flex-grow: 1; height: 1px; background: #1d2a3d;"></span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 30px; margin-bottom: 44px;">
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 7px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #8ab4ff;">Governance</span>
+        <span style="width: 3px; height: 3px; border-radius: 50%; background: #4f6a8a;"></span>
+        <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">LH-02</a>
+      </div>
+      <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: .02em; color: #e4eaf0;">Root-Cause Analysis Process</div>
+      <div style="font-size: 16px; line-height: 1.55; color: #aac0d6; max-width: 66ch;">Wrote this repo's first formal root-cause analysis, tracing a dozen "we believed X, checked, X was wrong" corrections back to one structural cause — facts written as static text that nothing re-derives — and fixed a standing contradiction about where RCA documents are supposed to live.</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 7px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #5cf2a4;">Feature</span>
+        <span style="width: 3px; height: 3px; border-radius: 50%; background: #4f6a8a;"></span>
+        <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">LH-03</a>
+      </div>
+      <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: .02em; color: #e4eaf0;">Test-Suite Resilience Helpers</div>
+      <div style="font-size: 16px; line-height: 1.55; color: #aac0d6; max-width: 66ch;">New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile string-matching patterns across the suite, with a new lint rule enforcing it going forward — which itself had a bug caught after it silently matched nothing.</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 7px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #ff7a6b;">Fix</span>
+        <span style="width: 3px; height: 3px; border-radius: 50%; background: #4f6a8a;"></span>
+        <a href="#" style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">LH-04</a>
+      </div>
+      <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 16px; letter-spacing: .02em; color: #e4eaf0;">Coverage Thresholds Enforced</div>
+      <div style="font-size: 16px; line-height: 1.55; color: #aac0d6; max-width: 66ch;">CI now actually runs the coverage-threshold check instead of only having it configured and silently unenforced — verified real coverage already cleared the bar before flipping the gate on.</div>
+    </div>
+
+  </div>
+
+  <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px;">
+    <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #9fb8d6; margin: 0; white-space: nowrap;">Calibration</h2>
+    <span style="flex-grow: 1; height: 1px; background: #1d2a3d;"></span>
+  </div>
+  <div style="font-size: 16px; line-height: 1.55; color: #aac0d6; max-width: 66ch;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #e4eaf0;">7 checked · 7 corrected · 0 unverifiable.</span>
+    Every claim this program checked was corrected by the check. That ratio is the signal — a run reporting no corrections means the verification step did nothing.
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

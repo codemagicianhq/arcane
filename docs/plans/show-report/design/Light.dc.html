@@ -1,0 +1,339 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Rajdhani:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    /* SCHEME:light */
+    body { margin: 0; background: #f0f4f8; }
+    a { text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: .92em; }
+    @page { margin: 16mm; }
+    @media print {
+      body { background: #ffffff !important; }
+      .rpt, .row, .panel, .sec, .sec-head, .cell, .pill { background: transparent !important; }
+      .dot { box-shadow: none !important; }
+      .row, .panel, .hl, .parked-item { break-inside: avoid; }
+      .sec-head { break-after: avoid; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0; text-transform: none; opacity: .7; }
+    }
+  </style>
+</helmet>
+
+<!-- SCHEME-TOKENS:light -->
+<div class="rpt" style="--bg: #f0f4f8; --bg-1: #e4eaef; --line: #cddae8; --line-2: #bdd0e2; --line-3: #a8c0d8; --ink-100: #070c14; --ink-90: #141e2e; --ink-80: #1f2f46; --ink-70: #2e4260; --ink-60: #3d5578; --ink-50: #435b78; --ink-40: #496482; --ink-30: #8aaac8; --accent: #006181; --ok: #086736; --warn: #824d00; --hazard-a: #bdd0e2; --hazard-b: #f0f4f8; --cat-spell: #6b3fbf; --cat-feature: #136640; --cat-governance: #2b5cb8; --cat-decision: #8a4f00; --cat-fix: #b8352a; --cat-process: #586a10; --cat-docs: #3d5578; --cat-platform: #0f6f8a; background: var(--bg); color: var(--ink-80); font-family: 'Rajdhani', system-ui, sans-serif; padding: 0 0 40px;">
+
+  <svg width="0" height="0" style="position: absolute; width: 0; height: 0;" aria-hidden="true" focusable="false">
+    <symbol id="cat-spell" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75v3.5M8 10.75v3.5M1.75 8h3.5M10.75 8h3.5M3.6 3.6l2.4 2.4M10 10l2.4 2.4M12.4 3.6 10 6M6 10l-2.4 2.4"/></symbol>
+    <symbol id="cat-feature" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="11.5" rx="1"/><path d="M8 5.25v5.5M5.25 8h5.5"/></symbol>
+    <symbol id="cat-governance" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.25 3.75v4.2c0 3.05-2.2 5.3-5.25 6.3-3.05-1-5.25-3.25-5.25-6.3v-4.2z"/></symbol>
+    <symbol id="cat-decision" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 14.25 8 8 14.25 1.75 8z"/></symbol>
+    <symbol id="cat-fix" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.4 4.9v6.2L8 14.25 2.6 11.1V4.9z"/><circle cx="8" cy="8" r="2.25"/></symbol>
+    <symbol id="cat-process" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 0 1-8.65 3.45M3 8a5 5 0 0 1 8.65-3.45"/><path d="M11.65 2.15v2.4h-2.4M4.35 13.85v-2.4h2.4"/></symbol>
+    <symbol id="cat-docs" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 1.75h5.75l2.75 2.75v9.75h-8.5z"/><path d="M9.5 1.75v3h3M6 8h4M6 10.75h4"/></symbol>
+    <symbol id="cat-platform" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="3.75" rx=".75"/><rect x="2.25" y="8.25" width="11.5" height="3.75" rx=".75"/><path d="M4.75 4.1h.01M4.75 10.1h.01"/><path d="M8 12v2.25"/></symbol>
+  </svg>
+
+  <div style="height: 6px; background: repeating-linear-gradient(135deg, var(--hazard-a) 0 10px, var(--hazard-b) 10px 20px);"></div>
+
+  <div style="padding: 32px 40px 0;">
+
+    <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-50);">Show Report</span>
+      <span style="flex-grow: 1; height: 1px; background: var(--line);"></span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-50);">lessons-hardening</span>
+    </div>
+
+    <h1 style="font-family: 'Chakra Petch', system-ui, sans-serif; font-weight: 600; font-size: 30px; line-height: 1.15; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0 0 10px; max-width: 24ch; text-wrap: balance;">Lessons Hardening</h1>
+    <p style="font-family: 'Rajdhani', sans-serif; font-size: 15px; color: var(--ink-60); margin: 0 0 14px; max-width: 62ch;">Mechanical enforcement for the Become Current corrections inventory — complete, 14 of 14 epics shipped.</p>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-70); margin-bottom: 26px;">
+      <span><span style="color: var(--ink-50);">status</span> <span style="color: var(--ok);">complete</span></span>
+      <span><span style="color: var(--ink-50);">started</span> 2026-09-02</span>
+      <span><span style="color: var(--ink-50);">completed</span> 2026-09-02</span>
+      <span><span style="color: var(--ink-50);">baseline</span> b0992c1 (main)</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line-3); border-radius: 2px; margin-bottom: 20px;">
+      <div class="cell" style="background: var(--bg); padding: 14px 16px;">
+        <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; font-size: 26px; color: var(--ink-100);">14/14</div>
+        <div style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-60); margin-top: 4px;">Epics shipped</div>
+      </div>
+      <div class="cell" style="background: var(--bg); padding: 14px 16px;">
+        <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 26px; color: var(--ink-100);">3</div>
+        <div style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-60); margin-top: 4px;">Pull requests</div>
+      </div>
+      <div class="cell" style="background: var(--bg); padding: 14px 16px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 500; font-variant-numeric: tabular-nums; font-size: 17px; color: var(--ink-100); padding-top: 6px;">0.33.2 → 0.34.1</div>
+        <div style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-60); margin-top: 6px;">Version span</div>
+      </div>
+      <div class="cell" style="background: var(--bg); padding: 14px 16px;">
+        <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 26px; color: var(--ink-100);">1</div>
+        <div style="font-family: 'Chakra Petch', sans-serif; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-60); margin-top: 4px;">ADRs accepted</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: stretch; margin-bottom: 26px;">
+      <div class="panel" style="flex-grow: 1; border: 1px solid var(--line-2); border-left: 2px solid var(--ok); border-radius: 2px; background: var(--bg-1); padding: 12px 16px; display: flex; align-items: center; gap: 10px;">
+        <span class="dot" style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 6px var(--ok);"></span>
+        <span style="font-family: 'Chakra Petch', sans-serif; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--ok);">Nothing needs you</span>
+      </div>
+      <div class="panel" style="border: 1px solid var(--line-2); border-radius: 2px; background: var(--bg-1); padding: 12px 16px; display: flex; align-items: center;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-70);">27 of 27 dispositioned · 20 to an epic · 7 parked</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-bottom: 26px;">
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-spell);"><use href="#cat-spell"/></svg>Spell</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-feature);"><use href="#cat-feature"/></svg>Feature</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-governance);"><use href="#cat-governance"/></svg>Governance</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-decision);"><use href="#cat-decision"/></svg>Decision</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-fix);"><use href="#cat-fix"/></svg>Fix</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-process);"><use href="#cat-process"/></svg>Process</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-docs);"><use href="#cat-docs"/></svg>Docs</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-50);"><svg width="12" height="12" aria-hidden="true" focusable="false" style="color: var(--cat-platform);"><use href="#cat-platform"/></svg>Platform</span>
+    </div>
+
+    <!-- Wave 0 -->
+    <div class="sec" style="border: 1px solid var(--line-3); border-radius: 2px; background: var(--bg); margin-bottom: 18px;">
+      <div class="sec-head" style="display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--ink-50);">W0</span>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Bootstrap</h2>
+        <span style="flex-grow: 1;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-50);">2</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start;">
+        <a href="https://github.com/codemagicianhq/arcane/pull/172" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);">LH-00</a>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Commit this plan</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Landed the Lessons Hardening plan itself, along with its delegation record — merged directly by the operator rather than autonomously, activating the standing grant for the rest of the program.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-process) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-process); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-process"/></svg>Process</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; align-items: start; background: var(--bg-1);">
+        <a href="https://github.com/codemagicianhq/arcane/pull/171" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);">LH-01</a>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Phase 0 Capture &amp; Drift Fixes</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Captured this program's Phase 0 findings as a tracking entry for work that had already shipped — the first 15-row section of a new verification ledger, plus live-drift fixes across TODO.md, the Become Current plan, and two other root docs.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-process) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-process); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-process"/></svg>Process</span>
+      </div>
+    </div>
+
+    <!-- Wave 1 -->
+    <div class="sec" style="border: 1px solid var(--line-3); border-radius: 2px; background: var(--bg); margin-bottom: 18px;">
+      <div class="sec-head" style="display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--ink-50);">W1</span>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Root cause record and test substrate</h2>
+        <span style="flex-grow: 1;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-50);">3</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start;">
+        <a href="https://github.com/codemagicianhq/arcane/pull/174" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);">LH-02</a>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Root-Cause Analysis Process</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Wrote this repo's first formal root-cause analysis, tracing a dozen "we believed X, checked, X was wrong" corrections back to one structural cause — facts written as static text nothing re-derives — and fixed a standing contradiction about where RCA documents are even supposed to live.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-governance) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-governance); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-governance"/></svg>Governance</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start; background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-03</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Test-suite resilience helpers</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile string-matching patterns across the test suite, with a new lint rule enforcing it going forward — which itself had a bug caught and fixed after it silently matched nothing, missing 8 real violations the original estimate hadn't found.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-feature) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-feature); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-feature"/></svg>Feature</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; align-items: start;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-04</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Coverage Thresholds Enforced</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">CI now actually runs the coverage-threshold check instead of only having it configured and silently unenforced — verified real coverage already cleared the bar (85.53%) before flipping the gate on.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-fix) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-fix); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-fix"/></svg>Fix</span>
+      </div>
+    </div>
+
+    <!-- Wave 2 -->
+    <div class="sec" style="border: 1px solid var(--line-3); border-radius: 2px; background: var(--bg); margin-bottom: 18px;">
+      <div class="sec-head" style="display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--ink-50);">W2</span>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Mechanical gates</h2>
+        <span style="flex-grow: 1;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-50);">5</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-05</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Derived Counts, Not Hardcoded</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Spell, agent, and governance counts throughout the README and tests now compute from the real registry instead of being hand-typed numbers that silently drift as the project grows — which caught a real bug where a profile's test was passing by coincidence, with a missing file and an extra one canceling out to the same total.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-fix) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-fix); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-fix"/></svg>Fix</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start; background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-06</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Build-Gate Correctness</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Fixed two build gates that were quietly wrong: the version-bump check now looks at actually-staged changes instead of running too early to see them, and a mismatched template marker now fails the build instead of shipping malformed content — with a second, previously-unnoticed silent-skip path found and closed along the way.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-fix) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-fix); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-fix"/></svg>Fix</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-07</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Line-citation hygiene</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Living docs now cite by a stable anchor or quoted phrase instead of a bare line number that drifts the moment the file is next edited — with a checker watching for it, which found 34 real violations, more than the original estimate, including a second citation shape the first pass had missed entirely.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-feature) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-feature); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-feature"/></svg>Feature</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start; background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-08</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Shipped-state staleness scan</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">A new check catches governance content whose "not yet built" or status claims no longer match reality, shipped as an immediately-blocking CI gate rather than a slow warn-mode rollout since the live corpus had zero false positives from the very first run.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-feature) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-feature); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-feature"/></svg>Feature</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; align-items: start;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-09</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Follow-up promotion gate</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">A new check flags any "we'll deal with that later" left in a journal, plan, or the ledger that doesn't carry a real tracker reference, refined mid-build after a whole-paragraph match missed the exact known case it was built to catch, fixed by scanning a tight window around each deferral phrase instead.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-feature) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-feature); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-feature"/></svg>Feature</span>
+      </div>
+    </div>
+
+    <!-- Wave 3 -->
+    <div class="sec" style="border: 1px solid var(--line-3); border-radius: 2px; background: var(--bg); margin-bottom: 18px;">
+      <div class="sec-head" style="display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--ink-50);">W3</span>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Conduct rules and ADR-gated work</h2>
+        <span style="flex-grow: 1;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-50);">3</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-10</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Advisory conduct rules batch</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Three new standing rules, each grounded in a real incident from this program itself: never quote a denylisted name even while documenting its removal, treat a zero-match search as evidence about the search rather than the thing, and review a dispatched agent's actual diff rather than trusting its summary.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-governance) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-governance); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-governance"/></svg>Governance</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; border-bottom: 1px solid var(--line); align-items: start; background: var(--bg-1);">
+        <a href="https://github.com/codemagicianhq/arcane/pull/174" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);">LH-11</a>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Local Denylist Source Approved</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Accepted the design letting the org-token privacy denylist be supplied from a file outside the repo — with a hard structural refusal of any in-repo path — closing the exact gap that let a real client name leak twice with no local way to catch it before pushing; the operator had already decided the open questions live, so this shipped as Accepted rather than another Proposed round.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-decision) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-decision); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-decision"/></svg>Decision</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; align-items: start;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">LH-12</span>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Local Denylist, Shipped</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Built the local org-token design for real: a pre-commit scan of staged files plus a matching <code>--terms-file</code> flag on <code>spell ward</code>, so the leak scanner never needs a name typed into shell history — the test suite itself caught two real bugs along the way, including one that would have passed for the wrong reason had a fixture not been checked directly.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-feature) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-feature); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-feature"/></svg>Feature</span>
+      </div>
+    </div>
+
+    <!-- Wave 4 -->
+    <div class="sec" style="border: 1px solid var(--line-3); border-radius: 2px; background: var(--bg); margin-bottom: 26px;">
+      <div class="sec-head" style="display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--bg-1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; color: var(--ink-50);">W4</span>
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Close</h2>
+        <span style="flex-grow: 1;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-50);">1</span>
+      </div>
+      <div class="row" style="display: grid; grid-template-columns: 68px 1fr 128px; gap: 14px; padding: 13px 14px; align-items: start;">
+        <a href="https://github.com/codemagicianhq/arcane/pull/174" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent);">LH-13</a>
+        <div>
+          <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 13px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-90); margin-bottom: 4px;">Program Close-Out Audit</div>
+          <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 58ch;">Audited all seven Definition-of-Done criteria directly against the live repository rather than assuming any of them, catching and fixing a stale status line in the operator's own queue and a bare citation the audit's own ledger entry had just introduced — then ran a real drift check and closed the program GO with zero Critical or High findings.</div>
+        </div>
+        <span class="pill" style="justify-self: end; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: .5px solid color-mix(in srgb, var(--cat-process) 50%, transparent); border-radius: 999px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--cat-process); background: var(--bg); white-space: nowrap;"><svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#cat-process"/></svg>Process</span>
+      </div>
+    </div>
+
+    <!-- Calibration -->
+    <div class="panel" style="border: 1px solid var(--line-2); border-radius: 2px; background: var(--bg-1); padding: 14px 16px; margin-bottom: 18px;">
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px;">
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Calibration</h2>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">7 checked · 7 corrected · 0 unverifiable</span>
+      </div>
+      <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 62ch; margin-bottom: 12px;">Every claim this program checked was corrected by the check. That ratio is the signal — a run with no corrections means the verification step did nothing.</div>
+      <div style="display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px;">
+        <div class="hl" style="display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--warn);">corrected</span>
+          <div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--ink-90); margin-bottom: 3px;">TODO.md's new ARC-014 citation, copied from ARC-031's own "Related" line…</div>
+            <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 62ch;">ARC-014's real title is "Spell Authoring Standards: A Quality Rubric for Spell Prompts" — unrelated to org-tokens. Pre-existing bug in ARC-031 itself, not introduced by LH-11. Fixed the new ADR to use plain prose instead of the copied link; routed the pre-existing bug as its own TODO.md item.</div>
+          </div>
+        </div>
+        <div class="hl" style="display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--warn);">corrected</span>
+          <div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--ink-90); margin-bottom: 3px;">resolvePrivateTokens()'s test suite passes after converting the function to…</div>
+            <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 62ch;">Typecheck stayed green, but two un-awaited call sites in test/org-token-lint.test.ts failed at runtime (Received: Promise {}; TypeError: tokens.map is not a function). Fixed both call sites with await.</div>
+          </div>
+        </div>
+        <div class="hl" style="display: grid; grid-template-columns: 84px 1fr; gap: 12px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--warn);">corrected</span>
+          <div>
+            <div style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .02em; color: var(--ink-90); margin-bottom: 3px;">The new "refuses a file inside a real repository" test exercises the in-repo…</div>
+            <div style="font-family: 'Rajdhani', sans-serif; font-size: 14px; line-height: 1.45; color: var(--ink-60); max-width: 62ch;">resolvePrivateTokens() had no cwd parameter yet, so the check silently ran against process.cwd() (the real checkout) rather than the fixture — the test passed without exercising the refusal logic at all. Added an optional cwd parameter threaded through to readLocalTokenFile; test now passes the fixture dir explicitly.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parked -->
+    <div class="panel" style="border: 1px solid var(--line-2); border-radius: 2px; background: var(--bg); padding: 14px 16px; margin-bottom: 26px;">
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px;">
+        <h2 style="font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-90); margin: 0;">Parked</h2>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-50);">9 items · deliberately not built</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px;">
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">Pattern 6</span> — already codified in spell-close-session</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">Pattern 12</span> — working as intended.</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">git cherry patch-id false negatives</span> — fully solved (git-conventions.md → Content-Verified Branch Deletion).</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">IDEAS.md's 2026-08-15 doc-ID-resolver remainder</span> — zero violations found; LH-07's validator is deliberately forbidden from growing into a resolver.</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">TODO.md's tracking-mode resolution-order inconsistency</span> — an operator design decision, already recorded at Become Current's OPERATOR-QUEUE.md Q-011 item 7.</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">Become Current's Q-009/Q-010</span> — cross-repo and distribution strategy, outside this program.</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">Mechanizing spell-check-drift's judgment-based detectors beyond LH-07/LH-08's two mechanical inputs</span> — deliberately out of scope; the detectors stay prose.</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">Pattern 8 beyond LH-10's advisory rule</span> — no subagent registry ships in this repo; nothing to gate mechanically yet.</span></div>
+        <div class="parked-item" style="display: grid; grid-template-columns: 8px 1fr; gap: 10px; align-items: baseline; font-family: 'Rajdhani', sans-serif; font-size: 13px; line-height: 1.4; color: var(--ink-60);"><span style="width: 8px; height: 1px; background: var(--ink-30); align-self: center;"></span><span><span style="color: var(--ink-80); font-weight: 600;">FEEDBACK.md</span> — not created. This repo <em>is</em> Arcane; spell-feedback.prompt.md's own maintainer-side</span></div>
+      </div>
+    </div>
+
+    <!-- Cast + colophon -->
+    <div style="display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; padding-top: 16px; border-top: 1px solid var(--line);">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-50); margin-bottom: 8px;">Cast</div>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-70);">
+          <div style="display: flex; justify-content: space-between; gap: 12px; max-width: 220px;"><span>claude</span><span style="color: var(--ink-50); font-variant-numeric: tabular-nums;">21 commits</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; max-width: 220px;"><span>Claude Code</span><span style="color: var(--ink-50); font-variant-numeric: tabular-nums;">1 commit</span></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-50); margin-bottom: 8px;">Colophon</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.7; color: var(--ink-50);">
+          compiled from docs/plans/lessons-hardening/PLAN.md · OPERATOR-QUEUE.md · docs/verification-ledger.md<br>
+          as of 2026-09-02 · template v0-interim · schema v1 · no runtime scripts
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
