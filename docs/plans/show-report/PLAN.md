@@ -132,6 +132,12 @@ Optional `title:` override (Circe R3: Title Case, ≤ 5 words, no IDs); default 
 
 ### arcane-ui (private repo, its own Arcane-governed workflow) — the contract this plan fixes
 
+> **Handoff:** [ARCANE-UI-BRIEF.md](ARCANE-UI-BRIEF.md) packages this section plus Adelaide's
+> verified findings (the three static traps, the measured contrast numbers, the size budget) into a
+> single input for `spell-plan` in that repository — so SR-05a/SR-05b do not have to re-derive any
+> of it. It also records the two prerequisites found 2026-09-03: that checkout is on Arcane
+> **0.15.8** (current: 0.35.1) and sits on a stale `docs/session-close-2026-08-21` branch.
+
 Executed there via its own `spell-plan` → `spell-architect` cycle, branch `copilot/feat/<version>`, **version bump before merge** (feed versions are immutable). **`ShowReport` does not exist today and is to be created**; the repo's existing report-style controls are the reference precedents, not the implementation: `PostmortemReport` (long-form sectioned document with a print mode — header/`PmSection`/footer pattern), `ChangelogViewer` (`Release`/`ChangeEntry`/`CAT_META` — closest data model and category-meta pattern), `InvoiceLedger` (row/pill idiom), `InvoicePage`/`SpellCertificate` (print documents), `DigestEmail` (stat strip). This plan specifies only the interface:
 
 - **Static-export contract** (general): `src/export/registry.ts` (`exportable` registrations), the `templateMode` prop convention, `test/export/conformance.test.tsx` (every registered export renders statically with none of the known traps), `scripts/build-export.tsx` (emits `dist/exports/<name>.template.html` with inlined CSS subset + license/version header). Show Report is the first registration; nothing else is registered until it passes conformance.
