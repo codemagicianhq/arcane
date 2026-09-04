@@ -198,6 +198,47 @@ describe("show-report CLI: runReportCheck --check/--fix", () => {
   );
 });
 
+describe("show-report: unwritten-description reporting (SR-04)", () => {
+  it(
+    "names the epics missing a **Report:** line, and never fails the check over them",
+    async () => {
+      dir = await createProgramFixture();
+      // Append a second epic with no `**Report:**` line at all.
+      const planPath = join(dir, "docs/plans/alpha/PLAN.md");
+      await fs.writeFile(
+        planPath,
+        `${await fs.readFile(planPath, "utf8")}\n- [x] **AL-02 — Second epic, never described.** Route: direct.\n`,
+        "utf8",
+      );
+
+      const result = await runReportCheck("fix", dir);
+      expect(result.unwritten).toEqual([{ slug: "alpha", ids: ["AL-02"] }]);
+
+      // Advisory only: a regenerated, up-to-date report reports zero drift even
+      // though one of its rows is unwritten.
+      const clean = await runReportCheck("check", dir);
+      expect(clean.drifted).toEqual([]);
+      expect(clean.unwritten).toEqual([{ slug: "alpha", ids: ["AL-02"] }]);
+
+      // And the page shows the gap rather than inventing a sentence for it.
+      const html = await fs.readFile(join(dir, "docs/plans/alpha/show-report.html"), "utf8");
+      expect(html).toContain('<div class="item-desc unwritten">unwritten</div>');
+      expect(html).not.toContain("Second epic, never described.</div>");
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+
+  it(
+    "reports nothing when every epic has a Report line",
+    async () => {
+      dir = await createProgramFixture();
+      const result = await runReportCheck("fix", dir);
+      expect(result.unwritten).toEqual([]);
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+});
+
 describe("show-report: shallow-clone detection (the v0.34.3 publish failure)", () => {
   it(
     "reports false for a normal fixture repo and true for a real --depth 1 clone of it",

@@ -13,6 +13,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from "node:pat
 import { buildShowReportModel } from "./model.js";
 import { renderShowReport } from "./render.js";
 import { parseEpics, parseFrontmatter } from "./plan-parser.js";
+import type { ShowReport } from "./types.js";
 
 /**
  * Recorded in colophon.templateVersion. "v0-interim" is the hand-CSS template
@@ -179,11 +180,23 @@ export interface ReportGenerationOptions {
   outDir?: string;
 }
 
+export interface UnwrittenRow {
+  slug: string;
+  /** Epic ids whose `**Report:**` line is missing, so the report renders them as "unwritten". */
+  ids: string[];
+}
+
 export interface ReportGenerationResult {
   /** Outputs that do not match a regeneration (line-ending-normalized), as rootDir-relative paths. */
   drifted: string[];
   /** Outputs written in `write` mode, as rootDir-relative paths. */
   repaired: string[];
+  /**
+   * Epics rendering as `unwritten` (SR-04). Advisory, never a failure: the
+   * capture point (`## For the record` at PR time) only applies going forward,
+   * and a report is more honest showing a visible gap than blocking on one.
+   */
+  unwritten: UnwrittenRow[];
 }
 
 /**
@@ -196,9 +209,15 @@ export async function runReportGeneration(options: ReportGenerationOptions): Pro
   const templateHtml = await readFile(options.templatePath, "utf8");
   const drifted: string[] = [];
   const repaired: string[] = [];
+  const unwritten: UnwrittenRow[] = [];
 
   for (const program of options.programs) {
     const generated = await generateReport(options.rootDir, program, templateHtml);
+    const missing = (JSON.parse(generated.json) as ShowReport).sections
+      .flatMap((section) => section.rows)
+      .filter((row) => row.descriptionState === "unwritten")
+      .map((row) => row.id);
+    if (missing.length > 0) unwritten.push({ slug: program.slug, ids: missing });
     const outAbs = options.outDir
       ? isAbsolute(options.outDir)
         ? options.outDir
@@ -222,5 +241,5 @@ export async function runReportGeneration(options: ReportGenerationOptions): Pro
     }
   }
 
-  return { drifted, repaired };
+  return { drifted, repaired, unwritten };
 }
