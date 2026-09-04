@@ -19,25 +19,48 @@
 
 ## Before starting
 
-1. **`spell update` first.** That checkout is on Arcane **0.15.8** (installed 2026-05-18); current
-   is **0.35.1**. Its spells predate the citation grammar (LH-07), the stale-claim and follow-up
-   gates (LH-08/09), EF-21's verification states, and the branch-naming standard. This is a real
-   change with its own review, not a formality — do it as its own PR before any Show Report work.
-2. **Start from `main`.** The working copy was last seen on `docs/session-close-2026-08-21`, an old
-   session-close branch.
+1. **The Arcane upgrade is done.** When this brief was first written that checkout was on **0.15.8**;
+   it was upgraded to **0.35.1** and merged there as PR !809 (`e60714e` on `main`) — verified, not
+   assumed. `arcane-cli` has since shipped **0.36.0**; re-run `spell update` if you want the
+   ARC-043 prompt changes, but nothing in this brief depends on it.
+2. **Start from `main`.** Note that `fix/light-scheme-ink-ramp-contrast` (commit `4196518`) is
+   pushed and waiting with no PR open — see the contrast section.
 3. **Branch/version conventions there:** `copilot/feat/<version>`, and **bump the version before
    merge** — Azure Artifacts feed versions are immutable.
 
-## The two epics, in order
+## Decisions already made — do not reopen these
+
+Settled by the operator on 2026-09-03/04 after the SR-05a design review. Each one narrows what
+SR-05b has to carry, so read them before planning.
+
+| decision | what it means here |
+|---|---|
+| **Direction A ("Console") is the design** | HUD panels, a bordered stat rail, dense rows with category pills. Built out in dark and light against real Lessons Hardening data. Formalizing it in Claude Design from real components is SR-05a's remaining half. |
+| **No emoji anywhere** (ARC-043, Accepted) | `ShowReportRow.glyph` is gone from the schema. A row's mark comes from `category` alone — eight inline SVG symbols keyed `#cat-<category>`. |
+| **Icons and both `--cat-*` palettes ship as v0 from `arcane-cli`** | Use them as they are. Replacing them from arcane-ui's own icon set is welcome but optional, and is a template-only change because they are keyed by category, not authored per row. |
+| **Operator lens only** | The share lens is deferred to SR-05c. Do not build lens switching, Open Graph tags, or path stripping. |
+| **Light is in scope, and is the print master** | The report must print and print is the light scheme. Not a deferrable second lens. |
+| **No coverage figure** | Considered and dropped — it cannot be derived deterministically, and recording it by hand would plant a stale number. Do not add a coverage stat. |
+
+## The epics, in order
+
+**Prerequisite — the light signal/accent retune, as its own arcane-ui item.** Land this *before*
+SR-05b (operator, 2026-09-04). It is product-wide breakage rather than report scope; details and
+numbers in the contrast section below.
 
 **SR-05a — design first.** Sync arcane-ui's tokens and the report-relevant exportable components
 into a Claude Design design-system project via the `/design-sync` skill + `DesignSync` tool —
-incrementally, one component at a time, never a wholesale replace. Design Show Report there against
-Circe's structure and the real JSON model (both lenses: operator / share; light + dark; print). The
+incrementally, one component at a time, never a wholesale replace. Formalize direction A there
+against Circe's structure and the real JSON model (operator lens; light + dark; print). The
 operator approves the design; **the approved design is the spec SR-05b builds.**
 
 **SR-05b — then build.** Design may add fields; the **JSON schema freezes at SR-05b start**,
 additive changes only after that point.
+
+**SR-05c — the share lens, later.** Deferred deliberately: IDs demoted to link text, internal paths
+stripped, Open Graph head, `spell ward`-gated content, "Built with Arcane" link. It needs privacy
+gating over report content, which is ARC-031-class work rather than a template variant. The freeze
+does not block it — an optional `lens` field is an *additive* change, which the freeze permits.
 
 Do not collapse these. The v0 template shipping in `arcane-cli` today is an explicit placeholder —
 the hand-built ledger's CSS converted to the Mustache grammar — not a design to reimplement.
@@ -164,8 +187,12 @@ Two things it does **not** fix, both still open for SR-05b:
 - `--ink-40` on `--bg-3` is 4.07 — still short. `--bg-3` is the deepest inset ground; `--ink-40` text
   on it should move up a step rather than the token being darkened further.
 - **Signal and accent are untouched** (ok 1.18, warn 1.45, alert 2.93, info 1.25, accent-mono 1.21,
-  violet 2.24, teal 1.53). This is now the whole of the residual light risk, and it is real product
-  breakage well beyond the report — measure every one on every `--bg-*` ground before sizing SR-05b.
+  violet 2.24, teal 1.53). A `Badge status="ok"` is unreadable in light mode. **Operator decision,
+  2026-09-04: this is its own arcane-ui item and it lands BEFORE SR-05b** — it is product-wide
+  breakage, not report scope, and it should not ride inside a feature epic. Measure every token on
+  every `--bg-*` ground, not just `--bg-1`; `--bg-3` is the harshest and fails first. The same root
+  cause applies: spacing a light ramp by hex distance collapses contrast, so solve for target
+  contrast per ground and keep hue and saturation.
 
 > **The "ship dark-only first" fallback is withdrawn** (operator, 2026-09-03). The report must
 > print, and print is the light scheme — so light is not a second lens that can be deferred, it is
