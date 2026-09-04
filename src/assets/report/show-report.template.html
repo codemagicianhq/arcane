@@ -180,7 +180,6 @@
     list-style: none;
   }
   .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--ink-soft); }
-  .swatch { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
 
   section.phase { margin-top: 2.5rem; }
 
@@ -219,7 +218,18 @@
   .row:nth-child(even) { background: var(--row-alt); }
 
   .item-title { display: flex; align-items: flex-start; gap: 0.55rem; font-weight: 600; font-size: 0.94rem; color: var(--ink); }
-  .item-title .emoji { font-size: 1.05rem; line-height: 1.3; flex: none; }
+  /* One icon per category, drawn from the sprite below and coloured by the
+     same token as the row's pill. Decorative: the pill carries the category in
+     text, so the icon is aria-hidden and never the sole carrier of meaning. */
+  .cat-icon { width: 1rem; height: 1rem; flex: none; margin-top: 0.12rem; }
+  .cat-icon.spell      { color: var(--cat-spell); }
+  .cat-icon.feature    { color: var(--cat-feature); }
+  .cat-icon.governance { color: var(--cat-governance); }
+  .cat-icon.decision   { color: var(--cat-decision); }
+  .cat-icon.fix        { color: var(--cat-fix); }
+  .cat-icon.process    { color: var(--cat-process); }
+  .cat-icon.docs       { color: var(--cat-docs); }
+  .cat-icon.platform   { color: var(--cat-platform); }
   .item-title a { color: inherit; text-decoration: none; }
   .item-title a:hover { text-decoration: underline; }
   .item-id { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; color: var(--ink-faint); margin-left: 0.4rem; font-weight: 500; }
@@ -273,6 +283,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 </head>
 <body>
+<!-- Category icon sprite. Eight symbols, one per ReportCategory, referenced by
+     `<use href="#cat-<category>">` from each row and from the legend. Inline
+     rather than an emoji per row: an emoji renders differently on every
+     platform, often falls back to a box or a monochrome outline in print, and
+     cannot take the report's own category colour. All eight together are about
+     2 KB, and the file stays self-contained with no network fetch. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="cat-spell" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75v3.5M8 10.75v3.5M1.75 8h3.5M10.75 8h3.5M3.6 3.6l2.4 2.4M10 10l2.4 2.4M12.4 3.6 10 6M6 10l-2.4 2.4"/></symbol>
+  <symbol id="cat-feature" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="11.5" rx="1"/><path d="M8 5.25v5.5M5.25 8h5.5"/></symbol>
+  <symbol id="cat-governance" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.25 3.75v4.2c0 3.05-2.2 5.3-5.25 6.3-3.05-1-5.25-3.25-5.25-6.3v-4.2z"/></symbol>
+  <symbol id="cat-decision" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 14.25 8 8 14.25 1.75 8z"/></symbol>
+  <symbol id="cat-fix" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.4 4.9v6.2L8 14.25 2.6 11.1V4.9z"/><circle cx="8" cy="8" r="2.25"/></symbol>
+  <symbol id="cat-process" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 0 1-8.65 3.45M3 8a5 5 0 0 1 8.65-3.45"/><path d="M11.65 2.15v2.4h-2.4M4.35 13.85v-2.4h2.4"/></symbol>
+  <symbol id="cat-docs" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 1.75h5.75l2.75 2.75v9.75h-8.5z"/><path d="M9.5 1.75v3h3M6 8h4M6 10.75h4"/></symbol>
+  <symbol id="cat-platform" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="3.75" rx=".75"/><rect x="2.25" y="8.25" width="11.5" height="3.75" rx=".75"/><path d="M4.75 4.1h.01M4.75 10.1h.01M8 12v2.25"/></symbol>
+</defs></svg>
 <div class="page">
 <main>
 
@@ -307,7 +333,7 @@
 
     <ul class="legend" aria-label="Category legend">
       {{#legend}}
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-{{key}})" aria-hidden="true"></span>{{label}}</li>
+      <li class="legend-item"><svg class="cat-icon {{key}}" aria-hidden="true" focusable="false"><use href="#cat-{{key}}"></use></svg>{{label}}</li>
       {{/legend}}
     </ul>
   </header>
@@ -319,7 +345,7 @@
     <ol class="ledger">
       {{#rows}}
       <li class="row">
-        <div class="item-title">{{#hasGlyph}}<span class="emoji" aria-hidden="true">{{glyph}}</span>{{/hasGlyph}}<span>{{#hasHref}}<a href="{{href}}">{{title}}</a>{{/hasHref}}{{^hasHref}}{{title}}{{/hasHref}}<span class="item-id">{{id}}</span></span></div>
+        <div class="item-title"><svg class="cat-icon {{category}}" aria-hidden="true" focusable="false"><use href="#cat-{{category}}"></use></svg><span>{{#hasHref}}<a href="{{href}}">{{title}}</a>{{/hasHref}}{{^hasHref}}{{title}}{{/hasHref}}<span class="item-id">{{id}}</span></span></div>
         {{#isUnwritten}}<div class="item-desc unwritten">unwritten</div>{{/isUnwritten}}
         {{^isUnwritten}}<div class="item-desc">{{{descriptionHtml}}}</div>{{/isUnwritten}}
         <span class="pill {{category}}">{{categoryLabel}}</span>
@@ -337,7 +363,7 @@
     <ol class="ledger">
       {{#highlights}}
       <li class="row">
-        <div class="item-title"><span>{{title}}</span></div>
+        <div class="item-title"><svg class="cat-icon {{category}}" aria-hidden="true" focusable="false"><use href="#cat-{{category}}"></use></svg><span>{{title}}</span></div>
         {{#isUnwritten}}<div class="item-desc unwritten">unwritten</div>{{/isUnwritten}}
         {{^isUnwritten}}<div class="item-desc">{{{descriptionHtml}}}</div>{{/isUnwritten}}
         <span class="pill {{category}}">{{categoryLabel}}</span>

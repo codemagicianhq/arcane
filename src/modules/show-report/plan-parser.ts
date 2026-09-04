@@ -25,7 +25,6 @@ export interface PlanFrontmatter {
 export interface ParsedEpicReport {
   description: string;
   category: string;
-  glyph?: string;
   titleOverride?: string;
 }
 
@@ -65,7 +64,12 @@ export function parseFrontmatter(content: string): PlanFrontmatter {
 const EPIC_START = /^- \[([ x])\] \*\*([A-Z]+-\d+) — /gm;
 const EPIC_TITLE = /^- \[[ x]\] \*\*[A-Z]+-\d+ — ([\s\S]+?)\.\*\*/;
 const HEADING_LINE = /^(#{2,3}) (.+)$/gm;
-const REPORT_LINE = /\*\*Report:\*\*\s*([\s\S]*?)\s*·\s*category:\s*(\S+)\s*·\s*glyph:\s*(\S+)/;
+// `category:` is the last field this parser reads. A trailing `· glyph: <emoji>`
+// is no longer part of the convention (ARC-043) but appears on every `**Report:**`
+// line authored before it was dropped, so the pattern deliberately does not
+// anchor at end-of-line: those lines keep parsing, and the emoji is ignored
+// rather than rendered. Category alone now selects the row's icon.
+const REPORT_LINE = /\*\*Report:\*\*\s*([\s\S]*?)\s*·\s*category:\s*([a-z]+)/;
 const TITLE_OVERRIDE_LINE = /^\s*title:\s*(.+)$/m;
 const PR_LINK = /\[PR #(\d+)\]\((https:\/\/github\.com\/[^)\s]+\/pull\/\d+)\)/g;
 
@@ -141,7 +145,6 @@ export function parseEpics(content: string): ParsedEpic[] {
         ? {
             description: reportMatch[1]!.replace(/\s+/g, " ").trim(),
             category: reportMatch[2]!,
-            glyph: reportMatch[3]!,
             titleOverride: titleOverrideMatch ? titleOverrideMatch[1]!.trim() : undefined,
           }
         : null,
@@ -198,11 +201,49 @@ export function parseParkedSection(content: string): ParsedParkedItem[] {
     }));
   }
 
-  const bulletItems = [...body.matchAll(/^- \*\*(.+?)\*\*\s*(?:\([^)]*\))?\s*—\s*(.+)$/gm)];
-  return bulletItems.map((m) => ({
-    title: stripMarkdown(m[1]!.trim()),
-    reason: stripMarkdown(m[2]!.trim()),
-  }));
+  // Bullets are unwrapped to one string each BEFORE matching. Matching the raw
+  // text line-by-line under `m` lost data two ways on the live corpus, both
+  // silently: a reason that wrapped to a second line was cut at the wrap
+  // ("fully solved (git-conventions.md → Content-Verified", losing "Branch
+  // Deletion)"), and an item whose `—` fell on the second line never matched at
+  // all, dropping it from the report entirely (Lessons Hardening's
+  // "Mechanizing spell-check-drift's judgment-based detectors" -- 8 of 9 items
+  // rendered, with nothing to indicate one was missing).
+  return unwrapBullets(body).flatMap((bullet) => {
+    const match = /^\*\*(.+?)\*\*(.*?)\s*—\s*(.+)$/.exec(bullet);
+    if (!match) return [];
+    // Text between the bold lead-in and the `—` belongs to the title (LH's
+    // "…detectors **beyond** LH-07/LH-08's two mechanical inputs"), except a
+    // parenthetical, which is a source note rather than part of the name.
+    const tail = match[2]!.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    const title = tail ? `${match[1]!.trim()} ${tail}` : match[1]!.trim();
+    return [{ title: stripMarkdown(title), reason: stripMarkdown(match[3]!.trim()) }];
+  });
+}
+
+/**
+ * Collapses a markdown bullet list into one string per bullet, joining each
+ * bullet's wrapped continuation lines. A bullet ends at the next `- ` at
+ * column 0, at a blank line, or at any other unindented line.
+ */
+function unwrapBullets(body: string): string[] {
+  const bullets: string[] = [];
+  let current: string[] | null = null;
+  const flush = (): void => {
+    if (current) bullets.push(current.join(" ").replace(/\s+/g, " ").trim());
+    current = null;
+  };
+  for (const line of body.split(/\r?\n/)) {
+    if (/^- /.test(line)) {
+      flush();
+      current = [line.slice(2).trim()];
+    } else if (current !== null) {
+      if (/^\s+\S/.test(line)) current.push(line.trim());
+      else flush();
+    }
+  }
+  flush();
+  return bullets;
 }
 
 /**

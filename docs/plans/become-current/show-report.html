@@ -180,7 +180,6 @@
     list-style: none;
   }
   .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--ink-soft); }
-  .swatch { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
 
   section.phase { margin-top: 2.5rem; }
 
@@ -219,7 +218,18 @@
   .row:nth-child(even) { background: var(--row-alt); }
 
   .item-title { display: flex; align-items: flex-start; gap: 0.55rem; font-weight: 600; font-size: 0.94rem; color: var(--ink); }
-  .item-title .emoji { font-size: 1.05rem; line-height: 1.3; flex: none; }
+  /* One icon per category, drawn from the sprite below and coloured by the
+     same token as the row's pill. Decorative: the pill carries the category in
+     text, so the icon is aria-hidden and never the sole carrier of meaning. */
+  .cat-icon { width: 1rem; height: 1rem; flex: none; margin-top: 0.12rem; }
+  .cat-icon.spell      { color: var(--cat-spell); }
+  .cat-icon.feature    { color: var(--cat-feature); }
+  .cat-icon.governance { color: var(--cat-governance); }
+  .cat-icon.decision   { color: var(--cat-decision); }
+  .cat-icon.fix        { color: var(--cat-fix); }
+  .cat-icon.process    { color: var(--cat-process); }
+  .cat-icon.docs       { color: var(--cat-docs); }
+  .cat-icon.platform   { color: var(--cat-platform); }
   .item-title a { color: inherit; text-decoration: none; }
   .item-title a:hover { text-decoration: underline; }
   .item-id { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; color: var(--ink-faint); margin-left: 0.4rem; font-weight: 500; }
@@ -273,6 +283,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 </head>
 <body>
+<!-- Category icon sprite. Eight symbols, one per ReportCategory, referenced by
+     `<use href="#cat-<category>">` from each row and from the legend. Inline
+     rather than an emoji per row: an emoji renders differently on every
+     platform, often falls back to a box or a monochrome outline in print, and
+     cannot take the report's own category colour. All eight together are about
+     2 KB, and the file stays self-contained with no network fetch. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="cat-spell" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75v3.5M8 10.75v3.5M1.75 8h3.5M10.75 8h3.5M3.6 3.6l2.4 2.4M10 10l2.4 2.4M12.4 3.6 10 6M6 10l-2.4 2.4"/></symbol>
+  <symbol id="cat-feature" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="11.5" rx="1"/><path d="M8 5.25v5.5M5.25 8h5.5"/></symbol>
+  <symbol id="cat-governance" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.25 3.75v4.2c0 3.05-2.2 5.3-5.25 6.3-3.05-1-5.25-3.25-5.25-6.3v-4.2z"/></symbol>
+  <symbol id="cat-decision" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 14.25 8 8 14.25 1.75 8z"/></symbol>
+  <symbol id="cat-fix" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.4 4.9v6.2L8 14.25 2.6 11.1V4.9z"/><circle cx="8" cy="8" r="2.25"/></symbol>
+  <symbol id="cat-process" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 0 1-8.65 3.45M3 8a5 5 0 0 1 8.65-3.45"/><path d="M11.65 2.15v2.4h-2.4M4.35 13.85v-2.4h2.4"/></symbol>
+  <symbol id="cat-docs" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 1.75h5.75l2.75 2.75v9.75h-8.5z"/><path d="M9.5 1.75v3h3M6 8h4M6 10.75h4"/></symbol>
+  <symbol id="cat-platform" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="3.75" rx=".75"/><rect x="2.25" y="8.25" width="11.5" height="3.75" rx=".75"/><path d="M4.75 4.1h.01M4.75 10.1h.01M8 12v2.25"/></symbol>
+</defs></svg>
 <div class="page">
 <main>
 
@@ -300,14 +326,14 @@
     <p class="outcome">23 of 23 items dispositioned — 20 routed to an epic, 3 parked</p>
 
     <ul class="legend" aria-label="Category legend">
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-spell)" aria-hidden="true"></span>New Spell</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-feature)" aria-hidden="true"></span>New Feature</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-governance)" aria-hidden="true"></span>Governance</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-decision)" aria-hidden="true"></span>Decision (ADR)</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-fix)" aria-hidden="true"></span>Bug Fix</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-process)" aria-hidden="true"></span>Process</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-docs)" aria-hidden="true"></span>Docs</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-platform)" aria-hidden="true"></span>Platform</li>
+      <li class="legend-item"><svg class="cat-icon spell" aria-hidden="true" focusable="false"><use href="#cat-spell"></use></svg>New Spell</li>
+      <li class="legend-item"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg>New Feature</li>
+      <li class="legend-item"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg>Governance</li>
+      <li class="legend-item"><svg class="cat-icon decision" aria-hidden="true" focusable="false"><use href="#cat-decision"></use></svg>Decision (ADR)</li>
+      <li class="legend-item"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg>Bug Fix</li>
+      <li class="legend-item"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg>Process</li>
+      <li class="legend-item"><svg class="cat-icon docs" aria-hidden="true" focusable="false"><use href="#cat-docs"></use></svg>Docs</li>
+      <li class="legend-item"><svg class="cat-icon platform" aria-hidden="true" focusable="false"><use href="#cat-platform"></use></svg>Platform</li>
     </ul>
   </header>
 
@@ -316,7 +342,7 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📜</span><span><a href="https://github.com/codemagicianhq/arcane/pull/86">Commit this plan</a><span class="item-id">BC-00</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/86">Commit this plan</a><span class="item-id">BC-00</span></span></div>
         
         <div class="item-desc">Landed the 33-epic execution plan itself, activating the standing autonomy grant that let the rest of the program run session after session without needing per-step approval.</div>
         <span class="pill process">Process</span>
@@ -328,25 +354,25 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔀</span><span><a href="https://github.com/codemagicianhq/arcane/pull/88">Review-Round Merge Gate</a><span class="item-id">BC-01</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/88">Review-Round Merge Gate</a><span class="item-id">BC-01</span></span></div>
         
         <div class="item-desc">Auto-merge now waits for a dedicated CI check confirming no unresolved change-request review remains on a pull request, closing the exact gap that had let a defective release ship before.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🧹</span><span><a href="https://github.com/codemagicianhq/arcane/pull/90">Build-Output Pruning</a><span class="item-id">BC-02</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/90">Build-Output Pruning</a><span class="item-id">BC-02</span></span></div>
         
         <div class="item-desc">The release build now deletes files that were removed from source instead of letting them linger in the shipped package forever, and a related bug that could silently corrupt this repo&#39;s own build during testing was found and fixed alongside it.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🌿</span><span><a href="https://github.com/codemagicianhq/arcane/pull/92">Content-Verified Branch Cleanup</a><span class="item-id">BC-03</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/92">Content-Verified Branch Cleanup</a><span class="item-id">BC-03</span></span></div>
         
         <div class="item-desc">Established a safe standard procedure for deleting old branches — checking their actual content, not just merge history — and used it to clear three branches confirmed fully landed, flagging the rest for the operator to decide.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🎭</span><span><a href="https://github.com/codemagicianhq/arcane/pull/45">Agent Roster Integrity</a><span class="item-id">BC-04</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/45">Agent Roster Integrity</a><span class="item-id">BC-04</span></span></div>
         
         <div class="item-desc">Found and fixed an agent template that had been silently shipping broken placeholder text, and added an automated check plus a non-zero exit on sync failures so a corrupted roster file can never ship unnoticed again.</div>
         <span class="pill fix">Bug Fix</span>
@@ -358,31 +384,31 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📒</span><span><a href="https://github.com/codemagicianhq/arcane/pull/21">Ledger &amp; status reconciliation</a><span class="item-id">BC-05</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/21">Ledger &amp; status reconciliation</a><span class="item-id">BC-05</span></span></div>
         
         <div class="item-desc">Reconciled stale status markers across TODO.md, feature PRDs, and intake records with verified PR references instead of guesses, and corrected a feature doc that still falsely claimed nothing had shipped despite real work landing.</div>
         <span class="pill process">Process</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔗</span><span><a href="https://github.com/codemagicianhq/arcane/pull/98">Doc-ID link integrity</a><span class="item-id">BC-06</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/98">Doc-ID link integrity</a><span class="item-id">BC-06</span></span></div>
         
         <div class="item-desc">Extended the documentation-link checker to catch references that look like they stay within the project but actually point across repositories, and fixed four real instances it found — including two introduced earlier the same night.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🌅</span><span><a href="https://github.com/codemagicianhq/arcane/pull/100">Fresh-session instruction probe</a><span class="item-id">BC-07</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/100">Fresh-session instruction probe</a><span class="item-id">BC-07</span></span></div>
         
         <div class="item-desc">Verified a brand-new session really does inherit this repo&#39;s working protocol automatically, confirmed the agent roster still doesn&#39;t exist, and fixed a stale line-number citation found live during the check.</div>
         <span class="pill process">Process</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">💬</span><span><a href="https://github.com/codemagicianhq/arcane/pull/102">Friendlier Unknown-Command Message</a><span class="item-id">BC-08</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/102">Friendlier Unknown-Command Message</a><span class="item-id">BC-08</span></span></div>
         
         <div class="item-desc">Typing an unrecognized CLI command now prints guidance and exits with an error instead of silently falling through to the welcome screen, with its command list generated live instead of a hardcoded, already-stale count.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🐙</span><span><a href="https://github.com/codemagicianhq/arcane/pull/104">GitHub as a First-Class Tracker</a><span class="item-id">BC-09</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/104">GitHub as a First-Class Tracker</a><span class="item-id">BC-09</span></span></div>
         
         <div class="item-desc">GitHub Issues is now a fully supported tracking provider alongside Azure DevOps and Jira, with real issue create/view/close support wired into five spells instead of being treated as an unsupported fallback.</div>
         <span class="pill feature">New Feature</span>
@@ -394,25 +420,25 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔍</span><span><a href="https://github.com/codemagicianhq/arcane/pull/106">Secret-Detection Design</a><span class="item-id">BC-10</span></span></div>
+        <div class="item-title"><svg class="cat-icon decision" aria-hidden="true" focusable="false"><use href="#cat-decision"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/106">Secret-Detection Design</a><span class="item-id">BC-10</span></span></div>
         
         <div class="item-desc">Drafted the design for catching leaked credentials and org names before they ship — a pre-commit scan plus a repository-wide CI backstop — correcting two inaccurate premises about what scanning already existed along the way.</div>
         <span class="pill decision">Decision (ADR)</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🎨</span><span><a href="https://github.com/codemagicianhq/arcane/pull/108">Vendor-Neutral Customization Design</a><span class="item-id">BC-11</span></span></div>
+        <div class="item-title"><svg class="cat-icon decision" aria-hidden="true" focusable="false"><use href="#cat-decision"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/108">Vendor-Neutral Customization Design</a><span class="item-id">BC-11</span></span></div>
         
         <div class="item-desc">Drafted the design for letting a hand-edited governance file survive a future update instead of being silently overwritten, after a research spike found the file assumed to need vendor-neutral treatment was the wrong one.</div>
         <span class="pill decision">Decision (ADR)</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">⚙️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/110">Spell-Compiler Design</a><span class="item-id">BC-12</span></span></div>
+        <div class="item-title"><svg class="cat-icon decision" aria-hidden="true" focusable="false"><use href="#cat-decision"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/110">Spell-Compiler Design</a><span class="item-id">BC-12</span></span></div>
         
         <div class="item-desc">Drafted the design for generating each spell&#39;s Claude Code stub straight from its real source file instead of hand-maintaining both, deliberately scoped to build time only — and found the &quot;66 hand-maintained files&quot; premise was already stale by the time this ran.</div>
         <span class="pill decision">Decision (ADR)</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📋</span><span><a href="https://github.com/codemagicianhq/arcane/pull/112">Decision Acceptance Brief</a><span class="item-id">BC-13</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/112">Decision Acceptance Brief</a><span class="item-id">BC-13</span></span></div>
         
         <div class="item-desc">Prepared a full accept/revise/reject brief for the long-pending ARC-029 decision, verifying the incident that motivated it directly against the original record rather than relaying a compressed summary, and flagged that accepting it won&#39;t by itself schedule its own follow-up work.</div>
         <span class="pill process">Process</span>
@@ -424,91 +450,91 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📊</span><span><a href="https://github.com/codemagicianhq/arcane/pull/123">Generated State Diagrams</a><span class="item-id">BC-14</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/123">Generated State Diagrams</a><span class="item-id">BC-14</span></span></div>
         
         <div class="item-desc">Spells that already compute their own state — version drift, branch/PR topology, review flow — now render it as a real generated diagram instead of prose, rolled out across the CLI and multiple spells over six sequential releases.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🤝</span><span><a href="https://github.com/codemagicianhq/arcane/pull/125">Session-Handoff Durability</a><span class="item-id">BC-15</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/125">Session-Handoff Durability</a><span class="item-id">BC-15</span></span></div>
         
         <div class="item-desc">Work named in a session handoff is now also registered somewhere durable, so a single overwrite can no longer lose it — and a real bug in the fresh-install scaffold that could falsely trigger the new detection was found and fixed along the way.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🧭</span><span><a href="https://github.com/codemagicianhq/arcane/pull/127">Spell Routing Layer</a><span class="item-id">BC-16</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/127">Spell Routing Layer</a><span class="item-id">BC-16</span></span></div>
         
         <div class="item-desc">Every AI client now sees a routing table on load telling it which spell to invoke for common workflows, backed by proactive-trigger descriptions on every spell command and a new standing lifecycle rule — a fourth, hook-based enforcement layer was deliberately deferred.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🛡️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/129">Doctor Platform-Policy Check</a><span class="item-id">BC-17</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/129">Doctor Platform-Policy Check</a><span class="item-id">BC-17</span></span></div>
         
         <div class="item-desc"><code>spell doctor</code> now checks a repo&#39;s live branch-protection rules against what governance says they should be, verified against this repo&#39;s own real GitHub Rulesets — the Azure DevOps path is implemented but not live-tested, since no ADO remote exists to check it against.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔄</span><span><a href="https://github.com/codemagicianhq/arcane/pull/131">New Spell: Sync Pull Request</a><span class="item-id">BC-18</span></span></div>
+        <div class="item-title"><svg class="cat-icon spell" aria-hidden="true" focusable="false"><use href="#cat-spell"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/131">New Spell: Sync Pull Request</a><span class="item-id">BC-18</span></span></div>
         
         <div class="item-desc">A new dedicated spell handles the recovery path when the mandatory pre-PR rebase hits a real conflict, covering clean syncs, conflicting rebases, stale-lease rejection, and ambiguous handoffs, with both <code>spell-create-pull-request</code> and <code>spell-ship</code> now routing conflicts to it.</div>
         <span class="pill spell">New Spell</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">👤</span><span><a href="https://github.com/codemagicianhq/arcane/pull/133">Delegation UX (solo-operator mode)</a><span class="item-id">BC-19</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/133">Delegation UX (solo-operator mode)</a><span class="item-id">BC-19</span></span></div>
         
         <div class="item-desc">Autonomous self-approval permissions are now recorded explicitly in a per-repo file, listable via <code>spell doctor</code> and revocable by editing it, replacing an implicit assumption — this program&#39;s own standing authority grant became the mechanism&#39;s first real record.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔧</span><span><a href="https://github.com/codemagicianhq/arcane/pull/135">Full-Cycle Coordination Fixes</a><span class="item-id">BC-20</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/135">Full-Cycle Coordination Fixes</a><span class="item-id">BC-20</span></span></div>
         
         <div class="item-desc">Closed real coordination gaps in the end-to-end feature spell — migration-number collisions, missing real-data migration guidance, and honest documentation that no actual agent roster ships despite the delegation language — after confirming one of the three planned fixes had already shipped separately and didn&#39;t need repeating.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🕵️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/138">New Spells: Ward &amp; Scry</a><span class="item-id">BC-21</span></span></div>
+        <div class="item-title"><svg class="cat-icon spell" aria-hidden="true" focusable="false"><use href="#cat-spell"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/138">New Spells: Ward &amp; Scry</a><span class="item-id">BC-21</span></span></div>
         
         <div class="item-desc">Two new spells shipped: <code>ward</code> scans a repo for leaked third-party names and trademarks, and <code>scry</code> clears a brand-new name for use — checking both the outside world and this repo&#39;s own history for collisions — before you commit to it.</div>
         <span class="pill spell">New Spell</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔌</span><span>MCP resilience<span class="item-id">BC-22</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span>MCP resilience<span class="item-id">BC-22</span></span></div>
         
         <div class="item-desc">A new standing rule: one abnormal MCP tool failure now marks that server down for the rest of the session instead of retrying blindly, backed by an optional <code>.mcp.json</code> scaffold and a new <code>spell doctor</code> check for per-server timeouts.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📚</span><span>Registry-driven spell catalog<span class="item-id">BC-23</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Registry-driven spell catalog<span class="item-id">BC-23</span></span></div>
         
         <div class="item-desc">The spell catalog the README lists is now generated directly from the source registry instead of hand-maintained, catching a real drift where the README undercounted the actual 38 shipped spells — with a new CI check guarding against it drifting again.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔬</span><span>Research-doc capability<span class="item-id">BC-24</span></span></div>
+        <div class="item-title"><svg class="cat-icon docs" aria-hidden="true" focusable="false"><use href="#cat-docs"></use></svg><span>Research-doc capability<span class="item-id">BC-24</span></span></div>
         
         <div class="item-desc">Research findings and technical spikes now have an official home and naming convention instead of being scattered ad hoc, reusing the existing <code>spell-document</code> spell rather than building a redundant dedicated one.</div>
         <span class="pill docs">Docs</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📱</span><span>New Spell: EAS Store Deploy<span class="item-id">BC-25</span></span></div>
+        <div class="item-title"><svg class="cat-icon spell" aria-hidden="true" focusable="false"><use href="#cat-spell"></use></svg><span>New Spell: EAS Store Deploy<span class="item-id">BC-25</span></span></div>
         
         <div class="item-desc">A new dedicated spell ships an app to the App Store and Google Play via Expo Application Services, backed by a new store-specific standards doc covering the durable facts that had no existing home.</div>
         <span class="pill spell">New Spell</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">✅</span><span>Compliance standards + spell<span class="item-id">BC-26</span></span></div>
+        <div class="item-title"><svg class="cat-icon spell" aria-hidden="true" focusable="false"><use href="#cat-spell"></use></svg><span>Compliance standards + spell<span class="item-id">BC-26</span></span></div>
         
         <div class="item-desc">A new spell runs a read-only compliance self-assessment against GDPR, CCPA, SOC 2, and HIPAA — backed by a new standards doc that is explicit it&#39;s not legal advice — and stops at reporting findings rather than attempting to fix them automatically.</div>
         <span class="pill spell">New Spell</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🏛️</span><span>Governance tail batch<span class="item-id">BC-27</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span>Governance tail batch<span class="item-id">BC-27</span></span></div>
         
         <div class="item-desc">A batch of governance fixes: a new rule requiring a diff before deleting a &quot;duplicate,&quot; broadened leak-scan guidance to cover personal identifiers, a new spell that captures verification claims and corrections as a structured record, and a commit-trailer model that now omits an agent&#39;s role rather than guessing it when the roster can&#39;t confirm it.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📡</span><span>Delivery-Channels Research<span class="item-id">BC-28</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span>Delivery-Channels Research<span class="item-id">BC-28</span></span></div>
         
         <div class="item-desc">A research spike ran two live smoke tests on this machine — confirming that npm&#39;s own <code>node_modules</code> traversal picks up prompt files, and that a symlink-like junction can be followed — after finding the epic&#39;s own starting description had actually mischaracterized what the idea was asking about.</div>
         <span class="pill process">Process</span>
@@ -520,25 +546,25 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🏷️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/154">Enforcement-Mode Labeling</a><span class="item-id">BC-29</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/154">Enforcement-Mode Labeling</a><span class="item-id">BC-29</span></span></div>
         
         <div class="item-desc">Every one of the 25 governance docs now states plainly whether each of its rules is actually enforced by a check or just advisory prose, closing a gap where only one rule in the whole repo carried that label before — the pass also surfaced several pre-existing doc contradictions, like a rule requiring &quot;3 issues minimum&quot; that the actual review spell no longer requires.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔒</span><span>Secret detection implementation<span class="item-id">BC-30</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Secret detection implementation<span class="item-id">BC-30</span></span></div>
         
         <div class="item-desc">Built the secret-detection design for real: a pre-commit hook and a repository-wide CI backstop now both scan for leaked credentials and org names using one shared rule set, installed automatically by <code>spell init</code> — along the way, fixing a real latent crash where a malformed config file could take down the whole <code>spell doctor</code> run.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🧩</span><span>Customization implementation<span class="item-id">BC-31</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Customization implementation<span class="item-id">BC-31</span></span></div>
         
         <div class="item-desc"><code>spell update</code> no longer blindly overwrites a governance file you&#39;ve hand-edited — it now three-way-merges your changes with the new version and flags real conflicts — and the CI/CD standards doc split into a vendor-neutral core plus an Azure DevOps-specific profile so the same pattern can support other platforms later.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🪄</span><span>Spell-compiler implementation<span class="item-id">BC-32</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Spell-compiler implementation<span class="item-id">BC-32</span></span></div>
         
         <div class="item-desc">Every Claude Code spell stub now generates directly from its real source file instead of being hand-maintained separately, catching and fixing two real title-drift bugs in the process, plus a starter shared-fragment mechanism for text repeated across a handful of spells.</div>
         <span class="pill feature">New Feature</span>
@@ -551,19 +577,19 @@
     <p class="phase-note">15 claims checked · 13 corrected · 1 unverifiable. Become Current corrections logged in docs/verification-ledger.md</p>
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span>TODO.md: &quot;R3 (lifecycle-operations rule) is genuinely still open&quot;</span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>TODO.md: &quot;R3 (lifecycle-operations rule) is genuinely still open&quot;</span></div>
         
         <div class="item-desc">The first grep was case-sensitive and missed rule 22&#39;s capitalized &quot;Lifecycle operations run through their spell…&quot; — R3 was already shipped. TODO item closed in full; error named on the record.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span>ARC-039 (I15&#39;s premise): &quot;36 (not 33) spell command stubs exist&quot;</span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>ARC-039 (I15&#39;s premise): &quot;36 (not 33) spell command stubs exist&quot;</span></div>
         
         <div class="item-desc">41, not 36 — the count grew again in the day between the ADR&#39;s drafting and its implementation.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span>ARC-039 decision 2: &quot;5 files duplicate a resolution-order paragraph, worded a...</span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>ARC-039 decision 2: &quot;5 files duplicate a resolution-order paragraph, worded…</span></div>
         
         <div class="item-desc">Only a bare 2-line tracking_mode/external_provider enum is byte-identical; spell-scope skips the .arcane.json source entirely that the other four check — the surrounding logic had already diverged. Extracted only the genuinely-shared 2 lines.</div>
         <span class="pill fix">Bug Fix</span>

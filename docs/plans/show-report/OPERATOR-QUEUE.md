@@ -65,3 +65,48 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
 - **Status:** [x] done 2026-09-03 — operator chose **annotate, not delete** (the reversible option; the tag stays as a record). [The `v0.34.3` release](https://github.com/codemagicianhq/arcane/releases/tag/v0.34.3) now opens with "This version was never published to npm. Use `v0.35.0` or later," explains the shallow-checkout cause and the SR-03 fix, and states that re-running its publish would fail the same way because that commit still carries the old `publish.yml`. Applied with `gh release edit v0.34.3 --notes ...` and verified by reading `gh release view v0.34.3 --json body` back, rather than trusting the command's own success output.
 
 <!-- The loop appends Q-004+ below this line. -->
+
+## Q-004 — Accept, revise, or reject ARC-043
+
+- **What:** Decide on [ARC-043](../../../DECISIONS.md#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark),
+  drafted `Proposed` in `DECISIONS.md`: Show Report rows carry no emoji; the row's mark is derived
+  from `category` alone via eight inline SVG symbols, and the `**Report:**` line now ends at
+  `category:`.
+- **Why:** You decided the substance live during the SR-05a design review ("ok lets drop the
+  emoji"), so this is a formality — but accepting an ADR is never inside any delegation's grant in
+  this repository, the same rule ARC-041 (Q-003 on Lessons Hardening) and ARC-042 (Q-002 here) were
+  both held to. The implementation shipped in the same PR rather than waiting: the schema freezes at
+  SR-05b start, and removing an optional field after that point would be a breaking change instead
+  of a clean one.
+- **Preconditions:** ARC-043 is drafted `Proposed` in `DECISIONS.md` (done), and the change is
+  implemented and green (done — schema, parser, template, three spell prompts, and both regenerated
+  reports).
+- **Exact commands:** read the ADR section in `DECISIONS.md`, then record the decision here and, if
+  accepted as-is, flip its `Status:` field to `Accepted`. If you would rather keep the emoji, say so
+  here and the change reverts cleanly — it is one commit, and the 47 historical `**Report:**` lines
+  were deliberately left untouched.
+- **Rollback:** revert the implementing commit; the parser change is backward-compatible in both
+  directions, so no plan file needs editing either way.
+- **Status:** [ ] open
+
+## Q-005 — Decide the committed source of truth for coverage-at-close
+
+- **What:** Decide where a program's test-coverage figure comes from, so Show Report can carry it.
+  You asked for a coverage stat on the report during the SR-05a review.
+- **Why:** The report cannot compute it. Every other stat is derived from committed text or git
+  history, which is what makes the output deterministic — the same inputs render byte-identical
+  bytes, and `check:report` can therefore be a CI gate. Coverage lives in the generated `coverage/`
+  directory, which is not committed and reflects whoever ran the suite last, on whatever machine.
+  Reading it at generation time would make the report depend on wall-clock environment state and
+  break the determinism gate. So the figure has to be *written down* at close by whoever runs the
+  close-out audit, exactly as `completed:` and `baseline:` already are.
+- **Options:** (a) a `coverage:` field in `PLAN.md`'s frontmatter, recorded by
+  `spell-close-session`'s close-out audit alongside `completed:` — smallest change, consistent with
+  how every other program-level fact is already carried; (b) a row in the verification ledger's own
+  section, which makes it a checked claim rather than an asserted one; (c) drop the idea — the
+  number is already visible in CI and adding it to the report invites a stale figure.
+- **Preconditions:** none. Nothing is blocked on this; it is a stat cell once the source exists.
+- **Exact commands:** answer here with (a), (b), or (c). If (a) or (b), the follow-on work is one
+  epic: a frontmatter/ledger field, a parser line, a stat, and a sentence in `spell-close-session`.
+- **Rollback:** n/a — nothing is built yet.
+- **Status:** [ ] open

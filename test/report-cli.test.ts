@@ -73,7 +73,7 @@ async function createProgramFixture(): Promise<string> {
       "- [x] **AL-01 — Only epic.** Route: direct.",
       "  **Done:** [PR #1](https://github.com/codemagicianhq/arcane/pull/1).",
       "",
-      "  **Report:** Shipped the only thing. · category: feature · glyph: ✨",
+      "  **Report:** Shipped the only thing. · category: feature",
     ].join("\n"),
   );
   // A second plan whose epics live in a table -- must be skipped, not rendered empty.

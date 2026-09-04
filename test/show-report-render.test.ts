@@ -35,7 +35,6 @@ function minimalModel(overrides: Partial<ShowReport> = {}): ShowReport {
         rows: [
           {
             id: "TP-01",
-            glyph: "✨",
             title: "First epic",
             description: "Shipped `code` and a [link](https://example.invalid/x).",
             descriptionState: "authored",
@@ -158,6 +157,22 @@ describe("show-report render: renderShowReport against the real v0 template", ()
     const html = renderShowReport(model, template);
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+  });
+
+  it("draws each row's mark from its category via the inline sprite, with no emoji anywhere", async () => {
+    const template = await readFile(TEMPLATE_PATH, "utf8");
+    const html = renderShowReport(minimalModel(), template);
+    // The row's icon is selected by category alone (ARC-043) ...
+    expect(html).toContain('<svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature">');
+    // ... and every category the legend advertises must have a symbol to point at.
+    for (const key of ["spell", "feature", "governance", "decision", "fix", "process", "docs", "platform"]) {
+      expect(html).toContain(`<symbol id="cat-${key}"`);
+    }
+    // Decorative only: the pill still carries the category as text.
+    expect(html).toContain('<span class="pill feature">New Feature</span>');
+    expect(html).not.toContain('class="emoji"');
+    // No emoji survived into the rendered document.
+    expect(/\p{Extended_Pictographic}/u.test(html)).toBe(false);
   });
 
   it("is deterministic: rendering the same model twice yields identical bytes", async () => {

@@ -57,7 +57,7 @@ describe("show-report model: buildShowReportModel (end to end against a real git
         "- [x] **TP-01 — First epic.** Route: direct.",
         "  **Done:** [PR #10](https://github.com/codemagicianhq/arcane/pull/10), merged 2026-09-01.",
         "",
-        "  **Report:** Shipped the first thing. · category: feature · glyph: ✨",
+        "  **Report:** Shipped the first thing. · category: feature",
         "",
         "- [x] **TP-02 — Second epic, no report yet.** Route: direct.",
         "  **Done:** merged without a report line.",
@@ -161,9 +161,9 @@ describe("show-report model: buildShowReportModel (end to end against a real git
       description: "Shipped the first thing.",
       descriptionState: "authored",
       category: "feature",
-      glyph: "✨",
       href: "https://github.com/codemagicianhq/arcane/pull/10",
     });
+    expect(model.sections[0]!.rows[0]).not.toHaveProperty("glyph");
     expect(model.sections[0]!.rows[1]).toMatchObject({
       id: "TP-02",
       description: null,
@@ -285,7 +285,7 @@ describe("show-report model: buildShowReportModel (end to end against a real git
       await writeFile(
         dir,
         PLAN_RELPATH,
-        `${planWith("completed: 2026-09-02")}\n  **Report:** Backfilled. · category: docs · glyph: 📝`,
+        `${planWith("completed: 2026-09-02")}\n  **Report:** Backfilled. · category: docs`,
       );
       await writePackageVersion(dir, "1.1.0");
       runGit(dir, ["add", "-A"]);

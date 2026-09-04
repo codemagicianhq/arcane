@@ -16,9 +16,13 @@ export type ReportCategory =
   | "docs"
   | "platform";
 
+// A row carries no per-row icon field. Until ARC-043 each row could name its
+// own emoji `glyph`; that was dropped because `category` already selects the
+// row's mark, an emoji renders differently on every platform and prints badly,
+// and a report theme cannot restyle one. The template now derives the icon from
+// `category` alone -- eight inline SVG symbols, one per category.
 export interface ShowReportRow {
   id: string;
-  glyph?: string;
   title: string;
   description: string | null;
   descriptionState: "authored" | "unwritten";

@@ -180,7 +180,6 @@
     list-style: none;
   }
   .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; color: var(--ink-soft); }
-  .swatch { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
 
   section.phase { margin-top: 2.5rem; }
 
@@ -219,7 +218,18 @@
   .row:nth-child(even) { background: var(--row-alt); }
 
   .item-title { display: flex; align-items: flex-start; gap: 0.55rem; font-weight: 600; font-size: 0.94rem; color: var(--ink); }
-  .item-title .emoji { font-size: 1.05rem; line-height: 1.3; flex: none; }
+  /* One icon per category, drawn from the sprite below and coloured by the
+     same token as the row's pill. Decorative: the pill carries the category in
+     text, so the icon is aria-hidden and never the sole carrier of meaning. */
+  .cat-icon { width: 1rem; height: 1rem; flex: none; margin-top: 0.12rem; }
+  .cat-icon.spell      { color: var(--cat-spell); }
+  .cat-icon.feature    { color: var(--cat-feature); }
+  .cat-icon.governance { color: var(--cat-governance); }
+  .cat-icon.decision   { color: var(--cat-decision); }
+  .cat-icon.fix        { color: var(--cat-fix); }
+  .cat-icon.process    { color: var(--cat-process); }
+  .cat-icon.docs       { color: var(--cat-docs); }
+  .cat-icon.platform   { color: var(--cat-platform); }
   .item-title a { color: inherit; text-decoration: none; }
   .item-title a:hover { text-decoration: underline; }
   .item-id { font-family: "IBM Plex Mono", monospace; font-size: 0.7rem; color: var(--ink-faint); margin-left: 0.4rem; font-weight: 500; }
@@ -273,6 +283,22 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 </head>
 <body>
+<!-- Category icon sprite. Eight symbols, one per ReportCategory, referenced by
+     `<use href="#cat-<category>">` from each row and from the legend. Inline
+     rather than an emoji per row: an emoji renders differently on every
+     platform, often falls back to a box or a monochrome outline in print, and
+     cannot take the report's own category colour. All eight together are about
+     2 KB, and the file stays self-contained with no network fetch. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="cat-spell" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75v3.5M8 10.75v3.5M1.75 8h3.5M10.75 8h3.5M3.6 3.6l2.4 2.4M10 10l2.4 2.4M12.4 3.6 10 6M6 10l-2.4 2.4"/></symbol>
+  <symbol id="cat-feature" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="11.5" rx="1"/><path d="M8 5.25v5.5M5.25 8h5.5"/></symbol>
+  <symbol id="cat-governance" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.25 3.75v4.2c0 3.05-2.2 5.3-5.25 6.3-3.05-1-5.25-3.25-5.25-6.3v-4.2z"/></symbol>
+  <symbol id="cat-decision" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 14.25 8 8 14.25 1.75 8z"/></symbol>
+  <symbol id="cat-fix" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.75 13.4 4.9v6.2L8 14.25 2.6 11.1V4.9z"/><circle cx="8" cy="8" r="2.25"/></symbol>
+  <symbol id="cat-process" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8a5 5 0 0 1-8.65 3.45M3 8a5 5 0 0 1 8.65-3.45"/><path d="M11.65 2.15v2.4h-2.4M4.35 13.85v-2.4h2.4"/></symbol>
+  <symbol id="cat-docs" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 1.75h5.75l2.75 2.75v9.75h-8.5z"/><path d="M9.5 1.75v3h3M6 8h4M6 10.75h4"/></symbol>
+  <symbol id="cat-platform" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2.25" y="2.25" width="11.5" height="3.75" rx=".75"/><rect x="2.25" y="8.25" width="11.5" height="3.75" rx=".75"/><path d="M4.75 4.1h.01M4.75 10.1h.01M8 12v2.25"/></symbol>
+</defs></svg>
 <div class="page">
 <main>
 
@@ -295,14 +321,14 @@
     <p class="outcome">27 of 27 items dispositioned — 20 routed to an epic, 7 parked</p>
 
     <ul class="legend" aria-label="Category legend">
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-spell)" aria-hidden="true"></span>New Spell</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-feature)" aria-hidden="true"></span>New Feature</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-governance)" aria-hidden="true"></span>Governance</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-decision)" aria-hidden="true"></span>Decision (ADR)</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-fix)" aria-hidden="true"></span>Bug Fix</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-process)" aria-hidden="true"></span>Process</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-docs)" aria-hidden="true"></span>Docs</li>
-      <li class="legend-item"><span class="swatch" style="background:var(--cat-platform)" aria-hidden="true"></span>Platform</li>
+      <li class="legend-item"><svg class="cat-icon spell" aria-hidden="true" focusable="false"><use href="#cat-spell"></use></svg>New Spell</li>
+      <li class="legend-item"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg>New Feature</li>
+      <li class="legend-item"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg>Governance</li>
+      <li class="legend-item"><svg class="cat-icon decision" aria-hidden="true" focusable="false"><use href="#cat-decision"></use></svg>Decision (ADR)</li>
+      <li class="legend-item"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg>Bug Fix</li>
+      <li class="legend-item"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg>Process</li>
+      <li class="legend-item"><svg class="cat-icon docs" aria-hidden="true" focusable="false"><use href="#cat-docs"></use></svg>Docs</li>
+      <li class="legend-item"><svg class="cat-icon platform" aria-hidden="true" focusable="false"><use href="#cat-platform"></use></svg>Platform</li>
     </ul>
   </header>
 
@@ -311,13 +337,13 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📜</span><span><a href="https://github.com/codemagicianhq/arcane/pull/172">Commit this plan</a><span class="item-id">LH-00</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/172">Commit this plan</a><span class="item-id">LH-00</span></span></div>
         
         <div class="item-desc">Landed the Lessons Hardening plan itself, along with its delegation record — merged directly by the operator rather than autonomously, activating the standing grant for the rest of the program.</div>
         <span class="pill process">Process</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🌱</span><span><a href="https://github.com/codemagicianhq/arcane/pull/171">Phase 0 Capture &amp; Drift Fixes</a><span class="item-id">LH-01</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/171">Phase 0 Capture &amp; Drift Fixes</a><span class="item-id">LH-01</span></span></div>
         
         <div class="item-desc">Captured this program&#39;s Phase 0 findings as a tracking entry for work that had already shipped — the first 15-row section of a new verification ledger, plus live-drift fixes across TODO.md, the Become Current plan, and two other root docs.</div>
         <span class="pill process">Process</span>
@@ -329,19 +355,19 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🕵️</span><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Root-Cause Analysis Process</a><span class="item-id">LH-02</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Root-Cause Analysis Process</a><span class="item-id">LH-02</span></span></div>
         
         <div class="item-desc">Wrote this repo&#39;s first formal root-cause analysis, tracing a dozen &quot;we believed X, checked, X was wrong&quot; corrections back to one structural cause — facts written as static text nothing re-derives — and fixed a standing contradiction about where RCA documents are even supposed to live.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🧪</span><span>Test-suite resilience helpers<span class="item-id">LH-03</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Test-suite resilience helpers<span class="item-id">LH-03</span></span></div>
         
         <div class="item-desc">New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile string-matching patterns across the test suite, with a new lint rule enforcing it going forward — which itself had a bug caught and fixed after it silently matched nothing, missing 8 real violations the original estimate hadn&#39;t found.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📈</span><span>Coverage Thresholds Enforced<span class="item-id">LH-04</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>Coverage Thresholds Enforced<span class="item-id">LH-04</span></span></div>
         
         <div class="item-desc">CI now actually runs the coverage-threshold check instead of only having it configured and silently unenforced — verified real coverage already cleared the bar (85.53%) before flipping the gate on.</div>
         <span class="pill fix">Bug Fix</span>
@@ -353,31 +379,31 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔢</span><span>Derived Counts, Not Hardcoded<span class="item-id">LH-05</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>Derived Counts, Not Hardcoded<span class="item-id">LH-05</span></span></div>
         
         <div class="item-desc">Spell, agent, and governance counts throughout the README and tests now compute from the real registry instead of being hand-typed numbers that silently drift as the project grows — which caught a real bug where a profile&#39;s test was passing by coincidence, with a missing file and an extra one canceling out to the same total.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🚧</span><span>Build-Gate Correctness<span class="item-id">LH-06</span></span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>Build-Gate Correctness<span class="item-id">LH-06</span></span></div>
         
         <div class="item-desc">Fixed two build gates that were quietly wrong: the version-bump check now looks at actually-staged changes instead of running too early to see them, and a mismatched template marker now fails the build instead of shipping malformed content — with a second, previously-unnoticed silent-skip path found and closed along the way.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔗</span><span>Line-citation hygiene<span class="item-id">LH-07</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Line-citation hygiene<span class="item-id">LH-07</span></span></div>
         
         <div class="item-desc">Living docs now cite by a stable anchor or quoted phrase instead of a bare line number that drifts the moment the file is next edited — with a checker watching for it, which found 34 real violations, more than the original estimate, including a second citation shape the first pass had missed entirely.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🕰️</span><span>Shipped-state staleness scan<span class="item-id">LH-08</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Shipped-state staleness scan<span class="item-id">LH-08</span></span></div>
         
         <div class="item-desc">A new check catches governance content whose &quot;not yet built&quot; or status claims no longer match reality, shipped as an immediately-blocking CI gate rather than a slow warn-mode rollout since the live corpus had zero false positives from the very first run.</div>
         <span class="pill feature">New Feature</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📌</span><span>Follow-up promotion gate<span class="item-id">LH-09</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Follow-up promotion gate<span class="item-id">LH-09</span></span></div>
         
         <div class="item-desc">A new check flags any &quot;we&#39;ll deal with that later&quot; left in a journal, plan, or the ledger that doesn&#39;t carry a real tracker reference, refined mid-build after a whole-paragraph match missed the exact known case it was built to catch, fixed by scanning a tight window around each deferral phrase instead.</div>
         <span class="pill feature">New Feature</span>
@@ -389,19 +415,19 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">📏</span><span>Advisory conduct rules batch<span class="item-id">LH-10</span></span></div>
+        <div class="item-title"><svg class="cat-icon governance" aria-hidden="true" focusable="false"><use href="#cat-governance"></use></svg><span>Advisory conduct rules batch<span class="item-id">LH-10</span></span></div>
         
         <div class="item-desc">Three new standing rules, each grounded in a real incident from this program itself: never quote a denylisted name even while documenting its removal, treat a zero-match search as evidence about the search rather than the thing, and review a dispatched agent&#39;s actual diff rather than trusting its summary.</div>
         <span class="pill governance">Governance</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🔐</span><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Local Denylist Source Approved</a><span class="item-id">LH-11</span></span></div>
+        <div class="item-title"><svg class="cat-icon decision" aria-hidden="true" focusable="false"><use href="#cat-decision"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Local Denylist Source Approved</a><span class="item-id">LH-11</span></span></div>
         
         <div class="item-desc">Accepted the design letting the org-token privacy denylist be supplied from a file outside the repo — with a hard structural refusal of any in-repo path — closing the exact gap that let a real client name leak twice with no local way to catch it before pushing; the operator had already decided the open questions live, so this shipped as Accepted rather than another Proposed round.</div>
         <span class="pill decision">Decision (ADR)</span>
       </li>
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🗝️</span><span>Local Denylist, Shipped<span class="item-id">LH-12</span></span></div>
+        <div class="item-title"><svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature"></use></svg><span>Local Denylist, Shipped<span class="item-id">LH-12</span></span></div>
         
         <div class="item-desc">Built the local org-token design for real: a pre-commit scan of staged files plus a matching <code>--terms-file</code> flag on <code>spell ward</code>, so the leak scanner never needs a name typed into shell history — the test suite itself caught two real bugs along the way, including one that would have passed for the wrong reason had a fixture not been checked directly.</div>
         <span class="pill feature">New Feature</span>
@@ -413,7 +439,7 @@
     
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span class="emoji" aria-hidden="true">🎯</span><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Program Close-Out Audit</a><span class="item-id">LH-13</span></span></div>
+        <div class="item-title"><svg class="cat-icon process" aria-hidden="true" focusable="false"><use href="#cat-process"></use></svg><span><a href="https://github.com/codemagicianhq/arcane/pull/174">Program Close-Out Audit</a><span class="item-id">LH-13</span></span></div>
         
         <div class="item-desc">Audited all seven Definition-of-Done criteria directly against the live repository rather than assuming any of them, catching and fixing a stale status line in the operator&#39;s own queue and a bare citation the audit&#39;s own ledger entry had just introduced — then ran a real drift check and closed the program GO with zero Critical or High findings.</div>
         <span class="pill process">Process</span>
@@ -426,19 +452,19 @@
     <p class="phase-note">7 claims checked · 7 corrected · 0 unverifiable. Lessons Hardening corrections logged in docs/verification-ledger.md</p>
     <ol class="ledger">
       <li class="row">
-        <div class="item-title"><span>TODO.md&#39;s new ARC-014 citation, copied from ARC-031&#39;s own &quot;Related&quot; line, cor...</span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>TODO.md&#39;s new ARC-014 citation, copied from ARC-031&#39;s own &quot;Related&quot; line…</span></div>
         
         <div class="item-desc">ARC-014&#39;s real title is &quot;Spell Authoring Standards: A Quality Rubric for Spell Prompts&quot; — unrelated to org-tokens. Pre-existing bug in ARC-031 itself, not introduced by LH-11. Fixed the new ADR to use plain prose instead of the copied link; routed the pre-existing bug as its own TODO.md item (root ADR number not yet identified).</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span>resolvePrivateTokens()&#39;s test suite passes after converting the function to a...</span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>resolvePrivateTokens()&#39;s test suite passes after converting the function to…</span></div>
         
         <div class="item-desc">Typecheck stayed green, but two un-awaited call sites in test/org-token-lint.test.ts failed at runtime (Received: Promise {}; TypeError: tokens.map is not a function). Fixed both call sites with await.</div>
         <span class="pill fix">Bug Fix</span>
       </li>
       <li class="row">
-        <div class="item-title"><span>The new &quot;refuses a file inside a real repository&quot; test exercises the in-repo ...</span></div>
+        <div class="item-title"><svg class="cat-icon fix" aria-hidden="true" focusable="false"><use href="#cat-fix"></use></svg><span>The new &quot;refuses a file inside a real repository&quot; test exercises the in-repo…</span></div>
         
         <div class="item-desc">resolvePrivateTokens() had no cwd parameter yet, so the check silently ran against process.cwd() (the real checkout) rather than the fixture — the test passed without exercising the refusal logic at all. Added an optional cwd parameter threaded through to readLocalTokenFile; test now passes the fixture dir explicitly.</div>
         <span class="pill fix">Bug Fix</span>
@@ -449,14 +475,15 @@
   <section class="phase" aria-labelledby="parked-heading">
     <div class="phase-label"><h2 id="parked-heading">Parked — needs operator</h2><span class="rule" aria-hidden="true"></span></div>
     <ul class="parked-list">
-      <li><strong>Pattern 6</strong> — already codified in spell-close-session</li>
+      <li><strong>Pattern 6</strong> — already codified in spell-close-session step 1b / step 10 / Content-Verified Branch Deletion. Ledger rows only, no epic.</li>
       <li><strong>Pattern 12</strong> — working as intended.</li>
-      <li><strong>git cherry patch-id false negatives</strong> — fully solved (git-conventions.md → Content-Verified</li>
-      <li><strong>IDEAS.md&#39;s 2026-08-15 doc-ID-resolver remainder</strong> — zero violations found; LH-07&#39;s validator is</li>
-      <li><strong>TODO.md&#39;s tracking-mode resolution-order inconsistency</strong> — an operator design decision, already</li>
+      <li><strong>git cherry patch-id false negatives</strong> — fully solved (git-conventions.md → Content-Verified Branch Deletion).</li>
+      <li><strong>IDEAS.md&#39;s 2026-08-15 doc-ID-resolver remainder</strong> — zero violations found; LH-07&#39;s validator is deliberately forbidden from growing into a resolver.</li>
+      <li><strong>TODO.md&#39;s tracking-mode resolution-order inconsistency</strong> — an operator design decision, already recorded at Become Current&#39;s OPERATOR-QUEUE.md Q-011 item 7.</li>
       <li><strong>Become Current&#39;s Q-009/Q-010</strong> — cross-repo and distribution strategy, outside this program.</li>
-      <li><strong>Pattern 8 beyond LH-10&#39;s advisory rule</strong> — no subagent registry ships in this repo; nothing to gate</li>
-      <li><strong>FEEDBACK.md</strong> — not created. This repo *is* Arcane; spell-feedback.prompt.md&#39;s own maintainer-side</li>
+      <li><strong>Mechanizing spell-check-drift&#39;s judgment-based detectors beyond LH-07/LH-08&#39;s two mechanical inputs</strong> — deliberately out of scope; the detectors stay prose.</li>
+      <li><strong>Pattern 8 beyond LH-10&#39;s advisory rule</strong> — no subagent registry ships in this repo; nothing to gate mechanically yet.</li>
+      <li><strong>FEEDBACK.md</strong> — not created. This repo *is* Arcane; spell-feedback.prompt.md&#39;s own maintainer-side rule triages framework-shaped feedback straight into IDEAS.md/TODO.md, which is what this program already did in LH-01.</li>
     </ul>
   </section>
 

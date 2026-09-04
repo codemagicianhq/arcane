@@ -130,7 +130,7 @@ Standard template:
 
 <One plain sentence a non-engineer reviewing the finished program would read — what changed for
 them, not how it was built. Omit this section entirely when the PR is not one epic of a tracked
-program.> · category: <spell|feature|governance|decision|fix|process|docs|platform> · glyph: <emoji>
+program.> · category: <spell|feature|governance|decision|fix|process|docs|platform>
 ```
 
 `--docs-only` template (skip Testing):
@@ -147,7 +147,7 @@ Documentation-only PR. No functional code changed.
 
 ## For the record
 
-<Same as above — include only when this PR is one epic of a tracked program.> · category: docs · glyph: <emoji>
+<Same as above — include only when this PR is one epic of a tracked program.> · category: docs
 ```
 
 **About `## For the record`** — include it **only when this PR is one epic of a tracked program**
@@ -159,6 +159,13 @@ point: it is copied verbatim into the epic's `PLAN.md` entry as its `**Report:**
 epic is recorded (`spell-close-session` step 4d). An epic that never gets one renders visibly as
 **unwritten** in the report — never as a pasted commit subject — so a missing line stays a visible
 gap rather than a silently fabricated one.
+
+The line ends at `category:`. It carried a trailing `· glyph: <emoji>` until ARC-043, which
+dropped it: `category` is a closed set of eight and already selects the mark the report draws, so a
+per-epic emoji was a second, redundant decision on every line — and an emoji renders differently on
+every platform, prints badly, and cannot take the report's own colour. Do **not** author one.
+Lines written before ARC-043 still carry theirs; the parser reads past it and the report ignores it,
+so they need no edit.
 
 ## Step 5 — Create the PR
 

@@ -40,7 +40,7 @@ describe("show-report plan-parser: parseFrontmatter", () => {
 });
 
 describe("show-report plan-parser: parseEpics", () => {
-  it("parses a single epic with a Report line, category, and glyph", () => {
+  it("keeps parsing a legacy Report line that still carries a trailing `· glyph:`, ignoring the emoji", () => {
     const content = [
       "## Wave Plan",
       "",
@@ -66,7 +66,25 @@ describe("show-report plan-parser: parseEpics", () => {
     expect(epics[0]!.report).toEqual({
       description: "Landed the plan itself, activating the standing autonomy grant.",
       category: "process",
-      glyph: "📜",
+      titleOverride: undefined,
+    });
+    // The emoji must not leak into any parsed field -- the 47 Report lines
+    // authored before ARC-043 all still carry one.
+    expect(JSON.stringify(epics[0]!.report)).not.toContain("📜");
+  });
+
+  it("parses a Report line that ends at `category:`, the post-ARC-043 shape", () => {
+    const content = [
+      "- [x] **SR-05 — Ship the report page.** Route: direct. Size M.",
+      "",
+      "  **Report:** Gave the generated report a real page. · category: feature",
+      "",
+      "## Parked — Needs Operator",
+    ].join("\n");
+
+    expect(parseEpics(content)[0]!.report).toEqual({
+      description: "Gave the generated report a real page.",
+      category: "feature",
       titleOverride: undefined,
     });
   });
@@ -200,6 +218,50 @@ describe("show-report plan-parser: parseParkedSection", () => {
     expect(parked).toEqual([
       { title: "EF-18 / spell-intake", reason: "A genuine independent batch-002 submission." },
       { title: "Naming reword", reason: "Approve or veto in one word." },
+    ]);
+  });
+
+  it("keeps the whole reason when a bullet wraps onto a continuation line", () => {
+    // Real Lessons Hardening shape. Matching line-by-line cut this reason at
+    // the wrap, shipping "fully solved (git-conventions.md → Content-Verified"
+    // into the committed report with the closing words missing.
+    const content = [
+      "## Parked — Needs Operator",
+      "",
+      "- **`git cherry` patch-id false negatives** — fully solved (`git-conventions.md` → Content-Verified",
+      "  Branch Deletion).",
+      "",
+      "## Coverage Map",
+    ].join("\n");
+
+    expect(parseParkedSection(content)).toEqual([
+      {
+        title: "git cherry patch-id false negatives",
+        reason: "fully solved (git-conventions.md → Content-Verified Branch Deletion).",
+      },
+    ]);
+  });
+
+  it("keeps a bullet whose `—` falls on the continuation line, and folds the pre-dash tail into the title", () => {
+    // Real Lessons Hardening shape, and the more serious of the two wrap bugs:
+    // this item matched nothing at all and was silently absent from the
+    // rendered report -- 8 of 9 items, with no gap to notice.
+    const content = [
+      "## Parked — Needs Operator",
+      "",
+      "- **Mechanizing `spell-check-drift`'s judgment-based detectors** beyond LH-07/LH-08's two mechanical",
+      "  inputs — deliberately out of scope; the detectors stay prose.",
+      "- **Pattern 12** (disclosed scope deviations, 8×) — working as intended.",
+      "",
+      "## Coverage Map",
+    ].join("\n");
+
+    expect(parseParkedSection(content)).toEqual([
+      {
+        title: "Mechanizing spell-check-drift's judgment-based detectors beyond LH-07/LH-08's two mechanical inputs",
+        reason: "deliberately out of scope; the detectors stay prose.",
+      },
+      { title: "Pattern 12", reason: "working as intended." },
     ]);
   });
 
