@@ -61,8 +61,7 @@
           "refs": [
             "https://github.com/codemagicianhq/arcane/pull/171",
             "https://github.com/codemagicianhq/arcane/pull/172"
-          ],
-          "glyph": "📜"
+          ]
         },
         {
           "id": "LH-01",
@@ -73,8 +72,7 @@
           "href": "https://github.com/codemagicianhq/arcane/pull/171",
           "refs": [
             "https://github.com/codemagicianhq/arcane/pull/171"
-          ],
-          "glyph": "🌱"
+          ]
         }
       ]
     },
@@ -91,8 +89,7 @@
           "href": "https://github.com/codemagicianhq/arcane/pull/174",
           "refs": [
             "https://github.com/codemagicianhq/arcane/pull/174"
-          ],
-          "glyph": "🕵️"
+          ]
         },
         {
           "id": "LH-03",
@@ -100,8 +97,7 @@
           "description": "New shared test helpers replace dozens of hand-rolled retry-cleanup and fragile string-matching patterns across the test suite, with a new lint rule enforcing it going forward — which itself had a bug caught and fixed after it silently matched nothing, missing 8 real violations the original estimate hadn't found.",
           "descriptionState": "authored",
           "category": "feature",
-          "refs": [],
-          "glyph": "🧪"
+          "refs": []
         },
         {
           "id": "LH-04",
@@ -109,8 +105,7 @@
           "description": "CI now actually runs the coverage-threshold check instead of only having it configured and silently unenforced — verified real coverage already cleared the bar (85.53%) before flipping the gate on.",
           "descriptionState": "authored",
           "category": "fix",
-          "refs": [],
-          "glyph": "📈"
+          "refs": []
         }
       ]
     },
@@ -124,8 +119,7 @@
           "description": "Spell, agent, and governance counts throughout the README and tests now compute from the real registry instead of being hand-typed numbers that silently drift as the project grows — which caught a real bug where a profile's test was passing by coincidence, with a missing file and an extra one canceling out to the same total.",
           "descriptionState": "authored",
           "category": "fix",
-          "refs": [],
-          "glyph": "🔢"
+          "refs": []
         },
         {
           "id": "LH-06",
@@ -133,8 +127,7 @@
           "description": "Fixed two build gates that were quietly wrong: the version-bump check now looks at actually-staged changes instead of running too early to see them, and a mismatched template marker now fails the build instead of shipping malformed content — with a second, previously-unnoticed silent-skip path found and closed along the way.",
           "descriptionState": "authored",
           "category": "fix",
-          "refs": [],
-          "glyph": "🚧"
+          "refs": []
         },
         {
           "id": "LH-07",
@@ -142,8 +135,7 @@
           "description": "Living docs now cite by a stable anchor or quoted phrase instead of a bare line number that drifts the moment the file is next edited — with a checker watching for it, which found 34 real violations, more than the original estimate, including a second citation shape the first pass had missed entirely.",
           "descriptionState": "authored",
           "category": "feature",
-          "refs": [],
-          "glyph": "🔗"
+          "refs": []
         },
         {
           "id": "LH-08",
@@ -151,8 +143,7 @@
           "description": "A new check catches governance content whose \"not yet built\" or status claims no longer match reality, shipped as an immediately-blocking CI gate rather than a slow warn-mode rollout since the live corpus had zero false positives from the very first run.",
           "descriptionState": "authored",
           "category": "feature",
-          "refs": [],
-          "glyph": "🕰️"
+          "refs": []
         },
         {
           "id": "LH-09",
@@ -160,8 +151,7 @@
           "description": "A new check flags any \"we'll deal with that later\" left in a journal, plan, or the ledger that doesn't carry a real tracker reference, refined mid-build after a whole-paragraph match missed the exact known case it was built to catch, fixed by scanning a tight window around each deferral phrase instead.",
           "descriptionState": "authored",
           "category": "feature",
-          "refs": [],
-          "glyph": "📌"
+          "refs": []
         }
       ]
     },
@@ -175,8 +165,7 @@
           "description": "Three new standing rules, each grounded in a real incident from this program itself: never quote a denylisted name even while documenting its removal, treat a zero-match search as evidence about the search rather than the thing, and review a dispatched agent's actual diff rather than trusting its summary.",
           "descriptionState": "authored",
           "category": "governance",
-          "refs": [],
-          "glyph": "📏"
+          "refs": []
         },
         {
           "id": "LH-11",
@@ -187,8 +176,7 @@
           "href": "https://github.com/codemagicianhq/arcane/pull/174",
           "refs": [
             "https://github.com/codemagicianhq/arcane/pull/174"
-          ],
-          "glyph": "🔐"
+          ]
         },
         {
           "id": "LH-12",
@@ -196,8 +184,7 @@
           "description": "Built the local org-token design for real: a pre-commit scan of staged files plus a matching `--terms-file` flag on `spell ward`, so the leak scanner never needs a name typed into shell history — the test suite itself caught two real bugs along the way, including one that would have passed for the wrong reason had a fixture not been checked directly.",
           "descriptionState": "authored",
           "category": "feature",
-          "refs": [],
-          "glyph": "🗝️"
+          "refs": []
         }
       ]
     },
@@ -214,8 +201,7 @@
           "href": "https://github.com/codemagicianhq/arcane/pull/174",
           "refs": [
             "https://github.com/codemagicianhq/arcane/pull/174"
-          ],
-          "glyph": "🎯"
+          ]
         }
       ]
     }
@@ -228,7 +214,7 @@
     "highlights": [
       {
         "id": "correction-1",
-        "title": "TODO.md's new ARC-014 citation, copied from ARC-031's own \"Related\" line, cor...",
+        "title": "TODO.md's new ARC-014 citation, copied from ARC-031's own \"Related\" line…",
         "description": "ARC-014's real title is \"Spell Authoring Standards: A Quality Rubric for Spell Prompts\" — unrelated to org-tokens. Pre-existing bug in ARC-031 itself, not introduced by LH-11. Fixed the new ADR to use plain prose instead of the copied link; routed the pre-existing bug as its own TODO.md item (root ADR number not yet identified).",
         "descriptionState": "authored",
         "category": "fix",
@@ -236,7 +222,7 @@
       },
       {
         "id": "correction-2",
-        "title": "resolvePrivateTokens()'s test suite passes after converting the function to a...",
+        "title": "resolvePrivateTokens()'s test suite passes after converting the function to…",
         "description": "Typecheck stayed green, but two un-awaited call sites in test/org-token-lint.test.ts failed at runtime (Received: Promise {}; TypeError: tokens.map is not a function). Fixed both call sites with await.",
         "descriptionState": "authored",
         "category": "fix",
@@ -244,7 +230,7 @@
       },
       {
         "id": "correction-3",
-        "title": "The new \"refuses a file inside a real repository\" test exercises the in-repo ...",
+        "title": "The new \"refuses a file inside a real repository\" test exercises the in-repo…",
         "description": "resolvePrivateTokens() had no cwd parameter yet, so the check silently ran against process.cwd() (the real checkout) rather than the fixture — the test passed without exercising the refusal logic at all. Added an optional cwd parameter threaded through to readLocalTokenFile; test now passes the fixture dir explicitly.",
         "descriptionState": "authored",
         "category": "fix",
@@ -255,7 +241,7 @@
   "parked": [
     {
       "title": "Pattern 6",
-      "reason": "already codified in spell-close-session"
+      "reason": "already codified in spell-close-session step 1b / step 10 / Content-Verified Branch Deletion. Ledger rows only, no epic."
     },
     {
       "title": "Pattern 12",
@@ -263,27 +249,31 @@
     },
     {
       "title": "git cherry patch-id false negatives",
-      "reason": "fully solved (git-conventions.md → Content-Verified"
+      "reason": "fully solved (git-conventions.md → Content-Verified Branch Deletion)."
     },
     {
       "title": "IDEAS.md's 2026-08-15 doc-ID-resolver remainder",
-      "reason": "zero violations found; LH-07's validator is"
+      "reason": "zero violations found; LH-07's validator is deliberately forbidden from growing into a resolver."
     },
     {
       "title": "TODO.md's tracking-mode resolution-order inconsistency",
-      "reason": "an operator design decision, already"
+      "reason": "an operator design decision, already recorded at Become Current's OPERATOR-QUEUE.md Q-011 item 7."
     },
     {
       "title": "Become Current's Q-009/Q-010",
       "reason": "cross-repo and distribution strategy, outside this program."
     },
     {
+      "title": "Mechanizing spell-check-drift's judgment-based detectors beyond LH-07/LH-08's two mechanical inputs",
+      "reason": "deliberately out of scope; the detectors stay prose."
+    },
+    {
       "title": "Pattern 8 beyond LH-10's advisory rule",
-      "reason": "no subagent registry ships in this repo; nothing to gate"
+      "reason": "no subagent registry ships in this repo; nothing to gate mechanically yet."
     },
     {
       "title": "FEEDBACK.md",
-      "reason": "not created. This repo *is* Arcane; spell-feedback.prompt.md's own maintainer-side"
+      "reason": "not created. This repo *is* Arcane; spell-feedback.prompt.md's own maintainer-side rule triages framework-shaped feedback straight into IDEAS.md/TODO.md, which is what this program already did in LH-01."
     }
   ],
   "cast": [

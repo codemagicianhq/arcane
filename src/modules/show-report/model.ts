@@ -72,7 +72,6 @@ function epicToRow(epic: ParsedEpic): ShowReportRow {
     href: epic.prLinks.length > 0 ? epic.prLinks[epic.prLinks.length - 1] : undefined,
     refs: epic.prLinks,
   };
-  if (epic.report?.glyph) row.glyph = epic.report.glyph;
   return row;
 }
 
@@ -129,6 +128,21 @@ function buildNeedsYou(queueEntries: ParsedQueueEntry[]): ShowReportNeedsYou[] {
     });
 }
 
+/**
+ * Shortens a ledger claim to title length at a word boundary. Cutting at a
+ * fixed character offset split words mid-token on the live corpus ("...own
+ * 'Related' line, cor..."), which reads as a rendering fault rather than an
+ * abridgement. Falls back to a hard cut only when the first word alone is
+ * already over the limit.
+ */
+function truncateAtWord(text: string, limit: number): string {
+  if (text.length <= limit) return text;
+  const window = text.slice(0, limit - 1);
+  const lastSpace = window.lastIndexOf(" ");
+  const head = lastSpace > 0 ? window.slice(0, lastSpace) : window;
+  return `${head.replace(/[\s,;:.—-]+$/, "")}…`;
+}
+
 function buildCorrections(
   ledgerRows: ParsedLedgerRow[],
   programName: string,
@@ -138,7 +152,7 @@ function buildCorrections(
   const unverifiable = ledgerRows.filter((r) => r.result === "unverifiable").length;
   const highlights: ShowReportRow[] = corrected.slice(0, 3).map((row, i) => ({
     id: `correction-${i + 1}`,
-    title: row.claim.length > 80 ? `${row.claim.slice(0, 77)}...` : row.claim,
+    title: truncateAtWord(row.claim, 80),
     description: row.correction,
     descriptionState: row.correction ? "authored" : "unwritten",
     category: "fix",

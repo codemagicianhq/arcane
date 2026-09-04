@@ -64,7 +64,6 @@ export interface ShowReportRowView extends ShowReportRow {
   descriptionHtml: string | null;
   isUnwritten: boolean;
   hasHref: boolean;
-  hasGlyph: boolean;
 }
 
 function toRowView(row: ShowReportRow): ShowReportRowView {
@@ -74,7 +73,6 @@ function toRowView(row: ShowReportRow): ShowReportRowView {
     descriptionHtml: row.description === null ? null : inlineMarkupToHtml(row.description),
     isUnwritten: row.descriptionState === "unwritten",
     hasHref: typeof row.href === "string" && row.href.length > 0,
-    hasGlyph: typeof row.glyph === "string" && row.glyph.length > 0,
   };
 }
 

@@ -61,6 +61,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) | Session Handoff Durability: Pointer, Never Sole Carrier | 2026-08-31 | Accepted   |
 | [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
 | [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
+| [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Proposed   |
 
 ---
 
@@ -2365,3 +2366,77 @@ above):**
   signal/accent tokens) is containable within SR-05b's scope, or whether Show Report ships dark-only
   first with light tracked as its own follow-on `arcane-ui` item — the plan's own stated riskiest
   assumption, not resolved by this ADR.
+
+---
+
+## ARC-043 — Show Report Rows Carry No Emoji: Category Selects the Mark
+
+**Date:** 2026-09-03
+**Status:** Proposed (operator decided the substance live during SR-05a design review — "ok lets drop the emoji"; drafted here for the formal accept per [OPERATOR-QUEUE.md Q-004](docs/plans/show-report/OPERATOR-QUEUE.md#q-004--accept-revise-or-reject-arc-043), since accepting an ADR is never inside a delegation's grant). Implementation: shipped alongside this draft, since the schema freezes at SR-05b start and a later change would be a breaking one.
+**Related:** [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) (the program this amends — the `show-report.json` contract and compiled-template model it fixed)
+**Sources:** [docs/plans/show-report/PLAN.md](docs/plans/show-report/PLAN.md), [docs/plans/show-report/ARCANE-UI-BRIEF.md](docs/plans/show-report/ARCANE-UI-BRIEF.md)
+
+**Context:**
+
+The `**Report:**` line convention introduced at SR-01 asked every epic to author three things: a
+reader-facing sentence, a `category` from a closed set of eight, and a `glyph` — one emoji, free
+choice. The emoji reached `show-report.json` as an optional per-row field and rendered before the
+row title. Forty-seven such lines exist across the two tracked programs.
+
+SR-05a drew the report in `arcane-ui`'s real design language for the first time, and the emoji did
+not survive contact with it. Four problems, none of which a different emoji would fix:
+
+1. **It is redundant with `category`.** Eight categories already partition every row, and the report
+   already renders a category pill and a category legend. A per-row glyph is a second decision,
+   made at authoring time, that carries no information the category does not.
+2. **It cannot be styled.** An emoji is a colour font glyph. It cannot take the report's category
+   colour, cannot thin to match a hairline aesthetic, and cannot respond to light or dark.
+3. **It renders differently everywhere.** The same codepoint is a different picture on each
+   platform, and in print is commonly monochrome, boxed, or absent.
+4. **It made every author choose.** "Which emoji is a build-gate fix?" is a question with no right
+   answer, asked once per epic, forever.
+
+Accessibility is *not* among the reasons: the emoji was already `aria-hidden` in the v0 template,
+so it was silent to a screen reader either way.
+
+**Decision:**
+
+1. **`ShowReportRow.glyph` is removed from the schema.** It was optional; nothing consumes it after
+   this change. The removal lands before the SR-05b freeze deliberately — after the freeze the
+   contract is additive-only and this would be a breaking change.
+2. **The row's mark is derived from `category` alone** — eight inline SVG `<symbol>`s in the
+   template, referenced per row by `<use href="#cat-<category>">`, coloured by the same
+   `--cat-<category>` token as the row's pill. About 2 KB for all eight, no network fetch, identical
+   on every platform and in print. They stay `aria-hidden`: the pill carries the category as text,
+   so the icon is never the sole carrier of meaning.
+3. **The `**Report:**` line ends at `category:`.** `spell-create-pull-request`,
+   `spell-commit-work` and `spell-close-session` no longer ask for a glyph.
+4. **The 47 lines authored before this decision are not edited.** The parser deliberately does not
+   anchor at end-of-line, so a trailing `· glyph: <emoji>` still parses and is ignored. Rewriting
+   47 lines across two completed programs' plans to remove a field nothing reads would be churn in
+   the historical record for no gain.
+
+**Consequences:**
+
+- One fewer thing to author per epic, and one fewer place for taste to vary between sessions.
+- The report gains a mark that a design system can actually own: the icon set is a design artifact
+  `arcane-ui` can revise without touching any program's plan.
+- The icons are drawn in this repository at v0 quality. SR-05b may replace all eight from
+  `arcane-ui`'s own icon set; because they are referenced by category rather than authored per row,
+  that is a template-only change with no data migration.
+- Anything outside this repository that read `glyph` from `show-report.json` would break. Nothing
+  does: SR-05b has not started, and the two committed reports are the only consumers.
+
+**Rejected alternatives:**
+
+- **Keep the emoji but ship it as an SVG** (Twemoji, Noto Emoji) — rejected. It fixes only problem 3.
+  Roughly fifteen distinct emoji across the existing corpus at 1–4 KB each is 20–40 KB even
+  deduplicated, against about 2 KB for eight category icons; Twemoji additionally carries an
+  attribution requirement. It still looks like emoji against a HUD aesthetic, still cannot take the
+  category colour, and still asks every author to choose one.
+- **Keep `glyph` in the schema as an optional override** — rejected. It preserves exactly the
+  inconsistency the decision exists to remove, and an override nothing in the repository uses is
+  dead surface that the SR-05b freeze would then make permanent.
+- **Drop the mark entirely and rely on the pill** — rejected. The icon does real work in a dense
+  fifty-row ledger, giving each row a fixed-position anchor the eye can scan by; the pill sits at
+  the far right and does not serve that purpose.

@@ -207,7 +207,7 @@ Workflow:
    - Tables/code blocks where they improve clarity.
    - `## For the record` — **only when this PR is one epic of a tracked program** (one with a
      `docs/plans/<slug>/PLAN.md`); omit the heading entirely otherwise. One plain sentence a
-     non-engineer reading the finished program would understand, plus `· category: <…> · glyph: <…>`.
+     non-engineer reading the finished program would understand, plus `· category: <…>`.
      It is copied verbatim into the epic's `PLAN.md` entry as its `**Report:**` line when the epic
      is recorded. See `spell-create-pull-request`'s Step 4 for the full convention — defined there,
      referenced here.
