@@ -1,0 +1,92 @@
+{
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Show Report"
+    },
+    {
+      "id": "page-2",
+      "name": "Direction sketches"
+    }
+  ],
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 900,
+      "h": 3000,
+      "title": "Dark",
+      "print": "flow",
+      "page": "page-1"
+    },
+    {
+      "file": "Light.dc.html",
+      "x": 1020,
+      "y": 0,
+      "w": 900,
+      "h": 3000,
+      "title": "Light \u00b7 print master",
+      "print": "flow",
+      "page": "page-1"
+    },
+    {
+      "file": "Briefing.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 900,
+      "h": 1180,
+      "title": "B \u2014 Briefing (not chosen)",
+      "print": "flow",
+      "page": "page-2"
+    },
+    {
+      "file": "Dispatch.dc.html",
+      "x": 1020,
+      "y": 0,
+      "w": 900,
+      "h": 1180,
+      "title": "C \u2014 Dispatch (not chosen)",
+      "print": "flow",
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "deliverable",
+      "x": 0,
+      "y": -260,
+      "w": 900,
+      "page": "page-1",
+      "text": "Option A \u2014 Console \u2014 chosen, and now the build spec. Every Lessons Hardening row, calibration, parked, cast, colophon. Real data; every token value lifted from arcane-ui's theme.css, and the ramp names match its real ramp (its --ink-40 is #6c8aac; #4f6a8a is --ink-30, used here only for decorative rules).\n\nThe per-row emoji is gone (ARC-043, shipped in arcane-cli v0.36.0). The mark derives from category alone: eight inline SVG symbols referenced by <use>, coloured by the row's own --cat-* token, aria-hidden with the pill carrying the meaning. ~2 KB for all eight. Replace them from arcane-ui's icon set if there is one \u2014 keyed by category, so it is a template-only change."
+    },
+    {
+      "id": "light",
+      "x": 1020,
+      "y": -260,
+      "w": 900,
+      "page": "page-1",
+      "text": "LIGHT is in scope, and is the print master (operator, 2026-09-03: the same report must print).\n\narcane-ui's light block retunes only --bg and --ink, never --signal-* or --accent, so the eight light --cat-* values here are authored and measured on --bg-1 #e4eaef; every one clears 4.5:1 (worst: platform 4.73).\n\n--ink-50 and --ink-40 are the FIXED values (#435b78 / #496482). As shipped they measured 4.36:1 and 3.04:1 and failed AA across the product, not just here \u2014 fix committed on arcane-ui's fix/light-scheme-ink-ramp-contrast branch, not yet pushed. Signal and accent are still unfixed and are the whole of the residual light risk.\n\nExport PDF paginates this artboard (print: flow); @media print drops fills and glows and appends link URLs."
+    },
+    {
+      "id": "sketches",
+      "x": 0,
+      "y": -200,
+      "w": 900,
+      "page": "page-2",
+      "text": "The two directions not chosen, kept for the record. B \u2014 Briefing: document rhythm, hairline rules, larger reading type. C \u2014 Dispatch: verdict and calibration first, ledger demoted to 'the record'."
+    },
+    {
+      "id": "data-truth",
+      "x": 0,
+      "y": 3080,
+      "w": 900,
+      "page": "page-1",
+      "text": "The parked list reads 9 items, not 8. Designing against real data caught three generator bugs: one parked item was silently dropped, wrapped reasons were cut mid-sentence, and ledger claims were truncated mid-word. All three are fixed in arcane-cli v0.36.0 and this artboard shows the corrected output \u2014 so it can be trusted as the spec."
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-1"
+  }
+}
