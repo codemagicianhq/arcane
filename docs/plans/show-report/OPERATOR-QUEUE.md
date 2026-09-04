@@ -109,4 +109,9 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
 - **Exact commands:** answer here with (a), (b), or (c). If (a) or (b), the follow-on work is one
   epic: a frontmatter/ledger field, a parser line, a stat, and a sentence in `spell-close-session`.
 - **Rollback:** n/a — nothing is built yet.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-04 — operator chose **(c) drop it**. No coverage figure ships in the
+  report. The reasoning holds up on its own terms: CI already prints coverage on every run, so the
+  report would be a second copy of a number nobody re-derives — the exact static-fact drift class
+  (P1) this program exists to remove, and the same failure mode as the hardcoded counts LH-05 tore
+  out. Nothing to build; `TODO.md`'s Show Report entry is closed with this decision rather than left
+  open against a question that has been answered.
