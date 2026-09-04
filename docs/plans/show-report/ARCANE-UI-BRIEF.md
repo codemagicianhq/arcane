@@ -153,9 +153,11 @@ between `--ink-60` and the AA floor, hue and saturation preserved: **`--ink-50` 
 `--ink-40` → `#496482` (5.05)**, monotonic on `--bg-1` at 6.25 > 5.76 > 5.05, both clearing AA on
 `--bg`, `--bg-1` and `--bg-2`.
 
-**This change is already committed in arcane-ui on the branch `fix/light-scheme-ink-ramp-contrast`
-and has NOT been pushed** — arcane-ui is outside this program's delegation. Its 913 tests and its
-build pass on that branch. Pick it up, review it, and land it as part of SR-05b; do not re-derive it.
+**This change is committed and pushed in arcane-ui on the branch
+`fix/light-scheme-ink-ramp-contrast`** (commit `4196518`, pushed 2026-09-03 on the operator's
+explicit go-ahead — arcane-ui is outside this program's delegation, so it was held until then). Its
+913 tests and its build pass on that branch. No PR is open. Review it, open the PR in that repo's
+own workflow, and land it as part of SR-05b; do not re-derive it.
 
 Two things it does **not** fix, both still open for SR-05b:
 
