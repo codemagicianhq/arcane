@@ -25,6 +25,7 @@ import {
   discoverPrograms,
   runReportGeneration,
   type SkippedPlan,
+  type UnwrittenRow,
 } from "../src/modules/show-report/generate.js";
 import { isShallowRepository } from "../src/modules/show-report/sources.js";
 
@@ -44,6 +45,7 @@ export interface ReportCheckResult {
   drifted: string[];
   repaired: string[];
   skipped: SkippedPlan[];
+  unwritten: UnwrittenRow[];
 }
 
 export async function runReportCheck(
@@ -102,6 +104,16 @@ async function main(): Promise<void> {
   const result = await runReportCheck(mode, rootDir, only);
 
   for (const s of result.skipped) console.log(`Show report: skipped ${s.slug} -- ${s.reason}.`);
+
+  // Advisory only (SR-04) -- never sets a failing exit code. The capture point
+  // (`## For the record` at PR time) applies to epics shipped from now on; a
+  // report that shows a visible `unwritten` gap is more honest than one
+  // blocked, or one padded with a fabricated sentence.
+  for (const u of result.unwritten) {
+    console.warn(
+      `⚠ Show report: ${u.slug} has ${u.ids.length} epic(s) with no \`**Report:**\` line -- rendered as "unwritten": ${u.ids.join(", ")}.`,
+    );
+  }
 
   if (mode === "fix") {
     console.log(`Show report: regenerated ${result.repaired.length} file(s).`);

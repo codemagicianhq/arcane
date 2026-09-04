@@ -86,6 +86,12 @@ export async function runReport(
     outDir: options.out,
   });
 
+  for (const u of result.unwritten) {
+    console.warn(
+      `⚠ arcane: ${u.slug} has ${u.ids.length} epic(s) with no \`**Report:**\` line in PLAN.md -- they render as "unwritten": ${u.ids.join(", ")}.`,
+    );
+  }
+
   if (result.repaired.length === 0) {
     console.log(`Show report: ${programs.length} program(s) already up to date.`);
     return;

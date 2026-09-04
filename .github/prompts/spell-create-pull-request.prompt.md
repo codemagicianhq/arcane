@@ -125,6 +125,12 @@ Standard template:
 ## Testing
 
 - <coverage / test status if known, else "See CI pipeline results.">
+
+## For the record
+
+<One plain sentence a non-engineer reviewing the finished program would read — what changed for
+them, not how it was built. Omit this section entirely when the PR is not one epic of a tracked
+program.> · category: <spell|feature|governance|decision|fix|process|docs|platform> · glyph: <emoji>
 ```
 
 `--docs-only` template (skip Testing):
@@ -138,7 +144,21 @@ Standard template:
 
 ## Notes
 Documentation-only PR. No functional code changed.
+
+## For the record
+
+<Same as above — include only when this PR is one epic of a tracked program.> · category: docs · glyph: <emoji>
 ```
+
+**About `## For the record`** — include it **only when this PR is one epic of a tracked program**
+(one with a `docs/plans/<slug>/PLAN.md`); omit the heading entirely otherwise, since an empty
+section is worse than none. Write the sentence that program's completion report will show for this
+epic, in the reader's language rather than the implementation's — what changed for someone reading
+the finished program, not how it was built. Authoring it here, while the work is fresh, is the
+point: it is copied verbatim into the epic's `PLAN.md` entry as its `**Report:**` line when the
+epic is recorded (`spell-close-session` step 4d). An epic that never gets one renders visibly as
+**unwritten** in the report — never as a pasted commit subject — so a missing line stays a visible
+gap rather than a silently fabricated one.
 
 ## Step 5 — Create the PR
 

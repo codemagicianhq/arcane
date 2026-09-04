@@ -62,6 +62,6 @@ Q-009/Q-010/Q-011 — items outside this program's scope. Not duplicated here.
 - **Preconditions:** SR-03 merged and `0.35.0` confirmed on npm (`npm view arcane-cli version`).
 - **Exact commands (optional):** annotate the release — `gh release edit v0.34.3 --notes "Never published to npm: the publish job failed on a shallow-checkout test defect fixed in v0.35.0 (SR-03). Use 0.35.0."` — or delete it and its tag (`gh release delete v0.34.3 --cleanup-tag`) if you prefer no orphan release. Do **not** re-run the `v0.34.3` publish: that tag's commit still carries the shallow-checkout `publish.yml`.
 - **Rollback:** `gh release edit` is reversible; deleting the tag is not (the commit itself remains on `main`).
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-03 — operator chose **annotate, not delete** (the reversible option; the tag stays as a record). [The `v0.34.3` release](https://github.com/codemagicianhq/arcane/releases/tag/v0.34.3) now opens with "This version was never published to npm. Use `v0.35.0` or later," explains the shallow-checkout cause and the SR-03 fix, and states that re-running its publish would fail the same way because that commit still carries the old `publish.yml`. Applied with `gh release edit v0.34.3 --notes ...` and verified by reading `gh release view v0.34.3 --json body` back, rather than trusting the command's own success output.
 
 <!-- The loop appends Q-004+ below this line. -->
