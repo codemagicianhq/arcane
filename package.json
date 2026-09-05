@@ -45,6 +45,7 @@
     "check:spell-catalog": "tsx scripts/spell-catalog.ts --check",
     "fix:spell-catalog": "tsx scripts/spell-catalog.ts --fix",
     "check:report": "tsx scripts/report.ts --check --all",
+    "check:report-template": "tsx scripts/check-report-template.ts",
     "fix:report": "tsx scripts/report.ts --fix --all",
     "check:adr-references": "tsx scripts/check-distributed-adr-references.ts",
     "check:version-bump": "tsx scripts/check-version-bump.ts",

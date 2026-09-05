@@ -96,6 +96,15 @@ jobs:
         run: npm run check:report
         continue-on-error: true
 
+      # Blocking, unlike check:report above. check:report proves the committed
+      # artifacts match a regeneration; it stays warn-mode because a stale
+      # artifact is a nuisance. This one proves the TEMPLATE is sound, and a
+      # template whose tags name nothing renders an empty page while
+      # regenerating byte-identically -- consistently wrong passes every other
+      # gate here (arcane-ui 2.1.0 did exactly that).
+      - name: Check the report template binds to the data model (SR-06)
+        run: npm run check:report-template
+
       - name: Check citation hygiene (warn mode, LH-07)
         run: npm run check:citations
         continue-on-error: true
