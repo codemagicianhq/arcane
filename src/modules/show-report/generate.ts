@@ -16,7 +16,7 @@ import { parseEpics, parseFrontmatter } from "./plan-parser.js";
 import type { ShowReport } from "./types.js";
 
 /**
- * Recorded in colophon.templateVersion. "v0-interim" is the hand-CSS template
+ * Recorded in provenance.templateVersion. "v0-interim" is the hand-CSS template
  * SR-02 ships; SR-06 replaces it with the arcane-ui version the compiled
  * template was built from.
  */

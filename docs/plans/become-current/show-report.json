@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "program": {
     "id": "become-current",
     "slug": "become-current",
@@ -512,7 +512,7 @@
       "source": "commit-trailer"
     }
   ],
-  "colophon": {
+  "provenance": {
     "sources": [
       "docs/plans/become-current/PLAN.md",
       "docs/plans/become-current/OPERATOR-QUEUE.md",

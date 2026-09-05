@@ -39,7 +39,7 @@ Then execute exactly one iteration of the Show Report program:
    SR-00 (this activation) and SR-07 (operator-confirmed automation) are operator-merged regardless
    of this rule; see the Authority & Delegation section for the full exclusion list.
 8. Record: tick the epic in `PLAN.md` with its PR number (and version if bumped) — including the
-   `**Report:**` line the epic's own data-contract design (schema v1) expects future sessions and
+   `**Report:**` line the epic's own data-contract design (schema v2) expects future sessions and
    Show Report itself to read — close the `TODO.md` item(s) it routes from, mark `IDEAS.md` entries,
    and append any new operator items to `OPERATOR-QUEUE.md`.
 9. Run /spell-close-session. If a claim was corrected this session, run /spell-verification-ledger

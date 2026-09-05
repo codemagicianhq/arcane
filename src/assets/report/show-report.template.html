@@ -259,7 +259,7 @@
   .parked-list li, .cast-list li { margin: 0.3rem 0; }
   .parked-list strong { color: var(--ink); }
 
-  footer.colophon {
+  footer.provenance {
     margin-top: 3rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--line);
@@ -399,8 +399,8 @@
 
 </main>
 
-  <footer class="colophon">
-    Compiled {{compiledAtDate}} from <code>{{sourcesJoined}}</code>. Program <code>{{program.slug}}</code>, status <code>{{program.status}}</code>{{#hasVersionSpan}}, <code>{{program.versionSpan.from}}</code> → <code>{{program.versionSpan.to}}</code>{{/hasVersionSpan}}. Template <code>{{colophon.templateVersion}}</code>. Every stat above is derived, never hand-typed.
+  <footer class="provenance">
+    Compiled {{compiledAtDate}} from <code>{{sourcesJoined}}</code>. Program <code>{{program.slug}}</code>, status <code>{{program.status}}</code>{{#hasVersionSpan}}, <code>{{program.versionSpan.from}}</code> → <code>{{program.versionSpan.to}}</code>{{/hasVersionSpan}}. Template <code>{{provenance.templateVersion}}</code>. Every stat above is derived, never hand-typed.
   </footer>
 
 </div>

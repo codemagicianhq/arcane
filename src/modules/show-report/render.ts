@@ -99,9 +99,9 @@ export function buildShowReportView(model: ShowReport): Record<string, unknown> 
     hasOutcome: typeof model.outcome === "string" && model.outcome.length > 0,
     hasVersionSpan: model.program.versionSpan !== undefined,
     needsYouCount: model.needsYou.length,
-    compiledAtDate: model.colophon.compiledAt.slice(0, 10),
+    compiledAtDate: model.provenance.compiledAt.slice(0, 10),
     legend: CATEGORY_ORDER.map((key) => ({ key, label: CATEGORY_LABELS[key] })),
-    sourcesJoined: model.colophon.sources.join(", "),
+    sourcesJoined: model.provenance.sources.join(", "),
   };
 }
 

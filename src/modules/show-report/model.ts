@@ -1,5 +1,5 @@
 /**
- * Builds a ShowReport (schema v1) from a program's real sources -- PLAN.md,
+ * Builds a ShowReport (schema v2) from a program's real sources -- PLAN.md,
  * OPERATOR-QUEUE.md, docs/verification-ledger.md, and git history (SR-01).
  *
  * Deliberately does not populate `close` (DoD/drift verdicts): both existing
@@ -228,7 +228,7 @@ export async function buildShowReportModel(options: BuildShowReportModelOptions)
   const corrections = buildCorrections(ledgerRows, options.ledgerProgramName);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     program: {
       id: options.slug,
       slug: options.slug,
@@ -251,7 +251,7 @@ export async function buildShowReportModel(options: BuildShowReportModelOptions)
     ...(corrections ? { corrections } : {}),
     parked,
     cast: [...cast.entries()].map(([name, commits]) => ({ name, commits, source: "commit-trailer" as const })),
-    colophon: {
+    provenance: {
       sources: [options.planRelPath, options.queueRelPath, ledgerRelPath],
       compiledAt: options.compiledAt,
       templateVersion: options.templateVersion,

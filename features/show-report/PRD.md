@@ -32,7 +32,7 @@ and (3) **usable by open-source `arcane-cli` users** on their own machines, offl
 
 ### Must Have
 
-- A JSON data contract (`show-report.json`, schema v1) deterministically derived from `PLAN.md`,
+- A JSON data contract (`show-report.json`, schema v2) deterministically derived from `PLAN.md`,
   `OPERATOR-QUEUE.md`, and `docs/verification-ledger.md` — no hand-typed stats. **AC:**
   `buildShowReportModel()` output matches both existing hand ledgers' independently verified numbers,
   or documents the corrected number (e.g. Become Current's actual 5 accepted ADRs).
@@ -102,7 +102,7 @@ and (3) **usable by open-source `arcane-cli` users** on their own machines, offl
 
 ## Acceptance Criteria
 
-- [ ] `show-report.json` schema v1 is implemented and `buildShowReportModel()` is pure/deterministic
+- [ ] `show-report.json` schema v2 is implemented and `buildShowReportModel()` is pure/deterministic
       given the same source files.
 - [ ] `npm run check:report` passes in warn mode on `main` with zero findings on both existing
       programs (Become Current, Lessons Hardening).
