@@ -79,9 +79,10 @@ describe("show-report render: escapeHtml / inlineMarkupToHtml", () => {
 describe("show-report render: buildShowReportView", () => {
   it("precomputes category labels, description HTML, and the boolean flags mustache needs", () => {
     const view = buildShowReportView(minimalModel()) as {
-      sections: { rows: { categoryLabel: string; descriptionHtml: string; isUnwritten: boolean; hasHref: boolean }[] }[];
+      sections: { rowCount: number; rows: { categoryLabel: string; descriptionHtml: string; isUnwritten: boolean; hasHref: boolean }[] }[];
       hasCorrections: boolean;
       hasParked: boolean;
+      parkedCount: number;
       needsYouCount: number;
       compiledAtDate: string;
       legend: { key: string; label: string }[];
@@ -96,6 +97,9 @@ describe("show-report render: buildShowReportView", () => {
     expect(view.hasCorrections).toBe(false);
     expect(view.hasParked).toBe(false);
     expect(view.needsYouCount).toBe(0);
+    // Mustache cannot count a list, so counts a template needs are precomputed.
+    expect(view.sections[0]!.rowCount).toBe(1);
+    expect(view.parkedCount).toBe(0);
     expect(view.compiledAtDate).toBe("2026-09-02");
     expect(view.legend.map((l) => l.key)).toEqual([
       "spell",
@@ -157,6 +161,31 @@ describe("show-report render: renderShowReport against the real v0 template", ()
     const html = renderShowReport(model, template);
     expect(html).not.toContain("<img");
     expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+  });
+
+  it("counts rows per section and parked items, for templates that label a list with its size", () => {
+    const model = minimalModel({
+      parked: [
+        { title: "Pattern 6", reason: "already codified elsewhere." },
+        { title: "FEEDBACK.md", reason: "not created, out of scope." },
+      ],
+    });
+    model.sections[0]!.rows.push({
+      id: "TP-02",
+      title: "Second epic",
+      description: null,
+      descriptionState: "unwritten",
+      category: "docs",
+      refs: [],
+    });
+    const view = buildShowReportView(model) as {
+      sections: { rowCount: number }[];
+      parkedCount: number;
+      hasParked: boolean;
+    };
+    expect(view.sections[0]!.rowCount).toBe(2);
+    expect(view.parkedCount).toBe(2);
+    expect(view.hasParked).toBe(true);
   });
 
   it("draws each row's mark from its category via the inline sprite, with no emoji anywhere", async () => {
