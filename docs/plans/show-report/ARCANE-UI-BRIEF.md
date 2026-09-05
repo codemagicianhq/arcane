@@ -235,12 +235,26 @@ consume exactly these sections: `program`, `masthead` (eyebrow/title/dek), `stat
 `cast[]`, `colophon`. Authoritative shape: `src/modules/show-report/types.ts` in
 `codemagicianhq/arcane`.
 
+**The template is not rendered against that JSON directly.** `arcane-cli` passes it through
+`buildShowReportView()`, which spreads the model and adds derived fields. Bind to these; they exist
+already and are the difference between a tag resolving and silently rendering as an empty string:
+
+| scope | derived fields |
+|---|---|
+| per row | `categoryLabel` (the display name — "Governance", not `governance`), `descriptionHtml` (**triple-mustache**: carries `<code>` and `<a>`), `isUnwritten`, `hasHref` |
+| per section | `hasNote`, `rowCount` |
+| top level | `hasCorrections`, `hasParked`, `parkedCount`, `hasCast`, `hasOutcome`, `hasVersionSpan`, `needsYouCount`, `compiledAtDate`, `legend[]` (`{key,label}`), `sourcesJoined` |
+
+Mustache cannot count a list, so `rowCount` and `parkedCount` are precomputed here rather than
+derived in the template.
+
 Two row-level rules the design must honour:
 
 - A row's `descriptionState` is `"authored"` or `"unwritten"`. **An `unwritten` row must render
   visibly as unwritten** — never as a pasted commit subject, never hidden.
-- Every row may carry an `href` (its PR) and a `glyph`; `category` is one of
-  `spell | feature | governance | decision | fix | process | docs | platform`.
+- Every row may carry an `href` (its PR) — guard it, not every row has one. `category` is one of
+  `spell | feature | governance | decision | fix | process | docs | platform`, and is the **only**
+  thing that selects a row's mark. There is no `glyph` field; ARC-043 removed it.
 
 ## Also needed from arcane-ui: release tagging
 
@@ -259,7 +273,15 @@ dependency, not decided by this program.
 ## Definition of done (what unblocks SR-06 back here)
 
 1. The conformance test is green and Show Report is registered as an export.
-2. `renderToStaticMarkup` snapshot + Mustache parse test pass.
+2. **A fixture-render test passes.** Render the built template against a real `show-report.json`
+   (copy one from `codemagicianhq/arcane`'s `docs/plans/lessons-hardening/show-report.json`) and
+   assert that no `{{tag}}` in the template lacks a field in the view, that no heading, stat value
+   or footer line renders empty, and that no value that should be data appears as a literal.
+   **A Mustache *parse* test is not sufficient and this criterion used to say otherwise** — parsing
+   proves the template is syntactically valid, not that a single tag matches a field. Mustache
+   renders an unknown tag as an empty string, silently, so the 2.1.0 template passed its gate with
+   fourteen dead tags, an empty `<h1>`, and a hardcoded calibration sentence. The fixture render is
+   the only thing that catches this class.
 3. The numeric contrast test passes for every `--cat-*` pill in every shipped scheme.
 4. `dist/show-report.template.html` is ≤ 100 KB raw, zero runtime JS, header carries the arcane-ui
    version + license notice.

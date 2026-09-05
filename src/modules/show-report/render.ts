@@ -85,11 +85,16 @@ export function buildShowReportView(model: ShowReport): Record<string, unknown> 
     sections: model.sections.map((section) => ({
       ...section,
       hasNote: typeof section.note === "string" && section.note.length > 0,
+      // Mustache cannot count a list, so any "N items" label in a template needs
+      // the count precomputed here. Added for the compiled arcane-ui template,
+      // which asks for a per-section row count and a parked total (SR-06).
+      rowCount: section.rows.length,
       rows: section.rows.map(toRowView),
     })),
     corrections,
     hasCorrections: corrections !== undefined,
     hasParked: model.parked.length > 0,
+    parkedCount: model.parked.length,
     hasCast: model.cast.length > 0,
     hasOutcome: typeof model.outcome === "string" && model.outcome.length > 0,
     hasVersionSpan: model.program.versionSpan !== undefined,
