@@ -67,7 +67,7 @@ describe("spell report (SR-03): offline generation in a consumer-shaped reposito
         sections: { rows: unknown[] }[];
         program: { versionSpan?: unknown };
       };
-      expect(json.schemaVersion).toBe(1);
+      expect(json.schemaVersion).toBe(2);
       expect(json.sections.reduce((n, s) => n + s.rows.length, 0)).toBe(expectedRows);
       // The copied plan's `baseline:` SHA does not exist in this fixture's history, so the
       // version span is omitted rather than invented -- and the page still renders.

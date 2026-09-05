@@ -144,7 +144,7 @@ describe("show-report model: buildShowReportModel (end to end against a real git
       templateVersion: "0.0.0-test",
     });
 
-    expect(model.schemaVersion).toBe(1);
+    expect(model.schemaVersion).toBe(2);
     expect(model.program).toMatchObject({
       id: "test-program",
       title: "Test Program",
@@ -189,7 +189,7 @@ describe("show-report model: buildShowReportModel (end to end against a real git
     const adrsStat = model.stats.find((s) => s.id === "adrs");
     expect(adrsStat).toMatchObject({ value: 1, label: "ADRs accepted" });
 
-    expect(model.colophon).toMatchObject({
+    expect(model.provenance).toMatchObject({
       sources: [PLAN_RELPATH, QUEUE_RELPATH, "docs/verification-ledger.md"],
       compiledAt: "2026-09-03T00:00:00Z",
       templateVersion: "0.0.0-test",

@@ -93,7 +93,7 @@ registered until it passes conformance.
 
 `ReportMasthead`, `StatRail` (+ `StatTile size="sm"` and a real `label` slot), `CategoryLegend`
 (+ `Badge tone`), `ReportSection` (export the currently-private `PmSection`), `LedgerList` /
-`LedgerRow`, `ReportColophon`, `NeedsYou`, `Corrections`, `Cast`, and a `ShowReport` composition.
+`LedgerRow`, `ReportProvenance`, `NeedsYou`, `Corrections`, `Cast`, and a `ShowReport` composition.
 Exact set is subject to the SR-05a design.
 
 **`ShowReport` does not exist today.** The nearest precedents are references, not the
@@ -228,11 +228,11 @@ Tests: snapshot, a Mustache **parse** test, axe on the rendered HTML, and the nu
 
 ## What consumes this
 
-`arcane-cli` fills the template from `show-report.json` (schema v1, **frozen**). The template must
+`arcane-cli` fills the template from `show-report.json` (schema v2, **frozen**). The template must
 consume exactly these sections: `program`, `masthead` (eyebrow/title/dek), `stats[]`
 (value + label), `outcome?`, `needsYou[]` (renders "Nothing needs you" when empty), `sections[]` →
 `rows[]`, `corrections?` (checked/corrected/unverifiable + highlights), `parked[]`, `close?`,
-`cast[]`, `colophon`. Authoritative shape: `src/modules/show-report/types.ts` in
+`cast[]`, `provenance`. Authoritative shape: `src/modules/show-report/types.ts` in
 `codemagicianhq/arcane`.
 
 **The template is not rendered against that JSON directly.** `arcane-cli` passes it through
@@ -328,7 +328,7 @@ already carries arcane-ui's components — and nothing about organization or hie
 >   corrections — what was believed and what turned out to be true
 > - Parked items — things deliberately not built — each with its reason
 > - The cast: who contributed and how many commits
-> - A colophon: source files, the as-of date, the template version
+> - A provenance block: source files, the as-of date, the template version
 >
 > Show it with real-looking content, not placeholders. Two readers: the operator who ran the
 > program, and someone opening it cold.

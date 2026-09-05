@@ -5,7 +5,7 @@
  *   --check   regenerate every program's show-report.{json,html} in memory and
  *             compare (line-ending-normalized) against the committed files;
  *             exit 1 on drift. Network-free and deterministic: every input is
- *             the local tree plus local git history, and the colophon's
+ *             the local tree plus local git history, and the provenance block's
  *             `compiledAt` comes from the plan's own dates, never wall-clock.
  *   --fix     same, but write the regenerated files.
  *   --refresh accepted for the documented CLI surface; external-data

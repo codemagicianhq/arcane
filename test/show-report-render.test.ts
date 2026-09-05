@@ -14,7 +14,7 @@ const TEMPLATE_PATH = join(ROOT_DIR, "src", "assets", "report", "show-report.tem
 
 function minimalModel(overrides: Partial<ShowReport> = {}): ShowReport {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     program: {
       id: "test",
       slug: "test",
@@ -47,7 +47,7 @@ function minimalModel(overrides: Partial<ShowReport> = {}): ShowReport {
     ],
     parked: [],
     cast: [],
-    colophon: { sources: ["docs/plans/test/PLAN.md"], compiledAt: "2026-09-02", templateVersion: "v0-test" },
+    provenance: { sources: ["docs/plans/test/PLAN.md"], compiledAt: "2026-09-02", templateVersion: "v0-test" },
     ...overrides,
   };
 }

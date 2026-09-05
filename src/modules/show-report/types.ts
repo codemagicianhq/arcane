@@ -1,5 +1,5 @@
 /**
- * show-report.json schema v1 (SR-01). Frozen at SR-05b start per
+ * show-report.json schema v2. Frozen at SR-05b start per
  * docs/plans/show-report/PLAN.md's Data contract section -- additive changes
  * only after that point. This file is the literal TypeScript form of the
  * interfaces defined there; keep the two in sync by hand until a generator
@@ -79,7 +79,7 @@ export interface ShowReportCastMember {
   source: "commit-trailer";
 }
 
-export interface ShowReportColophon {
+export interface ShowReportProvenance {
   sources: string[];
   compiledAt: string;
   templateVersion: string;
@@ -103,7 +103,7 @@ export interface ShowReportMasthead {
 }
 
 export interface ShowReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   program: ShowReportProgram;
   masthead: ShowReportMasthead;
   stats: ShowReportStat[];
@@ -114,5 +114,5 @@ export interface ShowReport {
   parked: ShowReportParkedItem[];
   close?: ShowReportClose;
   cast: ShowReportCastMember[];
-  colophon: ShowReportColophon;
+  provenance: ShowReportProvenance;
 }

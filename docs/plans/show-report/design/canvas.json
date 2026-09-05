@@ -58,7 +58,7 @@
       "y": -260,
       "w": 900,
       "page": "page-1",
-      "text": "Option A \u2014 Console \u2014 chosen, and now the build spec. Every Lessons Hardening row, calibration, parked, cast, colophon. Real data; every token value lifted from arcane-ui's theme.css, and the ramp names match its real ramp (its --ink-40 is #6c8aac; #4f6a8a is --ink-30, used here only for decorative rules).\n\nThe per-row emoji is gone (ARC-043, shipped in arcane-cli v0.36.0). The mark derives from category alone: eight inline SVG symbols referenced by <use>, coloured by the row's own --cat-* token, aria-hidden with the pill carrying the meaning. ~2 KB for all eight. Replace them from arcane-ui's icon set if there is one \u2014 keyed by category, so it is a template-only change."
+      "text": "Option A \u2014 Console \u2014 chosen, and now the build spec. Every Lessons Hardening row, calibration, parked, cast, provenance. Real data; every token value lifted from arcane-ui's theme.css, and the ramp names match its real ramp (its --ink-40 is #6c8aac; #4f6a8a is --ink-30, used here only for decorative rules).\n\nThe per-row emoji is gone (ARC-043, shipped in arcane-cli v0.36.0). The mark derives from category alone: eight inline SVG symbols referenced by <use>, coloured by the row's own --cat-* token, aria-hidden with the pill carrying the meaning. ~2 KB for all eight. Replace them from arcane-ui's icon set if there is one \u2014 keyed by category, so it is a template-only change."
     },
     {
       "id": "light",

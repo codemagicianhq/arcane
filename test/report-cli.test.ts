@@ -149,10 +149,10 @@ describe("show-report CLI: runReportCheck --check/--fix", () => {
       expect(second.drifted).toEqual([]);
 
       const json = JSON.parse(await fs.readFile(join(dir, "docs/plans/alpha/show-report.json"), "utf8")) as {
-        colophon: { compiledAt: string; templateVersion: string };
+        provenance: { compiledAt: string; templateVersion: string };
       };
-      expect(json.colophon.compiledAt).toBe("2026-09-02"); // plan's completed date, not wall-clock
-      expect(json.colophon.templateVersion).toBe("v0-interim");
+      expect(json.provenance.compiledAt).toBe("2026-09-02"); // plan's completed date, not wall-clock
+      expect(json.provenance.templateVersion).toBe("v0-interim");
     },
     HEAVY_TEST_TIMEOUT,
   );

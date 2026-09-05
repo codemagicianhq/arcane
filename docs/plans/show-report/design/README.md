@@ -12,7 +12,7 @@ Related: [[git-conventions]] for how this lands, and `../PLAN.md`'s SR-05a/SR-05
 
 | file | what it is |
 |---|---|
-| `Main.dc.html` | **Direction A, "Console" — the approved design**, dark scheme. The whole report: masthead, metadata row, stat rail, needs-you, legend, five wave sections with every Lessons Hardening epic, calibration, parked, cast, colophon. |
+| `Main.dc.html` | **Direction A, "Console" — the approved design**, dark scheme. The whole report: masthead, metadata row, stat rail, needs-you, legend, five wave sections with every Lessons Hardening epic, calibration, parked, cast, provenance. |
 | `Light.dc.html` | The same design, light scheme. **This is also the print master** — the report must print, and print is light. Derived from `Main.dc.html` by token swap only; the structure is identical by construction. |
 | `Briefing.dc.html` | Direction B, not chosen. Document rhythm — hairline rules, larger reading type, category as a small tag before the title. Kept as the record of what was weighed. |
 | `Dispatch.dc.html` | Direction C, not chosen. Answer-first — a large verdict, calibration promoted, the ledger demoted to "the record". |
@@ -31,7 +31,7 @@ Both uses are fine; nothing else reads these files, and no build step depends on
 
 - **Structure and composition.** Section order, the four-cell stat rail as one bordered grid, the
   section head bar (`W1` · title · count), the three-column row grid, the pill anatomy, the
-  two-column parked grid, the cast/colophon footer split.
+  two-column parked grid, the cast/provenance footer split.
 - **Type and spacing assignments.** Which family, size, weight, tracking and case each element uses.
 - **The eight category icons**, drawn once in the sprite at the top of `Main.dc.html` and referenced
   per row by `<use href="#cat-<category>">`.

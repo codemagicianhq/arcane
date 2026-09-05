@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "program": {
     "id": "lessons-hardening",
     "slug": "lessons-hardening",
@@ -288,7 +288,7 @@
       "source": "commit-trailer"
     }
   ],
-  "colophon": {
+  "provenance": {
     "sources": [
       "docs/plans/lessons-hardening/PLAN.md",
       "docs/plans/lessons-hardening/OPERATOR-QUEUE.md",
