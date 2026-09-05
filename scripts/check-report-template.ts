@@ -24,7 +24,7 @@ const TEMPLATE_RELPATH = "src/assets/report/show-report.template.html";
 /** ARC-042 decision 1: the compiled artifact ships inside MIT arcane-cli, so it stays small. */
 const MAX_BYTES = 100 * 1024;
 
-interface Failure {
+interface Finding {
   rule: string;
   detail: string;
 }
@@ -135,7 +135,8 @@ async function committedModels(): Promise<{ slug: string; model: ShowReport }[]>
 }
 
 async function main(): Promise<void> {
-  const failures: Failure[] = [];
+  const failures: Finding[] = [];
+  const warnings: Finding[] = [];
   const templatePath = join(ROOT, TEMPLATE_RELPATH);
   let template: string;
   try {
@@ -146,6 +147,7 @@ async function main(): Promise<void> {
   }
 
   const fail = (rule: string, detail: string): void => void failures.push({ rule, detail });
+  const warn = (rule: string, detail: string): void => void warnings.push({ rule, detail });
 
   // --- the artifact itself -------------------------------------------------
   // The template must say where it came from, in a comment near the top. A
@@ -202,6 +204,14 @@ async function main(): Promise<void> {
       fail("determinism", `${slug}: two renders of the same model differ -- check:report cannot be a gate`);
     }
 
+    // ARC-043's sibling rename must hold end to end. arcane-ui renamed the
+    // component ReportColophon -> ReportProvenance but left the visible heading
+    // reading "Colophon" -- the exact word the rename existed to remove, shown
+    // to every reader of every report. A component rename is not the rename.
+    if (/>\s*Colophon\s*</i.test(html)) {
+      fail("provenance label", `${slug}: the footer heading still reads "Colophon"; the field is 'provenance'`);
+    }
+
     // An epic with no **Report:** line must be visibly unwritten, never blank (SR-04).
     const probe = JSON.parse(JSON.stringify(model)) as ShowReport;
     const firstRow = probe.sections[0]?.rows[0];
@@ -212,6 +222,24 @@ async function main(): Promise<void> {
         fail("unwritten state", `${slug}: a row with no description renders blank instead of visibly unwritten`);
       }
     }
+  }
+
+  // Counts that read as prose need singular/plural agreement. The maximal model
+  // deliberately carries exactly one of everything, which is the case that
+  // exposes it -- the shipped 2.1.2 template rendered "1 commits".
+  const maximalHtml = renderShowReport(maximalModel(), template);
+  const singularSlips = [...maximalHtml.matchAll(/\b1 ([a-z]+s)\b/g)]
+    .map((m) => m[0])
+    .filter((phrase) => !/\b1 (items|is|was|has)\b/.test(phrase));
+  if (singularSlips.length > 0) {
+    // Advisory. This is a copy nit, not a correctness or accessibility failure,
+    // and the interim template carries it too -- blocking CI over it would be
+    // disproportionate. Loud, but not fatal.
+    warn("pluralisation", `${[...new Set(singularSlips)].join(", ")} -- reads wrong when the count is one`);
+  }
+
+  for (const { rule, detail } of warnings) {
+    console.warn(`Report template check WARNING [${rule}] ${detail}`);
   }
 
   if (failures.length > 0) {
