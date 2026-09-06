@@ -7,7 +7,7 @@ import {
     getGeneratedDogfoodPaths,
     runSelfHostParity,
 } from "../scripts/self-host-parity.js";
-import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
+import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const ASSETS_DIR = join(process.cwd(), "src", "assets");
@@ -78,7 +78,7 @@ describe("self-host parity gate", () => {
             expect(result.stderr).toContain("Self-host parity FAILED");
             expect(result.stderr).toContain(DRIFT_FIXTURE);
         },
-        HEAVY_TEST_TIMEOUT,
+        VERY_HEAVY_TEST_TIMEOUT,
     );
 
     it("runs the failing check as a required CI step", async () => {
@@ -108,7 +108,7 @@ describe("self-host parity gate", () => {
         // full-suite contention. Confirmed timing out here specifically
         // (TODO.md, found 2026-09-01), same class already fixed in
         // update.test.ts's two heaviest tests.
-        HEAVY_TEST_TIMEOUT,
+        VERY_HEAVY_TEST_TIMEOUT,
     );
 
     it(
@@ -125,7 +125,7 @@ describe("self-host parity gate", () => {
                 await fs.readFile(join(assets, DRIFT_FIXTURE), "utf8"),
             );
         },
-        HEAVY_TEST_TIMEOUT, // same createParityFixture() cost as the test above.
+        VERY_HEAVY_TEST_TIMEOUT, // same createParityFixture() cost as the test above.
     );
 });
 
