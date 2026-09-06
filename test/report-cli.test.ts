@@ -222,7 +222,7 @@ describe("show-report: unwritten-description reporting (SR-04)", () => {
 
       // And the page shows the gap rather than inventing a sentence for it.
       const html = await fs.readFile(join(dir, "docs/plans/alpha/show-report.html"), "utf8");
-      expect(html).toContain('<div class="item-desc unwritten">unwritten</div>');
+      expect(html).toContain('<span class="unwritten">unwritten</span>');
       expect(html).not.toContain("Second epic, never described.</div>");
     },
     HEAVY_TEST_TIMEOUT,

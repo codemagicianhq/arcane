@@ -114,16 +114,27 @@ describe("show-report render: buildShowReportView", () => {
   });
 });
 
-describe("show-report render: renderShowReport against the real v0 template", () => {
+describe("show-report render: renderShowReport against the vendored arcane-ui template", () => {
   it("renders a full standalone document with the stats, the row, its link, and the escaped description", async () => {
     const template = await readFile(TEMPLATE_PATH, "utf8");
     const html = renderShowReport(minimalModel(), template);
-    expect(html.startsWith("<!doctype html>")).toBe(true);
+    // The arcane-ui provenance/license comment comes FIRST, before the doctype:
+    // it identifies which build produced this template, and check:report-template
+    // requires it.
+    expect(html.startsWith("<!-- @codemagician/arcane-ui v")).toBe(true);
+    expect(html).toContain("<!doctype html>");
     expect(html).toContain("<title>Test Program</title>");
-    expect(html).toContain("<dd>1/1</dd><dt>epics shipped</dt>");
-    expect(html).toContain('<a href="https://github.com/codemagicianhq/arcane/pull/10">First epic</a>');
+    // One <dl> rail of N cells; each cell is column-reverse, so the label
+    // precedes the value in source order and reads under it visually.
+    expect(html).toContain("epics shipped</dt>");
+    expect(html).toContain("1/1</div>");
+    // The row's PR link wraps its ID, not its title -- the title is plain text
+    // beside it. This changed with the vendored template; assert what it does.
+    expect(html).toMatch(/<a href="https:\/\/github\.com\/codemagicianhq\/arcane\/pull\/10"[^>]*>TP-01<\/a>/);
+    expect(html).toContain("First epic</div>");
     expect(html).toContain("Shipped <code>code</code> and a <a href=\"https://example.invalid/x\">link</a>.");
-    expect(html).toContain('<span class="pill feature">New Feature</span>');
+    expect(html).toContain('class="arc-pill"');
+    expect(html).toContain("New Feature</span>");
     expect(html).not.toContain("{{"); // every tag resolved, nothing left unrendered
   });
 
@@ -140,8 +151,9 @@ describe("show-report render: renderShowReport against the real v0 template", ()
       minimalModel({ needsYou: [{ id: "Q-001", title: "Merge it", reason: "It is the grant." }] }),
       template,
     );
-    expect(html).toContain("Needs you: 1");
-    expect(html).toContain("<strong>Q-001</strong> — Merge it");
+    expect(html).toContain("Needs you");
+    expect(html).toContain("1 open");
+    expect(html).toContain("Merge it");
     expect(html).not.toContain("Nothing needs you");
   });
 
@@ -151,7 +163,7 @@ describe("show-report render: renderShowReport against the real v0 template", ()
     model.sections[0]!.rows[0]!.description = null;
     model.sections[0]!.rows[0]!.descriptionState = "unwritten";
     const html = renderShowReport(model, template);
-    expect(html).toContain('<div class="item-desc unwritten">unwritten</div>');
+    expect(html).toContain('<span class="unwritten">unwritten</span>');
   });
 
   it("HTML-escapes plain fields so a title cannot inject markup", async () => {
@@ -192,13 +204,13 @@ describe("show-report render: renderShowReport against the real v0 template", ()
     const template = await readFile(TEMPLATE_PATH, "utf8");
     const html = renderShowReport(minimalModel(), template);
     // The row's icon is selected by category alone (ARC-043) ...
-    expect(html).toContain('<svg class="cat-icon feature" aria-hidden="true" focusable="false"><use href="#cat-feature">');
+    expect(html).toContain('<use href="#cat-feature">');
     // ... and every category the legend advertises must have a symbol to point at.
     for (const key of ["spell", "feature", "governance", "decision", "fix", "process", "docs", "platform"]) {
       expect(html).toContain(`<symbol id="cat-${key}"`);
     }
     // Decorative only: the pill still carries the category as text.
-    expect(html).toContain('<span class="pill feature">New Feature</span>');
+    expect(html).toContain("New Feature</span>");
     expect(html).not.toContain('class="emoji"');
     // No emoji survived into the rendered document.
     expect(/\p{Extended_Pictographic}/u.test(html)).toBe(false);

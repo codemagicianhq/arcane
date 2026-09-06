@@ -59,7 +59,9 @@ describe("spell report (SR-03): offline generation in a consumer-shaped reposito
 
       expect(process.exitCode).toBeUndefined();
       const html = await fs.readFile(join(dir, "docs/plans/lessons-hardening/show-report.html"), "utf8");
-      expect(html.startsWith("<!doctype html>")).toBe(true);
+      // The arcane-ui provenance comment precedes the doctype (SR-06).
+      expect(html.startsWith("<!-- @codemagician/arcane-ui v")).toBe(true);
+      expect(html).toContain("<!doctype html>");
       expect(html).toContain("Lessons Hardening");
       expect(html).not.toContain("{{");
       const json = JSON.parse(await fs.readFile(join(dir, "docs/plans/lessons-hardening/show-report.json"), "utf8")) as {
