@@ -4,6 +4,7 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 const NPM_CLI = process.env["npm_execpath"];
 const tempDirs: string[] = [];
@@ -58,7 +59,7 @@ describe("distributed ADR reference gate", () => {
 
         expect(result.status).toBe(0);
         expect(result.stdout).toContain("Distributed ADR reference check passed");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("fails for a missing citation and identifies its file and line", async () => {
         const assets = await createFixture(
@@ -71,7 +72,7 @@ describe("distributed ADR reference gate", () => {
         expect(result.status).toBe(1);
         expect(result.stderr).toContain(".github/prompts/fixture.prompt.md:2");
         expect(result.stderr).toContain("ADR-051 (missing)");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("fails for a malformed citation", async () => {
         const assets = await createFixture(
@@ -83,7 +84,7 @@ describe("distributed ADR reference gate", () => {
 
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("ADR-48 (malformed)");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("runs as a required CI step", async () => {
         const workflow = await fs.readFile(
@@ -91,7 +92,7 @@ describe("distributed ADR reference gate", () => {
             "utf8",
         );
         expect(workflow).toContain("run: npm run check:adr-references");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 });
 
 describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
@@ -105,7 +106,7 @@ describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
 
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("ARC-035 (cross-repo-hazard)");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("flags a relative (non-https) markdown link to DECISIONS.md citing a specific ARC id", async () => {
         const assets = await createFixture(
@@ -117,7 +118,7 @@ describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
 
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("ARC-035 (cross-repo-hazard)");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("flags the same hazard shape for a specific EF id", async () => {
         const assets = await createFixture(
@@ -129,7 +130,7 @@ describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
 
         expect(result.status).toBe(1);
         expect(result.stderr).toContain("EF-36 (cross-repo-hazard)");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("accepts a full https canonical-repo URL citing a specific ARC id", async () => {
         const assets = await createFixture(
@@ -140,7 +141,7 @@ describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
         const result = runGate(assets);
 
         expect(result.status).toBe(0);
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("accepts a bare, unlinked ARC-NNN mention as safe plain text (the rule's own fallback)", async () => {
         const assets = await createFixture(
@@ -151,7 +152,7 @@ describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
         const result = runGate(assets);
 
         expect(result.status).toBe(0);
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("does not flag a placeholder ARC-NNN/EF-NN used to illustrate the rule itself", async () => {
         const assets = await createFixture(
@@ -162,5 +163,5 @@ describe("cross-repo-hazard detection for ARC-NNN and EF-NN (BC-06)", () => {
         const result = runGate(assets);
 
         expect(result.status).toBe(0);
-    });
+    }, HEAVY_TEST_TIMEOUT);
 });
