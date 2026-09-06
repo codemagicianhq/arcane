@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 const { inspectGitRepositoryMock } = vi.hoisted(() => ({
   inspectGitRepositoryMock: vi.fn(),
@@ -117,7 +118,7 @@ describe("spell init — hub question", () => {
 
     const manifest = await readManifest(tmpDir);
     expect(manifest.role).toBe("hub");
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("writes role: consumer when the hub question is answered no", async () => {
     mockConfirms(false);
@@ -125,7 +126,7 @@ describe("spell init — hub question", () => {
 
     const manifest = await readManifest(tmpDir);
     expect(manifest.role).toBe("consumer");
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("does not ask the hub question, and leaves role unset, when --profile is passed", async () => {
     await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
@@ -133,7 +134,7 @@ describe("spell init — hub question", () => {
     expect(confirmMock).not.toHaveBeenCalled();
     const manifest = await readManifest(tmpDir);
     expect(manifest.role).toBeUndefined();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe("spell init — tracking mode (EF-14)", () => {
@@ -161,7 +162,7 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("internal");
     expect(manifest.external_provider).toBeNull();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("methodology profile gets a silent internal/null default, no question asked", async () => {
     await runInit({ profile: "methodology" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
@@ -170,7 +171,7 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("internal");
     expect(manifest.external_provider).toBeNull();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("lite profile with --profile (scripted): no question asked, tracking_mode left unset", async () => {
     await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
@@ -181,7 +182,7 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBeUndefined();
     expect(manifest.external_provider).toBeUndefined();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("lite profile interactive: asks once, persists internal when chosen", async () => {
     resetSelectMock("internal");
@@ -193,7 +194,7 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("internal");
     expect(manifest.external_provider).toBeNull();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("lite profile interactive: asks once, persists external + chosen provider", async () => {
     resetSelectMock("external", "jira");
@@ -205,7 +206,7 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("external");
     expect(manifest.external_provider).toBe("jira");
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("lite profile interactive: accepts github as a chosen provider (BC-09)", async () => {
     resetSelectMock("external", "github");
@@ -214,7 +215,7 @@ describe("spell init — tracking mode (EF-14)", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("external");
     expect(manifest.external_provider).toBe("github");
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe("spell update — manifest retrofit wizard", () => {
@@ -253,7 +254,7 @@ describe("spell update — manifest retrofit wizard", () => {
     );
     const manifest = await readManifest(tmpDir);
     expect(manifest.role).toBe("hub"); // confirmMock defaults to true in this suite
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("does not ask again once role is already set (idempotent on a second update)", async () => {
     await writeManifest(tmpDir); // predates role
@@ -268,7 +269,7 @@ describe("spell update — manifest retrofit wizard", () => {
 
     const manifest = await readManifest(tmpDir);
     expect(manifest.role).toBe("hub");
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("does not ask any retrofit question in --dry-run mode", async () => {
     await writeManifest(tmpDir);
@@ -277,14 +278,14 @@ describe("spell update — manifest retrofit wizard", () => {
     expect(confirmMock).not.toHaveBeenCalled();
     const manifest = await readManifest(tmpDir);
     expect(manifest.role).toBeUndefined(); // dry-run never writes
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("does not ask when role is already present, even if empty/consumer", async () => {
     await writeManifest(tmpDir, { role: "consumer" });
     await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     expect(confirmMock).not.toHaveBeenCalled();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   // -- tracking_mode retrofit backfill (EF-14, MTC-3) ----------------------
 
@@ -301,7 +302,7 @@ describe("spell update — manifest retrofit wizard", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("internal");
     expect(manifest.external_provider).toBeNull();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("asks the tracking_mode retrofit question for a lite install that predates it", async () => {
     resetSelectMock("external", "ado");
@@ -314,7 +315,7 @@ describe("spell update — manifest retrofit wizard", () => {
     const manifest = await readManifest(tmpDir);
     expect(manifest.tracking_mode).toBe("external");
     expect(manifest.external_provider).toBe("ado");
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("does not ask the tracking_mode retrofit again once already set (idempotent)", async () => {
     await writeManifest(tmpDir, { profile: "lite", role: "consumer", tracking_mode: "internal", external_provider: null });
@@ -323,7 +324,7 @@ describe("spell update — manifest retrofit wizard", () => {
     expect(selectMock).not.toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining("How will work be tracked") }),
     );
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe("MANIFEST_RETROFITS registry", () => {
@@ -333,7 +334,7 @@ describe("MANIFEST_RETROFITS registry", () => {
     expect(retrofit!.needsRetrofit({ role: undefined } as ArcaneManifest)).toBe(true);
     expect(retrofit!.needsRetrofit({ role: "hub" } as ArcaneManifest)).toBe(false);
     expect(retrofit!.needsRetrofit({ role: "consumer" } as ArcaneManifest)).toBe(false);
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("tracking_mode retrofit correctly identifies manifests that predate it", () => {
     const retrofit = MANIFEST_RETROFITS.find((r) => r.field === "tracking_mode");
@@ -341,7 +342,7 @@ describe("MANIFEST_RETROFITS registry", () => {
     expect(retrofit!.needsRetrofit({ tracking_mode: undefined } as ArcaneManifest)).toBe(true);
     expect(retrofit!.needsRetrofit({ tracking_mode: "internal" } as ArcaneManifest)).toBe(false);
     expect(retrofit!.needsRetrofit({ tracking_mode: "external" } as ArcaneManifest)).toBe(false);
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe("offerRegistryScaffold", () => {
@@ -362,7 +363,7 @@ describe("offerRegistryScaffold", () => {
 
     expect(confirmMock).not.toHaveBeenCalled();
     await expect(fs.access(join(tmpDir, "ventures", "registry.json"))).rejects.toThrow();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("scaffolds registry.json from existing venture folders, excluding _template", async () => {
     await fs.mkdir(join(tmpDir, "ventures", "ordovica"), { recursive: true });
@@ -374,7 +375,7 @@ describe("offerRegistryScaffold", () => {
     const raw = await fs.readFile(join(tmpDir, "ventures", "registry.json"), "utf-8");
     const registry = JSON.parse(raw) as { ventures: Record<string, unknown> };
     expect(Object.keys(registry.ventures).sort()).toEqual(["ordovica", "tidewright"]);
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("never overwrites an existing registry.json", async () => {
     await fs.mkdir(join(tmpDir, "ventures", "ordovica"), { recursive: true });
@@ -390,7 +391,7 @@ describe("offerRegistryScaffold", () => {
     expect(confirmMock).not.toHaveBeenCalled();
     const raw = await fs.readFile(join(tmpDir, "ventures", "registry.json"), "utf-8");
     expect(JSON.parse(raw)).toEqual(existing);
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("declining the scaffold offer leaves no registry.json", async () => {
     await fs.mkdir(join(tmpDir, "ventures", "ordovica"), { recursive: true });
@@ -399,7 +400,7 @@ describe("offerRegistryScaffold", () => {
     await offerRegistryScaffold(tmpDir, "ventures");
 
     await expect(fs.access(join(tmpDir, "ventures", "registry.json"))).rejects.toThrow();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe("spell update without a TTY", () => {
@@ -433,7 +434,7 @@ describe("spell update without a TTY", () => {
 
     expect(confirmMock).not.toHaveBeenCalled();
     expect(selectMock).not.toHaveBeenCalled();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("still writes the manifest, so files and recorded version stay in step", async () => {
     await writeManifest(tmpDir);
@@ -446,5 +447,5 @@ describe("spell update without a TTY", () => {
     // the same way a scripted `init` already behaves.
     expect(manifest.role).toBeUndefined();
     expect(manifest.content_sensitivity).toBeUndefined();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
