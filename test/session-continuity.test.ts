@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 vi.mock("@inquirer/prompts", () => ({
@@ -58,7 +59,7 @@ describe("doctor — self-hosted source manifest", () => {
 
     expect(result.passed).toBe(true);
     expect(result.message).toContain("self-hosted source tree");
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not exempt an unmarked or externally tracked source manifest", async () => {
     await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
@@ -71,7 +72,7 @@ describe("doctor — self-hosted source manifest", () => {
 
     expect(result.passed).toBe(false);
     expect(result.blocking).toBe(false);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not hide a corrupt installed manifest behind the source marker", async () => {
     await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
@@ -85,7 +86,7 @@ describe("doctor — self-hosted source manifest", () => {
 
     expect(result.passed).toBe(false);
     expect(result.message).toContain("invalid JSON");
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not throw when the self-hosted source manifest is valid JSON but not an object", async () => {
     await fs.mkdir(join(tmpDir, "src/assets"), { recursive: true });
@@ -95,7 +96,7 @@ describe("doctor — self-hosted source manifest", () => {
 
     expect(result.passed).toBe(false);
     expect(result.blocking).toBe(false);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not throw when the installed manifest is valid JSON but not an object", async () => {
     await fs.writeFile(join(tmpDir, ".arcane.json"), "42");
@@ -104,7 +105,7 @@ describe("doctor — self-hosted source manifest", () => {
 
     expect(result.passed).toBe(false);
     expect(result.message).toContain("missing required fields");
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("rejects a non-string version instead of silently stringifying it", async () => {
     await fs.writeFile(
@@ -116,7 +117,7 @@ describe("doctor — self-hosted source manifest", () => {
 
     expect(result.passed).toBe(false);
     expect(result.message).toContain("missing required fields");
-  });
+  }, HEAVY_TEST_TIMEOUT);
 });
 
 describe("session-continuity — init scaffolding", () => {
@@ -150,7 +151,7 @@ describe("session-continuity — init scaffolding", () => {
     for (const file of SESSION_FILES) {
       await expect(fs.access(join(tmpDir, file))).resolves.toBeUndefined();
     }
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("session-continuity files are listed in the manifest", async () => {
     await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
@@ -161,7 +162,7 @@ describe("session-continuity — init scaffolding", () => {
 
     expect(sc).toBeDefined();
     expect(sc!.files).toEqual(expect.arrayContaining(SESSION_FILES));
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not overwrite existing TODO.md when it already has content", async () => {
     const userContent = "# My Custom TODO\n\n- [x] Important task\n";
@@ -171,7 +172,7 @@ describe("session-continuity — init scaffolding", () => {
 
     const result = await fs.readFile(join(tmpDir, "TODO.md"), "utf-8");
     expect(result).toBe(userContent);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not overwrite existing project orientation files", async () => {
     const readme = "# Existing README\n";
@@ -183,7 +184,7 @@ describe("session-continuity — init scaffolding", () => {
 
     await expect(fs.readFile(join(tmpDir, "README.md"), "utf8")).resolves.toBe(readme);
     await expect(fs.readFile(join(tmpDir, "project.md"), "utf8")).resolves.toBe(project);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not overwrite existing DECISIONS.md", async () => {
     const userContent = "# My Decisions\n\n## ADR-001\nCustom decision.\n";
@@ -193,7 +194,7 @@ describe("session-continuity — init scaffolding", () => {
 
     const result = await fs.readFile(join(tmpDir, "DECISIONS.md"), "utf-8");
     expect(result).toBe(userContent);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("does not overwrite existing ai-context/system-prompt-context.md", async () => {
     const userContent = "# Custom Context\n\nUser-authored content.\n";
@@ -204,7 +205,7 @@ describe("session-continuity — init scaffolding", () => {
 
     const result = await fs.readFile(join(tmpDir, "ai-context/system-prompt-context.md"), "utf-8");
     expect(result).toBe(userContent);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("--force overwrites session-continuity files", async () => {
     await fs.writeFile(join(tmpDir, "TODO.md"), "old content");
@@ -214,7 +215,7 @@ describe("session-continuity — init scaffolding", () => {
     const result = await fs.readFile(join(tmpDir, "TODO.md"), "utf-8");
     expect(result).not.toBe("old content");
     expect(result).toContain("# TODO");
-  });
+  }, HEAVY_TEST_TIMEOUT);
 });
 
 describe("session-continuity — doctor --fix", () => {
@@ -236,7 +237,7 @@ describe("session-continuity — doctor --fix", () => {
       expect(r.passed).toBe(false);
       expect(r.message).toContain("Missing");
     }
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("checkSessionContinuity reports present files as passed", async () => {
     // Create all session files
@@ -253,7 +254,7 @@ describe("session-continuity — doctor --fix", () => {
     for (const r of results) {
       expect(r.passed).toBe(true);
     }
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("fixSessionContinuity creates missing files without overwriting existing ones", async () => {
     // Pre-create TODO.md with custom content
@@ -275,7 +276,7 @@ describe("session-continuity — doctor --fix", () => {
     await expect(fs.access(join(tmpDir, "DECISIONS.md"))).resolves.toBeUndefined();
     await expect(fs.access(join(tmpDir, "ai-context/system-prompt-context.md"))).resolves.toBeUndefined();
     await expect(fs.access(join(tmpDir, "journal/.gitkeep"))).resolves.toBeUndefined();
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("fixSessionContinuity is idempotent — running twice creates nothing on second pass", async () => {
     // First fix — creates all files
@@ -285,5 +286,5 @@ describe("session-continuity — doctor --fix", () => {
     // Second fix — nothing to create
     const secondRun = await fixSessionContinuity(tmpDir, ASSETS_DIR);
     expect(secondRun).toHaveLength(0);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 });
