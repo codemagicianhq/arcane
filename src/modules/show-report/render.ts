@@ -82,6 +82,9 @@ export function buildShowReportView(model: ShowReport): Record<string, unknown> 
     : undefined;
   return {
     ...model,
+    // Same reason as parkedIsSingular: the template needs a flag to write "commit"
+    // rather than "commits" for a contributor with exactly one.
+    cast: model.cast.map((member) => ({ ...member, isSingular: member.commits === 1 })),
     sections: model.sections.map((section) => ({
       ...section,
       hasNote: typeof section.note === "string" && section.note.length > 0,
@@ -95,6 +98,11 @@ export function buildShowReportView(model: ShowReport): Record<string, unknown> 
     hasCorrections: corrections !== undefined,
     hasParked: model.parked.length > 0,
     parkedCount: model.parked.length,
+    // Mustache has no conditional on a VALUE -- only truthiness of a name -- so a
+    // template cannot choose "item" vs "items" from the number itself. It needs a
+    // flag, and only this side can derive one. Without it a one-item program reads
+    // "1 items", which is what the compiled template shipped.
+    parkedIsSingular: model.parked.length === 1,
     hasCast: model.cast.length > 0,
     hasOutcome: typeof model.outcome === "string" && model.outcome.length > 0,
     hasVersionSpan: model.program.versionSpan !== undefined,

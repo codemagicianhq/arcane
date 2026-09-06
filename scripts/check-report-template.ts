@@ -64,7 +64,10 @@ function maximalModel(): ShowReport {
     },
     masthead: { eyebrow: "Show Report", title: "P", dek: "complete" },
     stats: [{ id: "epics", value: "1/1", label: "epics shipped", derived: true }],
-    outcome: "1 of 1 items dispositioned.",
+    // Deliberately worded with no "1 <plural>" pair: the pluralisation check
+    // below scans this render, and an exclusion list to spare this one string
+    // masked a real defect ("{{parkedCount}} items" reading "1 items").
+    outcome: "12 of 12 items dispositioned.",
     needsYou: [{ id: "Q-001", title: "Do the thing", reason: "because", href: "https://example.invalid/q/1" }],
     sections: [{ id: "wave-1", title: "Wave 1", note: "A section note.", rows: [row] }],
     corrections: { checked: 1, corrected: 1, unverifiable: 0, scopeNote: "scope", highlights: [row] },
@@ -229,8 +232,7 @@ async function main(): Promise<void> {
   // exposes it -- the shipped 2.1.2 template rendered "1 commits".
   const maximalHtml = renderShowReport(maximalModel(), template);
   const singularSlips = [...maximalHtml.matchAll(/\b1 ([a-z]+s)\b/g)]
-    .map((m) => m[0])
-    .filter((phrase) => !/\b1 (items|is|was|has)\b/.test(phrase));
+    .map((m) => m[0]);
   if (singularSlips.length > 0) {
     // Advisory. This is a copy nit, not a correctness or accessibility failure,
     // and the interim template carries it too -- blocking CI over it would be
