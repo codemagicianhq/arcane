@@ -187,7 +187,9 @@ describe("push blocking (R2, R3) — against a real remote", () => {
     );
   });
 
-  it("a push succeeds again once both controls are undone", async () => {
+  it(
+    "a push succeeds again once both controls are undone",
+    async () => {
     const { work } = await repoWithRemote();
     await installPrePushHook(work);
     await disablePushUrls(work);
@@ -197,7 +199,9 @@ describe("push blocking (R2, R3) — against a real remote", () => {
     await restorePushUrls(work);
 
     expect(tryPush(work).ok).toBe(true);
-  });
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
 });
 
 describe("enforcement is verified, not assumed", () => {
