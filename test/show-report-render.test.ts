@@ -200,6 +200,33 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
     expect(view.hasParked).toBe(true);
   });
 
+  it("flags the singular cases, because a logic-less template cannot branch on a number", () => {
+    const many = buildShowReportView(
+      minimalModel({
+        parked: [
+          { title: "A", reason: "r" },
+          { title: "B", reason: "r" },
+        ],
+        cast: [{ name: "claude", commits: 21, source: "commit-trailer" }],
+      }),
+    ) as { parkedIsSingular: boolean; cast: { isSingular: boolean }[] };
+    expect(many.parkedIsSingular).toBe(false);
+    expect(many.cast[0]!.isSingular).toBe(false);
+
+    const one = buildShowReportView(
+      minimalModel({
+        parked: [{ title: "A", reason: "r" }],
+        cast: [{ name: "solo", commits: 1, source: "commit-trailer" }],
+      }),
+    ) as { parkedIsSingular: boolean; cast: { isSingular: boolean }[] };
+    expect(one.parkedIsSingular).toBe(true);
+    expect(one.cast[0]!.isSingular).toBe(true);
+
+    // Zero is not singular -- "0 items" is correct English, "0 item" is not.
+    const none = buildShowReportView(minimalModel()) as { parkedIsSingular: boolean };
+    expect(none.parkedIsSingular).toBe(false);
+  });
+
   it("draws each row's mark from its category via the inline sprite, with no emoji anywhere", async () => {
     const template = await readFile(TEMPLATE_PATH, "utf8");
     const html = renderShowReport(minimalModel(), template);
