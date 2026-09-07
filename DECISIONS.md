@@ -62,6 +62,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
 | [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
 | [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
+| [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
 
 ---
 
@@ -2440,3 +2441,112 @@ so it was silent to a screen reader either way.
 - **Drop the mark entirely and rely on the pill** — rejected. The icon does real work in a dense
   fifty-row ledger, giving each row a fixed-position anchor the eye can scan by; the pill sits at
   the far right and does not serve that purpose.
+
+---
+
+## ARC-044 — Client Architecture: Files-First State Contract and a Local Presence Channel
+
+**Date:** 2026-09-06
+**Status:** Proposed (drafted 2026-09-06 from the operator's hub decision of the same date, recorded
+there as ADR-101; awaiting this repository's accept call — implementation is gated on acceptance)
+**Related:** [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion)
+(hub role and registry — the files this contract indexes),
+[ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest)
+(persisted tracking configuration, which the state export carries),
+[ARC-036](#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state) (generated
+state diagrams — the computed spell state this contract externalizes),
+[ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) (shared
+prose fragments — how the reporting convention ships),
+[ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) (pointer, never sole carrier
+— the principle the presence channel inherits),
+[ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions)
+(compiled-template distribution — how private design assets reach the public CLI; unchanged here),
+[ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate) /
+[ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop)
+(the privacy and leak gates state exports and presence payloads must respect)
+**Sources:** the operator's six-month roadmap (private hub record);
+[features/generated-state-diagrams/PRD.md](features/generated-state-diagrams/PRD.md) for the
+computed-state lineage
+
+**Context:**
+
+Spells compute state — manifest and CLI versions, branch and pull-request topology, pipeline stage,
+the indexes of decisions, TODOs, ideas, and journal entries a repository carries — and today surface
+it only as prose and, since ARC-036, as data-derived Mermaid. Clients outside the CLI need the same
+facts in machine-readable form: an operations cockpit that shows agents at work, and a mobile
+companion that shows a project's state and asks its owner for input. Two shapes were on the table.
+Clients could parse Arcane-managed files themselves, which guarantees as many drifting parsers as
+there are clients. Or clients could talk to a hosted service that owns the state, which puts a network
+and a server between a user and their own repository, sends venture and client names off-machine by
+default, and breaks offline use — the same class of objection ARC-042 recorded against a hosted render
+endpoint. There is also a fact files cannot carry at all: which session is working on what *right
+now*.
+
+**Decision:**
+
+1. **The CLI owns a versioned state contract, `arcane-state` (working name), exposed as
+   `spell state --json`.** It is an extraction of the state spells already compute (ARC-036), not a
+   new model: schema-versioned JSON covering manifest and CLI versions, branch/PR topology,
+   per-repository indexes of `DECISIONS.md`, `TODO.md`, `IDEAS.md`, and `journal/`, the hub registry
+   when `role` is `hub` (ARC-030), tracking configuration (ARC-032), and program/epic status. Files
+   remain the only source of truth; the export is derived, deterministic, and additive-only after its
+   first stable version.
+2. **A local presence channel, `arcane-mcp` (working name), carries the ephemeral facts.** A local
+   MCP server plus a loopback HTTP API through which sessions and unattended runners report agent,
+   task, repository, status, and human-input requests. Presence is reconstructable from the state
+   contract and never authoritative; it never writes repository files. It binds to loopback by
+   default; exposure beyond the machine is an operator choice outside this decision.
+3. **Spell prompts gain a reporting convention.** When a presence channel is configured,
+   session-, commit-, and implementation-class spells report task start, progress, and "needs you"
+   requests through it; when none is configured, spells behave exactly as today. The convention ships
+   as one shared prose fragment (ARC-039), not as per-spell prose.
+4. **Clients consume the two contracts and nothing else.** Cockpit, mobile, and any future client
+   render from `spell state --json` and subscribe to the presence channel; no client parses
+   Arcane-managed files directly.
+5. **Privacy and distribution postures are unchanged.** State exports and presence payloads are
+   subject to the venture-name and org-token gates (ARC-031, ARC-037); private design assets still
+   reach the public CLI only as compiled templates (ARC-042). Multi-user presence and hosted
+   synchronization are explicitly out of scope and reserved for later decisions.
+
+**Reasoning:**
+
+- Files-first is the only shape that works offline, needs no infrastructure, keeps repository content
+  on the user's machine, and reuses the model the CLI already has.
+- One contract shared by every client is the drift control: the CLI is the single place that knows
+  the file model, so it is the single place that should export it.
+- Presence exists because "right now" is real information files cannot hold; keeping it thin and
+  non-authoritative keeps the source of truth singular.
+- Deferring multi-user and hosted shapes keeps this decision small enough to implement in one release
+  train and leaves the expensive questions for when there is usage to inform them.
+
+**Consequences:**
+
+- New CLI surface: `spell state --json` with a published, versioned schema and snapshot tests; the
+  two-axis version check and `spell status` become consumers of the same computation.
+- New optional component: the presence server, packaged so `arcane-cli` installs gain no new
+  mandatory dependency (the zero-extra-install posture of ARC-037 decision 8).
+- The spell compiler (ARC-039) gains one shared fragment for the reporting convention; generated
+  client stubs pick it up without per-spell edits.
+- The threat-model template gains a section for a local presence service (loopback binding, token,
+  no file writes).
+
+**Rejected alternatives:**
+
+- **Clients parse Arcane files directly** — rejected: duplicates the CLI's file model in every client
+  and guarantees drift.
+- **A hosted state/presence service as the default** — rejected: network dependency, off-machine
+  repository content, cost and attack surface before any usage; remains available as a later
+  optional shape, not the default.
+- **Presence as an authoritative store** (a database of "current work") — rejected: two sources of
+  truth; ARC-040's pointer-never-sole-carrier principle applies to session state exactly as it
+  applies to handoffs.
+- **Per-spell reporting prose** — rejected: dozens of prompts to keep in step; ARC-039's shared
+  fragments exist for exactly this.
+
+**Open questions (deferred to implementation, not blocking acceptance):**
+
+- Whether `arcane-mcp` exposes MCP only, HTTP only, or both — the reporting side of spells is
+  prompt-driven and may not need MCP at all.
+- The schema of the "needs you" request and its relationship to Show Report's Needs-You category
+  (ARC-042, ARC-043).
+- Naming: both component names are working names pending the Naming Test.
