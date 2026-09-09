@@ -191,3 +191,34 @@ export async function scanPromptDirectory(
 ): Promise<DenylistFinding[]> {
   return scanDirectoryByExtension(promptsDir, ".prompt.md", ".github/prompts", rules);
 }
+
+/**
+ * Scans every `.agents/skills/<id>/SKILL.md` (CS-01) for org tokens. Unlike
+ * `scanDirectoryByExtension`, skill files are one directory level deeper --
+ * `<skillsDir>/<id>/SKILL.md`, not `<skillsDir>/<id>.md` -- so this walks the
+ * one extra level itself rather than trying to force the flat helper to fit.
+ */
+export async function scanSkillsDirectory(
+  skillsDir: string,
+  rules: DenylistRule[],
+): Promise<DenylistFinding[]> {
+  const findings: DenylistFinding[] = [];
+  let ids: string[];
+  try {
+    ids = await readdir(skillsDir);
+  } catch {
+    return findings;
+  }
+
+  for (const id of ids) {
+    findings.push(
+      ...(await scanFile(
+        join(skillsDir, id, "SKILL.md"),
+        `.agents/skills/${id}/SKILL.md`,
+        rules,
+      )),
+    );
+  }
+
+  return findings;
+}

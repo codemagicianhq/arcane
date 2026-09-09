@@ -39,6 +39,16 @@ async function createInstructionsFixture(content: string) {
   return { assets, dist: join(root, "dist") };
 }
 
+async function createSkillsFixture(content: string) {
+  const root = await fs.mkdtemp(join(tmpdir(), "org-token-gate-test-"));
+  tempDirs.push(root);
+  const assets = join(root, "assets");
+  const skillDir = join(assets, ".agents", "skills", "fixture-spell");
+  await fs.mkdir(skillDir, { recursive: true });
+  await fs.writeFile(join(skillDir, "SKILL.md"), content, "utf8");
+  return { assets, dist: join(root, "dist") };
+}
+
 function runGate(
   assets: string,
   dist: string,
@@ -115,6 +125,19 @@ describe.skipIf(!TSX)("org-token build gate", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Org-token lint FAILED");
     expect(result.stderr).toContain(".github/instructions/fixture.instructions.md:1");
+    expect(result.stderr).not.toContain("Known Bad Organization");
+  });
+
+  it("also scans .agents/skills/*/SKILL.md (CS-01)", async () => {
+    const { assets, dist } = await createSkillsFixture(
+      "Deploy Known Bad Organization configuration.\n",
+    );
+
+    const result = runGate(assets, dist);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Org-token lint FAILED");
+    expect(result.stderr).toContain(".agents/skills/fixture-spell/SKILL.md:1");
     expect(result.stderr).not.toContain("Known Bad Organization");
   });
 });

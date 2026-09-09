@@ -5,13 +5,15 @@ import { join } from "node:path";
 import {
     deriveStubTitle,
     expandFragment,
+    InvalidSkillNameError,
     MalformedFragmentMarkersError,
     MissingFrontmatterError,
     parsePromptFrontmatter,
     referencesFragment,
     renderClaudeCommandStub,
+    renderCodexSkill,
 } from "../src/modules/spell-compiler.js";
-import { runFragmentParity, runStubParity } from "../scripts/self-host-parity.js";
+import { runFragmentParity, runSkillParity, runStubParity } from "../scripts/self-host-parity.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const ASSETS_DIR = join(process.cwd(), "src", "assets");
@@ -123,6 +125,56 @@ See the full prompt at \`.github/prompts/spell-example.prompt.md\` for the compl
             description: "Plain description",
         });
         expect(rendered).toContain("description: Plain description\n");
+    });
+});
+
+describe("renderCodexSkill", () => {
+    it("renders the exact SKILL.md template, preferring claudeDescription", () => {
+        const rendered = renderCodexSkill(
+            "spell-example",
+            {
+                name: "Spell — Example",
+                description: "Plain description",
+                claudeDescription: "Use PROACTIVELY for examples.",
+            },
+            ".github/prompts/spell-example.prompt.md",
+        );
+        expect(rendered).toBe(`---
+name: spell-example
+description: Use PROACTIVELY for examples.
+---
+
+This skill is the Arcane \`spell-example\` spell. Read \`.github/prompts/spell-example.prompt.md\` and follow it as the complete workflow.
+`);
+    });
+
+    it("falls back to description when claudeDescription is absent", () => {
+        const rendered = renderCodexSkill(
+            "spell-example",
+            { name: "Spell — Example", description: "Plain description" },
+            ".github/prompts/spell-example.prompt.md",
+        );
+        expect(rendered).toContain("description: Plain description\n");
+    });
+
+    it("throws InvalidSkillNameError for an id with uppercase or invalid characters", () => {
+        expect(() =>
+            renderCodexSkill(
+                "Spell_Example",
+                { name: "n", description: "d" },
+                ".github/prompts/spell-example.prompt.md",
+            ),
+        ).toThrow(InvalidSkillNameError);
+    });
+
+    it("accepts a lowercase-hyphenated id", () => {
+        expect(() =>
+            renderCodexSkill(
+                "spell-a1-b2",
+                { name: "n", description: "d" },
+                ".github/prompts/spell-a1-b2.prompt.md",
+            ),
+        ).not.toThrow();
     });
 });
 
@@ -287,6 +339,52 @@ body`,
     });
 });
 
+describe("runSkillParity (CS-01 fifth parity axis)", () => {
+    async function fixture() {
+        const dir = await mkTempDir("skill-parity-test-");
+        const promptsDir = join(dir, ".github", "prompts");
+        const skillsDir = join(dir, ".agents", "skills");
+        await fs.mkdir(promptsDir, { recursive: true });
+        await fs.mkdir(skillsDir, { recursive: true });
+        await fs.writeFile(
+            join(promptsDir, "spell-demo.prompt.md"),
+            `---
+name: Spell — Demo
+description: A demo spell
+claude_description: Use PROACTIVELY for demos.
+---
+
+body`,
+            "utf8",
+        );
+        return { dir, promptsDir, skillsDir };
+    }
+
+    it("reports drift when the skill file is missing entirely", async () => {
+        const { dir } = await fixture();
+        const result = await runSkillParity("check", dir);
+        expect(result.checked).toBe(1);
+        expect(result.drifted).toEqual([".agents/skills/spell-demo/SKILL.md"]);
+    });
+
+    it("reports drift when the skill file exists but does not match the rendered form", async () => {
+        const { dir, skillsDir } = await fixture();
+        await fs.mkdir(join(skillsDir, "spell-demo"), { recursive: true });
+        await fs.writeFile(join(skillsDir, "spell-demo", "SKILL.md"), "stale hand-authored content\n", "utf8");
+        const result = await runSkillParity("check", dir);
+        expect(result.drifted).toEqual([".agents/skills/spell-demo/SKILL.md"]);
+    });
+
+    it("--fix writes the generated skill file, and a following --check passes", async () => {
+        const { dir } = await fixture();
+        const fixResult = await runSkillParity("fix", dir);
+        expect(fixResult.repaired).toEqual([".agents/skills/spell-demo/SKILL.md"]);
+
+        const checkResult = await runSkillParity("check", dir);
+        expect(checkResult.drifted).toEqual([]);
+    });
+});
+
 describe("runFragmentParity (ARC-039 fourth parity axis)", () => {
     async function fixture() {
         const dir = await mkTempDir("fragment-parity-test-");
@@ -343,6 +441,12 @@ describe("runFragmentParity (ARC-039 fourth parity axis)", () => {
 describe("all real spells are stub-parity consistent (regression guard)", () => {
     it("every .claude/commands/spell-*.md stub matches its prompt's rendered form", async () => {
         const result = await runStubParity("check", ASSETS_DIR);
+        expect(result.checked).toBeGreaterThan(0);
+        expect(result.drifted).toEqual([]);
+    });
+
+    it("every .agents/skills/spell-*/SKILL.md matches its prompt's rendered form", async () => {
+        const result = await runSkillParity("check", ASSETS_DIR);
         expect(result.checked).toBeGreaterThan(0);
         expect(result.drifted).toEqual([]);
     });

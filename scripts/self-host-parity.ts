@@ -6,11 +6,12 @@ import { getAllComponents } from "../src/modules/registry.js";
 import {
     parsePromptFrontmatter,
     renderClaudeCommandStub,
+    renderCodexSkill,
     expandFragment,
     referencesFragment,
 } from "../src/modules/spell-compiler.js";
 
-const GENERATED_ROOTS = [".github/", ".arcane/", ".claude/"];
+const GENERATED_ROOTS = [".github/", ".arcane/", ".claude/", ".agents/"];
 
 export type ParityMode = "check" | "fix";
 
@@ -172,6 +173,44 @@ export async function runStubParity(
     return { checked: ids.length, repaired, drifted };
 }
 
+// ─── Fifth parity axis (CS-01 / ARC-039 extension): Codex skill files ─────────
+// `.agents/skills/{id}/SKILL.md` is a third generated client format, mirroring
+// runStubParity's shape exactly -- same source of truth, same drift/repair
+// model, different output path and renderer.
+
+export async function runSkillParity(
+    mode: ParityMode,
+    assetsDir: string,
+): Promise<ParityResult> {
+    const promptsDir = join(assetsDir, ".github", "prompts");
+    const skillsDir = join(assetsDir, ".agents", "skills");
+    const ids = await listSpellPromptIds(promptsDir);
+    const drifted: string[] = [];
+    const repaired: string[] = [];
+
+    for (const id of ids) {
+        const promptContent = await readFile(join(promptsDir, `${id}.prompt.md`), "utf8");
+        const frontmatter = parsePromptFrontmatter(promptContent);
+        const canonicalPath = `.github/prompts/${id}.prompt.md`;
+        const expected = renderCodexSkill(id, frontmatter, canonicalPath);
+        const skillPath = join(skillsDir, id, "SKILL.md");
+        const actual = await readOptionalFile(skillPath);
+        const matches = actual !== null && normalizeLineEndings(actual) === expected;
+
+        if (matches) continue;
+        const relativePath = `.agents/skills/${id}/SKILL.md`;
+        drifted.push(relativePath);
+
+        if (mode === "fix") {
+            await mkdir(dirname(skillPath), { recursive: true });
+            await writeFile(skillPath, expected, "utf8");
+            repaired.push(relativePath);
+        }
+    }
+
+    return { checked: ids.length, repaired, drifted };
+}
+
 // ─── Fourth parity axis (ARC-039 / BC-32): shared prose fragments ─────────────
 // Fragments under .github/prompts/_fragments/ are never shipped standalone
 // (no registry entry) -- they exist only to keep a consuming prompt's marked
@@ -234,23 +273,25 @@ async function main(): Promise<void> {
     const rootDir = process.env["ARCANE_SELF_HOST_ROOT"] ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
     const assetsDir = process.env["ARCANE_SELF_HOST_ASSETS_DIR"] ?? join(rootDir, "src", "assets");
 
-    // Fragment and stub axes operate on canonical src/assets/ content itself
-    // and must settle first in --fix mode, so the axis-1 canonical-vs-root
+    // Fragment, stub, and skill axes operate on canonical src/assets/ content
+    // itself and must settle first in --fix mode, so the axis-1 canonical-vs-root
     // copy below reflects the fully-repaired canonical state, not a stale one.
     const fragmentResult = await runFragmentParity(mode, assetsDir);
     const stubResult = await runStubParity(mode, assetsDir);
+    const skillResult = await runSkillParity(mode, assetsDir);
     const copyResult = await runSelfHostParity(mode, rootDir, assetsDir);
 
-    const totalChecked = fragmentResult.checked + stubResult.checked + copyResult.checked;
+    const totalChecked = fragmentResult.checked + stubResult.checked + skillResult.checked + copyResult.checked;
     const totalDrifted = [
         ...fragmentResult.drifted.map((path) => `[fragment] ${path}`),
         ...stubResult.drifted.map((path) => `[stub] ${path}`),
+        ...skillResult.drifted.map((path) => `[skill] ${path}`),
         ...copyResult.drifted.map((path) => `[copy] ${path}`),
     ];
-    const totalRepaired = [...fragmentResult.repaired, ...stubResult.repaired, ...copyResult.repaired];
+    const totalRepaired = [...fragmentResult.repaired, ...stubResult.repaired, ...skillResult.repaired, ...copyResult.repaired];
 
     if (mode === "fix") {
-        console.log(`Self-host parity repaired ${totalRepaired.length} of ${totalChecked} checked (fragments: ${fragmentResult.repaired.length}, stubs: ${stubResult.repaired.length}, copies: ${copyResult.repaired.length}).`);
+        console.log(`Self-host parity repaired ${totalRepaired.length} of ${totalChecked} checked (fragments: ${fragmentResult.repaired.length}, stubs: ${stubResult.repaired.length}, skills: ${skillResult.repaired.length}, copies: ${copyResult.repaired.length}).`);
         return;
     }
 
