@@ -71,6 +71,30 @@
       ],
       "status": "active",
       "revocation": "Edit or remove this entry and commit, or edit docs/plans/show-report/PLAN.md's own Authority & Delegation section (both are read together). This entry has no effect until it exists on main -- merging SR-00 is what activates it."
+    },
+    {
+      "id": "codex-support-plan",
+      "grantedBy": "operator (payini)",
+      "grantedAt": "2026-09-09",
+      "scope": "Sessions executing epics defined in docs/plans/codex-support/PLAN.md, in this repository (arcane-cli) only",
+      "permittedActions": [
+        "create-session-branches",
+        "commit",
+        "push",
+        "open-pull-requests",
+        "merge-own-pull-requests-via-sanctioned-strategies (merge or rebase, never squash)"
+      ],
+      "excludedActions": [
+        "github-or-ado-platform-settings-mutations (rulesets, required checks, allow_auto_merge, repo settings, secrets, webhooks)",
+        "delete-or-force-reset-any-branch-holding-content-not-on-main (content-verified via git cherry + diff, not ancestry)",
+        "manual-npm-publish-or-workflow-dispatch-of-publish-release-workflows",
+        "accept-an-adr (ARC-045 and any ARC-046 stay Proposed until the operator accepts via OPERATOR-QUEUE.md Q-002)",
+        "merge-cs-03-without-operator-confirmed-version-number (OPERATOR-QUEUE.md Q-003 -- CS-03's merge auto-publishes to npm and is always operator-executed, even once this grant is active)",
+        "mark-anything-in-operator-queue-as-approved-or-done",
+        "anything-in-agent-policies-prohibited-list (MCP/security config, etc.)"
+      ],
+      "status": "active",
+      "revocation": "Edit or remove this entry and commit, or edit docs/plans/codex-support/PLAN.md's own Authority & Delegation section (both are read together). This entry has no effect until it exists on main -- merging CS-00 is what activates it."
     }
   ]
 }
