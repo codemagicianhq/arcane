@@ -64,6 +64,11 @@ entry to *this* queue once it runs.
   the repo's normal `npm version` flow in CS-03's own PR.
 - **Rollback:** none needed before the fact — this is a decision recorded ahead of the irreversible
   publish, not an action to undo.
+- **Operator pre-decision (recorded 2026-09-09, via conversation, ahead of ARC-045's acceptance):**
+  **1.0.0** — "one source of truth, N thin clients," the framework's first stable-contract milestone,
+  over continuing the `0.x` line. This note records the decision's substance only; the preconditions
+  above (ARC-045 `Accepted`, CHANGELOG catch-up landed) still gate CS-03 itself, and this item is not
+  marked done until both are satisfied and CS-03's own PR applies `npm version major`.
 - **Status:** [ ] open
 
 <!-- The loop appends Q-004+ below this line. -->
