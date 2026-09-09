@@ -38,15 +38,16 @@ entry to *this* queue once it runs.
   explicit operator decision, regardless of autonomy level elsewhere. CS-03 (the canonical move)
   cannot start until this is `Accepted`.
 - **Preconditions (met):** CS-01 shipped ([PR #221](https://github.com/codemagicianhq/arcane/pull/221),
-  merged, `arcane-cli` 0.39.0 published) so the ADR reflects what actually exists; CS-02's PR is
-  open with the ADR drafted `Proposed` — [PR #226](https://github.com/codemagicianhq/arcane/pull/226),
-  awaiting your merge (ADR-drafting PRs are operator-gated regardless of the active delegation).
+  merged, `arcane-cli` 0.39.0 published) so the ADR reflects what actually exists; CS-02's PR
+  merged — [PR #226](https://github.com/codemagicianhq/arcane/pull/226).
 - **Exact commands:** read the ADR section in `DECISIONS.md`, then record the decision here and,
   if accepted, flip its `Status:` field to `Accepted` (or ask the executing session to do so on
   your behalf in the same PR once you've decided).
 - **Rollback:** an accepted ADR can later be superseded via a new ADR entry, per
   `decision-documentation-standard.md`'s own supersession convention.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-09 — **Accepted** by the operator ("accept ARC-045", direct
+  instruction). `DECISIONS.md`'s ARC-045 `Status:` field flipped to `Accepted`. CS-03 may now begin,
+  gated only on the CHANGELOG catch-up precondition and Q-003's version-number confirmation.
 
 ## Q-003 — Confirm the version number for CS-03
 
@@ -64,10 +65,10 @@ entry to *this* queue once it runs.
   the repo's normal `npm version` flow in CS-03's own PR.
 - **Rollback:** none needed before the fact — this is a decision recorded ahead of the irreversible
   publish, not an action to undo.
-- **Operator pre-decision (recorded 2026-09-09, via conversation, ahead of ARC-045's acceptance):**
+- **Operator pre-decision (recorded 2026-09-09, via conversation):**
   **1.0.0** — "one source of truth, N thin clients," the framework's first stable-contract milestone,
-  over continuing the `0.x` line. This note records the decision's substance only; the preconditions
-  above (ARC-045 `Accepted`, CHANGELOG catch-up landed) still gate CS-03 itself, and this item is not
+  over continuing the `0.x` line. ARC-045 is now `Accepted` (Q-002) — one of the two preconditions
+  above is met. Only the CHANGELOG catch-up remains before CS-03 itself may start, and this item is not
   marked done until both are satisfied and CS-03's own PR applies `npm version major`.
 - **Status:** [ ] open
 

@@ -228,10 +228,13 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   self-merged under the standing delegation (no operator action needed for this epic).
   **Report:** Codex can now see and run every Arcane spell — the first of three clients this
   program brings to parity. · category: feature
-- [ ] **CS-02 — ADR ARC-045.** Route: `adr`. Size: S. Bump: no. Dependencies: CS-01 (informs the
-  ADR with what CS-01 actually shipped). Risk: Low. Drafts ARC-045 `Proposed` in `DECISIONS.md`;
-  queues acceptance at `OPERATOR-QUEUE.md` Q-002. **CS-03 does not start until this is Accepted.**
-  **Report:**
+- [x] **CS-02 — ADR ARC-045.** Route: `adr`. Size: S. Bump: no. Dependencies: CS-01 (informs the
+  ADR with what CS-01 actually shipped). Risk: Low. Drafted `Proposed` in `DECISIONS.md`
+  ([PR #226](https://github.com/codemagicianhq/arcane/pull/226), merged 2026-09-09) and **Accepted**
+  by the operator the same day via `OPERATOR-QUEUE.md` Q-002. CS-03 is unblocked, pending only the
+  CHANGELOG catch-up precondition and Q-003's version-number confirmation (recorded: 1.0.0).
+  **Report:** The architectural decision behind bringing every AI client to parity and fixing
+  duplicate spells across projects is written down and accepted. · category: decision
 - [ ] **CS-03 — Canonical move: `.arcane/spells/` + all clients as shims.** Route: `chain`. Size: L
   (~10-12 stories — the program's largest epic). Bump: **major, operator-confirmed** (recommended
   1.0.0; gated at `OPERATOR-QUEUE.md` Q-003). Dependencies: CS-02 (ARC-045 Accepted). Risk: High —
