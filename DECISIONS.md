@@ -63,6 +63,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
 | [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
 | [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
+| [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Proposed   |
 
 ---
 
@@ -2550,3 +2551,134 @@ now*.
 - The schema of the "needs you" request and its relationship to Show Report's Needs-You category
   (ARC-042, ARC-043).
 - Naming: both component names are working names pending the Naming Test.
+
+---
+
+## ARC-045 — One Spell Source, Thin Client Shims, and a User-Level Install Tier
+
+**Date:** 2026-09-09
+**Status:** Proposed (drafted 2026-09-09 as CS-02 of the Codex Support program, after CS-01 shipped
+the concrete mechanism this decision generalizes; awaiting this repository's accept call —
+`docs/plans/codex-support/OPERATOR-QUEUE.md` Q-002 — before CS-03 may begin)
+**Related:** [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments)
+(the one-source/multiple-`render()` model this decision extends to a third client and relocates the
+source of), [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components)
+(decision 1, "no spell file is renamed or moved" — amended here, the one sanctioned exception),
+[ARC-019](#arc-019--repository-document-ownership-and-path-model) (repository document ownership —
+extended with a tier above the repo, which this ADR's model requires and that decision never
+contemplated), [ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard) /
+[ARC-027](#arc-027--registry-driven-self-host-parity-guard) (parity-guard obligation for any
+committed generated artifact, and the symlink rejection this decision reaffirms),
+[ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) (the
+hash-based three-way merge the consumer migration in CS-03 reuses, and the vendor-neutral-core
+principle a Codex-specific fork would have violated)
+**Sources:** [features/codex-support/PRD.md](features/codex-support/PRD.md);
+[docs/research/skill-discovery-smoke-tests.md](docs/research/skill-discovery-smoke-tests.md) (CS-00's
+live verification against installed `codex-cli`); [PR #221](https://github.com/codemagicianhq/arcane/pull/221)
+(CS-01, the shipped mechanism this decision generalizes)
+
+**Context:**
+
+CS-01 shipped Codex support by adding a third generated client format —
+`.agents/skills/<id>/SKILL.md` — over the *existing* canonical source at
+`.github/prompts/<id>.prompt.md`. That was deliberately the smallest change that unblocks Codex: an
+additive `render()` function and a registry line per spell, nothing moved, ARC-039's one-source
+model extended rather than redesigned. But the canonical source's location was never a considered
+choice — it is Copilot's own path, inherited from when Arcane distributed to Copilot alone. Every
+other client, Codex included, is now a shim reading a Copilot-shaped file, which is a historical
+accident wearing the appearance of a decision. Separately, opening several Arcane-managed
+repositories in one VS Code workspace duplicates every spell and every agent per repository folder —
+ten repositories surface 410 `/spell-*` entries and 120 Arcanos agent modes — a problem no ADR or
+TODO item in this repository named before this program (confirmed by keyword sweep). Both problems
+share one root: there is no client-neutral, install-location-independent home for a spell's
+authored content.
+
+**Decision:**
+
+1. **The canonical spell source moves to `.arcane/spells/<id>.md`.** This amends ARC-033 decision 1
+   ("no spell file is renamed or moved") — the one sanctioned exception that decision anticipated
+   needing. Frontmatter gains the per-client hint fields the compiler already parses conditionally
+   (`claude_description`) plus any Codex-specific fields CS-03's implementation finds it needs.
+   Implemented in **CS-03**, gated on this ADR's acceptance.
+2. **Every client surface is a generated shim with no authored body of its own.** The Copilot prompt,
+   the Claude command, and the Codex skill (CS-01's `renderCodexSkill()`, retargeted) are each
+   `render()` output referencing the canonical source — extending ARC-039's model, which already
+   proved this shape for the Claude stub, to all three. No client format may contain prose that is
+   not in the canonical file.
+3. **A user-level install tier exists at `~/.arcane/`**, installing the same canonical spell content
+   once per machine and fanning generated shims out to each client's home-directory discovery
+   location (`~/.claude/skills/`, `~/.agents/skills/`, and a printed — never auto-applied — VS Code
+   settings snippet for Copilot). Copied, never symlinked, reaffirming ARC-027's rejection (the
+   maintainer's own environment runs `core.symlinks=false`). Implemented in **CS-04**.
+4. **One owner per client surface, per machine, selected by a repository-level `spell_scope` field**
+   (`"repo"` default, `"user"` opt-in) on the ARC-032 manifest contract. A repository opted into the
+   user tier stops carrying its own copies of the canonical source and every generated shim; `spell
+   doctor` verifies a compatible user-tier install exists rather than silently leaving spells
+   unreachable. Implemented in **CS-05**.
+5. **ARC-019 is extended, not superseded**: the repository remains the sole owner of governance,
+   continuity files, and repository-specific configuration; the user tier's scope is limited to spell
+   and agent *delivery* content, an ownership axis ARC-019 never contemplated because no tier above
+   the repository existed when it was written.
+6. **Agent delivery follows the same model** (**CS-06**): `spell agents init/sync --user` renders the
+   roster once to the user tier; a repository opted into `spell_scope: "user"` stops writing
+   `.github/agents/*.agent.md` locally but keeps its roster tables in `AGENTS.md`/`CLAUDE.md`
+   /`copilot-instructions.md` as plain text, which carries no per-workspace duplication cost.
+
+**Reasoning:**
+
+- CS-01 already demonstrated the render-from-one-source model generalizes cleanly to a third client;
+  this decision applies the same discipline to *where* that one source lives, rather than leaving it
+  at an address that was never chosen on purpose.
+- A structurally-enforced single owner per client surface is the only mechanism that actually removes
+  multi-root duplication — a convention ("please don't open two repos") is not a fix, and this
+  program exists partly because no prior decision addressed the failure mode at all.
+- Extending ARC-019 rather than replacing it keeps the repository's existing authority (governance,
+  continuity, this decision record itself) exactly where operators already expect it; only spell/agent
+  delivery gains a second possible location.
+
+**Consequences:**
+
+- CS-03 becomes the one breaking change in the Codex Support program: every consumer's `spell update`
+  must migrate `.github/prompts/`/`.claude/commands/` content to the new source without silently
+  discarding an operator's hand edits (ARC-038's hash comparison, extended to detect and preserve
+  them rather than overwrite).
+- The self-host parity model (ARC-027) gains a canonical root (`.arcane/spells/`) alongside its
+  existing three; `check:self-host-parity` and the org-token lint both need to resolve paths there.
+- `spell doctor` gains a new check class: user-tier presence and version compatibility for any
+  `spell_scope: "user"` repository.
+- This is a **major** version bump when CS-03 ships (operator-confirmed exact number,
+  `docs/plans/codex-support/OPERATOR-QUEUE.md` Q-003) — the first breaking change to Arcane's
+  distribution contract since the framework's public release.
+
+**Rejected alternatives:**
+
+- **Leave the canonical source at `.github/prompts/` permanently, treating Copilot as first among
+  equals** — rejected: perpetuates the historical-accident problem this decision exists to fix, and
+  gives every future client the same "shim over someone else's home" shape CS-01 shipped as a
+  deliberately temporary bridge.
+- **Symlinks or filesystem junctions from a package-resident source instead of a canonical-source
+  move** — rejected per ARC-027: not portable to the maintainer's own environment, and BC-28's own
+  smoke tests found this behavior version-dependent and unverified as permanent.
+- **A restore-based (`node_modules`-style) distribution model instead of committed shims** —
+  considered, not rejected outright: [OPERATOR-QUEUE.md Q-010](docs/plans/become-current/OPERATOR-QUEUE.md#q-010--decide-whether-to-pursue-a-package-referenced-distribution-model)
+  remains genuinely open and is unparked as **CS-08**, a research spike run after this decision's
+  mechanism exists to spike against. This ADR does not pre-judge that question; adopting it later is
+  additive on top of the canonical-source model here, not a redesign of it.
+- **A Codex-specific fork of the distributed content instead of a shared canonical source** —
+  rejected per ARC-038's vendor-neutral-core principle: a fork guarantees the exact drift-between-
+  copies problem ARC-039 already solved for Claude, reintroduced for a third client.
+- **MCP-prompts-only distribution** — rejected: ARC-044 scopes the state/presence contracts to state,
+  not spell delivery, and Copilot/Codex parity over an MCP-prompts channel is unproven; not
+  reconsidered here.
+- **Microsoft APM as the distribution mechanism** — rejected for this decision's scope: Copilot-
+  specific today, and BC-28's landscape scan never evaluated it as a candidate to build against.
+
+**Open questions (deferred to implementation, not blocking acceptance):**
+
+- The exact CLI surface for the user tier (`--user` flag vs. a `spell user` noun) — a naming-
+  conventions "Naming Test" call, resolved in CS-04.
+- Whether every client's skill/prompt discovery mechanism actually follows an external file
+  reference the way Codex was proven to (CS-00); a client that does not falls back to an inlined
+  body per-client, a `render()` mode variance rather than a change to this decision's model.
+- The final version number for CS-03 — recommended `1.0.0` ("one source of truth, N thin clients"),
+  operator-confirmed at that epic via `OPERATOR-QUEUE.md` Q-003, not decided here.
