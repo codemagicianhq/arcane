@@ -22,6 +22,20 @@ afterEach(async () => {
   await Promise.all(tempDirs.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
+describe("copyAssets dotfile directories (CS-01: .agents/ carries the same as .github/.claude/.arcane/)", () => {
+  it("copies a nested dot-directory (.agents/skills/<id>/SKILL.md) to dist", async () => {
+    const { src, dest } = await fixtureDirs();
+    await fs.mkdir(join(src, ".agents", "skills", "spell-demo"), { recursive: true });
+    await fs.writeFile(join(src, ".agents", "skills", "spell-demo", "SKILL.md"), "demo\n", "utf8");
+
+    await copyAssets(src, dest);
+
+    await expect(
+      fs.readFile(join(dest, ".agents", "skills", "spell-demo", "SKILL.md"), "utf8"),
+    ).resolves.toBe("demo\n");
+  });
+});
+
 describe("copyAssets pruning", () => {
   it("removes a dist file whose source was deleted before the next build", async () => {
     const { src, dest } = await fixtureDirs();

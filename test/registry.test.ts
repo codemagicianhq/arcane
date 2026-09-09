@@ -224,4 +224,25 @@ describe("registry", () => {
       expect(external).toHaveLength(0);
     });
   });
+
+  // ─── Spell client-format parity (CS-01: three formats per spell) ────────────
+
+  describe("every spells-* component carries exactly 3 files per spell id", () => {
+    const spellComponents = getAllComponents().filter((c) => c.name.startsWith("spells-"));
+
+    for (const component of spellComponents) {
+      it(`${component.name}: prompt + command + skill, grouped in threes`, () => {
+        expect(component.files.length % 3).toBe(0);
+
+        for (let i = 0; i < component.files.length; i += 3) {
+          const [prompt, command, skill] = component.files.slice(i, i + 3);
+          const id = prompt!.replace(/^\.github\/prompts\//, "").replace(/\.prompt\.md$/, "");
+
+          expect(prompt).toBe(`.github/prompts/${id}.prompt.md`);
+          expect(command).toBe(`.claude/commands/${id}.md`);
+          expect(skill).toBe(`.agents/skills/${id}/SKILL.md`);
+        }
+      });
+    }
+  });
 });

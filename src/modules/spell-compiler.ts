@@ -34,6 +34,13 @@ export class MalformedFragmentMarkersError extends Error {
   }
 }
 
+export class InvalidSkillNameError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidSkillNameError";
+  }
+}
+
 const FRONTMATTER_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/;
 
 /**
@@ -104,6 +111,47 @@ See the full prompt at \`${promptPath}\` for the complete workflow definition.
 ---
 
 @${promptPath}
+`;
+}
+
+const SKILL_NAME_PATTERN = /^[a-z0-9-]+$/;
+
+/**
+ * Renders a `.agents/skills/{id}/SKILL.md` for OpenAI Codex (CS-01 / ARC-039
+ * extension). Unlike the Claude stub, this is not an `@include` -- Codex has
+ * no such directive -- so the body is a plain-language instruction to read
+ * and follow the canonical prompt. Live-tested against installed
+ * `codex-cli 0.153.4` (2026-09-09, `docs/research/skill-discovery-smoke-tests.md`):
+ * a skill body naming a bare repository-relative path is read via a real
+ * shell command and its instructions followed verbatim, so this is a proven
+ * mechanism, not an assumption. `canonicalPath` is the Copilot prompt today
+ * (`.github/prompts/{id}.prompt.md`); CS-03 retargets it to the client-neutral
+ * canonical source without changing this function's shape.
+ *
+ * No description-length guard: Codex already degrades gracefully on an
+ * overlong description (observed truncating it under a "skills context
+ * budget" rather than erroring), so throwing our own error for something the
+ * consumer already tolerates would be enforcing a limit nobody has actually
+ * hit or documented.
+ */
+export function renderCodexSkill(
+  id: string,
+  frontmatter: PromptFrontmatter,
+  canonicalPath: string,
+): string {
+  if (!SKILL_NAME_PATTERN.test(id)) {
+    throw new InvalidSkillNameError(
+      `Skill id "${id}" must match ${SKILL_NAME_PATTERN} (lowercase letters, digits, hyphens only).`,
+    );
+  }
+  const description = frontmatter.claudeDescription ?? frontmatter.description;
+
+  return `---
+name: ${id}
+description: ${description}
+---
+
+This skill is the Arcane \`${id}\` spell. Read \`${canonicalPath}\` and follow it as the complete workflow.
 `;
 }
 

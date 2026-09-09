@@ -176,26 +176,32 @@ const COMPONENTS: RegistryComponent[] = [
   // so a profile can select spells by capability (see ARC-0NN). Grouping lives
   // here and only here -- every spell file stays flat and unrenamed on disk.
   //
-  // Each component carries BOTH client formats of the same spell: the Copilot
-  // prompt (.github/prompts/*.prompt.md) and the Claude Code wrapper
-  // (.claude/commands/*.md). They are never independently selectable -- every
-  // profile that wanted one always wanted the other -- and pairing them here
-  // makes it structurally impossible for the two formats of one spell to drift
-  // apart across profiles.
+  // Each component carries ALL THREE client formats of the same spell: the
+  // Copilot prompt (.github/prompts/*.prompt.md), the Claude Code wrapper
+  // (.claude/commands/*.md), and the Codex skill (.agents/skills/*/SKILL.md,
+  // CS-01). They are never independently selectable -- every profile that
+  // wanted one always wanted the others -- and pairing them here makes it
+  // structurally impossible for the formats of one spell to drift apart
+  // across profiles.
   {
     name: "spells-session",
     description: "Session lifecycle — open, close, commit, status, version",
     files: [
       ".github/prompts/spell-open-session.prompt.md",
       ".claude/commands/spell-open-session.md",
+      ".agents/skills/spell-open-session/SKILL.md",
       ".github/prompts/spell-close-session.prompt.md",
       ".claude/commands/spell-close-session.md",
+      ".agents/skills/spell-close-session/SKILL.md",
       ".github/prompts/spell-commit-work.prompt.md",
       ".claude/commands/spell-commit-work.md",
+      ".agents/skills/spell-commit-work/SKILL.md",
       ".github/prompts/spell-status.prompt.md",
       ".claude/commands/spell-status.md",
+      ".agents/skills/spell-status/SKILL.md",
       ".github/prompts/spell-arcane-version.prompt.md",
       ".claude/commands/spell-arcane-version.md",
+      ".agents/skills/spell-arcane-version/SKILL.md",
     ],
   },
   {
@@ -204,20 +210,28 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-save-idea.prompt.md",
       ".claude/commands/spell-save-idea.md",
+      ".agents/skills/spell-save-idea/SKILL.md",
       ".github/prompts/spell-todo.prompt.md",
       ".claude/commands/spell-todo.md",
+      ".agents/skills/spell-todo/SKILL.md",
       ".github/prompts/spell-feedback.prompt.md",
       ".claude/commands/spell-feedback.md",
+      ".agents/skills/spell-feedback/SKILL.md",
       ".github/prompts/spell-suggest-feature.prompt.md",
       ".claude/commands/spell-suggest-feature.md",
+      ".agents/skills/spell-suggest-feature/SKILL.md",
       ".github/prompts/spell-document.prompt.md",
       ".claude/commands/spell-document.md",
+      ".agents/skills/spell-document/SKILL.md",
       ".github/prompts/spell-verification-ledger.prompt.md",
       ".claude/commands/spell-verification-ledger.md",
+      ".agents/skills/spell-verification-ledger/SKILL.md",
       ".github/prompts/spell-brainstorm.prompt.md",
       ".claude/commands/spell-brainstorm.md",
+      ".agents/skills/spell-brainstorm/SKILL.md",
       ".github/prompts/spell-explain-concept.prompt.md",
       ".claude/commands/spell-explain-concept.md",
+      ".agents/skills/spell-explain-concept/SKILL.md",
     ],
   },
   {
@@ -226,10 +240,13 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-create-pull-request.prompt.md",
       ".claude/commands/spell-create-pull-request.md",
+      ".agents/skills/spell-create-pull-request/SKILL.md",
       ".github/prompts/spell-sync-pull-request.prompt.md",
       ".claude/commands/spell-sync-pull-request.md",
+      ".agents/skills/spell-sync-pull-request/SKILL.md",
       ".github/prompts/spell-address-review.prompt.md",
       ".claude/commands/spell-address-review.md",
+      ".agents/skills/spell-address-review/SKILL.md",
     ],
   },
   {
@@ -238,8 +255,10 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-review.prompt.md",
       ".claude/commands/spell-review.md",
+      ".agents/skills/spell-review/SKILL.md",
       ".github/prompts/spell-review-batch.prompt.md",
       ".claude/commands/spell-review-batch.md",
+      ".agents/skills/spell-review-batch/SKILL.md",
     ],
   },
   {
@@ -248,12 +267,16 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-plan.prompt.md",
       ".claude/commands/spell-plan.md",
+      ".agents/skills/spell-plan/SKILL.md",
       ".github/prompts/spell-architect.prompt.md",
       ".claude/commands/spell-architect.md",
+      ".agents/skills/spell-architect/SKILL.md",
       ".github/prompts/spell-scope.prompt.md",
       ".claude/commands/spell-scope.md",
+      ".agents/skills/spell-scope/SKILL.md",
       ".github/prompts/spell-product-review.prompt.md",
       ".claude/commands/spell-product-review.md",
+      ".agents/skills/spell-product-review/SKILL.md",
     ],
   },
   {
@@ -262,32 +285,46 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-implement.prompt.md",
       ".claude/commands/spell-implement.md",
+      ".agents/skills/spell-implement/SKILL.md",
       ".github/prompts/spell-test.prompt.md",
       ".claude/commands/spell-test.md",
+      ".agents/skills/spell-test/SKILL.md",
       ".github/prompts/spell-full-cycle.prompt.md",
       ".claude/commands/spell-full-cycle.md",
+      ".agents/skills/spell-full-cycle/SKILL.md",
       ".github/prompts/spell-bug.prompt.md",
       ".claude/commands/spell-bug.md",
+      ".agents/skills/spell-bug/SKILL.md",
       ".github/prompts/spell-bump.prompt.md",
       ".claude/commands/spell-bump.md",
+      ".agents/skills/spell-bump/SKILL.md",
       ".github/prompts/spell-dotnet-expert.prompt.md",
       ".claude/commands/spell-dotnet-expert.md",
+      ".agents/skills/spell-dotnet-expert/SKILL.md",
       ".github/prompts/spell-security-review.prompt.md",
       ".claude/commands/spell-security-review.md",
+      ".agents/skills/spell-security-review/SKILL.md",
       ".github/prompts/spell-ship.prompt.md",
       ".claude/commands/spell-ship.md",
+      ".agents/skills/spell-ship/SKILL.md",
       ".github/prompts/spell-enchant.prompt.md",
       ".claude/commands/spell-enchant.md",
+      ".agents/skills/spell-enchant/SKILL.md",
       ".github/prompts/spell-generate-bot-icons.prompt.md",
       ".claude/commands/spell-generate-bot-icons.md",
+      ".agents/skills/spell-generate-bot-icons/SKILL.md",
       ".github/prompts/spell-make-discoverable.prompt.md",
       ".claude/commands/spell-make-discoverable.md",
+      ".agents/skills/spell-make-discoverable/SKILL.md",
       ".github/prompts/spell-scry.prompt.md",
       ".claude/commands/spell-scry.md",
+      ".agents/skills/spell-scry/SKILL.md",
       ".github/prompts/spell-eas-store-deploy.prompt.md",
       ".claude/commands/spell-eas-store-deploy.md",
+      ".agents/skills/spell-eas-store-deploy/SKILL.md",
       ".github/prompts/spell-compliance.prompt.md",
       ".claude/commands/spell-compliance.md",
+      ".agents/skills/spell-compliance/SKILL.md",
     ],
   },
   {
@@ -296,6 +333,7 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-adopt-docs.prompt.md",
       ".claude/commands/spell-adopt-docs.md",
+      ".agents/skills/spell-adopt-docs/SKILL.md",
     ],
   },
   {
@@ -304,8 +342,10 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-summon-venture.prompt.md",
       ".claude/commands/spell-summon-venture.md",
+      ".agents/skills/spell-summon-venture/SKILL.md",
       ".github/prompts/spell-manifest.prompt.md",
       ".claude/commands/spell-manifest.md",
+      ".agents/skills/spell-manifest/SKILL.md",
     ],
   },
   {
@@ -314,8 +354,10 @@ const COMPONENTS: RegistryComponent[] = [
     files: [
       ".github/prompts/spell-present-arcane.prompt.md",
       ".claude/commands/spell-present-arcane.md",
+      ".agents/skills/spell-present-arcane/SKILL.md",
       ".github/prompts/spell-check-drift.prompt.md",
       ".claude/commands/spell-check-drift.md",
+      ".agents/skills/spell-check-drift/SKILL.md",
     ],
   },
   // Templates

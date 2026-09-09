@@ -154,3 +154,8 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 | Your agent runtime | [[agents/agent-policies]] | Loaded via agent config |
 | Ad-hoc chat clients | [[ai-context/portable-bootstrap]] | Copy-paste into conversation |
 | Any new tool | This file | Read this, then follow links above |
+
+This table covers standing repository instructions only, not spell discovery. Spells reach each
+client through a separate mechanism: `.github/prompts/*.prompt.md` for Copilot,
+`.claude/commands/*.md` for Claude Code, and `.agents/skills/*/SKILL.md` for Codex (CS-01) — all
+three generated from one canonical source (ARC-039), never hand-authored per client.

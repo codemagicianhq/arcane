@@ -22,6 +22,7 @@ import {
   scanDirectoryByExtension,
   scanPromptDirectory,
   scanRepository,
+  scanSkillsDirectory,
 } from "./org-token-lint.js";
 import { SECRETS_PATTERNS, SECRETS_RULES } from "../src/modules/secrets-scan.js";
 import { resolveSecretsScanExcludePrefixes } from "../src/modules/manifest.js";
@@ -202,6 +203,7 @@ async function main() {
       ".github/instructions",
       orgTokenRules,
     )),
+    ...(await scanSkillsDirectory(join(SRC_ASSETS, ".agents/skills"), orgTokenRules)),
   ];
   // Privacy: the ARCANE_ORG_TOKENS denylist (real venture/customer/machine
   // names, supplied as a CI secret) must appear nowhere in the repository —
