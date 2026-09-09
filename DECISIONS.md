@@ -63,7 +63,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
 | [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
 | [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
-| [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Proposed   |
+| [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
 
 ---
 
@@ -2557,9 +2557,10 @@ now*.
 ## ARC-045 — One Spell Source, Thin Client Shims, and a User-Level Install Tier
 
 **Date:** 2026-09-09
-**Status:** Proposed (drafted 2026-09-09 as CS-02 of the Codex Support program, after CS-01 shipped
-the concrete mechanism this decision generalizes; awaiting this repository's accept call —
-`docs/plans/codex-support/OPERATOR-QUEUE.md` Q-002 — before CS-03 may begin)
+**Status:** Accepted (drafted 2026-09-09 as CS-02 of the Codex Support program, after CS-01 shipped
+the concrete mechanism this decision generalizes; accepted by the operator 2026-09-09 via
+`docs/plans/codex-support/OPERATOR-QUEUE.md` Q-002 — CS-03 may now begin, gated on the CHANGELOG
+catch-up precondition and the operator-confirmed version number, `OPERATOR-QUEUE.md` Q-003)
 **Related:** [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments)
 (the one-source/multiple-`render()` model this decision extends to a third client and relocates the
 source of), [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components)
