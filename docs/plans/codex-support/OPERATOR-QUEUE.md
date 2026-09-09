@@ -25,7 +25,7 @@ entry to *this* queue once it runs.
   `gh pr merge <PR#> --rebase`.
 - **Rollback:** revert the merge commit, or edit/remove the `codex-support-plan` entry from
   `.arcane/delegations.json` at any later point to revoke the grant without touching history.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-09 — merged by the operator ([PR #220](https://github.com/codemagicianhq/arcane/pull/220), merge commit `9c3ca28`, confirmed via `gh pr view 220`). The `codex-support-plan` delegation is active as of this merge.
 
 ## Q-002 — Accept, revise, or reject ARC-045
 

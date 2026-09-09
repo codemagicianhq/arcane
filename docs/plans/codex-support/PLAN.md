@@ -209,14 +209,14 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
 
 ## Coverage Map
 
-- [ ] **CS-00 — Discovery smoke tests + PRD/scope completion.** Route: `direct`. Size: S. Bump: no.
+- [x] **CS-00 — Discovery smoke tests + PRD/scope completion.** Route: `direct`. Size: S. Bump: no.
   Dependencies: none. Risk: Low. Produces this plan, `KICKOFF.md`, `OPERATOR-QUEUE.md`, the
   `codex-support-plan` delegation record, the completed PRD, and
-  `docs/research/skill-discovery-smoke-tests.md`. **Operator merges this one** (see Authority &
-  Delegation). [PR #220](https://github.com/codemagicianhq/arcane/pull/220) open, CI in progress,
-  **not yet merged — leave unchecked until it lands**. **Report:** Arcane now has a plan to work
-  inside OpenAI Codex, and a way to stop it flooding VS Code with duplicate spells when several
-  Arcane projects are open at once — the plan, not the feature itself yet. · category: docs
+  `docs/research/skill-discovery-smoke-tests.md`. **Operator merged this one** (see Authority &
+  Delegation) — [PR #220](https://github.com/codemagicianhq/arcane/pull/220), merged 2026-09-09.
+  **Report:** Arcane now has a plan to work inside OpenAI Codex, and a way to stop it flooding VS
+  Code with duplicate spells when several Arcane projects are open at once — the plan, not the
+  feature itself yet. · category: docs
 - [ ] **CS-01 — Codex shim, repo tier (ships Codex).** Route: `chain` (plan already done; architect
   → implement → test → review → ship). Size: M (~5-6 stories). Bump: minor (0.39.0). Dependencies:
   CS-00. Risk: Low — additive only, nothing moves. `renderCodexSkill()` in `spell-compiler.ts`,
