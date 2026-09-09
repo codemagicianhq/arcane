@@ -118,7 +118,7 @@ flowchart LR
 - **New attack surface: none identified.** No new endpoints, no new auth flow, no PII/payment data.
 - **New write locations:** the user tier writes under the operating user's own home directory only
   (`~/.arcane/`, fan-out to `~/.claude/skills/`, `~/.agents/skills/`), following the existing
-  OpenClaw precedent (`src/modules/agent-generator.ts:219-222`) — not a new pattern, an extension
+  OpenClaw precedent (`src/modules/agent-generator.ts ("openclawRoot = roster.openclaw.workspace_root.replace")`) — not a new pattern, an extension
   of one already shipped.
 - **Trust boundary:** unchanged — `spell init --user` runs as the same local operator invoking
   `spell init` today; no new external integration, no new credential handling.
