@@ -15,18 +15,18 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 1 of 9 epics shipped"
+    "dek": "active — 2 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "1/9",
+      "value": "2/9",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 1,
+      "value": 2,
       "label": "pull requests",
       "derived": true
     },
@@ -74,10 +74,13 @@
         {
           "id": "CS-01",
           "title": "Codex shim, repo tier (ships Codex)",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Codex can now see and run every Arcane spell — the first of three clients this program brings to parity.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/221",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/221"
+          ]
         },
         {
           "id": "CS-02",
@@ -142,7 +145,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 6,
+      "commits": 8,
       "source": "commit-trailer"
     }
   ],
