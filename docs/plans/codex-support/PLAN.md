@@ -217,11 +217,17 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   **Report:** Arcane now has a plan to work inside OpenAI Codex, and a way to stop it flooding VS
   Code with duplicate spells when several Arcane projects are open at once — the plan, not the
   feature itself yet. · category: docs
-- [ ] **CS-01 — Codex shim, repo tier (ships Codex).** Route: `chain` (plan already done; architect
-  → implement → test → review → ship). Size: M (~5-6 stories). Bump: minor (0.39.0). Dependencies:
-  CS-00. Risk: Low — additive only, nothing moves. `renderCodexSkill()` in `spell-compiler.ts`,
-  `runSkillParity` in `self-host-parity.ts`, registry third-file-per-spell, org-token-lint glob
-  widening, universal-agent-rules doc row. **Report:**
+- [x] **CS-01 — Codex shim, repo tier (ships Codex).** Route: `chain` (plan already done; architect
+  → implement → test → review → ship). Size: M (~5-6 stories, shipped as 4). Bump: minor
+  (0.38.3 → 0.39.0). Dependencies: CS-00. Risk: Low — additive only, nothing moved.
+  `renderCodexSkill()` in `spell-compiler.ts`, `runSkillParity` in `self-host-parity.ts`, registry
+  third-file-per-spell (41 spells), `scanSkillsDirectory` in `org-token-lint.ts`, a
+  `universal-agent-rules.md` note (not a table row — that table is about standing-instruction files,
+  a category error caught before committing, not the spell-discovery table it was drafted as).
+  60 new tests. [PR #221](https://github.com/codemagicianhq/arcane/pull/221), merged 2026-09-09,
+  self-merged under the standing delegation (no operator action needed for this epic).
+  **Report:** Codex can now see and run every Arcane spell — the first of three clients this
+  program brings to parity. · category: feature
 - [ ] **CS-02 — ADR ARC-045.** Route: `adr`. Size: S. Bump: no. Dependencies: CS-01 (informs the
   ADR with what CS-01 actually shipped). Risk: Low. Drafts ARC-045 `Proposed` in `DECISIONS.md`;
   queues acceptance at `OPERATOR-QUEUE.md` Q-002. **CS-03 does not start until this is Accepted.**
