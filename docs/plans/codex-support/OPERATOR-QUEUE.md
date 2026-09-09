@@ -37,8 +37,10 @@ entry to *this* queue once it runs.
 - **Why:** Accepting an ADR is never within any delegation's grant in this repository — always an
   explicit operator decision, regardless of autonomy level elsewhere. CS-03 (the canonical move)
   cannot start until this is `Accepted`.
-- **Preconditions:** CS-01 has shipped (so the ADR reflects what actually exists, not a plan), and
-  CS-02's PR is open with the ADR drafted `Proposed`.
+- **Preconditions (met):** CS-01 shipped ([PR #221](https://github.com/codemagicianhq/arcane/pull/221),
+  merged, `arcane-cli` 0.39.0 published) so the ADR reflects what actually exists; CS-02's PR is
+  open with the ADR drafted `Proposed` — [PR #226](https://github.com/codemagicianhq/arcane/pull/226),
+  awaiting your merge (ADR-drafting PRs are operator-gated regardless of the active delegation).
 - **Exact commands:** read the ADR section in `DECISIONS.md`, then record the decision here and,
   if accepted, flip its `Status:` field to `Accepted` (or ask the executing session to do so on
   your behalf in the same PR once you've decided).
