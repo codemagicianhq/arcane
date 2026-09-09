@@ -26,7 +26,7 @@
     },
     {
       "id": "prs",
-      "value": 0,
+      "value": 1,
       "label": "pull requests",
       "derived": true
     },
@@ -68,10 +68,13 @@
         {
           "id": "CS-00",
           "title": "Discovery smoke tests + PRD/scope completion",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Arcane now has a plan to work inside OpenAI Codex, and a way to stop it flooding VS Code with duplicate spells when several Arcane projects are open at once — the plan, not the feature itself yet.",
+          "descriptionState": "authored",
+          "category": "docs",
+          "href": "https://github.com/codemagicianhq/arcane/pull/220",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/220"
+          ]
         },
         {
           "id": "CS-01",
@@ -144,7 +147,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 2,
+      "commits": 3,
       "source": "commit-trailer"
     }
   ],
