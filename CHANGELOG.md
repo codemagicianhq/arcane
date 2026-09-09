@@ -5,6 +5,467 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
+
+## [0.39.0] - 2026-09-09
+
+Adds OpenAI Codex as a third client target, and opens the Codex Support program.
+
+### Added
+
+- **Every spell now generates a Codex skill** — `.agents/skills/<id>/SKILL.md` beside the existing Copilot prompt and Claude command, all three rendered from the one canonical `.github/prompts/<id>.prompt.md` source ([ARC-039](DECISIONS.md#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments)). Codex has no `@include`, so the skill body tells the agent to read the prompt at its path and follow it as the complete workflow — a mechanism verified against the real Codex CLI before it was designed in ([#221](https://github.com/codemagicianhq/arcane/pull/221)).
+- **[ARC-044](DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) — client architecture:** a versioned `spell state --json` export and a local presence channel; files remain the only source of truth, the export is derived and additive-only ([#218](https://github.com/codemagicianhq/arcane/pull/218)).
+
+### Fixed
+
+- **Two more full-suite timeout flakes budgeted** (`session-continuity`, `adr-reference-gate`), with the remaining 34 heavy tests surveyed ([#217](https://github.com/codemagicianhq/arcane/pull/217)).
+
+### Notes
+
+- **The Codex Support program opened** (`docs/plans/codex-support/`, CS-00, [#220](https://github.com/codemagicianhq/arcane/pull/220)): its plan, PRD, delegation record, and the skill-discovery smoke tests that decided the shim design above.
+
+## [0.38.3] - 2026-09-06
+
+Closes the Show Report program.
+
+### Changed
+
+- **Vendored arcane-ui v2.1.7's compiled template** — the pull request was opened automatically by arcane-ui's own pipeline (SR-07) because the compiled template changed ([#216](https://github.com/codemagicianhq/arcane/pull/216)).
+- **Show Report closed at SR-08** — verdict GO, with two recorded deviations ([#214](https://github.com/codemagicianhq/arcane/pull/214)).
+
+### Fixed
+
+- **`hub-retrofit`'s 24 CLI-roundtrip tests had no timeout overrides** on vitest's 5-second default while each drove a real init/update roundtrip ([#215](https://github.com/codemagicianhq/arcane/pull/215)).
+
+## [0.38.2] - 2026-09-05
+
+### Fixed
+
+- **Reports read "1 commit" and "1 item" at a count of one.** arcane-ui 2.1.4 re-vendored, consuming the singular flags added in `0.38.1`; the fix needed both sides ([#213](https://github.com/codemagicianhq/arcane/pull/213)).
+- **Two heavy tests given real timeout budgets**, closing a flake found by reading the pre-push hook's log rather than retrying it ([#213](https://github.com/codemagicianhq/arcane/pull/213)).
+
+## [0.38.1] - 2026-09-05
+
+### Added
+
+- **`buildShowReportView()` supplies `cast[].isSingular` and `parkedIsSingular`.** Mustache can branch on a name's truthiness but never on a value, so `{{commits}} commits` cannot pick its noun form — the flag has to come from this side ([#212](https://github.com/codemagicianhq/arcane/pull/212)).
+
+## [0.38.0] - 2026-09-05
+
+Replaces the interim report template with arcane-ui's real compiled build, behind a gate that renders it.
+
+### Added
+
+- **`check:report-template`, a gate that actually renders the template.** `check:report` only proves the committed reports match a regeneration; a template whose tags name fields that do not exist still regenerates byte-identically, because it is consistently wrong ([#209](https://github.com/codemagicianhq/arcane/pull/209)).
+- **Gate rules for the provenance label and flag pluralisation**, both user-visible text in every report ([#210](https://github.com/codemagicianhq/arcane/pull/210)).
+
+### Changed
+
+- **The v0 interim template is replaced by arcane-ui 2.1.3's compiled build (SR-06).** It took four arcane-ui builds to pass the gate ([#211](https://github.com/codemagicianhq/arcane/pull/211)).
+
+## [0.37.0] - 2026-09-05
+
+### Changed
+
+- **BREAKING: `show-report.json`'s `colophon` block is now `provenance`, and `schemaVersion` goes 1 → 2.** "Colophon" is a publishing term, not a software one; `naming-conventions.md` requires the established industry term where one exists ([#208](https://github.com/codemagicianhq/arcane/pull/208)).
+
+## [0.36.1] - 2026-09-04
+
+### Added
+
+- **`rowCount` per section and a top-level `parkedCount` are precomputed**, because mustache cannot count a list and the compiled template needs "N items" labels ([#207](https://github.com/codemagicianhq/arcane/pull/207)).
+
+### Changed
+
+- **The SR-06 gate is hardened**, and the approved SR-05a design lands as the build spec ([#205](https://github.com/codemagicianhq/arcane/pull/205), [#206](https://github.com/codemagicianhq/arcane/pull/206)). [ARC-043](DECISIONS.md#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) accepted ([#204](https://github.com/codemagicianhq/arcane/pull/204)).
+
+## [0.36.0] - 2026-09-03
+
+### Changed
+
+- **BREAKING: `ShowReportRow.glyph` is removed from schema v1 — category selects the mark instead of a per-row emoji.** The first design review against real data killed the emoji and exposed three generator defects only a real corpus could surface ([#203](https://github.com/codemagicianhq/arcane/pull/203)).
+- **The arcane-ui cross-repo brief for SR-05a/SR-05b is recorded**, and the session handoff refreshed after running four items stale ([#201](https://github.com/codemagicianhq/arcane/pull/201), [#202](https://github.com/codemagicianhq/arcane/pull/202)).
+
+## [0.35.1] - 2026-09-03
+
+### Added
+
+- **SR-04 — `## For the record` in both `spell-create-pull-request` templates.** An epic's reader-facing sentence is now authored while the work is fresh rather than reconstructed later from commit subjects; the heading is omitted entirely when the PR is not one epic of a tracked program ([#200](https://github.com/codemagicianhq/arcane/pull/200)).
+
+## [0.35.0] - 2026-09-03
+
+Show Report's data pipeline, renderer and `spell report` command — in the first build of them that actually reached npm (see Notes).
+
+### Added
+
+- **SR-01 — the report data pipeline:** plan, queue, ledger and decisions parsers, the schema v1 model, and a git-derived version span and cast ([#194](https://github.com/codemagicianhq/arcane/pull/194)).
+- **SR-02 — renderer, v0 template, and the `check:report` gate.** One five-character escaper per tag; `descriptionHtml` is the only triple-mustache field, re-admitting only code spans and https links ([#197](https://github.com/codemagicianhq/arcane/pull/197)).
+- **SR-03 — the `spell report` command.** The generation core moved to `src/modules/show-report/generate.ts` so the shipped command can use it; `scripts/` is not bundled into the published package ([#198](https://github.com/codemagicianhq/arcane/pull/198)).
+- **[ARC-042](DECISIONS.md#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) accepted** ([#196](https://github.com/codemagicianhq/arcane/pull/196)).
+
+### Fixed
+
+- **`publish.yml` checked out a shallow clone while `ci.yml` fetched full history.** Show Report's golden-parity test derives the version span and cast from git history; in the shallow clone those fields vanished, the test reported the omission as drift, and the publish job failed minutes after CI had passed on the same commit. `fetch-depth: 0` now matches across the three workflows, `check:report` says "cannot verify in a shallow clone" instead of failing, and `spell report` warns that the span and cast will be omitted ([#198](https://github.com/codemagicianhq/arcane/pull/198)).
+
+### Notes
+
+- **`0.34.3` was tagged and released on GitHub but never reached npm** — it is the release the failure above broke. SR-01, SR-02 and the ARC-042 acceptance were cut as `v0.34.3` on 2026-09-03 and first published as part of `0.35.0` later the same day.
+
+## [0.34.2] - 2026-09-03
+
+### Added
+
+- **`web-discoverability-standards` gains WD-16–WD-18** for AI retrieval agents, freshness, and measurement, wired into `spell-make-discoverable`. WD-16 separates a retrieval-class agent (never disallow when AI visibility is a goal) from a training crawler, which is an explicit, separate decision ([#193](https://github.com/codemagicianhq/arcane/pull/193)).
+
+### Fixed
+
+- **Doc drift across the HIGH/Medium/Low findings** of a `spell-check-drift` run ([#192](https://github.com/codemagicianhq/arcane/pull/192)); `@humanfs/node` bumped 0.16.7 → 0.16.8 ([#188](https://github.com/codemagicianhq/arcane/pull/188)).
+
+### Notes
+
+- **The Show Report program opened** (`docs/plans/show-report/`, SR-00, [#191](https://github.com/codemagicianhq/arcane/pull/191), [#192](https://github.com/codemagicianhq/arcane/pull/192)): plan, PRD, [ARC-042](DECISIONS.md#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) drafted, and its delegation record.
+
+## [0.34.1] - 2026-09-02
+
+Closes the Lessons Hardening program (LH-13).
+
+### Fixed
+
+- **RCA-001 recorded, and the RCA artifact path moved `governance/rcas/` → `docs/rcas/`** — the original location would have created a second root-level tree. It names the shared root cause behind five Lessons Hardening patterns: static tree-state facts written as prose that nothing re-derives ([#174](https://github.com/codemagicianhq/arcane/pull/174)).
+
+## [0.34.0] - 2026-09-02
+
+### Added
+
+- **The org-token denylist can be supplied from outside the repository** ([ARC-041](DECISIONS.md#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist)). When `ARCANE_ORG_TOKENS` is unset, `$ARCANE_ORG_TOKENS_FILE` or `~/.arcane/org-tokens` is read instead, with a structural in-repo refusal rather than a `.gitignore` convention ([#184](https://github.com/codemagicianhq/arcane/pull/184), [#185](https://github.com/codemagicianhq/arcane/pull/185)).
+
+## [0.33.9] - 2026-09-02
+
+### Added
+
+- **`universal-agent-rules` gains advisory rules 25–27**, each grounded in a real incident. Rule 25: never quote a denylisted token, even when documenting its removal — name the class, not the instance ([#183](https://github.com/codemagicianhq/arcane/pull/183)).
+
+## [0.33.8] - 2026-09-02
+
+### Added
+
+- **A follow-up promotion gate (`check:followups`).** Scans recent journals, the active plan, `TODO.md` and the verification ledger for deferral phrases carrying no tracker token, so findings stop being buried in closure prose ([#182](https://github.com/codemagicianhq/arcane/pull/182)).
+
+## [0.33.7] - 2026-09-02
+
+### Added
+
+- **A shipped-state staleness scan (`check:stale-claims`).** Class A fails the build when an `ARC-NNN (Status)` parenthetical in a living doc disagrees with `DECISIONS.md`; Class B reports the softer cases ([#181](https://github.com/codemagicianhq/arcane/pull/181)).
+
+## [0.33.6] - 2026-09-02
+
+### Added
+
+- **A stable-locator citation grammar plus `check:citations`** — path, `path#anchor`, or `path ("unique quoted phrase")`; a bare `path:NNN` is never sufficient in a living doc ([#180](https://github.com/codemagicianhq/arcane/pull/180)).
+
+### Fixed
+
+- **`expandFragment()` now throws on a start/end marker indentation mismatch** instead of silently re-indenting the span from the start marker alone ([#179](https://github.com/codemagicianhq/arcane/pull/179)).
+
+## [0.33.5] - 2026-09-02
+
+### Fixed
+
+- **`check:version-bump` reported a false "no bump required" before commit.** The default mode diffs only `merge-base..HEAD`, blind to uncommitted work — exactly what `spell-bump` Step 1 runs against. New `--staged` and `--working-tree` modes, wired into pre-push ([#178](https://github.com/codemagicianhq/arcane/pull/178)).
+
+## [0.33.4] - 2026-09-02
+
+### Changed
+
+- **README's spell, agent and governance-doc counts are derived from the registry**, not hand-maintained. The spell count alone moved 33 → 41 inside one program ([#177](https://github.com/codemagicianhq/arcane/pull/177)).
+
+## [0.33.3] - 2026-09-02
+
+Opens the Lessons Hardening program (`docs/plans/lessons-hardening/`), which turns the previous program's recurring failure patterns into gates.
+
+### Changed
+
+- **CI evaluates coverage thresholds.** `vitest.config.ts` configured 80% global / 95% critical-path, but CI ran bare `npm test` and never checked them ([#176](https://github.com/codemagicianhq/arcane/pull/176)).
+- **Test-suite resilience helpers with enforced conventions** — shared fixture-dir create/remove with retry for the Windows `ENOTEMPTY` window, and an end to line-wrap-fragile assertions ([#175](https://github.com/codemagicianhq/arcane/pull/175)).
+
+## [0.33.2] - 2026-09-01
+
+### Fixed
+
+- **Two stale statements found by `spell-check-drift`**, both claiming the customization/override model was unbuilt and that `arcane update` overwrites an edited standard silently — untrue since ARC-038 shipped in `0.32.0` ([#169](https://github.com/codemagicianhq/arcane/pull/169)).
+
+## [0.33.1] - 2026-09-01
+
+### Changed
+
+- **Become Current's Phase 5 definition-of-done closure.** Of 9 unchecked `TODO.md` items, the 4 that were small and not operator-blocked were implemented — among them ARC-035 decision 4, the closed-PR push warning, now shipped to every consumer tier except `blocked` — and the rest consolidated into a new "Parked — Needs Operator" section and queue item Q-011 ([#168](https://github.com/codemagicianhq/arcane/pull/168)).
+
+## [0.33.0] - 2026-09-01
+
+Implements Become Current's last epic (BC-32): the build-time spell compiler that ARC-039 proposed.
+
+### Added
+
+- **A build-time spell compiler ([ARC-039](DECISIONS.md#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments)).** `.claude/commands/` stubs and shared prose fragments are generated from each spell's own frontmatter at build time and held to parity by a gate, replacing hand-maintained stubs ([#167](https://github.com/codemagicianhq/arcane/pull/167)).
+
+### Fixed
+
+- **A real client name reintroduced by the closure note about removing it** — the second [ARC-031](DECISIONS.md#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate) catch in a day ([#166](https://github.com/codemagicianhq/arcane/pull/166)).
+
+## [0.32.4] - 2026-09-01
+
+### Fixed
+
+- **A real client name in governance content replaced with a fictional venture ([ARC-031](DECISIONS.md#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate)).** The token is private and configured only in CI, so no local check could have caught it before push ([#165](https://github.com/codemagicianhq/arcane/pull/165)).
+- **28 tests failed in any git worktree without its own install/build.** Ten test files hardcoded a `process.cwd()`-relative path to `dist/index.js` or `node_modules/tsx`; resolution now climbs the ancestor chain, bounded to the `arcane-cli` package ([#163](https://github.com/codemagicianhq/arcane/pull/163)).
+
+## [0.32.3] - 2026-09-01
+
+### Fixed
+
+- **8 of 15 rows in `spell-make-discoverable`'s Phase 2 audit table cited a `WD-nn` ID that tested a different claim than the same-numbered rule.** Baked in at authoring, not later drift ([#161](https://github.com/codemagicianhq/arcane/pull/161)).
+
+## [0.32.2] - 2026-09-01
+
+### Changed
+
+- **`cicd-standards.md` split into vendor-neutral Core Principles and an Azure DevOps Profile, with a D2 vendor gate** ([ARC-038](DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) decisions 2–3), closing the vendor-neutral backlog item first filed on 2026-07-14 ([#159](https://github.com/codemagicianhq/arcane/pull/159)).
+- **Become Current Phase 4 cleanup** — branch dispositions, consistency fixes, ledger reconciliation ([#160](https://github.com/codemagicianhq/arcane/pull/160)).
+
+### Notes
+
+- **`0.32.1` was never published.** Its bump commit exists (`ac1a3d0`), but the release-drift job received an `HTTP 500` from GitHub's Releases API while creating `v0.32.1`, so no tag, no Release and no publish followed. The `cicd-standards.md` change above first reached npm as `0.32.2`, 25 minutes later.
+
+## [0.32.0] - 2026-09-01
+
+### Added
+
+- **`arcane update` preserves your edits ([ARC-038](DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) Batch A).** Each installed file records a SHA-256 hash at write time and is three-way merged on update; files predating the field keep the old overwrite behavior. Adds an orphan report and `--prune` ([#158](https://github.com/codemagicianhq/arcane/pull/158)).
+
+## [0.31.0] - 2026-09-01
+
+### Added
+
+- **A consumer-facing secrets pre-commit hook installer ([ARC-037](DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) Batch B).** The pre-push install and collision-guard machinery is generalized to be hook-name-agnostic and independent of `push_policy`; existing callers are unchanged ([#157](https://github.com/codemagicianhq/arcane/pull/157)).
+
+## [0.30.0] - 2026-09-01
+
+### Added
+
+- **Secret detection for this repository and in CI ([ARC-037](DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) Batch A).** One shared credential-pattern set backs the copy-time scan, a new repository-wide backstop, and `spell doctor --leaks` ([#156](https://github.com/codemagicianhq/arcane/pull/156)).
+
+## [0.29.6] - 2026-09-01
+
+### Added
+
+- **[ARC-023](DECISIONS.md#arc-023--normative-controls-require-inline-enforcement-contracts) enforcement annotations, batch E** (`git-conventions.md`), closing the sweep ([#154](https://github.com/codemagicianhq/arcane/pull/154)).
+
+## [0.29.5] - 2026-09-01
+
+### Added
+
+- **[ARC-023](DECISIONS.md#arc-023--normative-controls-require-inline-enforcement-contracts) enforcement annotations, batch D** (`agent-policies.md`) ([#153](https://github.com/codemagicianhq/arcane/pull/153)).
+
+## [0.29.4] - 2026-08-31
+
+### Added
+
+- **[ARC-023](DECISIONS.md#arc-023--normative-controls-require-inline-enforcement-contracts) enforcement annotations, batch C** (5 docs) ([#152](https://github.com/codemagicianhq/arcane/pull/152)).
+
+## [0.29.3] - 2026-08-31
+
+### Added
+
+- **[ARC-023](DECISIONS.md#arc-023--normative-controls-require-inline-enforcement-contracts) enforcement annotations, batch B** (9 docs) ([#151](https://github.com/codemagicianhq/arcane/pull/151)).
+
+## [0.29.2] - 2026-08-31
+
+### Added
+
+- **[ARC-023](DECISIONS.md#arc-023--normative-controls-require-inline-enforcement-contracts) enforcement annotations, batch A** (8 docs). Every normative rule now declares `Enforcement: <mode>` — executable check, structured spell gate, verified external platform policy, or honestly-downgraded advisory prose ([#150](https://github.com/codemagicianhq/arcane/pull/150)).
+- **Delivery-channels smoke tests** covering `node_modules` traversal and symlink following ([#149](https://github.com/codemagicianhq/arcane/pull/149)).
+
+## [0.29.1] - 2026-08-31
+
+### Changed
+
+- **The `Agent` commit trailer splits into `Agent` / `Persona` / `Role`, plus `Model-Source`.** One trailer conflated runtime identity with persona identity, and `Role` had no defined source; `Role` now derives only from a real roster entry ([#148](https://github.com/codemagicianhq/arcane/pull/148)).
+
+## [0.29.0] - 2026-08-31
+
+### Added
+
+- **`spell-verification-ledger`** — extracts the structured `{claim, method, result, correction}` record that `spell-close-session` used to throw away. A corrected result is framed as the point, not something to hide ([#147](https://github.com/codemagicianhq/arcane/pull/147)).
+
+### Changed
+
+- **`spell ward` guidance names personal identifiers, not just org names.** The gate had found a username in a branch name in a public repo, because whoever seeded the denylist thought only in org terms ([#146](https://github.com/codemagicianhq/arcane/pull/146)).
+
+## [0.28.1] - 2026-08-31
+
+### Added
+
+- **`universal-agent-rules` rule 23 — diff before deleting a duplicate.** A near-identical pair is usually a drifted copy carrying unique content on one side ([#145](https://github.com/codemagicianhq/arcane/pull/145)).
+
+## [0.28.0] - 2026-08-31
+
+### Added
+
+- **`compliance-standards.md` (CS-01–CS-12) and `spell-compliance`** — GDPR, CCPA/CPRA, SOC 2 and HIPAA obligations mapped to concrete SaaS artifacts, plus a read-only self-assessment spell. Arcane's first regulatory coverage ([#144](https://github.com/codemagicianhq/arcane/pull/144)).
+
+## [0.27.0] - 2026-08-31
+
+### Added
+
+- **`mobile-release-standards.md` (MR-01–MR-14) and `spell-eas-store-deploy`** — the EAS Build + Submit pipeline for the App Store and Google Play, distilled from two real dogfooding runs ([#143](https://github.com/codemagicianhq/arcane/pull/143)).
+
+## [0.26.2] - 2026-08-31
+
+### Added
+
+- **A canonical home for research reports** at `docs/research/<topic-slug>.md`, with a required `sources` field and `spell-todo` routing their findings into the backlog ([#142](https://github.com/codemagicianhq/arcane/pull/142)).
+- **A registry-driven spell catalog generator.** The README list had drifted — the registry held 38 spells while the README said "34" and "36" in different places ([#141](https://github.com/codemagicianhq/arcane/pull/141)).
+
+## [0.26.1] - 2026-08-31
+
+### Added
+
+- **An MCP fail-fast rule and config scaffold.** One abnormal failure marks a server down for the session — no blind retries, fall back to the documented CLI, report the downgrade. Written after an ops session lost an hour to two consecutive 30-minute hangs ([#140](https://github.com/codemagicianhq/arcane/pull/140)).
+
+## [0.26.0] - 2026-08-31
+
+### Added
+
+- **`spell-scry`** — clears a candidate name before it ships: an outward four-check pass plus a mandatory repo-local collision pass that runs *first*, citing the real ARC-028 workspace incident as the reason ([#138](https://github.com/codemagicianhq/arcane/pull/138)).
+
+## [0.25.0] - 2026-08-31
+
+### Added
+
+- **`spell ward`** — a denylist scan reusing the existing org-token lint engine rather than reimplementing matching, tree-walking and dedup ([#137](https://github.com/codemagicianhq/arcane/pull/137)).
+
+## [0.24.1] - 2026-08-31
+
+### Changed
+
+- **`spell-full-cycle` gains cross-epic coordination**, including re-verifying a handed-in, pre-diagnosed root cause against current source before accepting it into the PRD ([#135](https://github.com/codemagicianhq/arcane/pull/135)).
+
+## [0.24.0] - 2026-08-31
+
+### Added
+
+- **Delegation for solo-operator mode.** A repo with no agent roster had nowhere to record a standing grant, so grants were made ad hoc and forgotten; `.arcane/delegations.json` makes them explicit, structured and git-tracked ([#133](https://github.com/codemagicianhq/arcane/pull/133)).
+
+## [0.23.0] - 2026-08-31
+
+### Added
+
+- **`spell-sync-pull-request`** — a recovery path for a PR that has fallen behind its target. `spell-create-pull-request` and `spell-ship` both detected a conflicted branch and refused, with no way to tell a mechanically-safe conflict from a genuinely ambiguous one ([#131](https://github.com/codemagicianhq/arcane/pull/131)).
+
+## [0.22.14] - 2026-08-31
+
+### Added
+
+- **`spell doctor` verifies platform branch and merge policy against what governance says (BC-17).** Paper-versus-enforced drift had already bitten this repository once, found only by reading a ruleset's raw JSON by hand. A new `platform-policy` module keeps pure `evaluate*` functions — unit-tested against this repo's own real ruleset in both its healthy and its historically drifted shape — apart from thin `gh api` / `az repos policy list` fetchers. The GitHub path queries Rulesets, never the classic branch-protection endpoint alone (which still answers "Branch not protected" for a repo with active Rulesets), and detects the `required_linear_history` × `allowed_merge_methods` interaction that silently blocks merge commits. The Azure DevOps path is implemented from the documented API shape only, not live-verified ([#129](https://github.com/codemagicianhq/arcane/pull/129)).
+
+## [0.22.13] - 2026-08-31
+
+### Added
+
+- **A spell routing layer (BC-16).** Agents were never told spells are the mandatory path for lifecycle operations — a session followed the git conventions correctly and still committed ad hoc instead of invoking `spell-commit-work`. `CLAUDE.md`, `.github/copilot-instructions.md` and `AGENTS.md` now carry a generated routing section ahead of the roster table, every `.claude/commands/spell-*.md` gained a `description:` with "Use PROACTIVELY" wording — the lever that makes Claude Code self-select a spell — and `universal-agent-rules.md` gains rule 22 ([#127](https://github.com/codemagicianhq/arcane/pull/127)).
+
+## [0.22.12] - 2026-08-31
+
+### Added
+
+- **Session handoff durability (BC-15, [ARC-040](DECISIONS.md#arc-040--session-handoff-durability-pointer-never-sole-carrier)).** The close-session handoff block is overwritten at every close and consumed at every open; one overwrite lost an unfinished task. `spell-close-session` now registers unfinished work on a durable, tracking-mode-aware surface (`TODO.md`, or the tracker work item) before writing the handoff, whose Notes field is formally pointer-only; `spell-open-session` runs a durability check and surfaces Last completed step, Blockers and Notes — fields close-session wrote but nothing had ever read back ([#125](https://github.com/codemagicianhq/arcane/pull/125)).
+
+## [0.22.11] - 2026-08-31
+
+### Changed
+
+- **Generated state diagrams, Tier 3 harmonization (BC-14 R11, [ARC-036](DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)).** `spell-explain-concept`, `spell-architect` and `spell-scope` repoint their independently restated Mermaid prescriptions to universal rule 8 as the single source, classified as agent-authored design output rather than generated state; `spell-security-review` gains the trust-boundary flowchart the PRD assumed it already had. Closes BC-14 ([#123](https://github.com/codemagicianhq/arcane/pull/123)).
+
+## [0.22.10] - 2026-08-31
+
+### Added
+
+- **Generated state diagrams for four more spells (BC-14 R10).** `spell-review-batch` (a GO/NO-GO flowchart), `spell-manifest` (a routing flowchart), `spell-full-cycle` (a phase `stateDiagram-v2`) and `spell-close-session` (the session's own commit `gitGraph`, tied to its real per-commit verification) — each built from data the spell already gathers, each behind an applicability guard. Mermaid's `timeline` type was deliberately avoided: its own docs mark it experimental ([#121](https://github.com/codemagicianhq/arcane/pull/121)).
+
+## [0.22.9] - 2026-08-31
+
+### Added
+
+- **Branch/PR topology diagrams in `spell-commit-work` and `spell-create-pull-request` (BC-14 R9).** One shared `gitGraph` built from the `git log origin/<target>..HEAD` both spells already run; no new git command is introduced ([#119](https://github.com/codemagicianhq/arcane/pull/119)).
+
+## [0.22.8] - 2026-08-31
+
+### Added
+
+- **`spell status` renders the version-drift diagram the prompt already described (BC-14 R8).** `status.ts` had never actually compared the manifest version to the installed package's. A new `diagram-generator` module produces the same `gitGraph` as `spell-open-session` from the same three inputs, so CLI and prompt agree by construction: aligned plain text on a TTY, a fenced Mermaid block when piped ([#117](https://github.com/codemagicianhq/arcane/pull/117)).
+
+## [0.22.7] - 2026-08-31
+
+### Added
+
+- **Generated state diagrams, Tier 1 (BC-14 R1–R7, [ARC-036](DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state)).** Universal rule 8 gains the convention, and `spell-open-session`'s two-axis version check emits a canonical `gitGraph` when either axis drifts — built only from values actually known, and suppressed entirely when both axes are current ([#114](https://github.com/codemagicianhq/arcane/pull/114), [#115](https://github.com/codemagicianhq/arcane/pull/115)).
+
+### Notes
+
+- Three ADRs were drafted in this release and implemented in `0.30.0`–`0.33.0`: [ARC-037](DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) secret and org-leak detection ([#106](https://github.com/codemagicianhq/arcane/pull/106)), [ARC-038](DECISIONS.md#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) content-preserving updates and vendor-neutral governance ([#108](https://github.com/codemagicianhq/arcane/pull/108)), and [ARC-039](DECISIONS.md#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) the build-time spell compiler ([#110](https://github.com/codemagicianhq/arcane/pull/110)). The [ARC-029](DECISIONS.md#arc-029--best-practice-first-solution-selection-standard) acceptance brief was prepared ([#112](https://github.com/codemagicianhq/arcane/pull/112)).
+
+## [0.22.6] - 2026-08-31
+
+### Added
+
+- **GitHub as a first-class `external_provider` (BC-09).** `ExternalProvider` becomes `"ado" | "github" | "jira" | "other"`, and `spell-bug`, `spell-plan`, `spell-scope`, `spell-suggest-feature` and `spell-full-cycle` gain real `gh issue` branches beside their `az boards` ones, every flag checked against the live CLI's `--help`. Not a reversal of [ARC-032](DECISIONS.md#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest), which dropped a `"github"` value that nothing read — this one ships with behavior behind it ([#104](https://github.com/codemagicianhq/arcane/pull/104)).
+- **`spell <unrecognized>` now says so (BC-08).** It fell through to the welcome screen with exit code 0, because the root action claims dispatch before Commander's unknown-command event can fire. It now prints the unrecognized name, the `/spell-<name>` guidance and the real command list — generated from `program.commands`, not a hand-written count that had already gone stale — and exits 1 ([#102](https://github.com/codemagicianhq/arcane/pull/102)).
+
+## [0.22.5] - 2026-08-31
+
+### Added
+
+- **A doc-ID link integrity gate (BC-06).** `check:adr-references` now detects "cross-repo-hazard" links — same-repo links to this repository's `DECISIONS.md` cited from a file that ships to consumers, where `src/assets/DECISIONS.md` is an empty starter template and the link dead-ends or resolves to the wrong document. Four live instances were found and fixed ([#98](https://github.com/codemagicianhq/arcane/pull/98)).
+
+### Fixed
+
+- **Shipped spell prompts cite ADRs as bare IDs, not full URLs.** The first commit of the change above converted the hazards to canonical GitHub URLs; CI's org-token portability gate rejected it, because a full URL bakes the project's own GitHub org into content that ships byte-for-byte into every consumer repo. The rule is now: a bare, unlinked ID in shipped prompts and instructions; links only in governance docs ([#98](https://github.com/codemagicianhq/arcane/pull/98)).
+
+## [0.22.4] - 2026-08-31
+
+### Fixed
+
+- **Roster integrity batch (BC-04).** `spell agents init/sync` now exit non-zero when a rostered role's definition genuinely fails to resolve, instead of passing CI silently; [ARC-012](DECISIONS.md#arc-012--generated-distributable-artifacts-require-a-parity-guard)'s parity guard now covers `.github/agents/*.agent.md`, and its first run found `mercurio.agent.md` still shipping a literal `[object Object]` from a defect whose source YAML had been fixed in PR #45 but whose generated snapshot never was ([#94](https://github.com/codemagicianhq/arcane/pull/94)).
+
+## [0.22.3] - 2026-08-31
+
+### Added
+
+- **Content-verified branch deletion (BC-03).** `git-conventions.md` gains the canonical procedure: provider PR status first when available, otherwise `git cherry` patch-id equivalence plus a resulting-content check for `+`-flagged commits, because a squash merge or an independently re-authored commit carries already-landed content under a different patch-id. `spell-close-session` gains a real idempotent sweep step. Run here for real, it found two "unmerged" branches whose content was byte-identical to `main` ([#92](https://github.com/codemagicianhq/arcane/pull/92)).
+
+### Fixed
+
+- **`copy-assets` prunes `dist/assets/` before copying (BC-02).** A deleted source file (`spell-eas-ios-deploy.prompt.md`) had survived every direct `tsx scripts/copy-assets.ts` run as an orphan. Found while fixing it: the script called `main()` unguarded at module scope, so importing it from a test rebuilt the real `dist/assets/` as a side effect and raced `init.test.ts`'s built-CLI subprocesses ([#90](https://github.com/codemagicianhq/arcane/pull/90)).
+
+## [0.22.2] - 2026-08-31
+
+Opens the Become Current program (`docs/plans/become-current/`) — an autonomous full-cycle loop through the intake backlog, which runs through `0.33.2`.
+
+### Added
+
+- **[ARC-035](DECISIONS.md#arc-035--auto-merge-requires-a-clear-review-round) — auto-merge requires a clear review round (BC-01).** A new "Review round clear" CI job blocks on an outstanding, un-dismissed `CHANGES_REQUESTED` review rather than on approval count, since GitHub blocks self-approval and this repository's author and reviewer are routinely the same identity; `spell-review` and `spell-review-batch` post and later dismiss that formal state. The closed-PR push warning ships for this repository's own pre-push hook only — recorded as a verified gap rather than claimed ([#88](https://github.com/codemagicianhq/arcane/pull/88)).
+- **[ARC-036](DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state) — generated state diagrams**, promoted from a PRD ([#84](https://github.com/codemagicianhq/arcane/pull/84)) and implemented across `0.22.7`–`0.22.11`.
+
+### Fixed
+
+- **The pre-push hook aborted under husky's `sh -e`** whenever `git symbolic-ref` (detached HEAD) or `gh pr view` (no PR yet) exited non-zero — taking `npm test` down with it. Both substitutions are now guarded ([#88](https://github.com/codemagicianhq/arcane/pull/88)).
+
+## [0.22.1] - 2026-08-25
+
+### Fixed
+
+- **`cicd-standards.md`'s Azure DevOps branch-policy table said the opposite of [ARC-009](DECISIONS.md#arc-009--session-naming-and-pr-lifecycle-reliability-policy) and `git-conventions.md`** — "squash merge or rebase (no merge commits)" where both sanction merge (no fast-forward) and rebase-and-fast-forward while disallowing squash. Found while checking a remembered ADO restriction against two real repositories, one of which had already drifted into mixed merge strategies because the rule lived only in prose ([#79](https://github.com/codemagicianhq/arcane/pull/79)).
+
 ## [0.22.0] - 2026-08-24
 
 Adds web discoverability and external-verification governance, plus a spell that applies them.
