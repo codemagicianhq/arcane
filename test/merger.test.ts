@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdtemp, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { access } from "node:fs/promises";
 import {
   mergeIntoFile,
+  stripMarkerSection,
   MARKER_START,
   MARKER_END,
   MalformedMarkersError,
@@ -311,5 +313,61 @@ describe("mergeIntoFile — content integrity", () => {
     await expect(
       mergeIntoFile(tmpDir, ".", "content"),
     ).rejects.toThrow(/EISDIR|ENOTDIR|not a file/i);
+  });
+});
+
+describe("stripMarkerSection", () => {
+  it("returns false when the file does not exist", async () => {
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(false);
+  });
+
+  it("returns false when the file has no markers at all", async () => {
+    await writeTarget("AGENTS.md", "plain content, no markers\n");
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(false);
+    await expect(readTarget("AGENTS.md")).resolves.toBe("plain content, no markers\n");
+  });
+
+  it("returns false when only the start marker is present", async () => {
+    await writeTarget("AGENTS.md", `before\n${MARKER_START}\nbody\n`);
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(false);
+  });
+
+  it("returns false when only the end marker is present", async () => {
+    await writeTarget("AGENTS.md", `body\n${MARKER_END}\nafter\n`);
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(false);
+  });
+
+  it("removes the marker block and rewrites the file when content remains around it", async () => {
+    await writeTarget(
+      "AGENTS.md",
+      `# Title\n\n${MARKER_START}\nmanaged content\n${MARKER_END}\n\n## Working protocol\nkeep this\n`,
+    );
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(true);
+    const result = await readTarget("AGENTS.md");
+    expect(result).not.toContain(MARKER_START);
+    expect(result).not.toContain("managed content");
+    expect(result).toContain("# Title");
+    expect(result).toContain("## Working protocol");
+  });
+
+  it("deletes the file when nothing remains after stripping the marker block", async () => {
+    await writeTarget("AGENTS.md", `${MARKER_START}\nonly managed content\n${MARKER_END}\n`);
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(true);
+    await expect(access(join(tmpDir, "AGENTS.md"))).rejects.toThrow(/ENOENT/);
+  });
+
+  it("treats whitespace-only remainder the same as empty and deletes the file", async () => {
+    await writeTarget("AGENTS.md", `   \n${MARKER_START}\nmanaged\n${MARKER_END}\n\n  \n`);
+    await expect(stripMarkerSection(tmpDir, "AGENTS.md")).resolves.toBe(true);
+    await expect(access(join(tmpDir, "AGENTS.md"))).rejects.toThrow(/ENOENT/);
+  });
+
+  it("does not modify or delete the file in dryRun mode", async () => {
+    const original = `${MARKER_START}\nonly managed content\n${MARKER_END}\n`;
+    await writeTarget("AGENTS.md", original);
+    await expect(
+      stripMarkerSection(tmpDir, "AGENTS.md", { dryRun: true }),
+    ).resolves.toBe(true);
+    await expect(readTarget("AGENTS.md")).resolves.toBe(original);
   });
 });
