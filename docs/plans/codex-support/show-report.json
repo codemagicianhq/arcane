@@ -15,18 +15,18 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 2 of 9 epics shipped"
+    "dek": "active — 3 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "2/9",
+      "value": "3/9",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 2,
+      "value": 3,
       "label": "pull requests",
       "derived": true
     },
@@ -38,18 +38,12 @@
     },
     {
       "id": "adrs",
-      "value": 0,
+      "value": 1,
       "label": "ADRs accepted",
       "derived": true
     }
   ],
   "needsYou": [
-    {
-      "id": "Q-002",
-      "title": "Accept, revise, or reject ARC-045",
-      "reason": "Accepting an ADR is never within any delegation's grant in this repository — always an",
-      "href": "https://github.com/codemagicianhq/arcane/pull/221"
-    },
     {
       "id": "Q-003",
       "title": "Confirm the version number for CS-03",
@@ -86,10 +80,13 @@
         {
           "id": "CS-02",
           "title": "ADR ARC-045",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "The architectural decision behind bringing every AI client to parity and fixing duplicate spells across projects is written down and accepted.",
+          "descriptionState": "authored",
+          "category": "decision",
+          "href": "https://github.com/codemagicianhq/arcane/pull/226",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/226"
+          ]
         },
         {
           "id": "CS-03",
@@ -146,7 +143,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 12,
+      "commits": 13,
       "source": "commit-trailer"
     }
   ],
