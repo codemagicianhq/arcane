@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 2,
+  "program": {
+    "id": "codex-support",
+    "slug": "codex-support",
+    "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
+    "status": "active",
+    "baseline": "1293fae (main)",
+    "started": "2026-09-09",
+    "versionSpan": {
+      "from": "0.38.3",
+      "to": "0.38.3"
+    }
+  },
+  "masthead": {
+    "eyebrow": "Show Report",
+    "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
+    "dek": "active — 0 of 9 epics shipped"
+  },
+  "stats": [
+    {
+      "id": "epics",
+      "value": "0/9",
+      "label": "epics shipped",
+      "derived": true
+    },
+    {
+      "id": "prs",
+      "value": 0,
+      "label": "pull requests",
+      "derived": true
+    },
+    {
+      "id": "version-span",
+      "value": "0.38.3 → 0.38.3",
+      "label": "version span",
+      "derived": true
+    },
+    {
+      "id": "adrs",
+      "value": 0,
+      "label": "ADRs accepted",
+      "derived": true
+    }
+  ],
+  "needsYou": [
+    {
+      "id": "Q-001",
+      "title": "Merge CS-00",
+      "reason": "This merge *is* the grant — nothing in this plan authorizes autonomous execution until"
+    },
+    {
+      "id": "Q-002",
+      "title": "Accept, revise, or reject ARC-045",
+      "reason": "Accepting an ADR is never within any delegation's grant in this repository — always an"
+    },
+    {
+      "id": "Q-003",
+      "title": "Confirm the version number for CS-03",
+      "reason": "a merged version bump auto-publishes to npm within minutes"
+    }
+  ],
+  "sections": [
+    {
+      "id": "wave-1",
+      "title": "Epics",
+      "rows": [
+        {
+          "id": "CS-00",
+          "title": "Discovery smoke tests + PRD/scope completion",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-01",
+          "title": "Codex shim, repo tier (ships Codex)",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-02",
+          "title": "ADR ARC-045",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-03",
+          "title": "Canonical move: `.arcane/spells/` + all clients as shims",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-04",
+          "title": "User tier install",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-05",
+          "title": "Repo opt-out (`spell_scope`)",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-06",
+          "title": "Agents at the user tier",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-07",
+          "title": "Docs, PRD close, drift",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "CS-08",
+          "title": "Distribution-model spike (restore-based delivery)",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        }
+      ]
+    }
+  ],
+  "parked": [],
+  "cast": [
+    {
+      "name": "claude",
+      "commits": 1,
+      "source": "commit-trailer"
+    }
+  ],
+  "provenance": {
+    "sources": [
+      "docs/plans/codex-support/PLAN.md",
+      "docs/plans/codex-support/OPERATOR-QUEUE.md",
+      "docs/verification-ledger.md"
+    ],
+    "compiledAt": "pending (CS-00 merge)",
+    "templateVersion": "v0-interim"
+  }
+}
