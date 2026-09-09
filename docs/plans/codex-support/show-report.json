@@ -15,12 +15,12 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 0 of 9 epics shipped"
+    "dek": "active — 1 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "0/9",
+      "value": "1/9",
       "label": "epics shipped",
       "derived": true
     },
@@ -44,11 +44,6 @@
     }
   ],
   "needsYou": [
-    {
-      "id": "Q-001",
-      "title": "Merge CS-00",
-      "reason": "This merge *is* the grant — nothing in this plan authorizes autonomous execution until"
-    },
     {
       "id": "Q-002",
       "title": "Accept, revise, or reject ARC-045",
@@ -147,7 +142,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 3,
+      "commits": 4,
       "source": "commit-trailer"
     }
   ],
