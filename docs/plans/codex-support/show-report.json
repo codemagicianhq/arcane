@@ -146,7 +146,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 10,
+      "commits": 11,
       "source": "commit-trailer"
     }
   ],
