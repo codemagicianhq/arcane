@@ -47,7 +47,8 @@
     {
       "id": "Q-002",
       "title": "Accept, revise, or reject ARC-045",
-      "reason": "Accepting an ADR is never within any delegation's grant in this repository — always an"
+      "reason": "Accepting an ADR is never within any delegation's grant in this repository — always an",
+      "href": "https://github.com/codemagicianhq/arcane/pull/221"
     },
     {
       "id": "Q-003",
@@ -145,7 +146,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 8,
+      "commits": 10,
       "source": "commit-trailer"
     }
   ],
