@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
     CANONICAL_SPELLS_DIR,
+    CLIENT_SHIM_PATHS,
     canonicalSpellPath,
     deriveStubTitle,
     expandFragment,
@@ -108,6 +109,20 @@ describe("the path contract (ARC-045 / CS-03)", () => {
         // and manifest paths both reach it.
         expect(isClientShimPath(".github\\prompts\\spell-plan.prompt.md")).toBe(true);
         expect(isClientShimPath("./.claude/commands/spell-a1-b2.md")).toBe(true);
+    });
+
+    it("the shim path generators and the shim matcher agree, one pair per client -- and the parity targets use the generators", () => {
+        // A renamed shim shape that updates the generator but not the matcher
+        // (or vice versa) would silently send customized files of that shape
+        // back into update's merge path; this binds the two.
+        for (const [client, path] of Object.entries(CLIENT_SHIM_PATHS)) {
+            expect(isClientShimPath(path("spell-plan")), client).toBe(true);
+        }
+        expect(SHIM_TARGETS.map((target) => target.relativePath("spell-x"))).toEqual([
+            CLIENT_SHIM_PATHS.copilot("spell-x"),
+            CLIENT_SHIM_PATHS.claude("spell-x"),
+            CLIENT_SHIM_PATHS.codex("spell-x"),
+        ]);
     });
 
     it("isClientShimPath is false for the canonical source and every near miss", () => {
@@ -452,6 +467,9 @@ body`;
         await fs.mkdir(join(spellsDir, "_fragments"), { recursive: true });
         await fs.writeFile(join(spellsDir, "_fragments", "demo-fragment.md"), "fragment\n", "utf8");
         await fs.writeFile(join(spellsDir, "README.md"), "not a spell\n", "utf8");
+        // A stray pre-move filename in the canonical folder must not become the
+        // malformed id `spell-stray.prompt` and crash the run in renderCodexSkill.
+        await fs.writeFile(join(spellsDir, "spell-stray.prompt.md"), "---\nname: n\ndescription: d\n---\n", "utf8");
         await fs.mkdir(join(dir, ".claude", "commands"), { recursive: true });
         await fs.writeFile(join(dir, ".claude", "commands", "spell-orphan.md"), "no canonical source\n", "utf8");
 

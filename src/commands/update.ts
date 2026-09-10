@@ -119,9 +119,12 @@ export async function resolveOrphan(
  * file and runs `spell update` to get the generated shim back -- at the
  * same version, since nothing else changed. Only files the current registry
  * still ships for that component count (anything else is an orphan, handled
- * by `resolveOrphan`), and `initOnly` components never do: `update` must not
- * create those at any version (EF-17). A component the registry no longer
- * knows has nothing to restore from.
+ * by `resolveOrphan`). `initOnly` components never do -- `update` must not
+ * create those at any version (EF-17) -- and neither do `skipExisting`
+ * (user-owned) ones: a continuity file, `.mcp.json` or `journal/.gitkeep`
+ * an operator deleted on purpose is backfilled only by a version change, as
+ * it always was, not on every same-version run. A component the registry no
+ * longer knows has nothing to restore from.
  */
 export async function findMissingTrackedFiles(
   targetDir: string,
@@ -135,7 +138,7 @@ export async function findMissingTrackedFiles(
     } catch {
       continue;
     }
-    if (component.initOnly) continue;
+    if (component.initOnly || component.skipExisting) continue;
     for (const file of installed.files) {
       if (!component.files.includes(file)) continue;
       if (!(await fileExists(join(targetDir, file)))) missing.push(file);
@@ -207,7 +210,7 @@ export async function runUpdate(
     }
     sameVersionRestore = true;
     console.log(
-      `Already at v${packageVersion}, but ${missing.length} tracked file${missing.length === 1 ? " is" : "s are"} missing — restoring.`,
+      `${options.dryRun ? "[dry-run] " : ""}Already at v${packageVersion}, but ${missing.length} tracked file${missing.length === 1 ? " is" : "s are"} missing — restoring.`,
     );
   }
 
@@ -289,15 +292,23 @@ export async function runUpdate(
         continue;
       }
 
-      // Same-version restore (see the up-to-date check above): a file that is
-      // present keeps exactly its recorded state; only missing files fall
-      // through to be written.
-      if (sameVersionRestore && targetExists) {
-        if (!preserveExisting || installed.files.includes(file)) {
-          updatedFiles.push(file);
-          if (recordedHash !== undefined) fileHashes[file] = recordedHash;
+      // Same-version restore (see the up-to-date check above): only a file
+      // that is tracked, absent, and shipped by a non-user-owned component
+      // falls through to be written -- exactly the set the gate counted.
+      // Everything else keeps its recorded state: a present file is not
+      // re-hashed or merged, an untracked registry file is neither created
+      // nor claimed, and a user-owned (skipExisting) file is left to the
+      // version-change backfill it always had.
+      if (sameVersionRestore) {
+        const tracked = installed.files.includes(file);
+        const restorable = tracked && !targetExists && !component.skipExisting;
+        if (!restorable) {
+          if (tracked) {
+            updatedFiles.push(file);
+            if (recordedHash !== undefined) fileHashes[file] = recordedHash;
+          }
+          continue;
         }
-        continue;
       }
 
       // ARC-038 decision 1: on-disk content that no longer matches what
@@ -456,7 +467,7 @@ export async function runUpdate(
     console.log(
       `\n! ${verb} ${customizedShims.length} customized client file(s) untouched (ARC-045): an edited Copilot prompt, Claude command or Codex skill is never merged into the new generated shim, because a shim carries no prose of its own to merge into.\n` +
         customizedShims.map((f) => `    ${f}`).join("\n") +
-        `\n  Each keeps working in its client as-is. To converge: move your edits into the canonical spell (.arcane/spells/<id>.md — later updates merge edits there), delete the customized file, and run \`spell update\` again; it restores the generated shim at the current version.`,
+        `\n  Each keeps working in its client as-is. To converge: move your edits into the canonical spell (.arcane/spells/<id>.md — later updates merge edits there), delete the customized file, commit, and run \`spell update\` again — it restores the generated shim at the current version.`,
     );
   }
 

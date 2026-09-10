@@ -110,11 +110,17 @@ all three shims as one unit, and the registry test pins "exactly 4 per spell, in
    Carrying it forward keeps "what Arcane last wrote" true and makes the warning idempotent across
    updates. Dry-run prints the same decision with a `[dry-run] Would keep customized` prefix.
 2. **Remedy path exists.** The warning's remedy is: port the edits into `.arcane/spells/<id>.md`
-   (future updates three-way merge edits there), delete the customized shim, run `spell update`.
-   For that last step to work at the same version, the "Already up to date" short-circuit becomes
-   "up to date **and** every tracked file present"; a same-version run restores missing tracked
-   files and reports them. (Today a deleted tracked file only comes back at the next version bump —
-   this makes that restoration available on demand, nothing more.)
+   (future updates three-way merge edits there), delete the customized shim, commit, run
+   `spell update`. For that last step to work at the same version, the "Already up to date"
+   short-circuit becomes "up to date **and** every tracked file present"; a same-version run
+   restores missing tracked files and reports them. (Today a deleted tracked file only comes back
+   at the next version bump — this makes that restoration available on demand, nothing more.)
+   *Scoped after the Phase 5 review (findings F1/F6):* the gate and the write are the same set —
+   tracked **and** absent **and** shipped by a vendor-owned component. A present file keeps its
+   recorded state untouched (no re-hash, no merge), an untracked registry file is neither created
+   nor claimed, and `initOnly` (EF-17) and user-owned `skipExisting` files (`TODO.md`, `.mcp.json`,
+   `journal/.gitkeep`) keep their version-change-only backfill, so a file an operator deleted on
+   purpose does not return on every same-version run.
 3. **Variant D fix.** After a successful three-way merge, record the hash of the **vendor** content
    just installed (`srcPath`), not of the merged file. The next update then sees a mismatch, merges
    again against the correct base, and the operator's edits survive every update, not one.

@@ -497,7 +497,7 @@ const LEGACY_MONOLITH_REPLACEMENTS = [
  *
  * `spell-prompts` and `claude-commands` were one monolithic pair holding all 34
  * spells in each client format. Both map to the same replacements, because
- * those components now carry both formats of every spell — so a manifest
+ * those components now carry every format of every spell (the canonical source and its three client shims) — so a manifest
  * listing either legacy name (or both, which every profile that had one did)
  * converges on the same result. Callers must dedupe.
  *

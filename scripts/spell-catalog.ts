@@ -10,8 +10,8 @@ import { AGENT_ROLES } from "../src/config/agent-roles.js";
 // A spell is identified by its canonical source (ARC-045 / CS-03) -- the
 // client shims that follow it in each spells-* component are the same spell
 // three more times, never counted.
-const PROMPT_PREFIX = ".arcane/spells/";
-const PROMPT_SUFFIX = ".md";
+const SPELL_PREFIX = ".arcane/spells/";
+const SPELL_SUFFIX = ".md";
 const GOVERNANCE_PREFIX = ".arcane/governance/";
 const GOVERNANCE_SUFFIX = ".md";
 
@@ -48,7 +48,7 @@ function labelForComponent(componentName: string): string {
 
 function idForPromptFile(filePath: string): string {
   const base = filePath.slice(filePath.lastIndexOf("/") + 1);
-  return base.slice(0, -PROMPT_SUFFIX.length);
+  return base.slice(0, -SPELL_SUFFIX.length);
 }
 
 interface PromptFrontmatter {
@@ -100,7 +100,7 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
     if (!component.name.startsWith("spells-")) continue;
 
     const promptFiles = component.files.filter(
-      (file) => file.startsWith(PROMPT_PREFIX) && file.endsWith(PROMPT_SUFFIX),
+      (file) => file.startsWith(SPELL_PREFIX) && file.endsWith(SPELL_SUFFIX),
     );
 
     const spells: SpellCatalogEntry[] = [];
