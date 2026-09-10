@@ -6,8 +6,8 @@ description: Use PROACTIVELY to work through stories.json autonomously once arch
 
 Invoke the Arcane `spell-implement` spell workflow.
 
-See the full prompt at `.github/prompts/spell-implement.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-implement.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-implement.prompt.md
+@.arcane/spells/spell-implement.md

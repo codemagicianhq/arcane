@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { lineContaining, blockContaining, expectNotNegated } from "./helpers/prose.js";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
 
 let gitConventions: string;
@@ -17,10 +17,10 @@ beforeAll(async () => {
   [gitConventions, agentPolicies, commitWork, closeSession, ship, openSession] = await Promise.all([
     readFile(join(GOVERNANCE, "git-conventions.md"), "utf8"),
     readFile(join(GOVERNANCE, "agent-policies.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-ship.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-close-session.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-ship.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-open-session.md"), "utf8"),
   ]);
 });
 
@@ -284,7 +284,7 @@ describe("spell-open-session selects an isolation primitive (ARC-028 R1-R5)", ()
 describe("spell-full-cycle serializes overlapping epics (ARC-028 R4)", () => {
   let fullCycle: string;
   beforeAll(async () => {
-    fullCycle = await readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8");
+    fullCycle = await readFile(join(PROMPTS, "spell-full-cycle.md"), "utf8");
   });
 
   it("requires a footprint comparison, including shared sequences", () => {

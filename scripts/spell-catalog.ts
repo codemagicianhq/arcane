@@ -7,8 +7,11 @@ import { getAllComponents } from "../src/modules/registry.js";
 import { MARKER_START, MARKER_END } from "../src/modules/merger.js";
 import { AGENT_ROLES } from "../src/config/agent-roles.js";
 
-const PROMPT_PREFIX = ".github/prompts/";
-const PROMPT_SUFFIX = ".prompt.md";
+// A spell is identified by its canonical source (ARC-045 / CS-03) -- the
+// client shims that follow it in each spells-* component are the same spell
+// three more times, never counted.
+const PROMPT_PREFIX = ".arcane/spells/";
+const PROMPT_SUFFIX = ".md";
 const GOVERNANCE_PREFIX = ".arcane/governance/";
 const GOVERNANCE_SUFFIX = ".md";
 

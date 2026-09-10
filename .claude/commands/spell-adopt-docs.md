@@ -6,8 +6,8 @@ description: Use PROACTIVELY when bringing an existing, ungoverned doc tree unde
 
 Invoke the Arcane `spell-adopt-docs` spell workflow.
 
-See the full prompt at `.github/prompts/spell-adopt-docs.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-adopt-docs.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-adopt-docs.prompt.md
+@.arcane/spells/spell-adopt-docs.md

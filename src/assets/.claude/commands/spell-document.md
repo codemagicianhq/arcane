@@ -6,8 +6,8 @@ description: Use PROACTIVELY when conversation content (an analysis, a decision,
 
 Invoke the Arcane `spell-document` spell workflow.
 
-See the full prompt at `.github/prompts/spell-document.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-document.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-document.prompt.md
+@.arcane/spells/spell-document.md

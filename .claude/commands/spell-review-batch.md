@@ -6,8 +6,8 @@ description: Use PROACTIVELY when multiple open PRs need an adversarial review p
 
 Invoke the Arcane `spell-review-batch` spell workflow.
 
-See the full prompt at `.github/prompts/spell-review-batch.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-review-batch.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-review-batch.prompt.md
+@.arcane/spells/spell-review-batch.md

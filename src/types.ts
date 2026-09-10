@@ -130,7 +130,7 @@ export interface RegistryComponent {
   files: string[];
   /**
    * Directories to copy recursively (relative to assets root → target root).
-   * Each entry is a path like ".github/prompts" — the entire directory
+   * Each entry is a path like ".arcane/spells" — the entire directory
    * tree is copied, preserving structure.
    */
   directories?: string[];

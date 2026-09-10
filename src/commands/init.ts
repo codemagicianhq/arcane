@@ -70,19 +70,15 @@ interface ComponentGroup {
 function categorizeComponents(components: RegistryComponent[]): ComponentGroup[] {
   const groups: ComponentGroup[] = [];
 
-  // Spells now arrive as several capability components rather than one
-  // monolith, and each carries both client formats of the same spell, so
-  // count by file destination rather than by component.
+  // Spells arrive as several capability components rather than one
+  // monolith, and each carries a spell's canonical source plus its three
+  // generated client shims (ARC-045 / CS-03), so count canonical files --
+  // one per spell -- rather than components or shims.
   const spellFiles = components.filter((c) => isSpellComponent(c.name)).flatMap((c) => c.files);
 
-  const promptCount = spellFiles.filter((f) => f.startsWith(".github/prompts/")).length;
-  if (promptCount > 0) {
-    groups.push({ icon: "✨", label: "Copilot Spells", count: promptCount });
-  }
-
-  const claudeCount = spellFiles.filter((f) => f.startsWith(".claude/commands/")).length;
-  if (claudeCount > 0) {
-    groups.push({ icon: "⚡", label: "Claude Spells", count: claudeCount });
+  const spellCount = spellFiles.filter((f) => f.startsWith(".arcane/spells/")).length;
+  if (spellCount > 0) {
+    groups.push({ icon: "✨", label: "Spells (Copilot, Claude Code, Codex)", count: spellCount });
   }
 
   const governance = components.filter(

@@ -6,8 +6,8 @@ description: Use PROACTIVELY when exploring multiple solutions to a problem befo
 
 Invoke the Arcane `spell-brainstorm` spell workflow.
 
-See the full prompt at `.github/prompts/spell-brainstorm.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-brainstorm.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-brainstorm.prompt.md
+@.arcane/spells/spell-brainstorm.md

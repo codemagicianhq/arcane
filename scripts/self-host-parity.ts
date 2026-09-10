@@ -4,12 +4,16 @@ import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAllComponents } from "../src/modules/registry.js";
 import {
+    CANONICAL_SPELLS_DIR,
+    canonicalSpellPath,
     parsePromptFrontmatter,
     renderClaudeCommandStub,
     renderCodexSkill,
+    renderCopilotPromptShim,
     expandFragment,
     referencesFragment,
 } from "../src/modules/spell-compiler.js";
+import type { PromptFrontmatter } from "../src/modules/spell-compiler.js";
 
 const GENERATED_ROOTS = [".github/", ".arcane/", ".claude/", ".agents/"];
 
@@ -124,106 +128,100 @@ export async function runSelfHostParity(
     return { checked: paths.length, repaired, drifted };
 }
 
-// ─── Third parity axis (ARC-039 / BC-32): stub-content-vs-prompt-frontmatter ──
-// `.github/prompts/spell-*.prompt.md` is each spell's sole authored source;
-// `.claude/commands/spell-*.md` is a generated thin shim. Unlike the axis
-// above (canonical src/assets/ vs. generated root copy of the SAME file),
-// this axis compares two DIFFERENT canonical files against each other, both
-// still inside src/assets/ -- it never touches the root dogfood copies
-// directly (those stay covered by the axis above, once this one has kept
-// src/assets/.claude/commands/ itself in sync).
+// ─── Shim parity axis (ARC-039 / BC-32, generalized by ARC-045 / CS-03) ───────
+// `.arcane/spells/spell-*.md` is each spell's sole authored source; the Copilot
+// prompt, the Claude Code command and the Codex skill are generated shims over
+// it, with no prose of their own. Unlike the axis above (canonical src/assets/
+// vs. generated root copy of the SAME file), this axis compares DIFFERENT
+// canonical files against each other, all still inside src/assets/ -- it never
+// touches the root dogfood copies directly (those stay covered by the axis
+// above, once this one has kept the three shim directories in sync).
+//
+// Ids are enumerated from the canonical folder and nowhere else: a shim file
+// with no canonical source is an orphan the copy axis reports (it is absent
+// from the registry), never a spell.
 
-async function listSpellPromptIds(promptsDir: string): Promise<string[]> {
-    const entries = await readdir(promptsDir).catch(() => [] as string[]);
+async function listSpellIds(spellsDir: string): Promise<string[]> {
+    const entries = await readdir(spellsDir).catch(() => [] as string[]);
     return entries
-        .filter((name) => name.startsWith("spell-") && name.endsWith(".prompt.md"))
-        .map((name) => name.replace(/\.prompt\.md$/, ""))
+        .filter((name) => name.startsWith("spell-") && name.endsWith(".md"))
+        .map((name) => name.replace(/\.md$/, ""))
         .sort();
 }
 
-export async function runStubParity(
+interface ShimTarget {
+    label: string;
+    relativePath: (id: string) => string;
+    render: (id: string, canonicalContent: string, frontmatter: PromptFrontmatter) => string;
+}
+
+/** The three client surfaces, each rendered from the same canonical file. */
+export const SHIM_TARGETS: readonly ShimTarget[] = [
+    {
+        label: "copilot",
+        relativePath: (id) => `.github/prompts/${id}.prompt.md`,
+        render: (id, canonicalContent) => renderCopilotPromptShim(id, canonicalContent),
+    },
+    {
+        label: "claude",
+        relativePath: (id) => `.claude/commands/${id}.md`,
+        render: (id, _canonicalContent, frontmatter) => renderClaudeCommandStub(id, frontmatter),
+    },
+    {
+        label: "codex",
+        relativePath: (id) => `.agents/skills/${id}/SKILL.md`,
+        render: (id, _canonicalContent, frontmatter) =>
+            renderCodexSkill(id, frontmatter, canonicalSpellPath(id)),
+    },
+];
+
+export async function runShimParity(
     mode: ParityMode,
     assetsDir: string,
 ): Promise<ParityResult> {
-    const promptsDir = join(assetsDir, ".github", "prompts");
-    const commandsDir = join(assetsDir, ".claude", "commands");
-    const ids = await listSpellPromptIds(promptsDir);
+    const spellsDir = join(assetsDir, CANONICAL_SPELLS_DIR);
+    const ids = await listSpellIds(spellsDir);
     const drifted: string[] = [];
     const repaired: string[] = [];
 
     for (const id of ids) {
-        const promptContent = await readFile(join(promptsDir, `${id}.prompt.md`), "utf8");
-        const frontmatter = parsePromptFrontmatter(promptContent);
-        const expected = renderClaudeCommandStub(id, frontmatter);
-        const stubPath = join(commandsDir, `${id}.md`);
-        const actual = await readOptionalFile(stubPath);
-        const matches = actual !== null && normalizeLineEndings(actual) === expected;
+        const canonicalContent = await readFile(join(spellsDir, `${id}.md`), "utf8");
+        const frontmatter = parsePromptFrontmatter(canonicalContent);
 
-        if (matches) continue;
-        const relativePath = `.claude/commands/${id}.md`;
-        drifted.push(relativePath);
+        for (const target of SHIM_TARGETS) {
+            const relativePath = target.relativePath(id);
+            const expected = target.render(id, canonicalContent, frontmatter);
+            const outputPath = join(assetsDir, relativePath);
+            const actual = await readOptionalFile(outputPath);
+            const matches = actual !== null && normalizeLineEndings(actual) === expected;
 
-        if (mode === "fix") {
-            await mkdir(dirname(stubPath), { recursive: true });
-            await writeFile(stubPath, expected, "utf8");
-            repaired.push(relativePath);
+            if (matches) continue;
+            drifted.push(relativePath);
+
+            if (mode === "fix") {
+                await mkdir(dirname(outputPath), { recursive: true });
+                await writeFile(outputPath, expected, "utf8");
+                repaired.push(relativePath);
+            }
         }
     }
 
-    return { checked: ids.length, repaired, drifted };
+    return { checked: ids.length * SHIM_TARGETS.length, repaired, drifted };
 }
 
-// ─── Fifth parity axis (CS-01 / ARC-039 extension): Codex skill files ─────────
-// `.agents/skills/{id}/SKILL.md` is a third generated client format, mirroring
-// runStubParity's shape exactly -- same source of truth, same drift/repair
-// model, different output path and renderer.
-
-export async function runSkillParity(
-    mode: ParityMode,
-    assetsDir: string,
-): Promise<ParityResult> {
-    const promptsDir = join(assetsDir, ".github", "prompts");
-    const skillsDir = join(assetsDir, ".agents", "skills");
-    const ids = await listSpellPromptIds(promptsDir);
-    const drifted: string[] = [];
-    const repaired: string[] = [];
-
-    for (const id of ids) {
-        const promptContent = await readFile(join(promptsDir, `${id}.prompt.md`), "utf8");
-        const frontmatter = parsePromptFrontmatter(promptContent);
-        const canonicalPath = `.github/prompts/${id}.prompt.md`;
-        const expected = renderCodexSkill(id, frontmatter, canonicalPath);
-        const skillPath = join(skillsDir, id, "SKILL.md");
-        const actual = await readOptionalFile(skillPath);
-        const matches = actual !== null && normalizeLineEndings(actual) === expected;
-
-        if (matches) continue;
-        const relativePath = `.agents/skills/${id}/SKILL.md`;
-        drifted.push(relativePath);
-
-        if (mode === "fix") {
-            await mkdir(dirname(skillPath), { recursive: true });
-            await writeFile(skillPath, expected, "utf8");
-            repaired.push(relativePath);
-        }
-    }
-
-    return { checked: ids.length, repaired, drifted };
-}
-
-// ─── Fourth parity axis (ARC-039 / BC-32): shared prose fragments ─────────────
-// Fragments under .github/prompts/_fragments/ are never shipped standalone
-// (no registry entry) -- they exist only to keep a consuming prompt's marked
+// ─── Fragment parity axis (ARC-039 / BC-32) ───────────────────────────────────
+// Fragments under .arcane/spells/_fragments/ are never shipped standalone
+// (no registry entry) -- they exist only to keep a consuming spell's marked
 // span in sync with its one canonical source, expanded in place at this same
-// build step. A prompt that does not reference a given fragment is untouched.
+// build step. A spell that does not reference a given fragment is untouched.
 
 export async function runFragmentParity(
     mode: ParityMode,
     assetsDir: string,
 ): Promise<ParityResult> {
-    const promptsDir = join(assetsDir, ".github", "prompts");
-    const fragmentsDir = join(promptsDir, "_fragments");
-    const ids = await listSpellPromptIds(promptsDir);
+    const spellsDir = join(assetsDir, CANONICAL_SPELLS_DIR);
+    const fragmentsDir = join(spellsDir, "_fragments");
+    const ids = await listSpellIds(spellsDir);
     const fragmentNames = (await readdir(fragmentsDir).catch(() => [] as string[]))
         .filter((name) => name.endsWith(".md"))
         .map((name) => name.replace(/\.md$/, ""));
@@ -233,8 +231,8 @@ export async function runFragmentParity(
     let checked = 0;
 
     for (const id of ids) {
-        const promptPath = join(promptsDir, `${id}.prompt.md`);
-        let content = await readFile(promptPath, "utf8");
+        const spellPath = join(spellsDir, `${id}.md`);
+        let content = await readFile(spellPath, "utf8");
         let fileChanged = false;
 
         for (const fragmentName of fragmentNames) {
@@ -245,7 +243,7 @@ export async function runFragmentParity(
             const expanded = expandFragment(content, fragmentName, fragmentContent);
             if (expanded === content) continue;
 
-            drifted.push(`.github/prompts/${id}.prompt.md (fragment: ${fragmentName})`);
+            drifted.push(`${canonicalSpellPath(id)} (fragment: ${fragmentName})`);
             if (mode === "fix") {
                 content = expanded;
                 fileChanged = true;
@@ -253,8 +251,8 @@ export async function runFragmentParity(
         }
 
         if (fileChanged) {
-            await writeFile(promptPath, content, "utf8");
-            repaired.push(`.github/prompts/${id}.prompt.md`);
+            await writeFile(spellPath, content, "utf8");
+            repaired.push(canonicalSpellPath(id));
         }
     }
 
@@ -273,32 +271,32 @@ async function main(): Promise<void> {
     const rootDir = process.env["ARCANE_SELF_HOST_ROOT"] ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
     const assetsDir = process.env["ARCANE_SELF_HOST_ASSETS_DIR"] ?? join(rootDir, "src", "assets");
 
-    // Fragment, stub, and skill axes operate on canonical src/assets/ content
-    // itself and must settle first in --fix mode, so the axis-1 canonical-vs-root
-    // copy below reflects the fully-repaired canonical state, not a stale one.
+    // The fragment and shim axes operate on canonical src/assets/ content
+    // itself and must settle first in --fix mode, so the canonical-vs-root
+    // copy axis below reflects the fully-repaired canonical state, not a
+    // stale one. Fragments before shims: a shim's frontmatter comes from the
+    // canonical file the fragment pass may have just rewritten.
     const fragmentResult = await runFragmentParity(mode, assetsDir);
-    const stubResult = await runStubParity(mode, assetsDir);
-    const skillResult = await runSkillParity(mode, assetsDir);
+    const shimResult = await runShimParity(mode, assetsDir);
     const copyResult = await runSelfHostParity(mode, rootDir, assetsDir);
 
-    const totalChecked = fragmentResult.checked + stubResult.checked + skillResult.checked + copyResult.checked;
+    const totalChecked = fragmentResult.checked + shimResult.checked + copyResult.checked;
     const totalDrifted = [
         ...fragmentResult.drifted.map((path) => `[fragment] ${path}`),
-        ...stubResult.drifted.map((path) => `[stub] ${path}`),
-        ...skillResult.drifted.map((path) => `[skill] ${path}`),
+        ...shimResult.drifted.map((path) => `[shim] ${path}`),
         ...copyResult.drifted.map((path) => `[copy] ${path}`),
     ];
-    const totalRepaired = [...fragmentResult.repaired, ...stubResult.repaired, ...skillResult.repaired, ...copyResult.repaired];
+    const totalRepaired = [...fragmentResult.repaired, ...shimResult.repaired, ...copyResult.repaired];
 
     if (mode === "fix") {
-        console.log(`Self-host parity repaired ${totalRepaired.length} of ${totalChecked} checked (fragments: ${fragmentResult.repaired.length}, stubs: ${stubResult.repaired.length}, skills: ${skillResult.repaired.length}, copies: ${copyResult.repaired.length}).`);
+        console.log(`Self-host parity repaired ${totalRepaired.length} of ${totalChecked} checked (fragments: ${fragmentResult.repaired.length}, shims: ${shimResult.repaired.length}, copies: ${copyResult.repaired.length}).`);
         return;
     }
 
     if (totalDrifted.length > 0) {
         console.error(`Self-host parity FAILED: ${totalDrifted.length} of ${totalChecked} checked items differ from their canonical source.`);
         for (const path of totalDrifted) console.error(`  ${path}`);
-        console.error("Run `npm run fix:self-host-parity`; never hand-edit generated root copies or .claude/commands/ stubs.");
+        console.error("Run `npm run fix:self-host-parity`; never hand-edit generated root copies or any client shim (.github/prompts/, .claude/commands/, .agents/skills/) -- edit .arcane/spells/<id>.md.");
         process.exitCode = 1;
         return;
     }

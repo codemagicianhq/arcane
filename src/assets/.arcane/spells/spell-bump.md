@@ -1,0 +1,82 @@
+---
+name: Spell — Bump Version
+description: Determine the correct semver bump type for the current change and apply it to package.json
+claude_description: Use PROACTIVELY before shipping any change that touches distributable content, to determine and apply the correct version bump.
+argument-hint: Optional context about the change (e.g., "new component", "bug fix", "breaking API change")
+agent: agent
+---
+
+## Executive Summary
+
+- This spell determines whether a version bump is required and applies the correct semver type.
+- Use it whenever you've changed `src/assets/`, `registry.ts`, or `profiles.ts` in the arcane repo.
+- It enforces the rule from `project.md` → Constraints → Self-hosting: "Anything touching
+  `src/assets/` requires a version bump." (Corrected 2026-08-31, BC-06 — this previously cited
+  CLAUDE.md, which now carries only the working protocol; the rule's live prose home moved to
+  `project.md ("requires a version bump"):56-58`.)
+
+---
+
+Determine the correct semver bump and apply it.
+
+## Step 1 — Check whether a bump is needed
+
+Run the version check gate in **staged mode** (LH-06a) — this spell runs before the commit that
+will actually contain the change, so the default `merge-base..HEAD` diff can't see it yet; staged
+mode unions that diff with `git diff --cached --name-only` so today's not-yet-committed work is
+checked too, not just history:
+
+```
+npm run check:version-bump -- --staged
+```
+
+- If it **passes** → no bump needed. Stop here and report "No version bump required."
+- If it **fails** → proceed to Step 2.
+- If the changed content isn't staged yet (working-tree edits only), use `-- --working-tree`
+  instead, which additionally unions plain `git diff --name-only`.
+
+## Step 2 — Determine semver type
+
+Inspect the changed files in `src/assets/`, `registry.ts`, and `profiles.ts`:
+
+| Change type | Bump |
+|---|---|
+| New component added to registry (new file in `src/assets/`) | `minor` |
+| Existing asset file updated (content change, no new component) | `patch` |
+| Component removed from registry | `minor` |
+| Breaking change to CLI API or registry schema | `major` |
+| Bug fix in CLI source (`src/modules/`, `src/commands/`) | `patch` |
+| New CLI command or flag | `minor` |
+
+When in doubt: new distributable content = `minor`, content update = `patch`.
+
+## Step 3 — Apply the bump
+
+Run the appropriate command (do **not** use `--git-tag-version` — tagging happens at publish time):
+
+```
+npm version patch --no-git-tag-version
+# or
+npm version minor --no-git-tag-version
+# or
+npm version major --no-git-tag-version
+```
+
+## Step 4 — Verify and stage
+
+```
+node -e "const p = require('./package.json'); console.log(p.version)"
+git add package.json package-lock.json
+```
+
+## Step 5 — Commit
+
+Use `spell-commit-work` to commit the version bump as a separate commit:
+
+```
+chore(release): bump version to X.Y.Z
+```
+
+Include in the commit body:
+- What distributable change triggered the bump
+- Which components were added/changed

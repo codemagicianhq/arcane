@@ -39,6 +39,16 @@ async function createInstructionsFixture(content: string) {
   return { assets, dist: join(root, "dist") };
 }
 
+async function createSpellsFixture(content: string) {
+  const root = await fs.mkdtemp(join(tmpdir(), "org-token-gate-test-"));
+  tempDirs.push(root);
+  const assets = join(root, "assets");
+  const spells = join(assets, ".arcane", "spells");
+  await fs.mkdir(spells, { recursive: true });
+  await fs.writeFile(join(spells, "spell-fixture.md"), content, "utf8");
+  return { assets, dist: join(root, "dist") };
+}
+
 async function createSkillsFixture(content: string) {
   const root = await fs.mkdtemp(join(tmpdir(), "org-token-gate-test-"));
   tempDirs.push(root);
@@ -125,6 +135,19 @@ describe.skipIf(!TSX)("org-token build gate", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Org-token lint FAILED");
     expect(result.stderr).toContain(".github/instructions/fixture.instructions.md:1");
+    expect(result.stderr).not.toContain("Known Bad Organization");
+  });
+
+  it("scans the canonical spell sources under .arcane/spells/*.md (CS-03)", async () => {
+    const { assets, dist } = await createSpellsFixture(
+      "Deploy Known Bad Organization configuration.\n",
+    );
+
+    const result = runGate(assets, dist);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Org-token lint FAILED");
+    expect(result.stderr).toContain(".arcane/spells/spell-fixture.md:1");
     expect(result.stderr).not.toContain("Known Bad Organization");
   });
 

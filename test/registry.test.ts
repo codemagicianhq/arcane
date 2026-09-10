@@ -225,19 +225,21 @@ describe("registry", () => {
     });
   });
 
-  // ─── Spell client-format parity (CS-01: three formats per spell) ────────────
+  // ─── Spell source + client-shim parity (CS-01: three shims; CS-03: canonical first) ──
 
-  describe("every spells-* component carries exactly 3 files per spell id", () => {
+  describe("every spells-* component carries exactly 4 files per spell id", () => {
     const spellComponents = getAllComponents().filter((c) => c.name.startsWith("spells-"));
 
     for (const component of spellComponents) {
-      it(`${component.name}: prompt + command + skill, grouped in threes`, () => {
-        expect(component.files.length % 3).toBe(0);
+      it(`${component.name}: canonical source + prompt + command + skill, grouped in fours`, () => {
+        expect(component.files.length % 4).toBe(0);
 
-        for (let i = 0; i < component.files.length; i += 3) {
-          const [prompt, command, skill] = component.files.slice(i, i + 3);
-          const id = prompt!.replace(/^\.github\/prompts\//, "").replace(/\.prompt\.md$/, "");
+        for (let i = 0; i < component.files.length; i += 4) {
+          const [canonical, prompt, command, skill] = component.files.slice(i, i + 4);
+          const id = canonical!.replace(/^\.arcane\/spells\//, "").replace(/\.md$/, "");
 
+          expect(id.startsWith("spell-")).toBe(true);
+          expect(canonical).toBe(`.arcane/spells/${id}.md`);
           expect(prompt).toBe(`.github/prompts/${id}.prompt.md`);
           expect(command).toBe(`.claude/commands/${id}.md`);
           expect(skill).toBe(`.agents/skills/${id}/SKILL.md`);

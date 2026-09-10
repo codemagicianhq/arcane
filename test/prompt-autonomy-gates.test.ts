@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 let commitWork: string;
 let closeSession: string;
@@ -11,10 +11,10 @@ let fullCycle: string;
 
 beforeAll(async () => {
   [commitWork, closeSession, createPullRequest, fullCycle] = await Promise.all([
-    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-create-pull-request.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-close-session.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-create-pull-request.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-full-cycle.md"), "utf8"),
   ]);
 });
 

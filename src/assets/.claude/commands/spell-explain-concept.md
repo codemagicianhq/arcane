@@ -6,8 +6,8 @@ description: Use PROACTIVELY when the user needs a concept, architecture, or sys
 
 Invoke the Arcane `spell-explain-concept` spell workflow.
 
-See the full prompt at `.github/prompts/spell-explain-concept.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-explain-concept.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-explain-concept.prompt.md
+@.arcane/spells/spell-explain-concept.md

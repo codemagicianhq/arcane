@@ -6,8 +6,8 @@ description: Use PROACTIVELY whenever responding to PR review comments — fetch
 
 Invoke the Arcane `spell-address-review` spell workflow.
 
-See the full prompt at `.github/prompts/spell-address-review.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-address-review.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-address-review.prompt.md
+@.arcane/spells/spell-address-review.md

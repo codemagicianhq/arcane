@@ -6,8 +6,8 @@ description: Use PROACTIVELY for an end-to-end feature request that should chain
 
 Invoke the Arcane `spell-full-cycle` spell workflow.
 
-See the full prompt at `.github/prompts/spell-full-cycle.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-full-cycle.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-full-cycle.prompt.md
+@.arcane/spells/spell-full-cycle.md

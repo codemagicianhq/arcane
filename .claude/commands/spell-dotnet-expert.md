@@ -6,8 +6,8 @@ description: Use PROACTIVELY when working on a .NET project and best-practice gu
 
 Invoke the Arcane `spell-dotnet-expert` spell workflow.
 
-See the full prompt at `.github/prompts/spell-dotnet-expert.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-dotnet-expert.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-dotnet-expert.prompt.md
+@.arcane/spells/spell-dotnet-expert.md

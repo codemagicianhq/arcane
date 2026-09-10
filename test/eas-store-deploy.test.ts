@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { getComponent, getProfile } from "../src/modules/registry.js";
 
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 const COMMANDS = join(process.cwd(), "src", "assets", ".claude", "commands");
 
 let standards: string;
@@ -14,7 +14,7 @@ let commandStub: string;
 beforeAll(async () => {
   [standards, spell, commandStub] = await Promise.all([
     readFile(join(GOVERNANCE, "mobile-release-standards.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-eas-store-deploy.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-eas-store-deploy.md"), "utf8"),
     readFile(join(COMMANDS, "spell-eas-store-deploy.md"), "utf8"),
   ]);
 });
@@ -47,7 +47,7 @@ describe("mobile-release-standards.md: rule-index/rule-body consistency (T8/BC-2
   });
 });
 
-describe("spell-eas-store-deploy.prompt.md (T8/BC-25)", () => {
+describe("spell-eas-store-deploy.md (T8/BC-25)", () => {
   it("has frontmatter naming both stores and the EAS tech stack", () => {
     expect(spell).toContain("Spell — EAS Store Deploy");
     expect(spell).toContain("App Store and Google Play");
@@ -96,7 +96,7 @@ describe("spell-eas-store-deploy.prompt.md (T8/BC-25)", () => {
 
 describe("spell-eas-store-deploy.md: thin Claude Code shim (T8/BC-25)", () => {
   it("includes the prompt file rather than duplicating its content", () => {
-    expect(commandStub).toContain("@.github/prompts/spell-eas-store-deploy.prompt.md");
+    expect(commandStub).toContain("@.arcane/spells/spell-eas-store-deploy.md");
   });
 });
 
@@ -108,7 +108,7 @@ describe("registry wiring (T8/BC-25)", () => {
 
   it("joins the new spell to the existing spells-build component (no new spell component)", () => {
     const component = getComponent("spells-build");
-    expect(component.files).toContain(".github/prompts/spell-eas-store-deploy.prompt.md");
+    expect(component.files).toContain(".arcane/spells/spell-eas-store-deploy.md");
     expect(component.files).toContain(".claude/commands/spell-eas-store-deploy.md");
   });
 

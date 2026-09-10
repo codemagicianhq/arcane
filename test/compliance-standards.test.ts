@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { getComponent, getProfile } from "../src/modules/registry.js";
 
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 const COMMANDS = join(process.cwd(), "src", "assets", ".claude", "commands");
 
 let standards: string;
@@ -14,7 +14,7 @@ let commandStub: string;
 beforeAll(async () => {
   [standards, spell, commandStub] = await Promise.all([
     readFile(join(GOVERNANCE, "compliance-standards.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-compliance.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-compliance.md"), "utf8"),
     readFile(join(COMMANDS, "spell-compliance.md"), "utf8"),
   ]);
 });
@@ -59,7 +59,7 @@ describe("compliance-standards.md: rule-index/rule-body consistency (T26/BC-26)"
   });
 });
 
-describe("spell-compliance.prompt.md (T26/BC-26)", () => {
+describe("spell-compliance.md (T26/BC-26)", () => {
   it("is explicitly read-only, with no apply/fix phase", () => {
     expect(spell).toContain("It is read-only.");
     expect(spell).toContain("never drafts a privacy policy, invents a retention period");
@@ -92,7 +92,7 @@ describe("spell-compliance.prompt.md (T26/BC-26)", () => {
 
 describe("spell-compliance.md: thin Claude Code shim (T26/BC-26)", () => {
   it("includes the prompt file rather than duplicating its content", () => {
-    expect(commandStub).toContain("@.github/prompts/spell-compliance.prompt.md");
+    expect(commandStub).toContain("@.arcane/spells/spell-compliance.md");
   });
 });
 
@@ -104,7 +104,7 @@ describe("registry wiring (T26/BC-26)", () => {
 
   it("joins the new spell to the existing spells-build component (no new spell component)", () => {
     const component = getComponent("spells-build");
-    expect(component.files).toContain(".github/prompts/spell-compliance.prompt.md");
+    expect(component.files).toContain(".arcane/spells/spell-compliance.md");
     expect(component.files).toContain(".claude/commands/spell-compliance.md");
   });
 

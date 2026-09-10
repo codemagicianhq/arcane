@@ -6,8 +6,8 @@ description: Use PROACTIVELY when a PRD should be enhanced — UX, accessibility
 
 Invoke the Arcane `spell-enchant` spell workflow.
 
-See the full prompt at `.github/prompts/spell-enchant.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-enchant.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-enchant.prompt.md
+@.arcane/spells/spell-enchant.md

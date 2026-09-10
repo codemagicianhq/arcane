@@ -6,8 +6,8 @@ description: Use PROACTIVELY before shipping any change that touches distributab
 
 Invoke the Arcane `spell-bump` spell workflow.
 
-See the full prompt at `.github/prompts/spell-bump.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-bump.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-bump.prompt.md
+@.arcane/spells/spell-bump.md

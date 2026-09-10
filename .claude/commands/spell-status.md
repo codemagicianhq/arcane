@@ -6,8 +6,8 @@ description: Use PROACTIVELY when asked for a quick snapshot of session/repo sta
 
 Invoke the Arcane `spell-status` spell workflow.
 
-See the full prompt at `.github/prompts/spell-status.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-status.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-status.prompt.md
+@.arcane/spells/spell-status.md

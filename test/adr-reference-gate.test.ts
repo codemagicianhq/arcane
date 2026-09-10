@@ -74,6 +74,25 @@ describe("distributed ADR reference gate", () => {
         expect(result.stderr).toContain("ADR-051 (missing)");
     }, HEAVY_TEST_TIMEOUT);
 
+    it("scans the canonical spell folder .arcane/spells/ as a shipped root (CS-03)", async () => {
+        const assets = await createFixture(
+            "# Decisions\n\n## ADR-048 — Branch Policy\n",
+            "Follow ADR-048.\n",
+        );
+        await fs.mkdir(join(assets, ".arcane", "spells"), { recursive: true });
+        await fs.writeFile(
+            join(assets, ".arcane", "spells", "spell-fixture.md"),
+            "Follow ADR-051.\n",
+            "utf8",
+        );
+
+        const result = runGate(assets);
+
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain(".arcane/spells/spell-fixture.md:1");
+        expect(result.stderr).toContain("ADR-051 (missing)");
+    }, HEAVY_TEST_TIMEOUT);
+
     it("fails for a malformed citation", async () => {
         const assets = await createFixture(
             "# Decisions\n\n## ADR-048 — Branch Policy\n",

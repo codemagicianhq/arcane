@@ -6,8 +6,8 @@ description: Use PROACTIVELY when naming anything new (a spell, a field, a produ
 
 Invoke the Arcane `spell-scry` spell workflow.
 
-See the full prompt at `.github/prompts/spell-scry.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-scry.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-scry.prompt.md
+@.arcane/spells/spell-scry.md

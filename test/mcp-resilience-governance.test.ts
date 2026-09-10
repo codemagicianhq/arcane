@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
 const INSTRUCTIONS = join(process.cwd(), "src", "assets", ".github", "instructions");
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 let gitConventions: string;
 let agentOutput: string;
@@ -14,7 +14,7 @@ beforeAll(async () => {
   [gitConventions, agentOutput, commitWork] = await Promise.all([
     readFile(join(GOVERNANCE, "git-conventions.md"), "utf8"),
     readFile(join(INSTRUCTIONS, "agent-output.instructions.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.md"), "utf8"),
   ]);
 });
 
@@ -59,7 +59,7 @@ describe("agent-output.instructions.md: references the canonical rule, does not 
   });
 });
 
-describe("spell-commit-work.prompt.md step 9: MCP fail-fast embed (BC-22)", () => {
+describe("spell-commit-work.md step 9: MCP fail-fast embed (BC-22)", () => {
   it("adds the embed as step 9's own sub-step, before the mandatory pre-PR rebase", () => {
     const mcpIndex = commitWork.indexOf("**MCP fail-fast / fallback.**");
     const rebaseIndex = commitWork.indexOf("Mandatory pre-PR rebase");

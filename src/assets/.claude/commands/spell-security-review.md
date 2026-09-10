@@ -6,8 +6,8 @@ description: Use PROACTIVELY before shipping any change that introduces new atta
 
 Invoke the Arcane `spell-security-review` spell workflow.
 
-See the full prompt at `.github/prompts/spell-security-review.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-security-review.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-security-review.prompt.md
+@.arcane/spells/spell-security-review.md
