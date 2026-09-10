@@ -50,8 +50,27 @@ const VALID_PUSH_POLICIES: PushPolicy[] = ["open", "guarded", "blocked"];
 const VALID_INSTALL_SCOPES: InstallScope[] = ["repo", "user"];
 
 /**
+ * True when a `fanout` key is a home-relative POSIX path that stays inside
+ * the home directory: not absolute, not drive-qualified, no backslashes, no
+ * `..` segment, one line. `uninstall --user` and `update --user` delete what
+ * the record lists (when its hash still matches), so a key must never be
+ * able to point that deletion outside the home directory -- the same
+ * reasoning `isValidSubjectRoot` applies to a path handed to spells.
+ */
+export function isValidFanoutPath(file: string): boolean {
+  return (
+    file.length > 0 &&
+    !file.startsWith("/") &&
+    !/^[a-zA-Z]:/.test(file) &&
+    !file.includes("\\") &&
+    !file.split("/").includes("..") &&
+    !/[\r\n\0]/.test(file)
+  );
+}
+
+/**
  * True when a `fanout` value is safe to store: a plain object mapping
- * home-relative paths to hex digests (CS-04). Both sides are strings; the
+ * home-relative paths (see isValidFanoutPath) to hex digests (CS-04). The
  * digest is what `update`/`uninstall --user` compare against before deleting
  * or rewriting a file outside the store, so a malformed entry must be
  * rejected here rather than read as "no record" (which would make the file
@@ -61,7 +80,8 @@ export function isValidFanoutRecord(value: unknown): value is Record<string, str
   return (
     isRecord(value) &&
     Object.entries(value).every(
-      ([file, hash]) => file.length > 0 && typeof hash === "string" && /^[0-9a-f]{64}$/.test(hash),
+      ([file, hash]) =>
+        isValidFanoutPath(file) && typeof hash === "string" && /^[0-9a-f]{64}$/.test(hash),
     )
   );
 }
