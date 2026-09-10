@@ -9,7 +9,7 @@
     "started": "2026-09-09",
     "versionSpan": {
       "from": "0.38.3",
-      "to": "1.1.0"
+      "to": "1.1.1"
     }
   },
   "masthead": {
@@ -32,7 +32,7 @@
     },
     {
       "id": "version-span",
-      "value": "0.38.3 → 1.1.0",
+      "value": "0.38.3 → 1.1.1",
       "label": "version span",
       "derived": true
     },
@@ -189,7 +189,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 33,
+      "commits": 35,
       "source": "commit-trailer"
     }
   ],
