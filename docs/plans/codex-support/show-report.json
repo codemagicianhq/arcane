@@ -26,7 +26,7 @@
     },
     {
       "id": "prs",
-      "value": 3,
+      "value": 5,
       "label": "pull requests",
       "derived": true
     },
@@ -47,7 +47,8 @@
     {
       "id": "Q-003",
       "title": "Confirm the version number for CS-03",
-      "reason": "a merged version bump auto-publishes to npm within minutes"
+      "reason": "a merged version bump auto-publishes to npm within minutes",
+      "href": "https://github.com/codemagicianhq/arcane/pull/231"
     }
   ],
   "sections": [
@@ -91,10 +92,14 @@
         {
           "id": "CS-03",
           "title": "Canonical move: `.arcane/spells/` + all clients as shims",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Every spell now has exactly one home, and Copilot, Claude Code and Codex all read from it through tiny generated pointers — spells can no longer drift between clients, and updating never silently overwrites a spell you customized.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/232",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/231",
+            "https://github.com/codemagicianhq/arcane/pull/232"
+          ]
         },
         {
           "id": "CS-04",
@@ -143,7 +148,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 20,
+      "commits": 21,
       "source": "commit-trailer"
     }
   ],
