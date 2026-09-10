@@ -15,18 +15,18 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 4 of 9 epics shipped"
+    "dek": "active — 5 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "4/9",
+      "value": "5/9",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 5,
+      "value": 6,
       "label": "pull requests",
       "derived": true
     },
@@ -49,6 +49,12 @@
       "title": "Confirm the Copilot shim in VS Code (one minute)",
       "reason": "CS-03 turned every `.github/prompts/*.prompt.md` into a generated shim — the canonical",
       "href": "https://github.com/codemagicianhq/arcane/pull/232"
+    },
+    {
+      "id": "Q-005",
+      "title": "Try the user tier in Claude Code and VS Code Copilot (a few minutes, once)",
+      "reason": "CS-04 fans every spell out to `~/.claude/commands/<id>.md` (Claude Code) and",
+      "href": "https://github.com/codemagicianhq/arcane/pull/234"
     }
   ],
   "sections": [
@@ -104,10 +110,13 @@
         {
           "id": "CS-04",
           "title": "User tier install",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Install Arcane's spells once on your machine and every AI client — Codex, Copilot, Claude Code — finds them from any project, with nothing to configure and nothing of yours ever overwritten.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/234",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/234"
+          ]
         },
         {
           "id": "CS-05",
@@ -180,7 +189,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 28,
+      "commits": 31,
       "source": "commit-trailer"
     }
   ],
