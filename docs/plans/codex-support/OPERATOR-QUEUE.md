@@ -155,9 +155,11 @@ entry to *this* queue once it runs.
   discovered them), and that an edit to a restored file is invisible to git and lost on the next
   clone — the customization overlay that would make the model safe does not exist. The user tier
   (CS-04) and the coming repo opt-out (CS-05) already answer the duplication that raised the question.
-- **Preconditions (met):** CS-03 shipped (the canonical folder exists to spike against); CS-08's PR
-  merged — this is an ADR-drafting PR, so it is **operator-merged**, not self-merged, per the plan's
-  Authority & Delegation.
+- **Preconditions:** CS-03 shipped (met — the canonical folder exists to spike against); CS-08's PR,
+  [PR #237](https://github.com/codemagicianhq/arcane/pull/237), merged — it is an ADR-drafting PR, so
+  it is **operator-merged**, not self-merged, per the plan's Authority & Delegation. Merging it is
+  separate from deciding this item: the merge lands the draft and the session record; the decision is
+  the `Status:` flip.
 - **Exact commands:** read ARC-046 in `DECISIONS.md` and the research doc; record the decision here;
   if accepted, flip its `Status:` to `Accepted` (or ask the executing session to do so in the same PR).
   If you want the model after all, say so: a "go" opens a new program whose first epic is the

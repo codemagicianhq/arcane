@@ -313,7 +313,8 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   `Proposed` in `DECISIONS.md`; the symlink/junction variant Q-010 named is rejected outright
   (ARC-027's constraint, plus VS Code's deprecation of the setting BC-28's junction finding relied on).
   Operator decision: `OPERATOR-QUEUE.md` Q-006. ADR-drafting PR, operator-merged per Authority &
-  Delegation (link recorded at session close). AC9 met.
+  Delegation: [PR #237](https://github.com/codemagicianhq/arcane/pull/237), which also carries the
+  session-close record (one open PR regenerating this program's report at a time). AC9 met.
   **Report:** Arcane looked hard at making spell files vanish from your repository and reappear on
   install, built the experiment, and decided against it: the user tier already removes the
   duplication, and a file git cannot see cannot carry your edits. · category: decision
