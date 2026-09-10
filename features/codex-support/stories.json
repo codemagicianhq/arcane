@@ -1,0 +1,156 @@
+{
+  "feature": "CS-03 — canonical spell move: .arcane/spells/ + every client a generated shim (Codex Support program)",
+  "branchName": "sessions/2026-09-09-cs03-canonical-spells",
+  "assignedAgent": "claude (role: Backend/Full-stack — no roster installed in this repository)",
+  "trackingMode": "internal",
+  "externalProvider": null,
+  "prd": "features/codex-support/PRD.md",
+  "architecture": "features/codex-support/architecture.md",
+  "stories": [
+    {
+      "id": "CS03-S1",
+      "title": "Move the canonical source and fragments; fix body links",
+      "description": "git mv all 41 src/assets/.github/prompts/spell-*.prompt.md to src/assets/.arcane/spells/<id>.md and _fragments/ to .arcane/spells/_fragments/, keeping frontmatter byte-identical (architecture D1). Rewrite sibling references spell-x.prompt.md -> spell-x.md in the six bodies that carry them and fix the two pre-existing broken links (architecture D6).",
+      "acceptanceCriteria": [
+        "41 files exist at src/assets/.arcane/spells/spell-*.md with git history preserved (git log --follow shows the pre-move commits)",
+        "src/assets/.arcane/spells/_fragments/tracking-mode-declaration.md exists and no file remains under src/assets/.github/prompts/_fragments/",
+        "grep -r 'prompt.md' src/assets/.arcane/spells/ returns no sibling reference",
+        "spell-brainstorm's TODO.md link and spell-arcane-version's .arcane.json link resolve from .arcane/spells/"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S2",
+      "title": "Compiler: Copilot shim renderer, retargeted Claude/Codex renderers, path helpers",
+      "description": "Add canonicalSpellPath(id), isClientShimPath(path), extractFrontmatterBlock(content) and renderCopilotPromptShim(id, content) to src/modules/spell-compiler.ts; retarget renderClaudeCommandStub to @.arcane/spells/<id>.md; callers pass canonicalSpellPath(id) to renderCodexSkill (architecture D2). Update the module header.",
+      "acceptanceCriteria": [
+        "renderCopilotPromptShim output = the canonical frontmatter block verbatim + one body paragraph containing both the relative Markdown link ../../.arcane/spells/<id>.md and the read-and-follow sentence",
+        "renderClaudeCommandStub output references .arcane/spells/<id>.md twice and never .github/prompts",
+        "isClientShimPath is true for the three shim shapes and false for .arcane/spells/<id>.md, governance files, and near-miss paths",
+        "Unit tests in test/spell-compiler.test.ts cover each renderer's golden string, CRLF frontmatter, and the helpers"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S3",
+      "title": "Parity: one shim axis over three targets, fragments from the new folder, regenerate everything",
+      "description": "In scripts/self-host-parity.ts replace runStubParity/runSkillParity with runShimParity(mode, assetsDir) enumerating ids from .arcane/spells/spell-*.md; point runFragmentParity at .arcane/spells/_fragments/; run npm run fix:self-host-parity so all 123 shim files in src/assets/ and every root dogfood copy (including root .arcane/spells/) are regenerated (architecture D3).",
+      "acceptanceCriteria": [
+        "npm run check:self-host-parity passes and reports 41 ids x 3 targets on the shim axis",
+        "A temp-tree test proves a hand-edited shim of each kind is reported as drifted and repaired in fix mode",
+        "Root .github/prompts/*.prompt.md are shims byte-identical to src/assets/; root .arcane/spells/ exists with 41 files"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S4",
+      "title": "Registry and init: four files per spell, canonical first",
+      "description": "Every spells-* component in src/modules/registry.ts lists .arcane/spells/<id>.md before its three shims; the block comment describes the model; src/commands/init.ts counts canonical spells in its summary (architecture D4). LEGACY_COMPONENT_MIGRATIONS is untouched.",
+      "acceptanceCriteria": [
+        "test/registry.test.ts asserts exactly 4 files per spell id in the order canonical, Copilot, Claude, Codex for every spells-* component",
+        "spell init --profile full into a temp repo installs 41 canonical files and 123 shims and reports 41 spells",
+        "LEGACY_COMPONENT_MIGRATIONS byte-identical to before"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S5",
+      "title": "Gates enumerate the canonical folder",
+      "description": "spell-catalog.ts prefix/suffix -> .arcane/spells/ + .md; copy-assets.ts scans .arcane/spells/*.md (plus the shims) with the org-token rules; check-distributed-adr-references.ts SCAN_ROOTS and scripts/lib/living-docs.ts include src/assets/.arcane/spells; check-citations.ts resolves cited paths under .arcane/spells (architecture D7). Regenerate docs/spell-catalog.json + README block.",
+      "acceptanceCriteria": [
+        "npm run check:spell-catalog passes with totalSpells 41",
+        "check:citations / check:stale-claims / check:followups scan sets include the 41 canonical files (test in test/check-citations.test.ts)",
+        "test/org-token-lint.test.ts and test/adr-reference-gate.test.ts fixtures exercise the new folder",
+        "npm run build passes the org-token lint over .arcane/spells/"
+      ],
+      "priority": 5,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S6",
+      "title": "spell update migration: preserve customized shims, restore on demand, fix the second-update loss",
+      "description": "In src/commands/update.ts: shim path + recorded-hash mismatch => keep the file untouched, warn with the remedy, carry the recorded hash forward, dry-run parity; 'Already up to date' only when every tracked file is present, otherwise restore missing files at the same version; after a successful merge record the vendor content's hash, not the merged file's (architecture D5, empirical variants A-D).",
+      "acceptanceCriteria": [
+        "AC8 fixture test: one hand-edited .github/prompts/<id>.prompt.md is byte-identical after update, a warning names it, the untouched sibling is replaced by the shim, .arcane/spells/<id>.md is written, and the manifest still records the pre-edit hash for the edited file",
+        "Dry-run prints the same decision without writing",
+        "Two consecutive updates through the merge path keep an operator edit (Variant D regression)",
+        "A deleted tracked file is restored by a same-version spell update; with nothing missing the command still prints 'Already up to date.'",
+        "All existing update tests pass unchanged except the two whose assertions encoded the old behavior"
+      ],
+      "priority": 6,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S7",
+      "title": "Repoint every test that read the old location",
+      "description": "The 17 content-reading tests (shared PROMPTS constant), 8 path-only tests, and 3 directory-enumerating tests move to .arcane/spells/ and .md; repo-wide checks (trunk-checkout scoping, path resolution, worktree vantage) scan the canonical folder; test/spell-routing.test.ts keeps reading the Claude stubs.",
+      "acceptanceCriteria": [
+        "grep -l '.github/prompts' test/ lists only files that intentionally assert shim paths",
+        "npm test passes in full (84+ files) with no test skipped for the move",
+        "docs-profile-registry-split's SPELLS_ON_DISK counts .arcane/spells/spell-*.md"
+      ],
+      "priority": 7,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S8",
+      "title": "Docs, governance, changelog",
+      "description": "Update the six src/assets prose sites (development-methodology links now ../spells/<id>.md, git-conventions scope row, spell-authoring-standards D2/Bronze row, universal-agent-rules client note, product-excellence-standards wiki-link, agent-output.instructions), project.md, README's install paragraph, portable-bootstrap's 'Where Documents Live' row, an ARC-045 implementation note in DECISIONS.md, and CHANGELOG.md's ## [1.0.0] entry with a consumer migration section (architecture D6, D8).",
+      "acceptanceCriteria": [
+        "No governance doc under src/assets names .github/prompts as the place a spell is authored",
+        "CHANGELOG.md has ## [1.0.0] - 2026-09-09 with Changed/Fixed/Notes and a migration section covering hashed, customized and pre-0.32.0 installs",
+        "check:stale-claims Class A and check:adr-references pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S9",
+      "title": "Dogfood and client re-confirmation (DoD 3, EV-01)",
+      "description": "Invoke a spell through its regenerated Claude Code stub in this session and confirm the canonical body loads; run codex exec in a fixture consumer installed from the new build and confirm the skill reads .arcane/spells/<id>.md; record both, and the deferred Copilot operator check, in docs/research/skill-discovery-smoke-tests.md (architecture D9).",
+      "acceptanceCriteria": [
+        "Claude Code: the Skill invocation output contains a heading that exists only in the canonical body",
+        "Codex: the transcript shows a shell read of .arcane/spells/<id>.md and the marker returned",
+        "Research doc gains a dated 'CS-03 re-confirmation' section with both transcripts and the Copilot deferral"
+      ],
+      "priority": 9,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "CS03-S10",
+      "title": "Version 1.0.0, program bookkeeping, PR",
+      "description": "npm version major (own chore(release) commit); PLAN.md CS-03 ticked with the premise correction and Report line; PRD AC3/AC4/AC8 ticked; OPERATOR-QUEUE.md Q-003 note (applied, awaiting operator merge — status left open); TODO.md gains the CRLF-vs-recorded-hash edge found in variant C; show-report regenerated trailer-free; PR opened with ## For the record and left for the operator.",
+      "acceptanceCriteria": [
+        "npm run check:version-bump passes (1.0.0 differs from main)",
+        "PR is green on all three required checks and NOT merged by the session",
+        "PLAN.md, PRD.md, OPERATOR-QUEUE.md and the show-report golden pair are consistent at HEAD"
+      ],
+      "priority": 10,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    }
+  ]
+}
