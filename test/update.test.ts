@@ -711,6 +711,83 @@ describe("spell update — handler", () => {
     expect(manifest.components[0]!.fileHashes![file]).toBe(await hashFile(join(tmpDir, file)));
   });
 
+  it("a same-version run restores only what is tracked, absent and vendor-owned; present files keep their recorded state and untracked registry files are not created", async () => {
+    // Manifest at the current version tracks the canonical and two of the
+    // three shims. The canonical is operator-edited (hash mismatch), one
+    // tracked shim is deleted, and the third shim is absent AND untracked.
+    const assets = await migrationAssetsDir();
+    await seedComponentFile(tmpDir, canonicalFile, NEW_CANONICAL);
+    await seedComponentFile(tmpDir, promptShimFile, NEW_PROMPT_SHIM);
+    const recorded = {
+      [canonicalFile]: await hashFile(join(tmpDir, canonicalFile)),
+      [promptShimFile]: await hashFile(join(tmpDir, promptShimFile)),
+      [commandShimFile]: "0".repeat(64),
+    };
+    const editedCanonical = `${NEW_CANONICAL}\nOPERATOR EDIT IN THE CANONICAL FILE\n`;
+    await fs.writeFile(join(tmpDir, canonicalFile), editedCanonical, "utf8");
+    await writeManifest(tmpDir, {
+      version: PACKAGE_VERSION,
+      components: [
+        {
+          name: "spells-docs",
+          files: [canonicalFile, promptShimFile, commandShimFile],
+          installedVersion: PACKAGE_VERSION,
+          fileHashes: recorded,
+        },
+      ],
+    });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({}, tmpDir, assets, PACKAGE_VERSION);
+
+    // The gate counted one file, and exactly one file was written.
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 tracked file is missing — restoring"));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Updated 1 files"));
+    await expect(fs.readFile(join(tmpDir, commandShimFile), "utf8")).resolves.toBe(NEW_COMMAND_STUB);
+    // Present files: untouched, not merged, not re-hashed.
+    await expect(fs.readFile(join(tmpDir, canonicalFile), "utf8")).resolves.toBe(editedCanonical);
+    expect(fetchPublishedFileMock).not.toHaveBeenCalled();
+    // Untracked registry file: neither created nor claimed.
+    await expect(fs.access(join(tmpDir, skillShimFile))).rejects.toThrow();
+    const manifest = await readManifestFile(tmpDir);
+    const component = manifest.components.find((c) => c.name === "spells-docs")!;
+    expect([...component.files].sort()).toEqual([canonicalFile, promptShimFile, commandShimFile].sort());
+    expect(component.fileHashes![canonicalFile]).toBe(recorded[canonicalFile]);
+    expect(component.fileHashes![promptShimFile]).toBe(recorded[promptShimFile]);
+    expect(component.fileHashes![commandShimFile]).toBe(await hashFile(join(tmpDir, commandShimFile)));
+    expect(consoleSpy.mock.calls.some((c) => String(c[0]).includes("orphaned"))).toBe(false);
+  });
+
+  it("a same-version dry-run announces and lists the restore without writing", async () => {
+    const file = ".arcane/governance/testing-standards.md";
+    await writeManifest(tmpDir, {
+      version: PACKAGE_VERSION,
+      components: [{ name: "testing-standards", files: [file], installedVersion: PACKAGE_VERSION }],
+    });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({ dryRun: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("[dry-run] Already at v"));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(`[dry-run] Would restore missing: ${file}`));
+    await expect(fs.access(join(tmpDir, file))).rejects.toThrow();
+  });
+
+  it("a same-version run leaves a deleted user-owned (skipExisting) file to the version-change backfill", async () => {
+    // session-continuity is skipExisting: an operator who deleted TODO.md on
+    // purpose must not see it return on every same-version run.
+    await writeManifest(tmpDir, {
+      version: PACKAGE_VERSION,
+      components: [{ name: "session-continuity", files: ["TODO.md"], installedVersion: PACKAGE_VERSION }],
+    });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith("Already up to date.");
+    await expect(fs.access(join(tmpDir, "TODO.md"))).rejects.toThrow();
+  });
+
   it("a same-version run does not treat a missing initOnly file as something to restore (EF-17)", async () => {
     await writeManifest(tmpDir, {
       version: PACKAGE_VERSION,

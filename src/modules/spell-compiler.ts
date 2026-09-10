@@ -46,10 +46,11 @@ export class InvalidSkillNameError extends Error {
 
 // ─── The path contract (ARC-045 decisions 1-2) ────────────────────────────────
 // Everything that needs to know where a spell's authored content lives, or
-// which files are generated client shims over it, resolves it through these
-// two helpers -- the parity script, the registry tests, and `spell update`'s
-// migration logic alike. There is deliberately no second copy of the shim
-// path shapes anywhere else.
+// where its generated client shims go, resolves it here -- the parity script,
+// the registry tests, and `spell update`'s migration logic alike. The shim
+// path GENERATORS (CLIENT_SHIM_PATHS) and the shim path MATCHER
+// (CLIENT_SHIM_PATH_PATTERNS) live side by side and are bound to each other
+// by test, so a renamed shape cannot drift out of the matcher unnoticed.
 
 /** Directory (relative to the assets root / a consumer's repo root) holding the canonical spell sources. */
 export const CANONICAL_SPELLS_DIR = ".arcane/spells";
@@ -59,11 +60,19 @@ export function canonicalSpellPath(id: string): string {
   return `${CANONICAL_SPELLS_DIR}/${id}.md`;
 }
 
+/** Where each client's generated shim for a spell lives, one generator per client surface. */
+export const CLIENT_SHIM_PATHS = {
+  copilot: (id: string): string => `.github/prompts/${id}.prompt.md`,
+  claude: (id: string): string => `.claude/commands/${id}.md`,
+  codex: (id: string): string => `.agents/skills/${id}/SKILL.md`,
+} as const;
+
 /**
- * The three generated client-shim shapes, one per client surface. A path
- * matching any of these carries no authored prose -- it is `render()` output
- * over the canonical file -- which is exactly why `spell update` must never
- * three-way-merge an operator's edit *into* one (see update.ts).
+ * The three generated client-shim shapes, one per client surface -- the
+ * matcher counterpart of CLIENT_SHIM_PATHS. A path matching any of these
+ * carries no authored prose -- it is `render()` output over the canonical
+ * file -- which is exactly why `spell update` must never three-way-merge an
+ * operator's edit *into* one (see update.ts).
  */
 export const CLIENT_SHIM_PATH_PATTERNS: readonly RegExp[] = [
   /^\.github\/prompts\/spell-[a-z0-9-]+\.prompt\.md$/,

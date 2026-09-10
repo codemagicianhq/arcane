@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { getAllComponents } from "../src/modules/registry.js";
 import {
     CANONICAL_SPELLS_DIR,
+    CLIENT_SHIM_PATHS,
     canonicalSpellPath,
     parsePromptFrontmatter,
     renderClaudeCommandStub,
@@ -141,10 +142,15 @@ export async function runSelfHostParity(
 // with no canonical source is an orphan the copy axis reports (it is absent
 // from the registry), never a spell.
 
+// A canonical spell file is exactly `spell-<lowercase-id>.md`; anything else in
+// the folder (a stray `spell-x.prompt.md`, a README) is not a spell and must
+// not become a malformed id that renderCodexSkill then rejects mid-run.
+const CANONICAL_SPELL_FILE_PATTERN = /^spell-[a-z0-9-]+\.md$/;
+
 async function listSpellIds(spellsDir: string): Promise<string[]> {
     const entries = await readdir(spellsDir).catch(() => [] as string[]);
     return entries
-        .filter((name) => name.startsWith("spell-") && name.endsWith(".md"))
+        .filter((name) => CANONICAL_SPELL_FILE_PATTERN.test(name))
         .map((name) => name.replace(/\.md$/, ""))
         .sort();
 }
@@ -159,17 +165,17 @@ interface ShimTarget {
 export const SHIM_TARGETS: readonly ShimTarget[] = [
     {
         label: "copilot",
-        relativePath: (id) => `.github/prompts/${id}.prompt.md`,
+        relativePath: CLIENT_SHIM_PATHS.copilot,
         render: (id, canonicalContent) => renderCopilotPromptShim(id, canonicalContent),
     },
     {
         label: "claude",
-        relativePath: (id) => `.claude/commands/${id}.md`,
+        relativePath: CLIENT_SHIM_PATHS.claude,
         render: (id, _canonicalContent, frontmatter) => renderClaudeCommandStub(id, frontmatter),
     },
     {
         label: "codex",
-        relativePath: (id) => `.agents/skills/${id}/SKILL.md`,
+        relativePath: CLIENT_SHIM_PATHS.codex,
         render: (id, _canonicalContent, frontmatter) =>
             renderCodexSkill(id, frontmatter, canonicalSpellPath(id)),
     },
