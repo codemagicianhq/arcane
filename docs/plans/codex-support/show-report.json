@@ -26,7 +26,7 @@
     },
     {
       "id": "prs",
-      "value": 6,
+      "value": 7,
       "label": "pull requests",
       "derived": true
     },
@@ -59,7 +59,8 @@
     {
       "id": "Q-006",
       "title": "Accept, revise, or reject ARC-046 (restore-based delivery: no-go)",
-      "reason": "Accepting an ADR is never within a delegation's grant in this repository. The evidence is"
+      "reason": "Accepting an ADR is never within a delegation's grant in this repository. The evidence is",
+      "href": "https://github.com/codemagicianhq/arcane/pull/237"
     }
   ],
   "sections": [
@@ -153,7 +154,10 @@
           "description": "Arcane looked hard at making spell files vanish from your repository and reappear on install, built the experiment, and decided against it: the user tier already removes the duplication, and a file git cannot see cannot carry your edits.",
           "descriptionState": "authored",
           "category": "decision",
-          "refs": []
+          "href": "https://github.com/codemagicianhq/arcane/pull/237",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/237"
+          ]
         }
       ]
     }
@@ -194,7 +198,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 37,
+      "commits": 38,
       "source": "commit-trailer"
     }
   ],
