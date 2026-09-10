@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.1.1] - 2026-09-10
+
+Four findings the Codex Support program's own sessions and reviews had left open, closed together.
+
+### Fixed
+
+- **A line-ending rewrite no longer reads as an operator edit.** Recorded file hashes (`fileHashes`, and the user tier's `fanout` record) are now computed over line-ending-normalized bytes, and every comparison against a recorded hash also accepts the raw-bytes digest that earlier versions recorded — so a managed file git rewrote from CRLF to LF (`text=auto eol=lf`, `core.autocrlf`) is refreshed normally instead of being three-way merged, and no migration is needed. A genuine edit inside a CRLF file is still an edit.
+- **No delete path takes a manifest path outside the repository any more.** `spell update --prune`'s orphan pruning and both `spell uninstall` loops run the same traversal guard every write path has: an `.arcane.json` entry that resolves outside the target directory is named and skipped, never deleted. The user tier's fan-out validates every recorded key against the home directory before it writes or deletes.
+- **`spell report` for an active program no longer goes stale the moment its own regeneration is committed.** The close commit of a program without a `completed:` date is now the most recent commit that touched anything other than the program's own `show-report.{json,html}`, and the cast never counts a commit that touched only those files — so a regeneration commit neither moves the version span nor counts itself, with or without an attribution trailer, whether it is the newest commit or buried under later work. Regeneration commits no longer need to be trailer-free; they only need to touch the report files alone, which is what `spell report` produces. The two closed programs' committed reports are unchanged by this rule.
+- **The user tier's Claude Code command quotes its `@` include when the store path contains whitespace** (`@"C:/Users/Jane Doe/.arcane/spells/<id>.md"`), Claude Code's documented form for such paths. The whitespace-free case is byte-identical to `1.1.0`; the next `spell update --user` on an affected machine rewrites the 41 commands.
+
 ## [1.1.0] - 2026-09-10
 
 The user tier: install the spell library once per machine and let every client find it from any repository (CS-04 of the Codex Support program, [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) decision 3).
