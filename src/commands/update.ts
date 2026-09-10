@@ -15,7 +15,13 @@ import {
 import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from "../modules/hub.js";
 import { merge3 } from "../modules/merge3.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
-import type { ArcaneManifest, InstalledComponent, SpellUpdateOptions } from "../types.js";
+import { isClientShimPath } from "../modules/spell-compiler.js";
+import type {
+  ArcaneManifest,
+  InstalledComponent,
+  RegistryComponent,
+  SpellUpdateOptions,
+} from "../types.js";
 
 /**
  * Runs the `spell update` command.
@@ -106,6 +112,38 @@ export async function resolveOrphan(
   return "pruned";
 }
 
+/**
+ * Tracked files that should be on disk but are not. Feeds the same-version
+ * restore path in `runUpdate` (ARC-045 / CS-03): an operator who has ported a
+ * customized client shim's edits into the canonical spell deletes the old
+ * file and runs `spell update` to get the generated shim back -- at the
+ * same version, since nothing else changed. Only files the current registry
+ * still ships for that component count (anything else is an orphan, handled
+ * by `resolveOrphan`), and `initOnly` components never do: `update` must not
+ * create those at any version (EF-17). A component the registry no longer
+ * knows has nothing to restore from.
+ */
+export async function findMissingTrackedFiles(
+  targetDir: string,
+  components: InstalledComponent[],
+): Promise<string[]> {
+  const missing: string[] = [];
+  for (const installed of components) {
+    let component: RegistryComponent;
+    try {
+      component = getComponent(installed.name);
+    } catch {
+      continue;
+    }
+    if (component.initOnly) continue;
+    for (const file of installed.files) {
+      if (!component.files.includes(file)) continue;
+      if (!(await fileExists(join(targetDir, file)))) missing.push(file);
+    }
+  }
+  return missing;
+}
+
 export async function runUpdate(
   options: SpellUpdateOptions,
   targetDir: string,
@@ -157,10 +195,20 @@ export async function runUpdate(
     return;
   }
 
-  // Already up to date
+  // Already up to date -- unless a tracked file has gone missing, in which
+  // case a same-version run restores exactly that and nothing else (the
+  // ARC-045 / CS-03 remedy path; see findMissingTrackedFiles).
+  let sameVersionRestore = false;
   if (manifest.version === packageVersion && manifest.components.length > 0) {
-    console.log("Already up to date.");
-    return;
+    const missing = await findMissingTrackedFiles(targetDir, manifest.components);
+    if (missing.length === 0) {
+      console.log("Already up to date.");
+      return;
+    }
+    sameVersionRestore = true;
+    console.log(
+      `Already at v${packageVersion}, but ${missing.length} tracked file${missing.length === 1 ? " is" : "s are"} missing — restoring.`,
+    );
   }
 
   if (manifest.components.length === 0) {
@@ -175,6 +223,9 @@ export async function runUpdate(
   // end rather than a per-file interruption -- the update still completes
   // for every other file either way.
   const conflictedFiles: string[] = [];
+  // ARC-045 / CS-03: generated client shims the operator had edited, kept
+  // untouched rather than merged -- see the per-file branch below.
+  const customizedShims: string[] = [];
   // TODO.md T10: files tracked before this update that no longer belong to
   // any current component, reported always and deleted only with --prune
   // (and only when untouched -- see resolveOrphan).
@@ -226,6 +277,7 @@ export async function runUpdate(
       const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
       const targetExists = await fileExists(join(targetDir, file));
       const preserveExisting = Boolean(component.skipExisting) && targetExists;
+      const recordedHash = installed.fileHashes?.[file];
 
       // initOnly: update never creates these. Their appearance alone changes
       // how Git treats the whole repository, so adding one mid-life is the
@@ -237,50 +289,93 @@ export async function runUpdate(
         continue;
       }
 
+      // Same-version restore (see the up-to-date check above): a file that is
+      // present keeps exactly its recorded state; only missing files fall
+      // through to be written.
+      if (sameVersionRestore && targetExists) {
+        if (!preserveExisting || installed.files.includes(file)) {
+          updatedFiles.push(file);
+          if (recordedHash !== undefined) fileHashes[file] = recordedHash;
+        }
+        continue;
+      }
+
+      // ARC-038 decision 1: on-disk content that no longer matches what
+      // Arcane last wrote means the operator edited this file, and that edit
+      // must never be silently discarded.
+      const editedByOperator =
+        recordedHash !== undefined &&
+        targetExists &&
+        !preserveExisting &&
+        (await hashFile(join(targetDir, file))) !== recordedHash;
+
       if (preserveExisting) {
         // skipExisting keeps its pre-ARC-038 whole-file behavior unchanged --
         // no hash tracking, no merge machinery (ARC-038 decision 1).
         console.log(`  ${options.dryRun ? "[dry-run] Would preserve" : "Preserved"}: ${file}`);
+      } else if (editedByOperator && isClientShimPath(file)) {
+        // ARC-045 decision 2 / CS-03: a generated client shim (Copilot
+        // prompt, Claude command, Codex skill) carries no authored prose, so
+        // there is nothing an operator's edit could be merged INTO. A
+        // three-way merge here either reports success while leaving the edit
+        // dangling under the new shim, or writes conflict markers over a body
+        // that is gone -- both observed live against a real consumer fixture
+        // (2026-09-09, features/codex-support/architecture.md). Keep the
+        // operator's file byte-untouched, name it, and carry the previously
+        // recorded hash forward: recording the edited content would make the
+        // next update read the file as untouched and overwrite it; recording
+        // nothing would drop it into the pre-ARC-038 overwrite path. The
+        // canonical spell is written beside it as an ordinary new file, so the
+        // spell keeps working in every client meanwhile.
+        customizedShims.push(file);
+        fileHashes[file] = recordedHash!;
+        console.log(
+          `  ${options.dryRun ? "[dry-run] Would keep" : "Kept"} customized (not merged): ${file}`,
+        );
       } else if (options.dryRun) {
-        console.log(`  [dry-run] Would update: ${file}`);
+        console.log(`  [dry-run] Would ${sameVersionRestore ? "restore missing" : "update"}: ${file}`);
         fileCount++;
       } else {
-        const recordedHash = installed.fileHashes?.[file];
         let handled = false;
 
-        if (recordedHash !== undefined && targetExists) {
-          const currentHash = await hashFile(join(targetDir, file));
-          if (currentHash !== recordedHash) {
-            // On-disk content no longer matches what Arcane last wrote --
-            // the operator edited this file. Do not silently discard that
-            // edit by overwriting it (ARC-038 decision 1).
-            const oldVendorContent = await fetchPublishedFile(installed.installedVersion, file);
-            if (oldVendorContent === undefined) {
-              console.log(
-                `  ! Could not fetch the previously published version of ${file} to merge your edits — left your version untouched. Update it manually if you want the latest.`,
-              );
-              handled = true;
+        if (editedByOperator) {
+          const oldVendorContent = await fetchPublishedFile(installed.installedVersion, file);
+          if (oldVendorContent === undefined) {
+            console.log(
+              `  ! Could not fetch the previously published version of ${file} to merge your edits — left your version untouched. Update it manually if you want the latest.`,
+            );
+            // Untouched means still edited: keep the recorded hash so the
+            // next update recognizes the edit again instead of reading the
+            // file as Arcane-written and overwriting it.
+            fileHashes[file] = recordedHash!;
+            handled = true;
+          } else {
+            const [currentContent, newContent] = await Promise.all([
+              readFile(join(targetDir, file), "utf-8"),
+              readFile(srcPath, "utf-8"),
+            ]);
+            const result = merge3(oldVendorContent, currentContent, newContent);
+            await writeFile(join(targetDir, file), result.content, "utf-8");
+            // Record the VENDOR content's hash, not the merged file's. The
+            // recorded hash means "what a clean install of this version
+            // wrote"; recording the merged content made the next update read
+            // the file as untouched and overwrite it, so an operator's edit
+            // survived exactly one update (observed live 2026-09-09, variant D
+            // in features/codex-support/architecture.md).
+            fileHashes[file] = await hashFile(srcPath);
+            if (result.hasConflict) {
+              conflictedFiles.push(file);
+              console.log(`  ⚠ Merge conflict in ${file} — resolve the <<<<<<< markers before committing.`);
             } else {
-              const [currentContent, newContent] = await Promise.all([
-                readFile(join(targetDir, file), "utf-8"),
-                readFile(srcPath, "utf-8"),
-              ]);
-              const result = merge3(oldVendorContent, currentContent, newContent);
-              await writeFile(join(targetDir, file), result.content, "utf-8");
-              fileHashes[file] = await hashFile(join(targetDir, file));
-              if (result.hasConflict) {
-                conflictedFiles.push(file);
-                console.log(`  ⚠ Merge conflict in ${file} — resolve the <<<<<<< markers before committing.`);
-              } else {
-                console.log(`  Merged your edits into: ${file}`);
-              }
-              handled = true;
+              console.log(`  Merged your edits into: ${file}`);
             }
+            handled = true;
           }
         }
 
         if (!handled) {
           fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: true });
+          if (sameVersionRestore) console.log(`  Restored missing: ${file}`);
         }
         fileCount++;
       }
@@ -352,6 +447,17 @@ export async function runUpdate(
     if (!options.prune) {
       console.log("  Run `spell update --prune` to remove the ones that are safe to delete.");
     }
+  }
+
+  // ARC-045 / CS-03: one summary for every customized client shim, in both
+  // dry-run and real runs, with the remedy spelled out once.
+  if (customizedShims.length > 0) {
+    const verb = options.dryRun ? "[dry-run] Would keep" : "Kept";
+    console.log(
+      `\n! ${verb} ${customizedShims.length} customized client file(s) untouched (ARC-045): an edited Copilot prompt, Claude command or Codex skill is never merged into the new generated shim, because a shim carries no prose of its own to merge into.\n` +
+        customizedShims.map((f) => `    ${f}`).join("\n") +
+        `\n  Each keeps working in its client as-is. To converge: move your edits into the canonical spell (.arcane/spells/<id>.md — later updates merge edits there), delete the customized file, and run \`spell update\` again; it restores the generated shim at the current version.`,
+    );
   }
 
   if (options.dryRun) {

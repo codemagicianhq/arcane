@@ -237,6 +237,9 @@ describe("spell update — handler", () => {
         },
       ],
     });
+    // The tracked file is present: genuinely up to date. (A missing tracked
+    // file at the same version is the restore case, tested further down.)
+    await seedComponentFile(tmpDir, ".arcane/governance/testing-standards.md");
 
     const consoleSpy = vi.spyOn(console, "log");
     await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
@@ -511,6 +514,214 @@ describe("spell update — handler", () => {
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining("unresolved merge conflicts"),
     );
+  });
+
+  it("keeps an operator edit through TWO consecutive updates -- the recorded hash is the vendor content's, not the merged file's (ARC-038 gap found by CS-03)", async () => {
+    // Observed live 2026-09-09 (features/codex-support/architecture.md,
+    // variant D): after a successful merge the merged file's own hash was
+    // recorded as "what Arcane last wrote", so the NEXT update read the
+    // file as untouched and overwrote it. Edits survived exactly one update.
+    const v1 = ["line one", "line two", "line three"].join("\n");
+    const v1AssetsDir = await isolatedAssetsDir(v1);
+    await writeManifest(tmpDir, {
+      components: [
+        {
+          name: "testing-standards",
+          files: [managedFile],
+          installedVersion: OLD_VERSION,
+          fileHashes: { [managedFile]: await hashFile(join(v1AssetsDir, managedFile)) },
+        },
+      ],
+    });
+    await seedComponentFile(
+      tmpDir,
+      managedFile,
+      ["OPERATOR EDITED THIS FIRST LINE", "line two", "line three"].join("\n"),
+    );
+
+    // Update 1: the vendor changes the last line; base is v1.
+    fetchPublishedFileMock.mockResolvedValue(v1);
+    const v2 = ["line one", "line two", "VENDOR V2 LAST LINE"].join("\n");
+    const v2AssetsDir = await isolatedAssetsDir(v2);
+    await runUpdate({}, tmpDir, v2AssetsDir, "0.2.0");
+
+    const afterFirst = await readManifestFile(tmpDir);
+    const recorded = afterFirst.components.find((c) => c.name === "testing-standards")!.fileHashes!;
+    expect(recorded[managedFile]).toBe(await hashFile(join(v2AssetsDir, managedFile)));
+    expect(recorded[managedFile]).not.toBe(await hashFile(join(tmpDir, managedFile)));
+
+    // Update 2: the vendor changes the last line again; base is now v2.
+    fetchPublishedFileMock.mockResolvedValue(v2);
+    const v3AssetsDir = await isolatedAssetsDir(["line one", "line two", "VENDOR V3 LAST LINE"].join("\n"));
+    await runUpdate({}, tmpDir, v3AssetsDir, "0.3.0");
+
+    const merged = await fs.readFile(join(tmpDir, managedFile), "utf8");
+    expect(merged).toContain("OPERATOR EDITED THIS FIRST LINE");
+    expect(merged).toContain("VENDOR V3 LAST LINE");
+    expect(merged).not.toContain("<<<<<<<");
+  });
+
+  it("keeps the recorded hash when the merge base cannot be fetched, so the edit is recognized again next time", async () => {
+    const original = ["line one", "line two"].join("\n");
+    const originalAssetsDir = await isolatedAssetsDir(original);
+    const recordedHash = await hashFile(join(originalAssetsDir, managedFile));
+    await writeManifest(tmpDir, {
+      components: [
+        { name: "testing-standards", files: [managedFile], installedVersion: OLD_VERSION, fileHashes: { [managedFile]: recordedHash } },
+      ],
+    });
+    await seedComponentFile(tmpDir, managedFile, "OPERATOR VERSION\nline two");
+    // fetchPublishedFileMock defaults to undefined -- "could not fetch".
+
+    await runUpdate({}, tmpDir, await isolatedAssetsDir("vendor v2\nline two"), "0.2.0");
+
+    const manifest = await readManifestFile(tmpDir);
+    expect(manifest.components[0]!.fileHashes![managedFile]).toBe(recordedHash);
+    await expect(fs.readFile(join(tmpDir, managedFile), "utf8")).resolves.toBe("OPERATOR VERSION\nline two");
+  });
+
+  // ─── Canonical-source migration (ARC-045 / CS-03, PRD AC8) ─────────────────
+  // `spells-docs` is the smallest real spells-* component (one spell, four
+  // files: canonical + three shims), so it serves as the migration fixture
+  // without faking a registry component. The consumer starts as a pre-move
+  // install: full prompt body, old stub, old skill, no canonical file.
+
+  const migratedSpell = "spell-adopt-docs";
+  const canonicalFile = `.arcane/spells/${migratedSpell}.md`;
+  const promptShimFile = `.github/prompts/${migratedSpell}.prompt.md`;
+  const commandShimFile = `.claude/commands/${migratedSpell}.md`;
+  const skillShimFile = `.agents/skills/${migratedSpell}/SKILL.md`;
+  const NEW_PROMPT_SHIM = `---\nname: Spell — Adopt Docs\ndescription: d\n---\n\nThis prompt is the Arcane \`${migratedSpell}\` spell. Read \`${canonicalFile}\` and follow it as the complete workflow.\n`;
+  const NEW_COMMAND_STUB = `---\ndescription: d\n---\n\n@${canonicalFile}\n`;
+  const NEW_SKILL = `---\nname: ${migratedSpell}\ndescription: d\n---\n\nRead \`${canonicalFile}\` and follow it.\n`;
+  const NEW_CANONICAL = "---\nname: Spell — Adopt Docs\ndescription: d\n---\n\n## Step 1\n\nthe authored body, now canonical\n";
+
+  async function migrationAssetsDir(): Promise<string> {
+    const dir = await fs.mkdtemp(join(tmpdir(), "update-migration-assets-"));
+    isolatedAssetsDirs.push(dir);
+    for (const [rel, content] of [
+      [canonicalFile, NEW_CANONICAL],
+      [promptShimFile, NEW_PROMPT_SHIM],
+      [commandShimFile, NEW_COMMAND_STUB],
+      [skillShimFile, NEW_SKILL],
+    ] as const) {
+      await fs.mkdir(join(dir, rel, ".."), { recursive: true });
+      await fs.writeFile(join(dir, rel), content, "utf8");
+    }
+    return dir;
+  }
+
+  async function seedPreMoveConsumer(options: { editPrompt: boolean }) {
+    const oldPrompt = "---\nname: Spell — Adopt Docs\ndescription: d\n---\n\n## Step 1\n\nthe full authored body\n";
+    const oldCommand = `---\ndescription: d\n---\n\n@${promptShimFile}\n`;
+    const oldSkill = `---\nname: ${migratedSpell}\ndescription: d\n---\n\nRead \`${promptShimFile}\`.\n`;
+    await seedComponentFile(tmpDir, promptShimFile, oldPrompt);
+    await seedComponentFile(tmpDir, commandShimFile, oldCommand);
+    await seedComponentFile(tmpDir, skillShimFile, oldSkill);
+    const recorded = {
+      [promptShimFile]: await hashFile(join(tmpDir, promptShimFile)),
+      [commandShimFile]: await hashFile(join(tmpDir, commandShimFile)),
+      [skillShimFile]: await hashFile(join(tmpDir, skillShimFile)),
+    };
+    const editedPrompt = `${oldPrompt}\n<!-- operator customization: keep me -->\nOPERATOR-EDIT-MARKER\n`;
+    if (options.editPrompt) await fs.writeFile(join(tmpDir, promptShimFile), editedPrompt, "utf8");
+    await writeManifest(tmpDir, {
+      components: [
+        {
+          name: "spells-docs",
+          files: [promptShimFile, commandShimFile, skillShimFile],
+          installedVersion: OLD_VERSION,
+          fileHashes: recorded,
+        },
+      ],
+    });
+    return { recorded, editedPrompt, oldCommand };
+  }
+
+  it("AC8: keeps a hand-edited prompt byte-untouched, names it, replaces the untouched shims, and writes the canonical file", async () => {
+    const { recorded, editedPrompt } = await seedPreMoveConsumer({ editPrompt: true });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({}, tmpDir, await migrationAssetsDir(), PACKAGE_VERSION);
+
+    // The edited file: exactly as the operator left it. No merge was even attempted.
+    await expect(fs.readFile(join(tmpDir, promptShimFile), "utf8")).resolves.toBe(editedPrompt);
+    expect(fetchPublishedFileMock).not.toHaveBeenCalled();
+    // Named, with the remedy.
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(`Kept customized (not merged): ${promptShimFile}`));
+    const summary = consoleSpy.mock.calls.map((c) => String(c[0])).find((line) => line.includes("customized client file(s) untouched"));
+    expect(summary).toBeDefined();
+    expect(summary).toContain(promptShimFile);
+    expect(summary).toContain(".arcane/spells/<id>.md");
+    // Untouched shims are replaced; the canonical file appears.
+    await expect(fs.readFile(join(tmpDir, commandShimFile), "utf8")).resolves.toBe(NEW_COMMAND_STUB);
+    await expect(fs.readFile(join(tmpDir, skillShimFile), "utf8")).resolves.toBe(NEW_SKILL);
+    await expect(fs.readFile(join(tmpDir, canonicalFile), "utf8")).resolves.toBe(NEW_CANONICAL);
+    // Manifest: canonical tracked; the edited file's PRE-edit hash carried
+    // forward so the next update recognizes the customization again.
+    const manifest = await readManifestFile(tmpDir);
+    const component = manifest.components.find((c) => c.name === "spells-docs")!;
+    expect(component.files).toEqual(expect.arrayContaining([canonicalFile, promptShimFile, commandShimFile, skillShimFile]));
+    expect(component.fileHashes![promptShimFile]).toBe(recorded[promptShimFile]);
+    expect(component.fileHashes![commandShimFile]).toBe(await hashFile(join(tmpDir, commandShimFile)));
+    expect(component.fileHashes![canonicalFile]).toBe(await hashFile(join(tmpDir, canonicalFile)));
+  });
+
+  it("AC8: an untouched prompt is replaced by the shim with no customization notice", async () => {
+    await seedPreMoveConsumer({ editPrompt: false });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({}, tmpDir, await migrationAssetsDir(), PACKAGE_VERSION);
+
+    await expect(fs.readFile(join(tmpDir, promptShimFile), "utf8")).resolves.toBe(NEW_PROMPT_SHIM);
+    expect(consoleSpy.mock.calls.some((c) => String(c[0]).includes("customized"))).toBe(false);
+  });
+
+  it("AC8: dry-run reports the customized file it would keep and writes nothing", async () => {
+    const { editedPrompt, oldCommand } = await seedPreMoveConsumer({ editPrompt: true });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({ dryRun: true }, tmpDir, await migrationAssetsDir(), PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(`[dry-run] Would keep customized (not merged): ${promptShimFile}`));
+    expect(consoleSpy.mock.calls.some((c) => String(c[0]).includes("[dry-run] Would keep 1 customized client file(s)"))).toBe(true);
+    await expect(fs.readFile(join(tmpDir, promptShimFile), "utf8")).resolves.toBe(editedPrompt);
+    await expect(fs.readFile(join(tmpDir, commandShimFile), "utf8")).resolves.toBe(oldCommand);
+    await expect(fs.access(join(tmpDir, canonicalFile))).rejects.toThrow();
+    expect((await readManifestFile(tmpDir)).version).toBe(OLD_VERSION);
+  });
+
+  it("a same-version run restores a deleted tracked file (the customized-shim remedy path) and leaves everything else alone", async () => {
+    const file = ".arcane/governance/testing-standards.md";
+    await writeManifest(tmpDir, {
+      version: PACKAGE_VERSION,
+      components: [{ name: "testing-standards", files: [file], installedVersion: PACKAGE_VERSION }],
+    });
+    // Nothing on disk: the operator deleted it after porting their edits.
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).not.toHaveBeenCalledWith("Already up to date.");
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 tracked file is missing — restoring"));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(`Restored missing: ${file}`));
+    const restored = await fs.readFile(join(tmpDir, file), "utf8");
+    expect(restored).toBe(await fs.readFile(join(ASSETS_DIR, file), "utf8"));
+    const manifest = await readManifestFile(tmpDir);
+    expect(manifest.components[0]!.fileHashes![file]).toBe(await hashFile(join(tmpDir, file)));
+  });
+
+  it("a same-version run does not treat a missing initOnly file as something to restore (EF-17)", async () => {
+    await writeManifest(tmpDir, {
+      version: PACKAGE_VERSION,
+      components: [{ name: "docs-baseline", files: [".gitattributes", ".gitignore"], installedVersion: PACKAGE_VERSION }],
+    });
+    const consoleSpy = vi.spyOn(console, "log");
+
+    await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(consoleSpy).toHaveBeenCalledWith("Already up to date.");
+    await expect(fs.access(join(tmpDir, ".gitattributes"))).rejects.toThrow();
   });
 
   it("backfills a missing continuity file during update", async () => {
@@ -882,6 +1093,10 @@ describe.skipIf(!BIN)("spell update — built CLI integration", () => {
         ],
       }),
     );
+    // Present on disk: genuinely up to date. A missing tracked file at the
+    // same version is restored instead (CS-03) -- covered by the handler tests.
+    await fs.mkdir(join(tmpDir, ".arcane", "governance"), { recursive: true });
+    await fs.writeFile(join(tmpDir, ".arcane", "governance", "testing-standards.md"), "installed\n");
     commitBaseline(tmpDir);
 
     const result = spawnSync("node", [BIN!, "update"], {
