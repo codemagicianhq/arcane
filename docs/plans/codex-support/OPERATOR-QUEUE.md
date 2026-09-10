@@ -77,7 +77,13 @@ entry to *this* queue once it runs.
   The PR is left open for the operator's merge — that merge is the act this item's `[x]` records. Mark
   it done with the merge commit once `publish.yml` has **succeeded**, not merely once the PR is merged
   (the 0.34.3 lesson recorded in `CHANGELOG.md`: a merged bump is not a published one).
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-09 — **1.0.0**, merged by the operator
+  ([PR #232](https://github.com/codemagicianhq/arcane/pull/232), rebase, merge commit `a68c974`,
+  confirmed via `gh pr view 232`); `release-drift.yml` cut `v1.0.0` (release published
+  2026-09-10T06:05Z) and [`publish.yml` succeeded](https://github.com/codemagicianhq/arcane/actions/runs/34443698300)
+  — `npm view arcane-cli version` returns `1.0.0` (published 2026-09-10T06:06Z), and the tarball lists
+  `dist/assets/.arcane/spells/`. Recorded by the executing session after the operator's act, as Q-001
+  and Q-002 were.
 
 <!-- The loop appends Q-004+ below this line. -->
 

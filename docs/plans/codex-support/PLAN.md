@@ -235,7 +235,7 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   CHANGELOG catch-up precondition and Q-003's version-number confirmation (recorded: 1.0.0).
   **Report:** The architectural decision behind bringing every AI client to parity and fixing
   duplicate spells across projects is written down and accepted. · category: decision
-- [ ] **CS-03 — Canonical move: `.arcane/spells/` + all clients as shims.** Route: `chain`. Size: L
+- [x] **CS-03 — Canonical move: `.arcane/spells/` + all clients as shims.** Route: `chain`. Size: L
   (~10-12 stories; shipped as 10). Bump: **major — `1.0.0`**, operator-confirmed at
   `OPERATOR-QUEUE.md` Q-003. Dependencies: CS-02 (ARC-045 Accepted 2026-09-09). Risk: High — the one
   breaking change in this program. Precondition met: the CHANGELOG catch-up landed as
@@ -247,14 +247,17 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   recorded hashes; the same fixture exposed an ARC-038 defect (an edit survived exactly one update,
   because the merged file's hash was recorded), fixed in this epic. Design and evidence:
   `features/codex-support/architecture.md`. **Shipped in
-  [PR #232](https://github.com/codemagicianhq/arcane/pull/232) — open,
-  CI green, awaiting the operator's merge (never self-merged, per Authority & Delegation):** canonical
-  move (41 files, history preserved) + `renderCopilotPromptShim` / retargeted Claude and Codex
-  renderers + `runShimParity` + registry four-per-spell + every gate retargeted + 28 test files
-  repointed; `spell update` keeps customized shims, restores missing tracked files at the same version,
-  and records the vendor hash after a merge; governance/README/CHANGELOG `1.0.0`; EV-01 re-confirmed
-  for Claude Code and Codex, Copilot recorded as an operator check
-  (`docs/research/skill-discovery-smoke-tests.md`). Tick this box when the operator has merged.
+  [PR #232](https://github.com/codemagicianhq/arcane/pull/232) — merged by the operator 2026-09-09
+  (rebase, `a68c974`; never self-merged, per Authority & Delegation); `release-drift.yml` cut
+  `v1.0.0` and [`publish.yml` succeeded](https://github.com/codemagicianhq/arcane/actions/runs/34443698300),
+  `npm view arcane-cli version` → `1.0.0` (published 2026-09-10T06:06Z, tarball verified to carry
+  `dist/assets/.arcane/spells/`):** canonical move (41 files, history preserved) +
+  `renderCopilotPromptShim` / retargeted Claude and Codex renderers + `runShimParity` + registry
+  four-per-spell + every gate retargeted + 28 test files repointed; `spell update` keeps customized
+  shims, restores missing tracked files at the same version, and records the vendor hash after a
+  merge; governance/README/CHANGELOG `1.0.0`; independent review 0 HIGH / 3 MEDIUM / 6 LOW, all
+  addressed before merge; EV-01 re-confirmed for Claude Code and Codex, Copilot recorded as an
+  operator check (`OPERATOR-QUEUE.md` Q-004; `docs/research/skill-discovery-smoke-tests.md`).
   **Report:** Every spell now has exactly one home, and Copilot, Claude Code and Codex all read from
   it through tiny generated pointers — spells can no longer drift between clients, and updating never
   silently overwrites a spell you customized. · category: feature
