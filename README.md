@@ -220,6 +220,19 @@ spell init --profile full
 spell add agent-policies   # or install any component à la carte
 ```
 
+### Once per machine
+
+Working across many Arcane repositories at once? Install the spells a single time at the **user tier**, instead of (or as well as) per repository:
+
+```bash
+spell init --user       # ~/.arcane/spells/<id>.md, plus one Codex/Copilot skill and one Claude Code command per spell in your home directory
+spell status --user     # what the tier holds, and whether any client file is missing or customized
+spell update --user     # after upgrading the CLI
+spell uninstall --user  # removes only what it wrote; an edited client file is kept and named
+```
+
+Codex, VS Code Copilot and Claude Code each discover the user tier from their own home-directory locations (`~/.agents/skills` and `~/.claude/commands`), so no VS Code setting is needed. Claude Code runs a personal command over a project command of the same name, so in a repository that still carries its own spells `/spell-*` runs the user tier's copy. Governance stays per repository — only spell delivery moves up a level.
+
 ---
 
 ## Philosophy

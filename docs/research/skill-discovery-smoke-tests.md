@@ -1,10 +1,10 @@
 ---
 title: Skill Discovery Smoke Tests — Codex, Claude Code, and the Read-and-Follow Shim Mechanism
 audience: both
-last_updated: 2026-09-09
+last_updated: 2026-09-10
 status: active
-tags: [research, distribution, codex, claude-code, skills, smoke-test, codex-support]
-sources: [a live empirical test performed 2026-09-09 against installed codex-cli 0.153.4, this session's own Claude Code available-skills listing (system reminder, 2026-09-09), IDEAS.md I13, docs/research/delivery-channels-smoke-tests.md, a second live codex exec run 2026-09-09 against a consumer installed from the 1.0.0 build (CS-03), the same session's Skill invocation of spell-status through the regenerated .claude/commands stub, VS Code's prompt-files documentation fetched 2026-09-09]
+tags: [research, distribution, codex, claude-code, skills, smoke-test, codex-support, user-tier]
+sources: [a live empirical test performed 2026-09-09 against installed codex-cli 0.153.4, this session's own Claude Code available-skills listing (system reminder, 2026-09-09), IDEAS.md I13, docs/research/delivery-channels-smoke-tests.md, a second live codex exec run 2026-09-09 against a consumer installed from the 1.0.0 build (CS-03), the same session's Skill invocation of spell-status through the regenerated .claude/commands stub, VS Code's prompt-files documentation fetched 2026-09-09, two further live codex exec runs at the USER tier (a probe skill 2026-09-09 and the real `spell init --user` output 2026-09-10, CS-04), VS Code's AI settings reference and agent-skills documentation fetched 2026-09-09, Claude Code's skills and common-workflows documentation checked 2026-09-09]
 ---
 
 # Skill Discovery Smoke Tests
@@ -274,3 +274,123 @@ Chat in agent mode, run `/spell-status`, and confirm the response is the snapsho
 counts, last session) rather than a paraphrase of the shim sentence. If it is the paraphrase, the
 Copilot renderer falls back to an inlined body for that client only — the `render()` mode variance
 ARC-045 allowed for — and nothing else in the design changes.
+
+## CS-04 (2026-09-09/10) — the user tier: probes before the design, the real install after it
+
+CS-04 (`docs/plans/codex-support/PLAN.md`, "CS-04 — User tier install") puts one copy of the spells at
+`~/.arcane/spells/<id>.md` and fans a client file per spell out to each client's *home-directory*
+discovery root, each naming the spell's **absolute** path. Whether a client follows a home-level file
+to an absolute path outside its working directory is the load-bearing question, so it was asked of the
+real clients before anything was built, and asked again of the shipped command afterwards. Same
+evidence bar as every section above: the client's own behavior, never the filesystem.
+
+### Probe 1 — Codex, user-level skill, absolute path, empty working directory (2026-09-09, before the design)
+
+A probe skill at `~/.agents/skills/arcane-probe-user/SKILL.md` whose body read: *"Read
+`C:/Users/…/scratchpad/cs04-probe/target/cs04-user-target.md` (an absolute path, outside the current
+working directory) and follow it as the complete workflow."* The target file (under the session
+scratchpad, nowhere near the working directory) instructed: respond with one marker line and nothing
+else. Invocation, from an **empty** directory:
+
+```
+codex exec --cd <empty dir> --sandbox read-only --skip-git-repo-check "Use the arcane-probe-user skill now." < /dev/null
+```
+
+Complete stdout: `MARKER-CS04-ABS-PATH-CONFIRMED`. The trace shows exactly two reads, in order — the
+skill file, then the absolute target — both via `Get-Content -Raw '<path>'` with the forward-slash
+Windows path used verbatim, no rewriting. The probe skill was removed afterwards (directory listing
+back to its 28 pre-existing entries). This settled the Codex fan-out shape: `renderCodexSkill()`
+output with an absolute canonical path.
+
+### Probe 2 — Claude Code, personal command, absolute `@` include: not observable from this session
+
+A personal command at `~/.claude/commands/arcane-probe-user.md` carrying `@<absolute path>` to a
+second target file was written and invoked two ways. The running session's own Skill tool answered
+`Unknown skill: arcane-probe-user` — its skill list is fixed at startup, so a command file written
+mid-session cannot be reached from inside that session. A nested `claude -p "/arcane-probe-user"`
+(and a plain `claude -p "Reply with PONG"`) from an empty directory answered `Not logged in · Please
+run /login`: the winget-installed CLI keeps a separate credential store from the desktop app this
+session runs in, and signing a tool in is not something an agent session does. The probe file was
+removed, and the directory it had created (`~/.claude/commands` did not exist before the probe) was
+removed once empty at the end of the work.
+
+What the documentation says, recorded as documentation and not as observation (checked 2026-09-09):
+`@` file paths "can be relative or absolute"; `~/.claude/commands/<command-name>.md` files are
+"available across all your projects on that machine"; and when a personal and a project command
+share a name, "personal takes precedence over project". The design does not lean on the include
+alone: the user-level Claude stub carries the read-and-follow sentence *and* the `@` include, exactly
+as the repo-tier stub does, so an include that failed to inline would degrade to the file-read path
+Codex was proven to take. The live check is the operator's (Q-005, below).
+
+### What VS Code's documentation said (fetched 2026-09-09) — and what it changed
+
+- The AI settings reference marks `chat.promptFilesLocations`, `chat.agentFilesLocations`,
+  `chat.agentSkillsLocations` and `chat.instructionsFilesLocations` **deprecated** — each entry reads
+  "This setting and the Local agent will be removed in a future release" — and points prompt-file users
+  at a migration to agent skills.
+- The agent-skills page lists the discovery locations: `.github/skills`, `.claude/skills`,
+  `.agents/skills` in a workspace and `~/.copilot/skills`, `~/.claude/skills`, `~/.agents/skills` for
+  the user; `chat.useAgentSkills` defaults to `true`; "Type / in the chat input field to see a list of
+  available skills".
+
+Consequences, recorded as premise corrections in `features/codex-support/architecture.md` (CS-04,
+finding 2): the settings snippet the plan intended to print would recommend a setting the vendor has
+announced it will remove, for a location Copilot already covers without any setting — so the user tier
+prints a note saying no setting is needed, and never touches `settings.json`; and because Copilot also
+scans `~/.claude/skills`, the Claude Code file went to `~/.claude/commands/<id>.md` rather than
+`~/.claude/skills/<id>/SKILL.md`, so Copilot does not list every spell twice.
+
+### EV-01 — the shipped command, in the real home directory (2026-09-10)
+
+Built CLI (`node dist/index.js`, the CS-04 tree before its version bump), operator's actual home,
+baseline recorded first: `~/.agents/skills` held 28 third-party entries, no `~/.arcane`.
+
+`spell init --user` printed the tier summary (`✨ 41 Spells → C:\Users\…\.arcane/spells/ · 🔗 82
+client files → ~/.agents/skills (Codex, Copilot), ~/.claude/commands (Claude Code)`), then `Wrote 82
+client file(s): 41 Codex/Copilot skills, 41 Claude Code commands.`, the Clients note (no VS Code
+setting needed; Claude Code precedence) and two next steps. On disk: 41 store spells, 41 skills, 41
+commands. `~/.agents/skills/spell-status/SKILL.md`:
+
+> This skill is the Arcane `spell-status` spell. Read `C:/Users/payini/.arcane/spells/spell-status.md` and follow it as the complete workflow.
+
+Then, from the same **empty** directory as Probe 1 — no repository, no repo-tier files anywhere near
+it:
+
+```
+codex exec --cd <empty dir> --sandbox read-only --skip-git-repo-check \
+  "Use the spell-status skill, but do NOT run its workflow. Instead reply with exactly three lines:
+   (1) the exact path the skill told you to read, (2) that file's first line beginning with '## '
+   verbatim, (3) the literal text CS04-EV01-DONE." < /dev/null
+```
+
+Complete stdout:
+
+```
+C:/Users/payini/.arcane/spells/spell-status.md
+## Executive Summary
+CS04-EV01-DONE
+```
+
+`## Executive Summary` exists only in the canonical file; the trace shows the two reads
+(`~/.agents/skills/spell-status/SKILL.md`, then `~/.arcane/spells/spell-status.md`, both
+`Get-Content -Raw`). `spell status --user` then reported the nine `spells-*` components, `Scope: user —
+C:\Users\…\.arcane`, `Client files: 82 (41 Codex/Copilot skills, 41 Claude Code commands)`; `spell
+doctor` (run in this repository) showed `✓ [pass] User tier (ARC-045)`. `spell uninstall --user --yes`
+printed `Removed 82 client file(s) no longer needed.` and `Uninstalled the user tier — 41 spells and
+82 client files removed.`; afterwards `~/.agents/skills` was back to its 28 entries with no `spell-*`,
+and `~/.arcane` was gone (nothing else lived in it). The tier was uninstalled on purpose: installing it
+for keeps changes which copy of every `/spell-*` Claude Code runs in every repository on the machine
+(personal over project), and that is the operator's call — Q-005 asks for it.
+
+### Q-005 — what the operator should check (a few minutes, once)
+
+1. `spell init --user` (any `1.1.0`+ CLI), then in **Claude Code**, from a directory that is *not* an
+   Arcane repository, run `/spell-status`: the snapshot line (branch/none, counts) rather than a
+   paraphrase of the stub means the absolute `@` include (or the read-and-follow sentence) resolved.
+2. In **VS Code Copilot Chat**, open a folder that is *not* an Arcane repository, type `/` and confirm
+   `spell-status` is listed; run it. (Inside an Arcane repository that still carries its own shims,
+   seeing the entry twice — the repo prompt and the user skill — is expected until CS-05's repo
+   opt-out.)
+3. If either client paraphrases instead of running the spell, the remedy is the same `render()` mode
+   variance ARC-045 allowed for — an inlined-body renderer for that client's user-level file — a small
+   follow-up, not a redesign. Record the result on the queue entry either way.
