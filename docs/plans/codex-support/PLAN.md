@@ -273,9 +273,11 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   `DECISIONS.md`). Naming Test call (ARC-045 open question 1): `--user` on the four verbs, not a
   `spell user` noun. Design and evidence: `features/codex-support/architecture.md` ("CS-04"). **Shipped
   in [PR #234](https://github.com/codemagicianhq/arcane/pull/234), self-merged under the standing
-  delegation (rebase; no operator action needed for this epic) — the `1.1.0` bump rides in it, and the
-  merge and publish evidence is recorded at session close:** `spell init|update|status|uninstall
-  --user`; the `~/.arcane` store (canonical spells only, through a scope-aware view of the registry —
+  delegation 2026-09-10 (rebase, `dac7a8f`; no operator action needed for this epic);
+  `release-drift.yml` cut `v1.1.0` (published 2026-09-10T15:46Z) and
+  [`publish.yml` succeeded](https://github.com/codemagicianhq/arcane/actions/runs/34497846257) —
+  `npm view arcane-cli version` → `1.1.0` (15:47Z), tarball unpacked and checked (`dist/index.js` carries
+  the user tier, `init --help` lists `--user`):** `spell init|update|status|uninstall --user`; the `~/.arcane` store (canonical spells only, through a scope-aware view of the registry —
   copier, hash record, same-version restore and the ARC-038 merge reused unchanged); the fan-out to
   `~/.agents/skills` (Codex + Copilot) and `~/.claude/commands` (Claude Code) with absolute paths,
   recorded in the manifest's `fanout` map and reconciled under the hash rule (edited → kept and named;

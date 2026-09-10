@@ -122,8 +122,10 @@ entry to *this* queue once it runs.
   CLI is not logged in), and Copilot Chat cannot be driven from an agent session at all — these two are
   the clients only you can observe (EV-01). Both are documented to work, and the Claude stub carries the
   read-and-follow sentence as well as the include.
-- **Preconditions:** [PR #234](https://github.com/codemagicianhq/arcane/pull/234) merged and `1.1.0`
-  on npm (`npm view arcane-cli version`); `npm install -g arcane-cli@latest`.
+- **Preconditions (met 2026-09-10):** [PR #234](https://github.com/codemagicianhq/arcane/pull/234)
+  merged (`dac7a8f`) and `1.1.0` on npm since 2026-09-10T15:47Z (`npm view arcane-cli version`);
+  `npm install -g arcane-cli@latest`. Nothing is installed at the user tier on this machine right now —
+  the executing session uninstalled its own live check so that the precedence change is your call.
 - **Exact commands:** `spell init --user` → Claude Code: `/spell-status` outside any repository →
   Copilot Chat: the `/` picker outside any repository → `spell status --user`. Inside a repository that
   still carries its own spells, Claude Code runs the *user tier's* copy (its documented "personal over
