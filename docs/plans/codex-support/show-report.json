@@ -154,9 +154,9 @@
     }
   ],
   "corrections": {
-    "checked": 12,
-    "corrected": 9,
-    "unverifiable": 0,
+    "checked": 26,
+    "corrected": 17,
+    "unverifiable": 1,
     "scopeNote": "Codex Support corrections logged in docs/verification-ledger.md",
     "highlights": [
       {
@@ -189,7 +189,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 31,
+      "commits": 33,
       "source": "commit-trailer"
     }
   ],
