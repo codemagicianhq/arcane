@@ -6,8 +6,8 @@ description: Use PROACTIVELY to detect contradictions and stale statements acros
 
 Invoke the Arcane `spell-check-drift` spell workflow.
 
-See the full prompt at `.github/prompts/spell-check-drift.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-check-drift.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-check-drift.prompt.md
+@.arcane/spells/spell-check-drift.md

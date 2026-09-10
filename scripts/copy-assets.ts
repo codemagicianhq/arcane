@@ -196,6 +196,15 @@ async function main() {
   // all (package-derived names included) — scanned only where they ship.
   const orgTokenRules = createOrgTokenRules(resolveOrgTokens(packageIdentity));
   const portabilityFindings = [
+    // The canonical spell sources (ARC-045 / CS-03) carry every spell's
+    // authored prose; the Copilot prompt shims below are still scanned
+    // because they ship too, even though their only prose is generated.
+    ...(await scanDirectoryByExtension(
+      join(SRC_ASSETS, ".arcane/spells"),
+      ".md",
+      ".arcane/spells",
+      orgTokenRules,
+    )),
     ...(await scanPromptDirectory(join(SRC_ASSETS, ".github/prompts"), orgTokenRules)),
     ...(await scanDirectoryByExtension(
       join(SRC_ASSETS, ".github/instructions"),

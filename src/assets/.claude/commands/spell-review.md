@@ -6,8 +6,8 @@ description: Use PROACTIVELY before merging any nontrivial change, even if the u
 
 Invoke the Arcane `spell-review` spell workflow.
 
-See the full prompt at `.github/prompts/spell-review.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-review.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-review.prompt.md
+@.arcane/spells/spell-review.md

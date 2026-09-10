@@ -6,8 +6,8 @@ description: Use PROACTIVELY whenever opening a pull request for the current bra
 
 Invoke the Arcane `spell-create-pull-request` spell workflow.
 
-See the full prompt at `.github/prompts/spell-create-pull-request.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-create-pull-request.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-create-pull-request.prompt.md
+@.arcane/spells/spell-create-pull-request.md

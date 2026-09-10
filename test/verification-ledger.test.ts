@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getComponent } from "../src/modules/registry.js";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 const COMMANDS = join(process.cwd(), "src", "assets", ".claude", "commands");
 const ROOT_DIR = process.cwd();
 
@@ -13,13 +13,13 @@ let closeSession: string;
 
 beforeAll(async () => {
   [spell, commandStub, closeSession] = await Promise.all([
-    readFile(join(PROMPTS, "spell-verification-ledger.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-verification-ledger.md"), "utf8"),
     readFile(join(COMMANDS, "spell-verification-ledger.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-close-session.md"), "utf8"),
   ]);
 });
 
-describe("spell-verification-ledger.prompt.md (I7/BC-27c)", () => {
+describe("spell-verification-ledger.md (I7/BC-27c)", () => {
   it("is explicitly separate from spell-close-session, run on demand", () => {
     expect(spell).toContain("Separate from spell-close-session; run on demand, not every session.");
   });
@@ -47,11 +47,11 @@ describe("spell-verification-ledger.prompt.md (I7/BC-27c)", () => {
 
 describe("spell-verification-ledger.md: thin Claude Code shim (I7/BC-27c)", () => {
   it("includes the prompt file rather than duplicating its content", () => {
-    expect(commandStub).toContain("@.github/prompts/spell-verification-ledger.prompt.md");
+    expect(commandStub).toContain("@.arcane/spells/spell-verification-ledger.md");
   });
 });
 
-describe("spell-close-session.prompt.md: tie-in to the new spell (I7/BC-27c)", () => {
+describe("spell-close-session.md: tie-in to the new spell (I7/BC-27c)", () => {
   it("suggests spell-verification-ledger as a separate step, not folded into close-session itself", () => {
     expect(closeSession).toContain("suggest `spell-verification-ledger` separately");
     expect(closeSession).toContain("it is not part of this close-session flow itself");
@@ -72,8 +72,8 @@ describe("docs/verification-ledger.md (I7/BC-27c)", () => {
 describe("registry wiring (I7/BC-27c)", () => {
   it("joins spell-verification-ledger to spells-capture, alongside spell-document", () => {
     const component = getComponent("spells-capture");
-    expect(component.files).toContain(".github/prompts/spell-document.prompt.md");
-    expect(component.files).toContain(".github/prompts/spell-verification-ledger.prompt.md");
+    expect(component.files).toContain(".arcane/spells/spell-document.md");
+    expect(component.files).toContain(".arcane/spells/spell-verification-ledger.md");
     expect(component.files).toContain(".claude/commands/spell-verification-ledger.md");
   });
 });

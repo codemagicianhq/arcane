@@ -3,17 +3,22 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+    CANONICAL_SPELLS_DIR,
+    canonicalSpellPath,
     deriveStubTitle,
     expandFragment,
+    extractFrontmatterBlock,
     InvalidSkillNameError,
+    isClientShimPath,
     MalformedFragmentMarkersError,
     MissingFrontmatterError,
     parsePromptFrontmatter,
     referencesFragment,
     renderClaudeCommandStub,
     renderCodexSkill,
+    renderCopilotPromptShim,
 } from "../src/modules/spell-compiler.js";
-import { runFragmentParity, runSkillParity, runStubParity } from "../scripts/self-host-parity.js";
+import { runFragmentParity, runShimParity, SHIM_TARGETS } from "../scripts/self-host-parity.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const ASSETS_DIR = join(process.cwd(), "src", "assets");
@@ -31,9 +36,7 @@ async function mkTempDir(prefix: string): Promise<string> {
     return dir;
 }
 
-describe("parsePromptFrontmatter", () => {
-    it("parses name, description, and claude_description", () => {
-        const content = `---
+const EXAMPLE_CANONICAL = `---
 name: Spell — Example
 description: Plain description
 claude_description: Use PROACTIVELY for examples.
@@ -41,8 +44,13 @@ argument-hint: something
 agent: agent
 ---
 
+# Example
+
 body`;
-        const fm = parsePromptFrontmatter(content);
+
+describe("parsePromptFrontmatter", () => {
+    it("parses name, description, and claude_description", () => {
+        const fm = parsePromptFrontmatter(EXAMPLE_CANONICAL);
         expect(fm).toEqual({
             name: "Spell — Example",
             description: "Plain description",
@@ -86,6 +94,55 @@ body`;
     });
 });
 
+describe("the path contract (ARC-045 / CS-03)", () => {
+    it("canonicalSpellPath places a spell under .arcane/spells/<id>.md", () => {
+        expect(CANONICAL_SPELLS_DIR).toBe(".arcane/spells");
+        expect(canonicalSpellPath("spell-plan")).toBe(".arcane/spells/spell-plan.md");
+    });
+
+    it("isClientShimPath recognizes exactly the three generated shim shapes", () => {
+        expect(isClientShimPath(".github/prompts/spell-plan.prompt.md")).toBe(true);
+        expect(isClientShimPath(".claude/commands/spell-plan.md")).toBe(true);
+        expect(isClientShimPath(".agents/skills/spell-plan/SKILL.md")).toBe(true);
+        // Either slash style, with or without a leading ./ -- registry paths
+        // and manifest paths both reach it.
+        expect(isClientShimPath(".github\\prompts\\spell-plan.prompt.md")).toBe(true);
+        expect(isClientShimPath("./.claude/commands/spell-a1-b2.md")).toBe(true);
+    });
+
+    it("isClientShimPath is false for the canonical source and every near miss", () => {
+        expect(isClientShimPath(".arcane/spells/spell-plan.md")).toBe(false);
+        expect(isClientShimPath(".arcane/governance/git-conventions.md")).toBe(false);
+        expect(isClientShimPath(".github/prompts/README.prompt.md")).toBe(false);
+        expect(isClientShimPath(".github/prompts/spell-plan.md")).toBe(false);
+        expect(isClientShimPath(".claude/commands/spell-Plan.md")).toBe(false);
+        expect(isClientShimPath(".agents/skills/spell-plan/README.md")).toBe(false);
+        expect(isClientShimPath(".github/instructions/agent-output.instructions.md")).toBe(false);
+    });
+});
+
+describe("extractFrontmatterBlock", () => {
+    it("returns the block verbatim, closing fence and newline included", () => {
+        expect(extractFrontmatterBlock(EXAMPLE_CANONICAL)).toBe(`---
+name: Spell — Example
+description: Plain description
+claude_description: Use PROACTIVELY for examples.
+argument-hint: something
+agent: agent
+---
+`);
+    });
+
+    it("normalizes CRLF to LF and supplies a trailing newline when the fence ends the file", () => {
+        const crlf = "---\r\nname: Spell — X\r\ndescription: d\r\n---";
+        expect(extractFrontmatterBlock(crlf)).toBe("---\nname: Spell — X\ndescription: d\n---\n");
+    });
+
+    it("throws MissingFrontmatterError when there is no block", () => {
+        expect(() => extractFrontmatterBlock("no block here")).toThrow(MissingFrontmatterError);
+    });
+});
+
 describe("deriveStubTitle", () => {
     it("strips the 'Spell — ' prefix", () => {
         expect(deriveStubTitle("Spell — Commit Work")).toBe("Commit Work");
@@ -96,8 +153,42 @@ describe("deriveStubTitle", () => {
     });
 });
 
+describe("renderCopilotPromptShim", () => {
+    it("copies the canonical frontmatter verbatim and adds the link-plus-instruction body", () => {
+        expect(renderCopilotPromptShim("spell-example", EXAMPLE_CANONICAL)).toBe(`---
+name: Spell — Example
+description: Plain description
+claude_description: Use PROACTIVELY for examples.
+argument-hint: something
+agent: agent
+---
+
+This prompt is the Arcane \`spell-example\` spell. Read [\`.arcane/spells/spell-example.md\`](../../.arcane/spells/spell-example.md) and follow it as the complete workflow.
+`);
+    });
+
+    it("carries none of the canonical body -- a shim has no authored prose (ARC-045 decision 2)", () => {
+        const rendered = renderCopilotPromptShim("spell-example", EXAMPLE_CANONICAL);
+        expect(rendered).not.toContain("# Example");
+        expect(rendered).not.toContain("\nbody");
+    });
+
+    it("renders LF output from a CRLF canonical file", () => {
+        const crlf = EXAMPLE_CANONICAL.replace(/\n/g, "\r\n");
+        expect(renderCopilotPromptShim("spell-example", crlf)).toBe(
+            renderCopilotPromptShim("spell-example", EXAMPLE_CANONICAL),
+        );
+    });
+
+    it("refuses a canonical file the frontmatter parser rejects, so a bad source cannot ship as a shim", () => {
+        expect(() => renderCopilotPromptShim("spell-example", "---\ndescription: d\n---\n\nbody")).toThrow(
+            MissingFrontmatterError,
+        );
+    });
+});
+
 describe("renderClaudeCommandStub", () => {
-    it("renders the exact thin-shim template, preferring claudeDescription", () => {
+    it("renders the exact thin-shim template over the canonical path, preferring claudeDescription", () => {
         const rendered = renderClaudeCommandStub("spell-example", {
             name: "Spell — Example",
             description: "Plain description",
@@ -111,12 +202,21 @@ description: Use PROACTIVELY for examples.
 
 Invoke the Arcane \`spell-example\` spell workflow.
 
-See the full prompt at \`.github/prompts/spell-example.prompt.md\` for the complete workflow definition.
+See the full prompt at \`.arcane/spells/spell-example.md\` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-example.prompt.md
+@.arcane/spells/spell-example.md
 `);
+    });
+
+    it("never references the pre-CS-03 Copilot location", () => {
+        const rendered = renderClaudeCommandStub("spell-example", {
+            name: "Spell — Example",
+            description: "Plain description",
+        });
+        expect(rendered).not.toContain(".github/prompts");
+        expect(rendered).not.toContain(".prompt.md");
     });
 
     it("falls back to description when claudeDescription is absent", () => {
@@ -129,7 +229,7 @@ See the full prompt at \`.github/prompts/spell-example.prompt.md\` for the compl
 });
 
 describe("renderCodexSkill", () => {
-    it("renders the exact SKILL.md template, preferring claudeDescription", () => {
+    it("renders the exact SKILL.md template over the canonical path, preferring claudeDescription", () => {
         const rendered = renderCodexSkill(
             "spell-example",
             {
@@ -137,14 +237,14 @@ describe("renderCodexSkill", () => {
                 description: "Plain description",
                 claudeDescription: "Use PROACTIVELY for examples.",
             },
-            ".github/prompts/spell-example.prompt.md",
+            canonicalSpellPath("spell-example"),
         );
         expect(rendered).toBe(`---
 name: spell-example
 description: Use PROACTIVELY for examples.
 ---
 
-This skill is the Arcane \`spell-example\` spell. Read \`.github/prompts/spell-example.prompt.md\` and follow it as the complete workflow.
+This skill is the Arcane \`spell-example\` spell. Read \`.arcane/spells/spell-example.md\` and follow it as the complete workflow.
 `);
     });
 
@@ -152,7 +252,7 @@ This skill is the Arcane \`spell-example\` spell. Read \`.github/prompts/spell-e
         const rendered = renderCodexSkill(
             "spell-example",
             { name: "Spell — Example", description: "Plain description" },
-            ".github/prompts/spell-example.prompt.md",
+            canonicalSpellPath("spell-example"),
         );
         expect(rendered).toContain("description: Plain description\n");
     });
@@ -162,7 +262,7 @@ This skill is the Arcane \`spell-example\` spell. Read \`.github/prompts/spell-e
             renderCodexSkill(
                 "Spell_Example",
                 { name: "n", description: "d" },
-                ".github/prompts/spell-example.prompt.md",
+                canonicalSpellPath("Spell_Example"),
             ),
         ).toThrow(InvalidSkillNameError);
     });
@@ -172,7 +272,7 @@ This skill is the Arcane \`spell-example\` spell. Read \`.github/prompts/spell-e
             renderCodexSkill(
                 "spell-a1-b2",
                 { name: "n", description: "d" },
-                ".github/prompts/spell-a1-b2.prompt.md",
+                canonicalSpellPath("spell-a1-b2"),
             ),
         ).not.toThrow();
     });
@@ -294,142 +394,118 @@ describe("expandFragment / referencesFragment", () => {
     });
 });
 
-describe("runStubParity (ARC-039 third parity axis)", () => {
-    async function fixture() {
-        const dir = await mkTempDir("stub-parity-test-");
-        const promptsDir = join(dir, ".github", "prompts");
-        const commandsDir = join(dir, ".claude", "commands");
-        await fs.mkdir(promptsDir, { recursive: true });
-        await fs.mkdir(commandsDir, { recursive: true });
-        await fs.writeFile(
-            join(promptsDir, "spell-demo.prompt.md"),
-            `---
+describe("runShimParity (ARC-039 / ARC-045: three generated shims over one canonical source)", () => {
+    const DEMO_CANONICAL = `---
 name: Spell — Demo
 description: A demo spell
 claude_description: Use PROACTIVELY for demos.
 ---
 
-body`,
-            "utf8",
-        );
-        return { dir, promptsDir, commandsDir };
-    }
+body`;
 
-    it("reports drift when the stub is missing entirely", async () => {
-        const { dir } = await fixture();
-        const result = await runStubParity("check", dir);
-        expect(result.checked).toBe(1);
-        expect(result.drifted).toEqual([".claude/commands/spell-demo.md"]);
-    });
-
-    it("reports drift when the stub exists but does not match the rendered form", async () => {
-        const { dir, commandsDir } = await fixture();
-        await fs.writeFile(join(commandsDir, "spell-demo.md"), "stale hand-authored content\n", "utf8");
-        const result = await runStubParity("check", dir);
-        expect(result.drifted).toEqual([".claude/commands/spell-demo.md"]);
-    });
-
-    it("--fix writes the generated stub, and a following --check passes", async () => {
-        const { dir } = await fixture();
-        const fixResult = await runStubParity("fix", dir);
-        expect(fixResult.repaired).toEqual([".claude/commands/spell-demo.md"]);
-
-        const checkResult = await runStubParity("check", dir);
-        expect(checkResult.drifted).toEqual([]);
-    });
-});
-
-describe("runSkillParity (CS-01 fifth parity axis)", () => {
     async function fixture() {
-        const dir = await mkTempDir("skill-parity-test-");
-        const promptsDir = join(dir, ".github", "prompts");
-        const skillsDir = join(dir, ".agents", "skills");
-        await fs.mkdir(promptsDir, { recursive: true });
-        await fs.mkdir(skillsDir, { recursive: true });
-        await fs.writeFile(
-            join(promptsDir, "spell-demo.prompt.md"),
-            `---
-name: Spell — Demo
-description: A demo spell
-claude_description: Use PROACTIVELY for demos.
----
-
-body`,
-            "utf8",
-        );
-        return { dir, promptsDir, skillsDir };
+        const dir = await mkTempDir("shim-parity-test-");
+        const spellsDir = join(dir, ".arcane", "spells");
+        await fs.mkdir(spellsDir, { recursive: true });
+        await fs.writeFile(join(spellsDir, "spell-demo.md"), DEMO_CANONICAL, "utf8");
+        return { dir, spellsDir };
     }
 
-    it("reports drift when the skill file is missing entirely", async () => {
+    const EXPECTED_SHIMS = [
+        ".github/prompts/spell-demo.prompt.md",
+        ".claude/commands/spell-demo.md",
+        ".agents/skills/spell-demo/SKILL.md",
+    ];
+
+    it("checks one canonical id against all three targets, in the declared target order", async () => {
         const { dir } = await fixture();
-        const result = await runSkillParity("check", dir);
-        expect(result.checked).toBe(1);
-        expect(result.drifted).toEqual([".agents/skills/spell-demo/SKILL.md"]);
+        const result = await runShimParity("check", dir);
+        expect(SHIM_TARGETS.map((t) => t.label)).toEqual(["copilot", "claude", "codex"]);
+        expect(result.checked).toBe(3);
+        expect(result.drifted).toEqual(EXPECTED_SHIMS);
     });
 
-    it("reports drift when the skill file exists but does not match the rendered form", async () => {
-        const { dir, skillsDir } = await fixture();
-        await fs.mkdir(join(skillsDir, "spell-demo"), { recursive: true });
-        await fs.writeFile(join(skillsDir, "spell-demo", "SKILL.md"), "stale hand-authored content\n", "utf8");
-        const result = await runSkillParity("check", dir);
-        expect(result.drifted).toEqual([".agents/skills/spell-demo/SKILL.md"]);
+    it("reports only the shim that exists but does not match the rendered form", async () => {
+        const { dir } = await fixture();
+        await runShimParity("fix", dir);
+        await fs.writeFile(join(dir, ".claude", "commands", "spell-demo.md"), "stale hand-authored content\n", "utf8");
+        const result = await runShimParity("check", dir);
+        expect(result.drifted).toEqual([".claude/commands/spell-demo.md"]);
     });
 
-    it("--fix writes the generated skill file, and a following --check passes", async () => {
+    it("--fix writes all three generated shims, and a following --check passes", async () => {
         const { dir } = await fixture();
-        const fixResult = await runSkillParity("fix", dir);
-        expect(fixResult.repaired).toEqual([".agents/skills/spell-demo/SKILL.md"]);
+        const fixResult = await runShimParity("fix", dir);
+        expect(fixResult.repaired).toEqual(EXPECTED_SHIMS);
 
-        const checkResult = await runSkillParity("check", dir);
+        const copilot = await fs.readFile(join(dir, ".github", "prompts", "spell-demo.prompt.md"), "utf8");
+        expect(copilot).toBe(renderCopilotPromptShim("spell-demo", DEMO_CANONICAL));
+        const skill = await fs.readFile(join(dir, ".agents", "skills", "spell-demo", "SKILL.md"), "utf8");
+        expect(skill).toContain("Read `.arcane/spells/spell-demo.md`");
+
+        const checkResult = await runShimParity("check", dir);
         expect(checkResult.drifted).toEqual([]);
+    });
+
+    it("enumerates ids from the canonical folder only -- fragments, stray files and orphan shims are not spells", async () => {
+        const { dir, spellsDir } = await fixture();
+        await fs.mkdir(join(spellsDir, "_fragments"), { recursive: true });
+        await fs.writeFile(join(spellsDir, "_fragments", "demo-fragment.md"), "fragment\n", "utf8");
+        await fs.writeFile(join(spellsDir, "README.md"), "not a spell\n", "utf8");
+        await fs.mkdir(join(dir, ".claude", "commands"), { recursive: true });
+        await fs.writeFile(join(dir, ".claude", "commands", "spell-orphan.md"), "no canonical source\n", "utf8");
+
+        const result = await runShimParity("check", dir);
+        expect(result.checked).toBe(3);
+        expect(result.drifted).toEqual(EXPECTED_SHIMS);
     });
 });
 
-describe("runFragmentParity (ARC-039 fourth parity axis)", () => {
+describe("runFragmentParity (ARC-039 fragment parity axis, on the canonical folder)", () => {
     async function fixture() {
         const dir = await mkTempDir("fragment-parity-test-");
-        const promptsDir = join(dir, ".github", "prompts");
-        const fragmentsDir = join(promptsDir, "_fragments");
+        const spellsDir = join(dir, ".arcane", "spells");
+        const fragmentsDir = join(spellsDir, "_fragments");
         await fs.mkdir(fragmentsDir, { recursive: true });
         await fs.writeFile(join(fragmentsDir, "demo-fragment.md"), "canonical fragment body\n", "utf8");
-        return { dir, promptsDir, fragmentsDir };
+        return { dir, spellsDir, fragmentsDir };
     }
 
-    it("skips a prompt that does not reference any fragment", async () => {
-        const { dir, promptsDir } = await fixture();
-        await fs.writeFile(join(promptsDir, "spell-plain.prompt.md"), "---\nname: Spell — Plain\ndescription: d\n---\n\nno fragments here", "utf8");
+    it("skips a spell that does not reference any fragment", async () => {
+        const { dir, spellsDir } = await fixture();
+        await fs.writeFile(join(spellsDir, "spell-plain.md"), "---\nname: Spell — Plain\ndescription: d\n---\n\nno fragments here", "utf8");
         const result = await runFragmentParity("check", dir);
         expect(result.checked).toBe(0);
         expect(result.drifted).toEqual([]);
     });
 
     it("reports drift when a referenced fragment's span is stale", async () => {
-        const { dir, promptsDir } = await fixture();
+        const { dir, spellsDir } = await fixture();
         await fs.writeFile(
-            join(promptsDir, "spell-uses-fragment.prompt.md"),
+            join(spellsDir, "spell-uses-fragment.md"),
             "---\nname: Spell — Uses Fragment\ndescription: d\n---\n\n<!-- fragment:demo-fragment:start -->\nstale\n<!-- fragment:demo-fragment:end -->\n",
             "utf8",
         );
         const result = await runFragmentParity("check", dir);
         expect(result.checked).toBe(1);
         expect(result.drifted).toEqual([
-            ".github/prompts/spell-uses-fragment.prompt.md (fragment: demo-fragment)",
+            ".arcane/spells/spell-uses-fragment.md (fragment: demo-fragment)",
         ]);
     });
 
     it("--fix expands the fragment in place, and a following --check passes", async () => {
-        const { dir, promptsDir } = await fixture();
-        const promptPath = join(promptsDir, "spell-uses-fragment.prompt.md");
+        const { dir, spellsDir } = await fixture();
+        const spellPath = join(spellsDir, "spell-uses-fragment.md");
         await fs.writeFile(
-            promptPath,
+            spellPath,
             "---\nname: Spell — Uses Fragment\ndescription: d\n---\n\n<!-- fragment:demo-fragment:start -->\nstale\n<!-- fragment:demo-fragment:end -->\n",
             "utf8",
         );
 
         const fixResult = await runFragmentParity("fix", dir);
-        expect(fixResult.repaired).toEqual([".github/prompts/spell-uses-fragment.prompt.md"]);
+        expect(fixResult.repaired).toEqual([".arcane/spells/spell-uses-fragment.md"]);
 
-        const written = await fs.readFile(promptPath, "utf8");
+        const written = await fs.readFile(spellPath, "utf8");
         expect(written).toContain("canonical fragment body");
         expect(written).not.toContain("stale");
 
@@ -438,17 +514,24 @@ describe("runFragmentParity (ARC-039 fourth parity axis)", () => {
     });
 });
 
-describe("all real spells are stub-parity consistent (regression guard)", () => {
-    it("every .claude/commands/spell-*.md stub matches its prompt's rendered form", async () => {
-        const result = await runStubParity("check", ASSETS_DIR);
+describe("all real spells are shim-parity consistent (regression guard)", () => {
+    it("every Copilot prompt, Claude command and Codex skill matches its canonical source's rendered form", async () => {
+        const result = await runShimParity("check", ASSETS_DIR);
         expect(result.checked).toBeGreaterThan(0);
+        expect(result.checked % SHIM_TARGETS.length).toBe(0);
         expect(result.drifted).toEqual([]);
     });
 
-    it("every .agents/skills/spell-*/SKILL.md matches its prompt's rendered form", async () => {
-        const result = await runSkillParity("check", ASSETS_DIR);
-        expect(result.checked).toBeGreaterThan(0);
-        expect(result.drifted).toEqual([]);
+    it("no shipped Copilot prompt carries a body of its own any more (ARC-045 decision 2)", async () => {
+        const promptsDir = join(ASSETS_DIR, ".github", "prompts");
+        const names = (await fs.readdir(promptsDir)).filter((n) => n.startsWith("spell-") && n.endsWith(".prompt.md"));
+        expect(names.length).toBeGreaterThan(0);
+        for (const name of names) {
+            const content = await fs.readFile(join(promptsDir, name), "utf8");
+            const body = content.slice(extractFrontmatterBlock(content).length).trim().split("\n");
+            expect(body, name).toHaveLength(1);
+            expect(body[0]).toContain("and follow it as the complete workflow.");
+        }
     });
 
     it("every referenced fragment span is expanded and in sync", async () => {
@@ -458,7 +541,7 @@ describe("all real spells are stub-parity consistent (regression guard)", () => 
 
     it("the tracking-mode-declaration fragment is actually referenced by at least one real spell", async () => {
         // Guards against the fragment library silently becoming dead weight --
-        // a fragment file with zero referencing prompts would pass every other
+        // a fragment file with zero referencing spells would pass every other
         // check here while doing nothing.
         const result = await runFragmentParity("check", ASSETS_DIR);
         expect(result.checked).toBeGreaterThanOrEqual(5);

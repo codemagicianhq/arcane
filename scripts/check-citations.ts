@@ -69,10 +69,11 @@ function countOccurrences(content: string, phrase: string): number {
 /**
  * Resolves a citation's own path against `rootDir`. Citations in these
  * docs are written relative to repo root OR as a bare filename inside
- * `.arcane/governance/`/`.github/prompts/`/`.github/instructions/` (the
- * convention already used throughout this corpus -- e.g. `git-
- * conventions.md:554` meaning `.arcane/governance/git-conventions.md`).
- * Tries the literal path first, then each of those three directories.
+ * `.arcane/governance/`/`.arcane/spells/`/`.github/prompts/`/
+ * `.github/instructions/` (the convention already used throughout this
+ * corpus -- e.g. `git-conventions.md:554` meaning
+ * `.arcane/governance/git-conventions.md`). Tries the literal path first,
+ * then each of those directories.
  */
 async function resolveCitedPath(rootDir: string, citedPath: string): Promise<string | null> {
     if (citedPath.includes("/")) {
@@ -84,6 +85,8 @@ async function resolveCitedPath(rootDir: string, citedPath: string): Promise<str
         join(rootDir, citedPath),
         join(rootDir, ".arcane", "governance", citedPath),
         join(rootDir, "src", "assets", ".arcane", "governance", citedPath),
+        join(rootDir, ".arcane", "spells", citedPath),
+        join(rootDir, "src", "assets", ".arcane", "spells", citedPath),
         join(rootDir, ".github", "prompts", citedPath),
         join(rootDir, "src", "assets", ".github", "prompts", citedPath),
         join(rootDir, ".github", "instructions", citedPath),

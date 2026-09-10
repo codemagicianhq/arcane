@@ -6,8 +6,8 @@ description: Use PROACTIVELY whenever committing work during a session, even if 
 
 Invoke the Arcane `spell-commit-work` spell workflow.
 
-See the full prompt at `.github/prompts/spell-commit-work.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-commit-work.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-commit-work.prompt.md
+@.arcane/spells/spell-commit-work.md

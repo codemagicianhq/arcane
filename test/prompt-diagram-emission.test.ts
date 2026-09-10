@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 let universalRules: string;
 let openSession: string;
@@ -36,18 +36,18 @@ beforeAll(async () => {
     securityReview,
   ] = await Promise.all([
     readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-arcane-version.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-create-pull-request.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-review-batch.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-manifest.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-explain-concept.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-architect.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-scope.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-security-review.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-open-session.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-arcane-version.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-create-pull-request.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-review-batch.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-manifest.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-full-cycle.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-close-session.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-explain-concept.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-architect.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-scope.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-security-review.md"), "utf8"),
   ]);
 });
 
@@ -132,7 +132,7 @@ describe("spell-arcane-version gains the third reading and references the canoni
 
   it("references spell-open-session's canonical diagram rather than duplicating the template", () => {
     expect(arcaneVersion).toContain("emit the canonical version-drift diagram");
-    expect(arcaneVersion).toContain("spell-open-session.prompt.md");
+    expect(arcaneVersion).toContain("spell-open-session.md");
     expect(arcaneVersion).not.toContain("gitGraph");
   });
 

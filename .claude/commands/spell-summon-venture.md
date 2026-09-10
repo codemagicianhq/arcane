@@ -6,8 +6,8 @@ description: Use PROACTIVELY in a hub repo when creating a new venture from scra
 
 Invoke the Arcane `spell-summon-venture` spell workflow.
 
-See the full prompt at `.github/prompts/spell-summon-venture.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-summon-venture.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-summon-venture.prompt.md
+@.arcane/spells/spell-summon-venture.md

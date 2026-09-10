@@ -6,8 +6,8 @@ description: Use PROACTIVELY once a PRD exists and needs architecture decisions 
 
 Invoke the Arcane `spell-architect` spell workflow.
 
-See the full prompt at `.github/prompts/spell-architect.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-architect.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-architect.prompt.md
+@.arcane/spells/spell-architect.md

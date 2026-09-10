@@ -29,14 +29,16 @@ import { join } from "node:path";
  * not require editing a count in an unrelated assertion. What matters is that
  * every spell on disk is registered exactly once, whatever the total is.
  */
-const SPELLS_ON_DISK = readdirSync(join(process.cwd(), "src/assets/.github/prompts")).filter((f) =>
-  f.endsWith(".prompt.md"),
+const SPELLS_ON_DISK = readdirSync(join(process.cwd(), "src/assets/.arcane/spells")).filter((f) =>
+  f.startsWith("spell-") && f.endsWith(".md"),
 ).length;
 
 /**
  * WP-C1: the monolithic `spell-prompts` + `claude-commands` pair was split into
  * capability-scoped components so a profile can select spells by capability.
- * Grouping lives in the registry only -- no spell file was renamed or moved.
+ * Grouping lives in the registry only. (The canonical files later moved to
+ * `.arcane/spells/` -- ARC-045's one sanctioned relocation, CS-03 -- with the
+ * former Copilot location kept as a generated shim.)
  */
 describe("spell component split (registry integrity)", () => {
   const spellComponents = SPELL_COMPONENT_NAMES.map((n) => ({
@@ -53,26 +55,40 @@ describe("spell component split (registry integrity)", () => {
   }
 
   it("every spell appears exactly once across all capability groups", () => {
-    const promptFiles = spellComponents
+    const canonicalFiles = spellComponents
       .flatMap((c) => c.files)
-      .filter((f) => f.startsWith(".github/prompts/"));
+      .filter((f) => f.startsWith(".arcane/spells/"));
 
-    expect(promptFiles).toHaveLength(SPELLS_ON_DISK);
-    expect(new Set(promptFiles).size).toBe(SPELLS_ON_DISK);
+    expect(canonicalFiles).toHaveLength(SPELLS_ON_DISK);
+    expect(new Set(canonicalFiles).size).toBe(SPELLS_ON_DISK);
   });
 
-  it("every spell ships both client formats, paired in the same component", () => {
+  it("every spell ships its canonical source and all three client shims, paired in the same component", () => {
     for (const component of spellComponents) {
+      const canonical = component.files
+        .filter((f) => f.startsWith(".arcane/spells/"))
+        .map((f) => f.replace(".arcane/spells/", "").replace(/\.md$/, ""))
+        .sort();
       const prompts = component.files
         .filter((f) => f.startsWith(".github/prompts/"))
-        .map((f) => f.replace(".github/prompts/", "").replace(".prompt.md", ""));
+        .map((f) => f.replace(".github/prompts/", "").replace(".prompt.md", ""))
+        .sort();
       const commands = component.files
         .filter((f) => f.startsWith(".claude/commands/"))
-        .map((f) => f.replace(".claude/commands/", "").replace(".md", ""));
+        .map((f) => f.replace(".claude/commands/", "").replace(/\.md$/, ""))
+        .sort();
+      const skills = component.files
+        .filter((f) => f.startsWith(".agents/skills/"))
+        .map((f) => f.replace(".agents/skills/", "").replace("/SKILL.md", ""))
+        .sort();
 
       // Pairing them in one component is what makes it structurally impossible
-      // for a profile to ship the Copilot prompt without the Claude wrapper.
-      expect(commands.sort()).toEqual(prompts.sort());
+      // for a profile to ship a spell's source without one of its shims, or a
+      // shim without its source.
+      expect(canonical.length).toBeGreaterThan(0);
+      expect(prompts).toEqual(canonical);
+      expect(commands).toEqual(canonical);
+      expect(skills).toEqual(canonical);
     }
   });
 
@@ -219,8 +235,10 @@ describe("backwards compatibility of the split", () => {
   // any unit test -- so here is the unit test.
   it("full ships every spell that exists on disk", () => {
     const files = getProfile("full").flatMap((c) => c.files);
+    expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(SPELLS_ON_DISK);
     expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(SPELLS_ON_DISK);
     expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(SPELLS_ON_DISK);
+    expect(files.filter((f) => f.startsWith(".agents/skills/"))).toHaveLength(SPELLS_ON_DISK);
   });
 
   // lite/methodology took the whole monolith before the split, so they must
@@ -239,7 +257,7 @@ describe("backwards compatibility of the split", () => {
   // 40: spell-verification-ledger joined spells-capture (BC-27c, I7 -- extracts a structured
   //     checked-claim record separate from spell-close-session's narrative).
   it.each(["lite", "methodology"] as const)(
-    "%s still ships the 40 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in both formats",
+    "%s still ships the 40 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in every format",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
       // LH-05: deliberately NOT derived from the registry -- see the comment
@@ -250,14 +268,19 @@ describe("backwards compatibility of the split", () => {
       // cases apart -- a registry-derived count cannot, since both look
       // identical from the registry's own point of view.
       // eslint-disable-next-line no-restricted-syntax
+      expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(40);
+      // eslint-disable-next-line no-restricted-syntax
       expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(40);
       // eslint-disable-next-line no-restricted-syntax
       expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(40);
+      // eslint-disable-next-line no-restricted-syntax
+      expect(files.filter((f) => f.startsWith(".agents/skills/"))).toHaveLength(40);
     },
   );
 
   it("governance-only still ships no spells at all", () => {
     const files = getProfile("governance-only").flatMap((c) => c.files);
+    expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(0);
     expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(0);
   });
 });

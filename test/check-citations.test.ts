@@ -41,13 +41,17 @@ describe("getLivingDocs (LH-07)", () => {
         expect(docs).not.toContain("docs/plans/done-one/PLAN.md");
     });
 
-    it("includes src/assets/.arcane/governance and src/assets/.github content", async () => {
+    it("includes src/assets/.arcane/governance, src/assets/.arcane/spells and src/assets/.github content", async () => {
         dir = await createFixtureDir("living-docs-assets");
         await writeFile(dir, "src/assets/.arcane/governance/foo.md", "# Foo\n");
-        await writeFile(dir, "src/assets/.github/prompts/spell-foo.prompt.md", "# Spell\n");
+        await writeFile(dir, "src/assets/.arcane/spells/spell-foo.md", "# Spell\n");
+        await writeFile(dir, "src/assets/.github/prompts/spell-foo.prompt.md", "# Shim\n");
 
         const docs = await getLivingDocs(dir);
         expect(docs).toContain("src/assets/.arcane/governance/foo.md");
+        // CS-03: the canonical spell sources are living docs -- without this
+        // entry every prompt body would silently leave the LH-07/08/09 gates.
+        expect(docs).toContain("src/assets/.arcane/spells/spell-foo.md");
         expect(docs).toContain("src/assets/.github/prompts/spell-foo.prompt.md");
     });
 
@@ -150,10 +154,19 @@ describe("checkCitations (LH-07)", () => {
         expect(findings[0]!.reason).toContain("is beyond");
     });
 
-    it("resolves a bare filename against .arcane/governance/, .github/prompts/, and .github/instructions/ conventions", async () => {
+    it("resolves a bare filename against .arcane/governance/, .arcane/spells/, .github/prompts/, and .github/instructions/ conventions", async () => {
         dir = await createFixtureDir("citations-bare-filename-resolve");
         await writeFile(dir, "TODO.md", "See `git-conventions.md#some-heading` for context.\n");
         await writeFile(dir, ".arcane/governance/git-conventions.md", "# Intro\n\n## Some Heading\n\nBody.\n");
+
+        const findings = await checkCitations(dir);
+        expect(findings).toHaveLength(0);
+    });
+
+    it("resolves a bare spell filename against the canonical .arcane/spells/ folder (CS-03)", async () => {
+        dir = await createFixtureDir("citations-bare-spell-resolve");
+        await writeFile(dir, "TODO.md", "See `spell-plan.md#some-heading` for context.\n");
+        await writeFile(dir, "src/assets/.arcane/spells/spell-plan.md", "# Intro\n\n## Some Heading\n\nBody.\n");
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(0);

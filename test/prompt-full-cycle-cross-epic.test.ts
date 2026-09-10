@@ -2,12 +2,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 let fullCycle: string;
 
 beforeAll(async () => {
-  fullCycle = await readFile(join(PROMPTS, "spell-full-cycle.prompt.md"), "utf8");
+  fullCycle = await readFile(join(PROMPTS, "spell-full-cycle.md"), "utf8");
 });
 
 describe("spell-full-cycle: delegation-is-roleplay disclosed honestly (BC-20)", () => {

@@ -6,8 +6,8 @@ description: Use PROACTIVELY when a session had real verification events worth a
 
 Invoke the Arcane `spell-verification-ledger` spell workflow.
 
-See the full prompt at `.github/prompts/spell-verification-ledger.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-verification-ledger.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-verification-ledger.prompt.md
+@.arcane/spells/spell-verification-ledger.md

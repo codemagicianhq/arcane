@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 const COMMANDS = join(process.cwd(), "src", "assets", ".claude", "commands");
 
 let scry: string;
@@ -10,7 +10,7 @@ let commandStub: string;
 
 beforeAll(async () => {
   [scry, commandStub] = await Promise.all([
-    readFile(join(PROMPTS, "spell-scry.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-scry.md"), "utf8"),
     readFile(join(COMMANDS, "spell-scry.md"), "utf8"),
   ]);
 });

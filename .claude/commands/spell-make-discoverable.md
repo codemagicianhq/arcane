@@ -6,8 +6,8 @@ description: Use PROACTIVELY when auditing a web property's search/AI-assistant 
 
 Invoke the Arcane `spell-make-discoverable` spell workflow.
 
-See the full prompt at `.github/prompts/spell-make-discoverable.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-make-discoverable.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-make-discoverable.prompt.md
+@.arcane/spells/spell-make-discoverable.md

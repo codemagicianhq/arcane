@@ -93,6 +93,15 @@ export async function getLivingDocs(rootDir: string): Promise<string[]> {
             (f) => relative(rootDir, f),
         ),
     );
+    // The canonical spell sources (ARC-045 / CS-03) hold every spell's prose;
+    // `src/assets/.github` still contributes the instructions files and the
+    // generated Copilot shims. Without this entry the prompts would silently
+    // leave every LH-07/08/09 gate the day they moved.
+    files.push(
+        ...(await listMarkdownFilesRecursive(join(rootDir, "src", "assets", ".arcane", "spells"))).map(
+            (f) => relative(rootDir, f),
+        ),
+    );
     files.push(
         ...(await listMarkdownFilesRecursive(join(rootDir, "src", "assets", ".github"))).map((f) =>
             relative(rootDir, f),

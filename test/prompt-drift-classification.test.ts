@@ -12,14 +12,14 @@ import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
 const ASSETS_DIR = join(process.cwd(), "src", "assets");
 const NPM_CLI = process.env["npm_execpath"];
-const DRIFT_FIXTURE = ".github/prompts/spell-create-pull-request.prompt.md";
+const DRIFT_FIXTURE = ".arcane/spells/spell-create-pull-request.md";
 const tempDirs: string[] = [];
 
 let driftPrompt: string;
 
 beforeAll(async () => {
     driftPrompt = await fs.readFile(
-        join(ASSETS_DIR, ".github", "prompts", "spell-check-drift.prompt.md"),
+        join(ASSETS_DIR, ".arcane", "spells", "spell-check-drift.md"),
         "utf8",
     );
 });
@@ -150,7 +150,7 @@ describe("spell-open-session self-host tracking source", () => {
     // session-scoped pending a future fix.
     it("reads the self-hosted source manifest's tracking_mode as a resolution fallback, not blanket doctor-only metadata", async () => {
         const openSessionPrompt = await fs.readFile(
-            join(ASSETS_DIR, ".github", "prompts", "spell-open-session.prompt.md"),
+            join(ASSETS_DIR, ".arcane", "spells", "spell-open-session.md"),
             "utf8",
         );
 

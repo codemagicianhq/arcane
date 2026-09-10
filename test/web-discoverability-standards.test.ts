@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 let standards: string;
 let spell: string;
@@ -11,7 +11,7 @@ let spell: string;
 beforeAll(async () => {
   [standards, spell] = await Promise.all([
     readFile(join(GOVERNANCE, "web-discoverability-standards.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-make-discoverable.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-make-discoverable.md"), "utf8"),
   ]);
 });
 

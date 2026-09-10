@@ -32,7 +32,7 @@ describe("registry-driven spell catalog (T15/BC-23)", () => {
     const expectedTotal = getAllComponents()
       .filter((component) => component.name.startsWith("spells-"))
       .reduce(
-        (sum, component) => sum + component.files.filter((file) => file.endsWith(".prompt.md")).length,
+        (sum, component) => sum + component.files.filter((file) => file.startsWith(".arcane/spells/")).length,
         0,
       );
 

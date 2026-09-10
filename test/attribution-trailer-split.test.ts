@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 const GOVERNANCE = join(process.cwd(), "src", "assets", ".arcane", "governance");
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 let gitConventions: string;
 let universalRules: string;
@@ -13,7 +13,7 @@ beforeAll(async () => {
   [gitConventions, universalRules, commitWork] = await Promise.all([
     readFile(join(GOVERNANCE, "git-conventions.md"), "utf8"),
     readFile(join(GOVERNANCE, "universal-agent-rules.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-commit-work.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-commit-work.md"), "utf8"),
   ]);
 });
 
@@ -71,7 +71,7 @@ describe("universal-agent-rules.md: rule 12 lists the full required trailer set 
   });
 });
 
-describe("spell-commit-work.prompt.md: trailer template matches the split (I3/BC-27d)", () => {
+describe("spell-commit-work.md: trailer template matches the split (I3/BC-27d)", () => {
   it("Agent is runtime-only in the template, with Persona/Role as separate conditional lines", () => {
     expect(commitWork).toContain("Agent: [runtime/tool name only -- claude, copilot, codex -- never a persona name]");
     expect(commitWork).toContain("Persona: [roster identity operated as, ONLY if a roster exists");

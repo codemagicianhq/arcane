@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 
 async function read(name: string): Promise<string> {
   return readFile(join(PROMPTS, name), "utf8");
@@ -18,13 +18,13 @@ let saveIdea: string;
 
 beforeAll(async () => {
   [openSession, plan, checkDrift, commitWork, todo, summonVenture, saveIdea] = await Promise.all([
-    read("spell-open-session.prompt.md"),
-    read("spell-plan.prompt.md"),
-    read("spell-check-drift.prompt.md"),
-    read("spell-commit-work.prompt.md"),
-    read("spell-todo.prompt.md"),
-    read("spell-summon-venture.prompt.md"),
-    read("spell-save-idea.prompt.md"),
+    read("spell-open-session.md"),
+    read("spell-plan.md"),
+    read("spell-check-drift.md"),
+    read("spell-commit-work.md"),
+    read("spell-todo.md"),
+    read("spell-summon-venture.md"),
+    read("spell-save-idea.md"),
   ]);
 });
 

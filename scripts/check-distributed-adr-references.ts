@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const SCAN_ROOTS = [
     ".arcane/governance",
+    ".arcane/spells",
     ".github/prompts",
     ".github/instructions",
 ];
@@ -39,7 +40,16 @@ const CROSS_REPO_HAZARD_PATTERNS: RegExp[] = [
 ];
 
 async function listFiles(root: string): Promise<string[]> {
-    const entries = await readdir(root, { withFileTypes: true });
+    // A shipped root that does not exist in this tree is simply empty -- an
+    // asset set without spells (governance-only fixtures, a consumer's
+    // partial layout) is a valid thing to scan, not an error.
+    let entries;
+    try {
+        entries = await readdir(root, { withFileTypes: true });
+    } catch (error: unknown) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+        throw error;
+    }
     const files: string[] = [];
     for (const entry of entries) {
         const path = join(root, entry.name);

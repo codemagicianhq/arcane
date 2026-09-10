@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 
 const ASSETS = join(process.cwd(), "src", "assets");
-const PROMPTS = join(ASSETS, ".github", "prompts");
+const PROMPTS = join(ASSETS, ".arcane", "spells");
 
 describe("canonical prompt document paths", () => {
     it("uses only the installed governance layer", async () => {

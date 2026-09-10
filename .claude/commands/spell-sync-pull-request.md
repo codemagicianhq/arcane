@@ -6,8 +6,8 @@ description: Use PROACTIVELY whenever an open PR has fallen behind its target br
 
 Invoke the Arcane `spell-sync-pull-request` spell workflow.
 
-See the full prompt at `.github/prompts/spell-sync-pull-request.prompt.md` for the complete workflow definition.
+See the full prompt at `.arcane/spells/spell-sync-pull-request.md` for the complete workflow definition.
 
 ---
 
-@.github/prompts/spell-sync-pull-request.prompt.md
+@.arcane/spells/spell-sync-pull-request.md

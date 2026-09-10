@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-const PROMPTS = join(process.cwd(), "src", "assets", ".github", "prompts");
+const PROMPTS = join(process.cwd(), "src", "assets", ".arcane", "spells");
 const AI_CONTEXT = join(process.cwd(), "src", "assets", "ai-context");
 
 let closeSession: string;
@@ -11,8 +11,8 @@ let aiContextTemplate: string;
 
 beforeAll(async () => {
   [closeSession, openSession, aiContextTemplate] = await Promise.all([
-    readFile(join(PROMPTS, "spell-close-session.prompt.md"), "utf8"),
-    readFile(join(PROMPTS, "spell-open-session.prompt.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-close-session.md"), "utf8"),
+    readFile(join(PROMPTS, "spell-open-session.md"), "utf8"),
     readFile(join(AI_CONTEXT, "system-prompt-context.md"), "utf8"),
   ]);
 });
