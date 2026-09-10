@@ -135,4 +135,32 @@ entry to *this* queue once it runs.
   write). If a client paraphrases instead of running the spell, record it here: the remedy is an
   inlined-body renderer for that client's user-level file — the `render()` mode variance ARC-045
   allowed for — a small follow-up, not a redesign.
+- **Update 2026-09-10:** the executing session installed the tier for real on this machine with the
+  published `1.1.0` CLI (`spell init --user`: 41 spells, 82 client files) at the operator's direction
+  ("continue with q-005"), so steps (1) and (2) can be run as-is. `1.1.1` followed; run
+  `spell update --user` once it is on npm to pick up the quoted-path rendering (no visible change on
+  a home path without spaces).
+- **Status:** [ ] open
+
+## Q-006 — Accept, revise, or reject ARC-046 (restore-based delivery: no-go)
+
+- **What:** Decide on the ADR CS-08 drafts as `Proposed` in `DECISIONS.md`: "Restore-Based Spell
+  Delivery — No-Go for Now, Mechanism Retained". It closes Become Current's parked
+  [Q-010](../become-current/OPERATOR-QUEUE.md#q-010--decide-whether-to-pursue-a-package-referenced-distribution-model)
+  by recording that Arcane does not open a program to gitignore spell files and restore them from
+  the dependency, and rejects the symlink/junction-referenced variant outright.
+- **Why:** Accepting an ADR is never within a delegation's grant in this repository. The evidence is
+  in `docs/research/restore-based-delivery.md`: a live prototype showed the restore mechanism already
+  exists (today's same-version `spell update` restored 160 gitignored files on a fresh clone and Codex
+  discovered them), and that an edit to a restored file is invisible to git and lost on the next
+  clone — the customization overlay that would make the model safe does not exist. The user tier
+  (CS-04) and the coming repo opt-out (CS-05) already answer the duplication that raised the question.
+- **Preconditions (met):** CS-03 shipped (the canonical folder exists to spike against); CS-08's PR
+  merged — this is an ADR-drafting PR, so it is **operator-merged**, not self-merged, per the plan's
+  Authority & Delegation.
+- **Exact commands:** read ARC-046 in `DECISIONS.md` and the research doc; record the decision here;
+  if accepted, flip its `Status:` to `Accepted` (or ask the executing session to do so in the same PR).
+  If you want the model after all, say so: a "go" opens a new program whose first epic is the
+  customization-overlay design — it is not folded into Codex Support.
+- **Rollback:** an accepted ADR can be superseded by a later ADR; nothing is implemented either way.
 - **Status:** [ ] open
