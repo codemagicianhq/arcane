@@ -16,7 +16,7 @@ follow), [[naming-conventions]] (the "Naming Test" governing CS-04's CLI-surface
 This is the epic-split execution plan for [features/codex-support/PRD.md](../../../features/codex-support/PRD.md),
 produced via `spell-scope` and delivered in this repository's own established program shape (the
 one Become Current, Lessons Hardening, and Show Report each converged on) rather than a bare
-`execution-plan.md` — the analytical content `spell-scope.prompt.md` specifies (classification,
+`execution-plan.md` — the analytical content `spell-scope.md` specifies (classification,
 dependency graph, ADR candidates, security flags, agent assignment) is folded into the Coverage
 Map and sections below.
 
