@@ -470,6 +470,23 @@ describe("docs-mode manifest fields (EF-07 / EF-12)", () => {
     await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
   });
 
+  it("rejects a fanout key that could point a deletion outside the home directory", async () => {
+    const hash = "b".repeat(64);
+    for (const key of [
+      "../../important.txt",
+      ".agents/skills/../../../important.txt",
+      "/etc/passwd",
+      "C:/Users/someone/important.txt",
+      ".agents\\skills\\spell-plan\\SKILL.md",
+      "",
+    ]) {
+      await write({ scope: "user", fanout: { [key]: hash } });
+      await expect(readManifest(tempDir), `key ${JSON.stringify(key)} should be rejected`).rejects.toThrow(
+        ManifestInvalidFieldError,
+      );
+    }
+  });
+
   // "." is the whole point of EF-07's root-as-subject decision: an existing
   // archive comes under governance without being restructured first.
   it.each([".", "docs", "records/2026", "a/b/c"])(
