@@ -4,6 +4,7 @@ import type {
   ArcaneManifest,
   ContentSensitivity,
   ExternalProvider,
+  InstallScope,
   InstalledComponent,
   Profile,
   PushPolicy,
@@ -46,6 +47,24 @@ const VALID_TRACKING_MODES: TrackingMode[] = ["internal", "external"];
 const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "github", "jira", "other"];
 const VALID_CONTENT_SENSITIVITY: ContentSensitivity[] = ["standard", "sensitive"];
 const VALID_PUSH_POLICIES: PushPolicy[] = ["open", "guarded", "blocked"];
+const VALID_INSTALL_SCOPES: InstallScope[] = ["repo", "user"];
+
+/**
+ * True when a `fanout` value is safe to store: a plain object mapping
+ * home-relative paths to hex digests (CS-04). Both sides are strings; the
+ * digest is what `update`/`uninstall --user` compare against before deleting
+ * or rewriting a file outside the store, so a malformed entry must be
+ * rejected here rather than read as "no record" (which would make the file
+ * look unclaimed) or as a matching hash (which would make it look untouched).
+ */
+export function isValidFanoutRecord(value: unknown): value is Record<string, string> {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(
+      ([file, hash]) => file.length > 0 && typeof hash === "string" && /^[0-9a-f]{64}$/.test(hash),
+    )
+  );
+}
 
 /**
  * `subject_root` is a free-form relative path, so it gets shape rules rather
@@ -104,6 +123,10 @@ function manifestPath(targetDir: string): string {
   return path.join(targetDir, MANIFEST_FILE);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function validateTrackingFields(manifest: ArcaneManifest, filePath: string): void {
   if (
     manifest.tracking_mode !== undefined &&
@@ -143,6 +166,12 @@ function validateTrackingFields(manifest: ArcaneManifest, filePath: string): voi
   if (manifest.secretsScanExcludePrefixes !== undefined) {
     validateSecretsScanExcludePrefixes(manifest.secretsScanExcludePrefixes, filePath);
   }
+  if (manifest.scope !== undefined && !VALID_INSTALL_SCOPES.includes(manifest.scope)) {
+    throw new ManifestInvalidFieldError(filePath, "scope", manifest.scope);
+  }
+  if (manifest.fanout !== undefined && !isValidFanoutRecord(manifest.fanout)) {
+    throw new ManifestInvalidFieldError(filePath, "fanout", manifest.fanout);
+  }
 }
 
 /**
@@ -174,10 +203,6 @@ export async function readManifest(targetDir: string): Promise<ArcaneManifest> {
 
   validateTrackingFields(manifest, filePath);
   return manifest;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**

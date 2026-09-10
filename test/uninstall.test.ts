@@ -11,6 +11,8 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { canonicalSpellPath } from "../src/modules/spell-compiler.js";
+import { USER_FANOUT_PATHS, storeSpellPath, syncUserTierFanout } from "../src/modules/user-tier.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
@@ -333,6 +335,109 @@ describe("spell uninstall — handler", () => {
     await writeManifest(tmpDir, { components: [] });
     // No agent files seeded — should still succeed
     await expect(runUninstall({ yes: true }, tmpDir)).resolves.not.toThrow();
+  });
+
+  // ─── --user: the per-user tier (ARC-045 decision 3 / CS-04) ────────────────
+  // tmpDir is the home directory; the store is its `.arcane` child, seeded
+  // exactly as `spell init --user` leaves it (one spell, two client files,
+  // both recorded).
+
+  describe("--user", () => {
+    const ASSETS_DIR = join(process.cwd(), "src/assets");
+    const codexFile = USER_FANOUT_PATHS.codex("spell-status");
+    const claudeFile = USER_FANOUT_PATHS.claude("spell-status");
+    let home: string;
+    let storeRoot: string;
+
+    beforeEach(async () => {
+      home = tmpDir;
+      storeRoot = join(home, ".arcane");
+      const dest = join(storeRoot, storeSpellPath("spell-status"));
+      await fs.mkdir(join(dest, ".."), { recursive: true });
+      await fs.copyFile(join(ASSETS_DIR, canonicalSpellPath("spell-status")), dest);
+      const { record } = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ["spell-status"] });
+      await writeManifest(storeRoot, {
+        profile: "full",
+        components: [
+          { name: "spells-session", files: [storeSpellPath("spell-status")], installedVersion: PACKAGE_VERSION },
+        ],
+        scope: "user",
+        fanout: record,
+      });
+    });
+
+    it("removes the client files, their per-spell directory, the store spells and the manifest — and the store itself once it is empty", async () => {
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUninstall({ user: true }, storeRoot);
+
+      const callArg = vi.mocked(inquirer.confirm).mock.calls[0]![0] as { message: string };
+      expect(callArg.message).toContain(`user tier at ${storeRoot}`);
+      expect(await fileExists(join(home, codexFile))).toBe(false);
+      expect(await fileExists(join(home, ".agents/skills/spell-status"))).toBe(false);
+      expect(await fileExists(join(home, claudeFile))).toBe(false);
+      // The client's own directory is never removed, even when Arcane's file was the last one in it.
+      expect(await fileExists(join(home, ".claude/commands"))).toBe(true);
+      expect(await fileExists(join(storeRoot, storeSpellPath("spell-status")))).toBe(false);
+      expect(await fileExists(join(storeRoot, ".arcane.json"))).toBe(false);
+      expect(await fileExists(storeRoot)).toBe(false);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Uninstalled the user tier — 1 spells and 2 client files removed."),
+      );
+    });
+
+    it("keeps an edited client file, names it, and still removes everything else (--yes skips the prompt)", async () => {
+      const edited = `${await fs.readFile(join(home, codexFile), "utf8")}\nOPERATOR EDIT\n`;
+      await fs.writeFile(join(home, codexFile), edited, "utf8");
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUninstall({ user: true, yes: true }, storeRoot);
+
+      expect(vi.mocked(inquirer.confirm)).not.toHaveBeenCalled();
+      expect(await fs.readFile(join(home, codexFile), "utf8")).toBe(edited);
+      expect(await fileExists(join(home, claudeFile))).toBe(false);
+      expect(await fileExists(join(storeRoot, ".arcane.json"))).toBe(false);
+      const output = consoleSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain("Kept 1 edited client file(s)");
+      expect(output).toContain(`~/${codexFile}`);
+      expect(output).toContain("1 edited client file(s) kept");
+    });
+
+    it("--dry-run lists what would go and removes nothing", async () => {
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUninstall({ user: true, dryRun: true }, storeRoot);
+
+      const output = consoleSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain(`[dry-run] Would remove: ${storeRoot}/${storeSpellPath("spell-status")}`);
+      expect(output).toContain("[dry-run] Would remove 2 client file(s) no longer needed.");
+      expect(output).toContain(`[dry-run] Would remove: ${storeRoot}/.arcane.json`);
+      expect(vi.mocked(inquirer.confirm)).not.toHaveBeenCalled();
+      expect(await fileExists(join(home, codexFile))).toBe(true);
+      expect(await fileExists(join(home, claudeFile))).toBe(true);
+      expect(await fileExists(join(storeRoot, ".arcane.json"))).toBe(true);
+    });
+
+    it("a manifest with scope: user is uninstalled as the user tier even without the flag", async () => {
+      await runUninstall({ yes: true }, storeRoot);
+
+      expect(await fileExists(join(home, codexFile))).toBe(false);
+      expect(await fileExists(join(home, claudeFile))).toBe(false);
+      expect(await fileExists(join(storeRoot, ".arcane.json"))).toBe(false);
+    });
+
+    it("points a missing store at spell init --user", async () => {
+      const consoleSpy = vi.spyOn(console, "error");
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+      const emptyHome = await fs.mkdtemp(join(tmpdir(), "uninstall-user-empty-"));
+      try {
+        await runUninstall({ user: true }, join(emptyHome, ".arcane"));
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("spell init --user"));
+        expect(exitSpy).toHaveBeenCalledWith(1);
+      } finally {
+        await removeFixtureDir(emptyHome);
+      }
+    });
   });
 });
 

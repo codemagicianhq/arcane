@@ -1,3 +1,4 @@
+import { dirname } from "node:path";
 import {
   readManifest,
   ManifestNotFoundError,
@@ -7,6 +8,14 @@ import {
   getFeedUrl,
 } from "../modules/version-check.js";
 import { generateVersionDriftDiagram } from "../modules/diagram-generator.js";
+import {
+  CLAUDE_PRECEDENCE_NOTE,
+  FANOUT_CLIENT_LABELS,
+  VSCODE_USER_TIER_NOTE,
+  inspectUserTierFanout,
+  userTierRoot,
+} from "../modules/user-tier.js";
+import type { InstallScope } from "../types.js";
 
 /**
  * Runs the `spell status` command.
@@ -14,12 +23,15 @@ import { generateVersionDriftDiagram } from "../modules/diagram-generator.js";
  * Reads .arcane.json, checks for an available update, then prints
  * a formatted table of installed components + a version footer.
  *
- * @param targetDir  Directory containing the Arcane installation
+ * @param targetDir  Directory containing the Arcane installation (the
+ *   `~/.arcane` store when `options.user` is set)
  * @param packageVersion  Current package version string
+ * @param options.user  Report on the per-user tier instead of a repository (CS-04)
  */
 export async function runStatus(
   targetDir: string,
   packageVersion: string,
+  options: { user?: boolean } = {},
 ): Promise<void> {
   // Read existing manifest
   let manifest;
@@ -28,13 +40,15 @@ export async function runStatus(
   } catch (err) {
     if (err instanceof ManifestNotFoundError) {
       console.error(
-        'Not initialized. Run "spell init" first.',
+        `Not initialized. Run "spell init${options.user ? " --user" : ""}" first.`,
       );
       process.exit(1);
       return; // guard: process.exit is mocked in tests
     }
     throw err;
   }
+
+  const scope: InstallScope = options.user || manifest.scope === "user" ? "user" : "repo";
 
   if (manifest.components.length === 0) {
     console.log("No components installed.");
@@ -85,6 +99,39 @@ export async function runStatus(
     );
   }
 
+  // ─── Scope (ARC-045 decision 3 / CS-04) ────────────────────────────────────
+  // Which tier this manifest is, and -- for the user tier -- the state of the
+  // client files it fanned out beyond the store; for a repository, whether a
+  // user tier exists on this machine at all, since Claude Code will prefer
+  // its copy of a same-named command (D7 in the CS-04 architecture).
+
+  console.log("");
+  if (scope === "user") {
+    console.log(`  Scope: user — ${targetDir}`);
+    const health = await inspectUserTierFanout(dirname(targetDir), manifest.fanout);
+    console.log(
+      `  Client files: ${health.total} (${health.byClient.codex} ${FANOUT_CLIENT_LABELS.codex}, ${health.byClient.claude} ${FANOUT_CLIENT_LABELS.claude})`,
+    );
+    if (health.missing.length > 0 || health.customized.length > 0) {
+      const parts: string[] = [];
+      if (health.missing.length > 0) parts.push(`${health.missing.length} missing`);
+      if (health.customized.length > 0) parts.push(`${health.customized.length} customized`);
+      console.log(
+        `  ! ${parts.join(", ")} — \`spell update --user\` regenerates missing files; customized files are never overwritten.`,
+      );
+    }
+  } else {
+    console.log("  Scope: repo");
+    try {
+      const store = userTierRoot();
+      const userManifest = await readManifest(store);
+      console.log(`  User tier: v${userManifest.version} at ${store} (spell status --user)`);
+    } catch {
+      // No user tier on this machine (or an unreadable one -- `spell doctor`
+      // reports that); nothing to add here.
+    }
+  }
+
   // ─── Version footer ────────────────────────────────────────────────────────
 
   console.log("");
@@ -131,5 +178,11 @@ export async function runStatus(
         console.log("```");
       }
     }
+  }
+
+  if (scope === "user") {
+    console.log("");
+    for (const line of VSCODE_USER_TIER_NOTE) console.log(`  ${line}`);
+    console.log(`  ${CLAUDE_PRECEDENCE_NOTE}`);
   }
 }

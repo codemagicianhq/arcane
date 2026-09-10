@@ -13,6 +13,7 @@ import { runUnblockPush } from "./commands/unblock-push.js";
 import { runReport } from "./commands/report.js";
 import { runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
+import { userTierRoot } from "./modules/user-tier.js";
 import type { Profile, AgentInitOptions, AgentProfileId, NamingStrategy, AgentSyncOptions } from "./types.js";
 
 const require = createRequire(import.meta.url);
@@ -29,6 +30,18 @@ export const ASSETS_DIR =
   join(dirname(fileURLToPath(import.meta.url)), "assets");
 
 const program = new Command();
+
+/**
+ * ARC-045 decision 3 / CS-04: `--user` points init/update/status/uninstall
+ * at the per-user tier (`~/.arcane`) instead of the current repository. One
+ * description string, so the four commands describe the same thing.
+ */
+const USER_FLAG_DESCRIPTION =
+  "Operate on the per-user tier at ~/.arcane — spells shared by every repository on this machine, fanned out to ~/.agents/skills (Codex, Copilot) and ~/.claude/commands (Claude Code)";
+
+function targetDirFor(opts: { user?: boolean }): string {
+  return opts.user ? userTierRoot() : process.cwd();
+}
 
 program
   .name("spell")
@@ -66,15 +79,17 @@ program
   .option("--profile <profile>", "Profile: full | lite | methodology | docs | governance-only")
   .option("--force", "Overwrite existing files without error")
   .option("--dry-run", "Preview what would be installed without making changes")
+  .option("--user", USER_FLAG_DESCRIPTION)
   .action(
-    async (opts: { profile?: string; force?: boolean; dryRun?: boolean }) => {
+    async (opts: { profile?: string; force?: boolean; dryRun?: boolean; user?: boolean }) => {
       await runInit(
         {
           profile: opts.profile as Profile | undefined,
           force: opts.force,
           dryRun: opts.dryRun,
+          user: opts.user,
         },
-        process.cwd(),
+        targetDirFor(opts),
         ASSETS_DIR,
         pkg.version,
       );
@@ -109,10 +124,11 @@ program
     "--prune",
     "Also delete orphaned managed files (tracked before this update, no longer part of any current component). Hash-checked: an edited file is reported, never silently deleted",
   )
-  .action(async (opts: { dryRun?: boolean; prune?: boolean }) => {
+  .option("--user", USER_FLAG_DESCRIPTION)
+  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean }) => {
     await runUpdate(
-      { dryRun: opts.dryRun, prune: opts.prune },
-      process.cwd(),
+      { dryRun: opts.dryRun, prune: opts.prune, user: opts.user },
+      targetDirFor(opts),
       ASSETS_DIR,
       pkg.version,
     );
@@ -121,8 +137,9 @@ program
 program
   .command("status")
   .description("Show installed components and check for updates")
-  .action(async () => {
-    await runStatus(process.cwd(), pkg.version);
+  .option("--user", USER_FLAG_DESCRIPTION)
+  .action(async (opts: { user?: boolean }) => {
+    await runStatus(targetDirFor(opts), pkg.version, { user: opts.user });
   });
 
 program
@@ -130,8 +147,9 @@ program
   .description("Remove all installed Arcane framework files")
   .option("--yes", "Skip confirmation prompt")
   .option("--dry-run", "Preview what would be removed without deleting files")
-  .action(async (opts: { yes?: boolean; dryRun?: boolean }) => {
-    await runUninstall({ yes: opts.yes, dryRun: opts.dryRun }, process.cwd());
+  .option("--user", USER_FLAG_DESCRIPTION)
+  .action(async (opts: { yes?: boolean; dryRun?: boolean; user?: boolean }) => {
+    await runUninstall({ yes: opts.yes, dryRun: opts.dryRun, user: opts.user }, targetDirFor(opts));
   });
 
 program
@@ -147,7 +165,11 @@ program
   .option("--fix", "Automatically create missing session continuity files")
   .option("--leaks", "Run only the on-demand secrets/credential scan (ARC-037), skipping the default checks")
   .action(async (opts: { fix?: boolean; leaks?: boolean }) => {
-    await runDoctor(process.cwd(), { fix: opts.fix, leaks: opts.leaks }, ASSETS_DIR);
+    await runDoctor(
+      process.cwd(),
+      { fix: opts.fix, leaks: opts.leaks, packageVersion: pkg.version },
+      ASSETS_DIR,
+    );
   });
 
 // ─── spell ward ───────────────────────────────────────────────────────────────

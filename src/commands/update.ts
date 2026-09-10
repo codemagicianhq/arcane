@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { readFile, writeFile, rm } from "node:fs/promises";
 import { copyFile, copyDirectory, fileExists, hashFile } from "../modules/copier.js";
 import {
@@ -16,8 +16,15 @@ import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from 
 import { merge3 } from "../modules/merge3.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
+import {
+  componentForScope,
+  describeFanoutOutcomes,
+  spellIdsInStore,
+  syncUserTierFanout,
+} from "../modules/user-tier.js";
 import type {
   ArcaneManifest,
+  InstallScope,
   InstalledComponent,
   RegistryComponent,
   SpellUpdateOptions,
@@ -129,12 +136,13 @@ export async function resolveOrphan(
 export async function findMissingTrackedFiles(
   targetDir: string,
   components: InstalledComponent[],
+  scope: InstallScope = "repo",
 ): Promise<string[]> {
   const missing: string[] = [];
   for (const installed of components) {
     let component: RegistryComponent;
     try {
-      component = getComponent(installed.name);
+      component = componentForScope(getComponent(installed.name), scope);
     } catch {
       continue;
     }
@@ -160,7 +168,7 @@ export async function runUpdate(
   } catch (err) {
     if (err instanceof ManifestNotFoundError) {
       console.error(
-        'Not initialized. Run "spell init" first before updating.',
+        `Not initialized. Run "spell init${options.user ? " --user" : ""}" first before updating.`,
       );
       process.exit(1);
       return; // guard: process.exit is mocked in tests
@@ -168,34 +176,45 @@ export async function runUpdate(
     throw err;
   }
 
-  console.warn(
-    `WARNING: Arcane v${packageVersion} update safety notice: commit your work before updating.`,
-  );
-  console.warn(
-    "Updates can replace managed files. A clean committed baseline is required for recovery.",
-  );
+  // ARC-045 decision 3 / CS-04: the user tier at ~/.arcane is not a
+  // repository -- its merge baseline is the recorded hash plus the published
+  // vendor file, so the git checks below do not apply; and its client shims
+  // live outside the store and are reconciled after the store itself (see
+  // the fan-out calls below). Everything else in this command runs unchanged
+  // over the store through componentForScope.
+  const scope: InstallScope = options.user || manifest.scope === "user" ? "user" : "repo";
+  const homeDir = dirname(targetDir);
 
-  const gitState = await inspectGitRepository(targetDir);
-  if (gitState.status === "not-repository") {
-    console.error(
-      "Update refused: this directory is not a Git repository or Git is unavailable.",
+  if (scope === "repo") {
+    console.warn(
+      `WARNING: Arcane v${packageVersion} update safety notice: commit your work before updating.`,
     );
-    process.exit(1);
-    return;
-  }
-  if (gitState.status === "no-commits") {
-    console.error(
-      "Update refused: this repository has no commits. Commit the current baseline before updating.",
+    console.warn(
+      "Updates can replace managed files. A clean committed baseline is required for recovery.",
     );
-    process.exit(1);
-    return;
-  }
-  if (gitState.uncommittedChanges > 0) {
-    console.error(
-      `Update refused: this repository has ${gitState.uncommittedChanges} uncommitted change${gitState.uncommittedChanges === 1 ? "" : "s"}. Commit or otherwise clean the working tree before updating.`,
-    );
-    process.exit(1);
-    return;
+
+    const gitState = await inspectGitRepository(targetDir);
+    if (gitState.status === "not-repository") {
+      console.error(
+        "Update refused: this directory is not a Git repository or Git is unavailable.",
+      );
+      process.exit(1);
+      return;
+    }
+    if (gitState.status === "no-commits") {
+      console.error(
+        "Update refused: this repository has no commits. Commit the current baseline before updating.",
+      );
+      process.exit(1);
+      return;
+    }
+    if (gitState.uncommittedChanges > 0) {
+      console.error(
+        `Update refused: this repository has ${gitState.uncommittedChanges} uncommitted change${gitState.uncommittedChanges === 1 ? "" : "s"}. Commit or otherwise clean the working tree before updating.`,
+      );
+      process.exit(1);
+      return;
+    }
   }
 
   // Already up to date -- unless a tracked file has gone missing, in which
@@ -203,9 +222,25 @@ export async function runUpdate(
   // ARC-045 / CS-03 remedy path; see findMissingTrackedFiles).
   let sameVersionRestore = false;
   if (manifest.version === packageVersion && manifest.components.length > 0) {
-    const missing = await findMissingTrackedFiles(targetDir, manifest.components);
+    const missing = await findMissingTrackedFiles(targetDir, manifest.components, scope);
     if (missing.length === 0) {
       console.log("Already up to date.");
+      // The user tier's client files can go missing (or a renderer can
+      // change) with the store itself intact -- reconcile them on every
+      // same-version run too. A no-op when nothing changed.
+      if (scope === "user") {
+        const fanout = await syncUserTierFanout({
+          homeDir,
+          storeRoot: targetDir,
+          spellIds: spellIdsInStore(manifest.components),
+          previous: manifest.fanout,
+          dryRun: options.dryRun,
+        });
+        for (const line of describeFanoutOutcomes(fanout.outcomes, options.dryRun)) console.log(`  ${line}`);
+        if (!options.dryRun && JSON.stringify(fanout.record) !== JSON.stringify(manifest.fanout ?? {})) {
+          await writeManifest(targetDir, { ...manifest, fanout: fanout.record });
+        }
+      }
       return;
     }
     sameVersionRestore = true;
@@ -240,7 +275,7 @@ export async function runUpdate(
     // Look up the current registry definition (source of truth for file paths)
     let component;
     try {
-      component = getComponent(installed.name);
+      component = componentForScope(getComponent(installed.name), scope);
     } catch (err) {
       if (err instanceof ComponentNotFoundError) {
         // Component removed from registry entirely -- every file it used to
@@ -350,7 +385,14 @@ export async function runUpdate(
         let handled = false;
 
         if (editedByOperator) {
-          const oldVendorContent = await fetchPublishedFile(installed.installedVersion, file);
+          // Fetch by the ASSET path: the published tarball holds the source
+          // (`docs-baseline/gitignore`, `.arcane/spells/<id>.md`), not the
+          // installed name a sourceOverrides component or the user tier's
+          // store gives it.
+          const oldVendorContent = await fetchPublishedFile(
+            installed.installedVersion,
+            component.sourceOverrides?.[file] ?? file,
+          );
           if (oldVendorContent === undefined) {
             console.log(
               `  ! Could not fetch the previously published version of ${file} to merge your edits — left your version untouched. Update it manually if you want the latest.`,
@@ -471,11 +513,31 @@ export async function runUpdate(
     );
   }
 
+  // ARC-045 decision 3 / CS-04: with the store current, reconcile the client
+  // files outside it -- a renderer change regenerates every shim, a dropped
+  // spell's shims are pruned, a missing one comes back, and an edited or
+  // foreign file is left alone and named. Dry-run reports the same decisions.
+  let fanoutRecord: Record<string, string> | undefined;
+  if (scope === "user") {
+    const fanout = await syncUserTierFanout({
+      homeDir,
+      storeRoot: targetDir,
+      spellIds: spellIdsInStore(updatedComponents),
+      previous: manifest.fanout,
+      dryRun: options.dryRun,
+    });
+    const lines = describeFanoutOutcomes(fanout.outcomes, options.dryRun);
+    if (lines.length > 0) console.log();
+    for (const line of lines) console.log(`  ${line}`);
+    fanoutRecord = fanout.record;
+  }
+
   if (options.dryRun) {
     console.log(
       `\n[dry-run] Would update ${fileCount} files.`,
     );
-    const applicableRetrofits = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
+    const applicableRetrofits =
+      scope === "repo" ? MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest)) : [];
     if (applicableRetrofits.length > 0) {
       console.log(
         `[dry-run] Would ask ${applicableRetrofits.length} manifest retrofit question${applicableRetrofits.length === 1 ? "" : "s"}: ${applicableRetrofits.map((r) => r.field).join(", ")}.`,
@@ -494,9 +556,13 @@ export async function runUpdate(
   // scripted upgrades all land here. The fields stay unset and are asked on
   // the next interactive run, which is exactly how a scripted `init` already
   // behaves.
-  const interactive = Boolean(process.stdin.isTTY);
+  //
+  // Skipped entirely for the user tier: every retrofit field describes a
+  // repository (hub role, tracking mode, subject root, sensitivity, push
+  // policy), none of which the store has.
+  const interactive = Boolean(process.stdin.isTTY) && scope === "repo";
   const retrofitPatch = interactive ? await runManifestRetrofits(manifest) : {};
-  if (!interactive) {
+  if (!interactive && scope === "repo") {
     const pending = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
     if (pending.length > 0) {
       console.log(
@@ -508,12 +574,13 @@ export async function runUpdate(
   }
 
   // Update manifest with new version, refreshed component file paths, and
-  // any retrofit answers.
+  // any retrofit answers (and, for the user tier, the reconciled fan-out).
   const updated: ArcaneManifest = {
     ...manifest,
     version: packageVersion,
     components: updatedComponents,
     ...retrofitPatch,
+    ...(fanoutRecord !== undefined ? { fanout: fanoutRecord } : {}),
   };
   await writeManifest(targetDir, updated);
 
@@ -537,7 +604,7 @@ export async function runUpdate(
 
   // If this update just turned the repo into a hub, offer to scaffold the
   // venture registry from whatever already exists under business_root.
-  if (manifest.role !== "hub" && updated.role === "hub") {
+  if (scope === "repo" && manifest.role !== "hub" && updated.role === "hub") {
     await offerRegistryScaffold(targetDir, updated.business_root ?? "ventures");
   }
 }

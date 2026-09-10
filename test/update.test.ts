@@ -13,6 +13,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import type { ArcaneManifest } from "../src/types.js";
 import { hashFile } from "../src/modules/copier.js";
+import { USER_FANOUT_PATHS, storeSpellPath } from "../src/modules/user-tier.js";
 import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
@@ -1088,6 +1089,128 @@ describe("spell update — handler", () => {
       expect(
         manifest.components.find((c) => c.name === "component-that-was-removed-from-registry"),
       ).toBeUndefined();
+    });
+  });
+
+  // ─── --user: the per-user tier (ARC-045 decision 3 / CS-04) ────────────────
+  // tmpDir is the home directory; the store is its `.arcane` child. The
+  // fixture is a real `runInit --user`, so these run against exactly the
+  // manifest and fan-out record the product writes.
+
+  describe("--user", () => {
+    let home: string;
+    let storeRoot: string;
+    const storeFile = storeSpellPath("spell-status");
+    const codexFile = USER_FANOUT_PATHS.codex("spell-status");
+    const claudeFile = USER_FANOUT_PATHS.claude("spell-status");
+
+    beforeEach(async () => {
+      home = tmpDir;
+      storeRoot = join(home, ".arcane");
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      await runInit({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+      vi.mocked(console.log).mockClear();
+      inspectGitRepositoryMock.mockClear();
+    });
+
+    it("runs no git check and asks no retrofit question", async () => {
+      const { select, confirm } = await import("@inquirer/prompts");
+      vi.mocked(select).mockClear();
+      vi.mocked(confirm).mockClear();
+
+      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, "0.2.0");
+
+      expect(inspectGitRepositoryMock).not.toHaveBeenCalled();
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect((await readManifestFile(storeRoot)).version).toBe("0.2.0");
+    });
+
+    it("prints 'Already up to date.' at the same version and leaves an intact fan-out untouched", async () => {
+      const before = await readManifestFile(storeRoot);
+
+      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(console.log).toHaveBeenCalledWith("Already up to date.");
+      expect(await readManifestFile(storeRoot)).toEqual(before);
+    });
+
+    it("a same-version run restores a deleted client file even though the store itself is intact", async () => {
+      await removeFixtureDir(join(home, claudeFile));
+
+      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(console.log).toHaveBeenCalledWith("Already up to date.");
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Wrote 1 client file(s): 0 Codex/Copilot skills, 1 Claude Code commands."));
+      const manifest = await readManifestFile(storeRoot);
+      expect(manifest.fanout![claudeFile]).toBe(await hashFile(join(home, claudeFile)));
+    });
+
+    it("a same-version run restores a deleted store spell through the ordinary restore path", async () => {
+      await removeFixtureDir(join(storeRoot, storeFile));
+
+      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("1 tracked file is missing — restoring"));
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining(`Restored missing: ${storeFile}`));
+      expect(await fs.readFile(join(storeRoot, storeFile), "utf8")).toBe(
+        await fs.readFile(join(ASSETS_DIR, ".arcane/spells/spell-status.md"), "utf8"),
+      );
+    });
+
+    it("an edited store spell goes through the three-way merge, fetching the published file by its ASSET path", async () => {
+      const vendor = await fs.readFile(join(ASSETS_DIR, ".arcane/spells/spell-status.md"), "utf8");
+      fetchPublishedFileMock.mockResolvedValue(vendor);
+      await fs.appendFile(join(storeRoot, storeFile), "\nOPERATOR EDIT IN THE STORE\n");
+
+      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, "0.2.0");
+
+      expect(fetchPublishedFileMock).toHaveBeenCalledWith(PACKAGE_VERSION, ".arcane/spells/spell-status.md");
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining(`Merged your edits into: ${storeFile}`));
+      expect(await fs.readFile(join(storeRoot, storeFile), "utf8")).toContain("OPERATOR EDIT IN THE STORE");
+      // The vendor hash is recorded (variant D rule), so the edit survives the next update too.
+      const manifest = await readManifestFile(storeRoot);
+      const component = manifest.components.find((c) => c.files.includes(storeFile))!;
+      expect(component.fileHashes![storeFile]).toBe(await hashFile(join(ASSETS_DIR, ".arcane/spells/spell-status.md")));
+    });
+
+    it("keeps an edited client file, says so, and carries its recorded hash forward across a version bump", async () => {
+      const before = await readManifestFile(storeRoot);
+      const edited = `${await fs.readFile(join(home, codexFile), "utf8")}\nOPERATOR EDIT\n`;
+      await fs.writeFile(join(home, codexFile), edited, "utf8");
+
+      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, "0.2.0");
+
+      expect(await fs.readFile(join(home, codexFile), "utf8")).toBe(edited);
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Kept 1 customized client file(s) untouched"));
+      const manifest = await readManifestFile(storeRoot);
+      expect(manifest.fanout![codexFile]).toBe(before.fanout![codexFile]);
+      expect(manifest.version).toBe("0.2.0");
+    });
+
+    it("--dry-run reports the client-file decisions and writes nothing", async () => {
+      await removeFixtureDir(join(home, claudeFile));
+      const before = await readManifestFile(storeRoot);
+
+      await runUpdate({ user: true, dryRun: true }, storeRoot, ASSETS_DIR, "0.2.0");
+
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("[dry-run] Would write 1 client file(s)"));
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("[dry-run] Would update"));
+      await expect(fs.access(join(home, claudeFile))).rejects.toThrow();
+      expect(await readManifestFile(storeRoot)).toEqual(before);
+    });
+
+    it("points a missing store at spell init --user", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+      const emptyHome = await fs.mkdtemp(join(tmpdir(), "update-user-empty-"));
+      try {
+        await runUpdate({ user: true }, join(emptyHome, ".arcane"), ASSETS_DIR, PACKAGE_VERSION);
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('spell init --user'));
+        expect(exitSpy).toHaveBeenCalledWith(1);
+      } finally {
+        await removeFixtureDir(emptyHome);
+      }
     });
   });
 });

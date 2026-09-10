@@ -241,6 +241,18 @@ See the full prompt at \`.arcane/spells/spell-example.md\` for the complete work
         });
         expect(rendered).toContain("description: Plain description\n");
     });
+
+    it("renders over an explicit canonical reference (the user tier's absolute store path) when one is given", () => {
+        const abs = "C:/Users/someone/.arcane/spells/spell-example.md";
+        const rendered = renderClaudeCommandStub(
+            "spell-example",
+            { name: "Spell — Example", description: "Plain description" },
+            abs,
+        );
+        expect(rendered).toContain(`See the full prompt at \`${abs}\` for the complete workflow definition.`);
+        expect(rendered).toContain(`\n@${abs}\n`);
+        expect(rendered).not.toContain("@.arcane/spells/");
+    });
 });
 
 describe("renderCodexSkill", () => {

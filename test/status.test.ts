@@ -11,6 +11,8 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { canonicalSpellPath } from "../src/modules/spell-compiler.js";
+import { USER_FANOUT_PATHS, storeSpellPath, syncUserTierFanout } from "../src/modules/user-tier.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
@@ -339,6 +341,107 @@ describe("spell status — handler", () => {
       expect(allOutput).toContain("gitGraph");
       expect(allOutput).toContain('commit id: "0.14.0"');
       expect(allOutput).not.toContain("Version drift:");
+    });
+  });
+
+  // ─── Scope and --user (ARC-045 decision 3 / CS-04) ─────────────────────────
+  // tmpDir doubles as a home directory whose `.arcane` child is the store.
+  // The repository-status test that looks for a user tier on "this machine"
+  // resolves it through the environment, so it stubs USERPROFILE/HOME to a
+  // temp home rather than mocking anything.
+
+  describe("scope and --user", () => {
+    const ASSETS_DIR = join(process.cwd(), "src/assets");
+    const savedEnv: Record<string, string | undefined> = {};
+
+    function stubHome(dir: string) {
+      for (const key of ["USERPROFILE", "HOME"]) {
+        if (!(key in savedEnv)) savedEnv[key] = process.env[key];
+        process.env[key] = dir;
+      }
+    }
+
+    afterEach(() => {
+      for (const [key, value] of Object.entries(savedEnv)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+        delete savedEnv[key];
+      }
+    });
+
+    /** A store under `home` with one spell and its two client files, as `spell init --user` leaves it. */
+    async function installTier(home: string, version = PACKAGE_VERSION) {
+      const storeRoot = join(home, ".arcane");
+      const dest = join(storeRoot, storeSpellPath("spell-status"));
+      await fs.mkdir(join(dest, ".."), { recursive: true });
+      await fs.copyFile(join(ASSETS_DIR, canonicalSpellPath("spell-status")), dest);
+      const { record } = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ["spell-status"] });
+      await writeManifest(storeRoot, {
+        version,
+        profile: "full",
+        components: [
+          { name: "spells-session", files: [storeSpellPath("spell-status")], installedVersion: version },
+        ],
+        scope: "user",
+        fanout: record,
+      });
+      return { storeRoot, record };
+    }
+
+    const output = () => logSpy.mock.calls.map((c) => c[0] as string).join("\n");
+
+    it("--user reports the store, its scope, the client-file counts and the VS Code note", async () => {
+      const { storeRoot } = await installTier(tmpDir);
+
+      await runStatus(storeRoot, PACKAGE_VERSION, { user: true });
+
+      expect(output()).toContain(`Scope: user — ${storeRoot}`);
+      expect(output()).toContain("Client files: 2 (1 Codex/Copilot skills, 1 Claude Code commands)");
+      expect(output()).not.toContain("missing");
+      expect(output()).toContain("chat.useAgentSkills");
+      expect(output()).toContain("personal command over a project command");
+    });
+
+    it("--user counts a deleted client file as missing and an edited one as customized, with the remedy", async () => {
+      const { storeRoot } = await installTier(tmpDir);
+      await removeFixtureDir(join(tmpDir, USER_FANOUT_PATHS.claude("spell-status")));
+      await fs.appendFile(join(tmpDir, USER_FANOUT_PATHS.codex("spell-status")), "\nEDIT\n");
+
+      await runStatus(storeRoot, PACKAGE_VERSION, { user: true });
+
+      expect(output()).toContain("1 missing, 1 customized");
+      expect(output()).toContain("spell update --user");
+    });
+
+    it("--user without a store points at spell init --user", async () => {
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+
+      await runStatus(join(tmpDir, ".arcane"), PACKAGE_VERSION, { user: true });
+
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("spell init --user"));
+      expect(exitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it("a repository status says Scope: repo, and names the user tier only when this machine has one", async () => {
+      await writeManifest(tmpDir, {
+        components: [{ name: "testing-standards", files: ["x.md"], installedVersion: PACKAGE_VERSION }],
+      });
+      const home = await fs.mkdtemp(join(tmpdir(), "status-home-"));
+      try {
+        stubHome(home);
+
+        await runStatus(tmpDir, PACKAGE_VERSION);
+        expect(output()).toContain("Scope: repo");
+        expect(output()).not.toContain("User tier:");
+
+        logSpy.mockClear();
+        const { storeRoot } = await installTier(home, "1.1.0");
+        await runStatus(tmpDir, PACKAGE_VERSION);
+        expect(output()).toContain("Scope: repo");
+        expect(output()).toContain(`User tier: v1.1.0 at ${storeRoot} (spell status --user)`);
+      } finally {
+        await removeFixtureDir(home);
+      }
     });
   });
 });

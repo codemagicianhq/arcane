@@ -11,6 +11,14 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
+import { hashFile } from "../src/modules/copier.js";
+import { getComponent } from "../src/modules/registry.js";
+import {
+  USER_FANOUT_PATHS,
+  USER_TIER_COMPONENTS,
+  absoluteStoreSpellPath,
+  componentForScope,
+} from "../src/modules/user-tier.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
@@ -278,6 +286,136 @@ describe("spell init — handler", () => {
         PACKAGE_VERSION,
       ),
     ).resolves.not.toThrow();
+  });
+
+  // ─── --user: the per-user tier (ARC-045 decision 3 / CS-04) ────────────────
+  // tmpDir stands in for the home directory; the store is its `.arcane`
+  // child, exactly as userTierRoot() derives it. The command receives the
+  // store root and fans out to its parent, so no environment stubbing is
+  // needed at this level (userTierRoot's own env behavior is covered in
+  // test/user-tier.test.ts).
+
+  describe("--user", () => {
+    const EXPECTED_SPELLS = USER_TIER_COMPONENTS
+      .map((name) => componentForScope(getComponent(name), "user"))
+      .flatMap((c) => c.files).length;
+
+    function storeRootOf(home: string) {
+      return join(home, ".arcane");
+    }
+
+    it("installs canonical spells into ~/.arcane/spells and fans two client files per spell out to the home directory, recording both", async () => {
+      const home = tmpDir;
+      const storeRoot = storeRootOf(home);
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await runInit({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      const manifest = JSON.parse(await fs.readFile(join(storeRoot, ".arcane.json"), "utf8")) as ArcaneManifest;
+      expect(manifest.scope).toBe("user");
+      expect(manifest.version).toBe(PACKAGE_VERSION);
+      expect(manifest.components.map((c) => c.name)).toEqual([...USER_TIER_COMPONENTS]);
+      const storeFiles = manifest.components.flatMap((c) => c.files);
+      expect(storeFiles).toHaveLength(EXPECTED_SPELLS);
+      expect(storeFiles.every((f) => /^spells\/spell-[a-z0-9-]+\.md$/.test(f))).toBe(true);
+      for (const component of manifest.components) {
+        for (const file of component.files) {
+          expect(component.fileHashes?.[file]).toBe(await hashFile(join(storeRoot, file)));
+        }
+      }
+      // No repository-relative shim, no governance, no manifest questions' fields.
+      expect(storeFiles.some((f) => f.startsWith(".github") || f.startsWith(".claude") || f.startsWith(".agents"))).toBe(false);
+      expect(manifest.role).toBeUndefined();
+      expect(manifest.tracking_mode).toBeUndefined();
+      expect(manifest.push_policy).toBeUndefined();
+
+      // The fan-out: two files per spell, recorded with the hash of what was written.
+      expect(Object.keys(manifest.fanout ?? {})).toHaveLength(EXPECTED_SPELLS * 2);
+      const codex = USER_FANOUT_PATHS.codex("spell-status");
+      const claude = USER_FANOUT_PATHS.claude("spell-status");
+      const abs = absoluteStoreSpellPath(storeRoot, "spell-status");
+      expect(await fs.readFile(join(home, codex), "utf8")).toContain(`Read \`${abs}\``);
+      expect(await fs.readFile(join(home, claude), "utf8")).toContain(`@${abs}\n`);
+      expect(manifest.fanout![codex]).toBe(await hashFile(join(home, codex)));
+      expect(manifest.fanout![claude]).toBe(await hashFile(join(home, claude)));
+
+      // What the operator is told: counts, the VS Code note, the precedence rule.
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain(`${EXPECTED_SPELLS} Spells installed to ${storeRoot}/spells/`);
+      expect(output).toContain(`Wrote ${EXPECTED_SPELLS * 2} client file(s)`);
+      expect(output).toContain("chat.useAgentSkills");
+      expect(output).toContain("chat.promptFilesLocations; the user tier does not use it");
+      expect(output).toContain("personal command over a project command");
+    });
+
+    it("asks no question and touches no git state", async () => {
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      const { select, confirm, input } = await import("@inquirer/prompts");
+      const { inspectGitRepository, ensureLocalPullRebase } = await import("../src/modules/git.js");
+
+      await runInit({ user: true }, storeRootOf(tmpDir), ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(inspectGitRepository)).not.toHaveBeenCalled();
+      expect(vi.mocked(ensureLocalPullRebase)).not.toHaveBeenCalled();
+    });
+
+    it("--dry-run lists the store copies and the client files it would write, and writes nothing", async () => {
+      const home = tmpDir;
+      const storeRoot = storeRootOf(home);
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await runInit({ user: true, dryRun: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain("Would copy: spells/spell-status.md");
+      expect(output).toContain(`Would write: ~/${USER_FANOUT_PATHS.codex("spell-status")}`);
+      expect(output).toContain(`Would write: ~/${USER_FANOUT_PATHS.claude("spell-status")}`);
+      expect(output).toContain(`Would initialize the user tier — ${EXPECTED_SPELLS} spells, ${EXPECTED_SPELLS * 2} client files`);
+      await expect(fs.access(storeRoot)).rejects.toThrow();
+      await expect(fs.access(join(home, ".agents"))).rejects.toThrow();
+      await expect(fs.access(join(home, ".claude"))).rejects.toThrow();
+    });
+
+    it("a second init reports the tier as already initialized and points at spell update --user", async () => {
+      const storeRoot = storeRootOf(tmpDir);
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      await runInit({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+      logSpy.mockClear();
+
+      await runInit({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain(`Already initialized (user tier at ${storeRoot})`);
+      expect(output).toContain("spell update --user");
+    });
+
+    it("rejects --profile together with --user", async () => {
+      await expect(
+        runInit({ user: true, profile: "lite" }, storeRootOf(tmpDir), ASSETS_DIR, PACKAGE_VERSION),
+      ).rejects.toThrow(/does not apply to "--user"/);
+    });
+
+    it("leaves a same-named client file it did not write alone, says so, and does not record it", async () => {
+      const home = tmpDir;
+      const storeRoot = storeRootOf(home);
+      const foreign = USER_FANOUT_PATHS.codex("spell-plan");
+      await fs.mkdir(join(home, foreign, ".."), { recursive: true });
+      await fs.writeFile(join(home, foreign), "the operator's own spell-plan skill\n", "utf8");
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await runInit({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(await fs.readFile(join(home, foreign), "utf8")).toBe("the operator's own spell-plan skill\n");
+      const manifest = JSON.parse(await fs.readFile(join(storeRoot, ".arcane.json"), "utf8")) as ArcaneManifest;
+      expect(manifest.fanout![foreign]).toBeUndefined();
+      expect(Object.keys(manifest.fanout!)).toHaveLength(EXPECTED_SPELLS * 2 - 1);
+      const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain("Left 1 existing file(s) alone");
+      expect(output).toContain(`~/${foreign}`);
+    });
   });
 });
 
