@@ -2,10 +2,10 @@
 title: Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier
 status: active
 created: 2026-09-09
-activated: pending (CS-00 merge)
+activated: 2026-09-09 (CS-00 merged — PR #220)
 baseline: 1293fae (main)
 owner: operator (payini)
-executor: Arcane autonomous loop (one epic per session) — activates when CS-00 is merged
+executor: Arcane autonomous loop (one epic per session) — active since CS-00 merged on 2026-09-09
 ---
 
 # Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier

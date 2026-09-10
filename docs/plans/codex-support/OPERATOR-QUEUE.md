@@ -80,3 +80,22 @@ entry to *this* queue once it runs.
 - **Status:** [ ] open
 
 <!-- The loop appends Q-004+ below this line. -->
+
+## Q-004 — Confirm the Copilot shim in VS Code (one minute)
+
+- **What:** In VS Code with Copilot Chat in **agent mode**, in this repository once
+  [PR #232](https://github.com/codemagicianhq/arcane/pull/232) has merged (or in any consumer at
+  `1.0.0`), run `/spell-status` and confirm the reply is the read-only snapshot line (branch, counts,
+  last session) rather than a paraphrase of the shim sentence.
+- **Why:** CS-03 turned every `.github/prompts/*.prompt.md` into a generated shim — the canonical
+  frontmatter block, a relative link to `.arcane/spells/<id>.md`, and the read-and-follow sentence.
+  Claude Code and Codex were re-confirmed live by direct observation
+  (`docs/research/skill-discovery-smoke-tests.md`, "CS-03 re-confirmation"); Copilot Chat cannot be
+  driven from an agent session, so it is the one client whose behavior only you can observe (EV-01,
+  Definition of Done item 3).
+- **Preconditions:** PR #232 merged, or a consumer installed at `1.0.0`.
+- **Exact commands:** open Copilot Chat → agent mode → type `/spell-status` → read the reply.
+- **Rollback / if it fails:** nothing to undo on a pass — record the result here. If Copilot paraphrases
+  the shim instead of running the spell, record that instead: the remedy is the `render()` mode variance
+  ARC-045 allowed for — an inlined-body Copilot renderer — a small follow-up epic, not a redesign.
+- **Status:** [ ] open
