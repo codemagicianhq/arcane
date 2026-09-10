@@ -299,10 +299,24 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
 - [ ] **CS-07 — Docs, PRD close, drift.** Route: `direct`. Size: S. Bump: no. Dependencies: CS-05,
   CS-06, CS-08. Risk: Low. README, `portable-bootstrap.md`, `spell-authoring-standards.md`, PRD
   `status: complete`, final `spell-check-drift` GO. **Report:**
-- [ ] **CS-08 — Distribution-model spike (restore-based delivery).** Route: `adr` (research +
+- [x] **CS-08 — Distribution-model spike (restore-based delivery).** Route: `adr` (research +
   ADR draft, no implementation). Size: M (research-heavy). Bump: no. Dependencies: CS-03 (needs the
   canonical folder to exist to spike against). Risk: Low — produces a decision, not code. Verdict
-  goes to `OPERATOR-QUEUE.md`; a "go" is a new program, never folded back into this one. **Report:**
+  goes to `OPERATOR-QUEUE.md`; a "go" is a new program, never folded back into this one. **Ran
+  2026-09-10, after CS-04 rather than last, at the operator's direction ("cs-08 if make sense to run
+  it now" — it did: research-only, no `src/assets`/registry footprint, and the user tier now exists
+  to compare against).** Built the model instead of arguing it: a `lite` consumer with its four spell
+  folders gitignored, a fresh clone restored in full by today's same-version `spell update` (160
+  files), Codex discovering the restored, ignored skills (81 `spell-*` listed), and an edit to a
+  restored spell invisible to git and gone on a second clone. **Verdict: no-go for now, mechanism
+  retained** — `docs/research/restore-based-delivery.md` (eight findings) and ARC-046 drafted
+  `Proposed` in `DECISIONS.md`; the symlink/junction variant Q-010 named is rejected outright
+  (ARC-027's constraint, plus VS Code's deprecation of the setting BC-28's junction finding relied on).
+  Operator decision: `OPERATOR-QUEUE.md` Q-006. ADR-drafting PR, operator-merged per Authority &
+  Delegation (link recorded at session close). AC9 met.
+  **Report:** Arcane looked hard at making spell files vanish from your repository and reappear on
+  install, built the experiment, and decided against it: the user tier already removes the
+  duplication, and a file git cannot see cannot carry your edits. · category: decision
 
 ## Recommended Execution Order
 
