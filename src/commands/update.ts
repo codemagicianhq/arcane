@@ -1,6 +1,14 @@
 import { dirname, join } from "node:path";
-import { readFile, writeFile, rm } from "node:fs/promises";
-import { copyFile, copyDirectory, fileExists, hashFile } from "../modules/copier.js";
+import { readFile, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  copyDirectory,
+  fileExists,
+  fileMatchesHash,
+  hashFile,
+  removeWithin,
+  validateTargetPath,
+} from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
@@ -103,6 +111,15 @@ export async function resolveOrphan(
   recordedHash: string | undefined,
   prune: boolean,
 ): Promise<OrphanStatus> {
+  // A manifest path is repository content: one that resolves outside the
+  // target directory is never read, hashed or deleted -- the same guard every
+  // write path applies, reported rather than acted on.
+  try {
+    validateTargetPath(targetDir, file);
+  } catch {
+    console.log(`  ! Refused (path escapes the target directory): ${file}`);
+    return "reported";
+  }
   const filePath = join(targetDir, file);
   if (!(await fileExists(filePath))) return "not-found";
   if (!prune) return "reported";
@@ -111,12 +128,11 @@ export async function resolveOrphan(
     console.log(`  ! Orphaned, not pruned (no recorded hash to verify it's untouched): ${file}`);
     return "reported";
   }
-  const currentHash = await hashFile(filePath);
-  if (currentHash !== recordedHash) {
+  if (!(await fileMatchesHash(filePath, recordedHash))) {
     console.log(`  ! Orphaned but edited since install — not pruning: ${file}`);
     return "reported";
   }
-  await rm(filePath, { force: true });
+  await removeWithin(targetDir, file);
   console.log(`  Pruned orphaned file: ${file}`);
   return "pruned";
 }
@@ -362,7 +378,7 @@ export async function runUpdate(
         recordedHash !== undefined &&
         targetExists &&
         !preserveExisting &&
-        (await hashFile(join(targetDir, file))) !== recordedHash;
+        !(await fileMatchesHash(join(targetDir, file), recordedHash));
 
       if (preserveExisting) {
         // skipExisting keeps its pre-ARC-038 whole-file behavior unchanged --

@@ -1,6 +1,7 @@
 import { rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { confirm } from "@inquirer/prompts";
+import { removeWithin } from "../modules/copier.js";
 import {
   readManifest,
   ManifestNotFoundError,
@@ -136,16 +137,19 @@ export async function runUninstall(
     }
   }
 
-  // Delete each file tracked in the manifest
+  // Delete each file tracked in the manifest -- through the same traversal
+  // guard every write path has: a manifest entry that resolves outside the
+  // repository is named and skipped, never deleted.
   let removed = 0;
   for (const component of manifest.components) {
     for (const file of component.files) {
-      const filePath = join(targetDir, file);
       try {
-        await rm(filePath, { force: true });
+        await removeWithin(targetDir, file);
         removed++;
-      } catch {
-        // Non-existent files are fine (force: true), but other errors propagate
+      } catch (err) {
+        console.log(
+          `  ! Skipped ${file}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
   }
@@ -251,8 +255,12 @@ async function uninstallUserTier(
 
   let removed = 0;
   for (const file of storeFiles) {
-    await rm(join(storeRoot, file), { force: true });
-    removed++;
+    try {
+      await removeWithin(storeRoot, file);
+      removed++;
+    } catch (err) {
+      console.log(`  ! Skipped ${file}: ${err instanceof Error ? err.message : String(err)}`);
+    }
   }
   await rm(join(storeRoot, ".arcane.json"), { force: true });
   await removeDirectoryIfEmpty(join(storeRoot, USER_TIER_SPELLS_DIR));

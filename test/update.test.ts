@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import type { ArcaneManifest } from "../src/types.js";
-import { hashFile } from "../src/modules/copier.js";
+import { hashContent, hashFile } from "../src/modules/copier.js";
 import { USER_FANOUT_PATHS, storeSpellPath } from "../src/modules/user-tier.js";
 import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
@@ -972,6 +972,109 @@ describe("spell update — handler", () => {
     it("reports not-found when the file is already gone, regardless of prune", async () => {
       expect(await resolveOrphan(tmpDir, "never-existed.md", "somehash", true)).toBe("not-found");
       expect(await resolveOrphan(tmpDir, "never-existed.md", "somehash", false)).toBe("not-found");
+    });
+
+    it("refuses a manifest path that resolves outside the target directory, even with prune=true and a matching hash (TODO.md traversal finding)", async () => {
+      const outside = await fs.mkdtemp(join(tmpdir(), "update-orphan-outside-"));
+      try {
+        const victim = join(outside, "keep-me.md");
+        await fs.writeFile(victim, "precious");
+        const escaping = `../${outside.split(/[\\/]/).pop()}/keep-me.md`;
+        const consoleSpy = vi.spyOn(console, "log");
+
+        const status = await resolveOrphan(tmpDir, escaping, hashContent("precious"), true);
+
+        expect(status).toBe("reported");
+        await expect(fs.readFile(victim, "utf8")).resolves.toBe("precious");
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Refused (path escapes the target directory)"));
+      } finally {
+        await removeFixtureDir(outside);
+      }
+    });
+
+    it("prunes a file whose only difference from the record is its line endings", async () => {
+      const file = "orphan.md";
+      await fs.writeFile(join(tmpDir, file), "line one\r\nline two\r\n");
+      const recordedAtInstall = hashContent("line one\nline two\n");
+
+      expect(await resolveOrphan(tmpDir, file, recordedAtInstall, true)).toBe("pruned");
+    });
+  });
+
+  // ─── Line endings and the recorded hash (TODO.md, "a recorded file hash is byte-exact") ──
+
+  describe("line endings", () => {
+    const file = ".arcane/governance/testing-standards.md";
+
+    it("a managed file git rewrote from CRLF to LF is untouched: refreshed normally, never merged", async () => {
+      const asset = await fs.readFile(join(ASSETS_DIR, file), "utf8");
+      // Installed at a time the asset shipped with CRLF (hash recorded from
+      // that content), then normalized to LF by a checkout -- or the reverse.
+      await seedComponentFile(tmpDir, file, asset.replace(/\n/g, "\r\n"));
+      await writeManifest(tmpDir, {
+        components: [
+          {
+            name: "testing-standards",
+            files: [file],
+            installedVersion: OLD_VERSION,
+            fileHashes: { [file]: hashContent(asset) },
+          },
+        ],
+      });
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(fetchPublishedFileMock).not.toHaveBeenCalled();
+      expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining("Merged your edits"));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Updated 1 files"));
+      expect(await fs.readFile(join(tmpDir, file), "utf8")).toBe(asset);
+    });
+
+    it("a hash recorded before normalization (raw CRLF bytes) still reads the unchanged file as untouched", async () => {
+      const asset = await fs.readFile(join(ASSETS_DIR, file), "utf8");
+      const crlf = asset.replace(/\n/g, "\r\n");
+      await seedComponentFile(tmpDir, file, crlf);
+      await writeManifest(tmpDir, {
+        components: [
+          {
+            name: "testing-standards",
+            files: [file],
+            installedVersion: OLD_VERSION,
+            fileHashes: { [file]: createHash("sha256").update(crlf).digest("hex") },
+          },
+        ],
+      });
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(fetchPublishedFileMock).not.toHaveBeenCalled();
+      const manifest = await readManifestFile(tmpDir);
+      // Re-recorded in the normalized form going forward.
+      expect(manifest.components[0]!.fileHashes![file]).toBe(hashContent(asset));
+    });
+
+    it("a genuine edit inside a CRLF file is still an edit", async () => {
+      const asset = await fs.readFile(join(ASSETS_DIR, file), "utf8");
+      await seedComponentFile(tmpDir, file, `${asset}OPERATOR EDIT\n`.replace(/\n/g, "\r\n"));
+      await writeManifest(tmpDir, {
+        components: [
+          {
+            name: "testing-standards",
+            files: [file],
+            installedVersion: OLD_VERSION,
+            fileHashes: { [file]: hashContent(asset) },
+          },
+        ],
+      });
+      // "Could not fetch" keeps the operator's file and its recorded hash.
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(fetchPublishedFileMock).toHaveBeenCalledWith(OLD_VERSION, file);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("left your version untouched"));
+      expect(await fs.readFile(join(tmpDir, file), "utf8")).toContain("OPERATOR EDIT");
     });
   });
 

@@ -253,6 +253,21 @@ See the full prompt at \`.arcane/spells/spell-example.md\` for the complete work
         expect(rendered).toContain(`\n@${abs}\n`);
         expect(rendered).not.toContain("@.arcane/spells/");
     });
+
+    it("quotes the @ include when the reference contains whitespace (Claude Code's documented form for such paths)", () => {
+        const spaced = "C:/Users/Jane Doe/.arcane/spells/spell-example.md";
+        const rendered = renderClaudeCommandStub(
+            "spell-example",
+            { name: "Spell — Example", description: "Plain description" },
+            spaced,
+        );
+        expect(rendered).toContain(`\n@"${spaced}"\n`);
+        expect(rendered).toContain(`See the full prompt at \`${spaced}\``);
+        // The common, whitespace-free case is unchanged.
+        const plain = renderClaudeCommandStub("spell-example", { name: "Spell — Example", description: "d" });
+        expect(plain).toContain("\n@.arcane/spells/spell-example.md\n");
+        expect(plain).not.toContain('@"');
+    });
 });
 
 describe("renderCodexSkill", () => {

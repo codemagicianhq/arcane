@@ -197,6 +197,10 @@ export function renderClaudeCommandStub(
   const title = deriveStubTitle(frontmatter.name);
   const description = frontmatter.claudeDescription ?? frontmatter.description;
   const promptPath = canonicalRef;
+  // Claude Code's documented form for a path with whitespace is
+  // `@"path with spaces.md"`; the repository-relative canonical path never
+  // has any, so the common case stays byte-identical to what shipped in 1.0.0.
+  const includeRef = /\s/.test(promptPath) ? `"${promptPath}"` : promptPath;
 
   return `---
 description: ${description}
@@ -210,7 +214,7 @@ See the full prompt at \`${promptPath}\` for the complete workflow definition.
 
 ---
 
-@${promptPath}
+@${includeRef}
 `;
 }
 

@@ -68,10 +68,31 @@ export async function getVersionAtRef(cwd: string, ref: string): Promise<string 
  * authored at 06:46). `%cs` renders it in the commit's own recorded offset,
  * so the calendar-day comparison gives the same answer on the operator's
  * machine and on a UTC runner, where a `--until=<instant>` filter would not.
+ *
+ * For an in-progress program, "now" deliberately excludes the report's own
+ * generated outputs (`generatedOutputs`, repository-relative): the close is
+ * the most recent commit that touched anything ELSE. Without that, committing
+ * a regenerated report moved the close onto the very commit that carried the
+ * report, whose own `Agent:` trailer the cast then counted -- so a freshly
+ * committed report for an active program was stale the instant it landed,
+ * and only a trailer-free regeneration commit kept the parity gate green
+ * (TODO.md, "the golden-parity gate has no notion of an in-progress
+ * program"). Anchoring on paths rather than on a recorded SHA survives this
+ * repo's rebase-merges, which rewrite every SHA on the way to main. The one
+ * discipline left is the natural one: a regeneration commit touches only the
+ * report files, which is what `spell report` produces.
  */
-export async function getCloseCommit(cwd: string, completedDate?: string): Promise<string | null> {
+export async function getCloseCommit(
+  cwd: string,
+  completedDate?: string,
+  generatedOutputs: string[] = [],
+): Promise<string | null> {
   if (!completedDate) {
-    const head = await runGitTextOrNull(cwd, ["rev-parse", "HEAD"]);
+    const args =
+      generatedOutputs.length === 0
+        ? ["rev-parse", "HEAD"]
+        : ["log", "-1", "--format=%H", "HEAD", "--", ".", ...generatedOutputs.map((p) => `:(exclude)${p}`)];
+    const head = await runGitTextOrNull(cwd, args);
     return head === null || head === "" ? null : head;
   }
   const log = await runGitTextOrNull(cwd, ["log", "--format=%H%x09%cs", "HEAD"]);
@@ -91,14 +112,30 @@ export async function getCloseCommit(cwd: string, completedDate?: string): Promi
  * a commit with neither trailer (ordinary human commits) is not counted --
  * this list is specifically the self-reported AI cast, per the schema's
  * `source: "commit-trailer"` / "self-reported" note, not full authorship.
+ *
+ * `generatedOutputs` (repository-relative) are the program's own report
+ * files: a commit that touched nothing but them -- a regeneration -- is not
+ * part of the cast at all, whatever trailer it carries. Anchoring only the
+ * close (getCloseCommit) was not enough: it kept a regeneration from counting
+ * itself while it was the tip, but the moment real content landed after it,
+ * the earlier regeneration fell inside `fromRef..toRef` and was counted after
+ * all -- caught by the regression in test/report-cli.test.ts.
  */
-export async function getCast(cwd: string, fromRef: string, toRef: string): Promise<Map<string, number>> {
+export async function getCast(
+  cwd: string,
+  fromRef: string,
+  toRef: string,
+  generatedOutputs: string[] = [],
+): Promise<Map<string, number>> {
   const ETX = "\x03";
   const log = await runGitTextOrNull(cwd, [
     "log",
     "--no-merges",
     `--format=%B${ETX}`,
     `${fromRef}..${toRef}`,
+    ...(generatedOutputs.length > 0
+      ? ["--", ".", ...generatedOutputs.map((p) => `:(exclude)${p}`)]
+      : []),
   ]);
   const cast = new Map<string, number>();
   if (log === null || log === "") return cast;

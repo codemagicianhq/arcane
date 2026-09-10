@@ -42,7 +42,7 @@ async function writeFile(root: string, relPath: string, content: string) {
  * correct behaviour on incoherent data, but makes the fixture useless for
  * testing anything downstream of it.
  */
-async function createProgramFixture(): Promise<string> {
+async function createProgramFixture(options: { active?: boolean } = {}): Promise<string> {
   const root = await createFixtureDir("report-cli");
   const on = (day: string) => ({ authorDate: `${day}T12:00:00`, committerDate: `${day}T12:00:00` });
   runGit(root, ["init", "-b", "main"]);
@@ -60,9 +60,10 @@ async function createProgramFixture(): Promise<string> {
     [
       "---",
       "title: Alpha — A Test Program",
-      "status: complete",
+      // An active program has no `completed:` date: its close is "as of now",
+      // which is exactly the case the self-count regression below exercises.
+      ...(options.active ? ["status: active"] : ["status: complete", "completed: 2026-09-02"]),
       "created: 2026-09-01",
-      "completed: 2026-09-02",
       `baseline: ${baselineSha} (main)`,
       "---",
       "",
@@ -273,6 +274,43 @@ describe("show-report: shallow-clone detection (the v0.34.3 publish failure)", (
       // hence `check` must say "cannot verify", not "drifted".
       const result = await runReportCheck("check", shallow);
       expect(result.drifted.length).toBeGreaterThan(0);
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+});
+
+describe("show-report: an active program's report is anchored on its last non-report commit (TODO.md self-count gap)", () => {
+  it(
+    "stays parity-clean across its own regeneration commit even when that commit carries an Agent trailer, and drifts again only on a real content commit",
+    async () => {
+      dir = await createProgramFixture({ active: true });
+      const trailer = ["-m", "Agent: claude"];
+      const castOf = async () =>
+        (JSON.parse(await fs.readFile(join(dir!, "docs/plans/alpha/show-report.json"), "utf8")) as {
+          cast: { name: string; commits: number }[];
+        }).cast;
+
+      // First regeneration, committed WITH a trailer: before the fix, the cast
+      // counted this very commit and the committed report was stale at once.
+      await runReportCheck("fix", dir);
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "docs: regenerate report", ...trailer]);
+      expect((await runReportCheck("check", dir)).drifted).toEqual([]);
+      expect(await castOf()).toEqual([{ name: "claude", commits: 1, source: "commit-trailer" }]);
+
+      // A real content commit moves the close: drift, as it should.
+      await writeFile(dir, "docs/plans/alpha/NOTES.md", "a note\n");
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "docs: a content commit", ...trailer]);
+      expect((await runReportCheck("check", dir)).drifted.length).toBeGreaterThan(0);
+
+      // Regenerate and commit the report alone (again with a trailer): clean,
+      // and the cast counts the two content commits, not the two regenerations.
+      await runReportCheck("fix", dir);
+      runGit(dir, ["add", "-A"]);
+      runGit(dir, ["commit", "-m", "docs: regenerate report again", ...trailer]);
+      expect((await runReportCheck("check", dir)).drifted).toEqual([]);
+      expect(await castOf()).toEqual([{ name: "claude", commits: 2, source: "commit-trailer" }]);
     },
     HEAVY_TEST_TIMEOUT,
   );

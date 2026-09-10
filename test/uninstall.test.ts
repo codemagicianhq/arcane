@@ -337,6 +337,33 @@ describe("spell uninstall — handler", () => {
     await expect(runUninstall({ yes: true }, tmpDir)).resolves.not.toThrow();
   });
 
+  it("never deletes a manifest entry that resolves outside the repository — it names it and moves on (TODO.md traversal finding)", async () => {
+    const outside = await fs.mkdtemp(join(tmpdir(), "uninstall-outside-"));
+    try {
+      const victim = join(outside, "keep-me.md");
+      await fs.writeFile(victim, "precious");
+      const escaping = `../${outside.split(/[\\/]/).pop()}/keep-me.md`;
+      await writeManifest(tmpDir, {
+        components: [
+          { name: "testing-standards", files: [escaping, "governance/testing-standards.md"], installedVersion: PACKAGE_VERSION },
+        ],
+      });
+      await seedFile(tmpDir, "governance/testing-standards.md");
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUninstall({ yes: true }, tmpDir);
+
+      expect(await fs.readFile(victim, "utf8")).toBe("precious");
+      expect(await fileExists(join(tmpDir, "governance/testing-standards.md"))).toBe(false);
+      expect(await fileExists(join(tmpDir, ".arcane.json"))).toBe(false);
+      const output = consoleSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain(`Skipped ${escaping}`);
+      expect(output).toContain("Path traversal detected");
+    } finally {
+      await removeFixtureDir(outside);
+    }
+  });
+
   // ─── --user: the per-user tier (ARC-045 decision 3 / CS-04) ────────────────
   // tmpDir is the home directory; the store is its `.arcane` child, seeded
   // exactly as `spell init --user` leaves it (one spell, two client files,
