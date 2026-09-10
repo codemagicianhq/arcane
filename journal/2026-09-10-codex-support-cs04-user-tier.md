@@ -233,8 +233,9 @@ after saving the full log, never instead of it.
 
 The restore-model question had been open since August. Twenty minutes with the shipped CLI — a
 gitignored consumer, a clone, an update, an edit, a second clone, one `codex exec` — produced every
-finding the decision rests on and one incidental bug. Planning had rightly deferred the question to a
-spike; the spike's value was in running it, not in reasoning about it.
+finding the decision rests on and one incidental bug. Planning had rightly sent the question to a
+spike instead of deciding it cold (ARC-046, Q-006); the spike's value was in running it, not in
+reasoning about it.
 
 ### Open Items Carried Forward
 
