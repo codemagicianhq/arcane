@@ -64,6 +64,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
 | [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
 | [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
+| [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Proposed   |
 
 ---
 
@@ -2741,3 +2742,121 @@ variances recorded against vendor documentation):**
   Claude Code's user-level `@` include and Copilot's user-level picker are the operator's Q-005.
 - Decision 4 (`spell_scope`, CS-05) is unchanged; until it ships, Claude Code's documented "personal
   over project" precedence means the user tier's copy runs in a repository that still carries its own.
+
+---
+
+## ARC-046 — Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained
+
+**Date:** 2026-09-10
+**Status:** Proposed (2026-09-10, drafted by CS-08 of the Codex Support program; operator decision via
+[docs/plans/codex-support/OPERATOR-QUEUE.md Q-006](docs/plans/codex-support/OPERATOR-QUEUE.md#q-006--accept-revise-or-reject-arc-046-restore-based-delivery-no-go))
+**Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier)
+(the canonical source and the user tier this decision is evaluated against; its rejected-alternatives
+list deliberately left this question open), [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content)
+(the hash record and three-way merge that protect committed files and cannot protect ignored ones),
+[ARC-027](#arc-027--registry-driven-self-host-parity-guard) (the symlink rejection this decision
+reaffirms, now with a second reason), [ARC-019](#arc-019--repository-document-ownership-and-path-model)
+(governance was never a candidate for restoration)
+**Sources:** [docs/research/restore-based-delivery.md](docs/research/restore-based-delivery.md) (the
+prototype and its eight findings), [docs/plans/become-current/OPERATOR-QUEUE.md Q-010](docs/plans/become-current/OPERATOR-QUEUE.md#q-010--decide-whether-to-pursue-a-package-referenced-distribution-model)
+(the parked question this closes), [docs/research/delivery-channels-smoke-tests.md](docs/research/delivery-channels-smoke-tests.md)
+(BC-28), IDEAS.md's 2026-08-21 `#distribution` entry (I13)
+
+**Context:**
+
+During the Codex Support planning conversation the operator asked whether, once every spell has one
+canonical file and three generated shims, those files should stop being committed in consumer
+repositories and be restored from the declared `arcane-cli` dependency instead — gitignored,
+materialized on install, never diffed — the way `node_modules` content is. Become Current had parked
+the adjacent question (Q-010: a package-*referenced* folder, symlinked or junctioned rather than
+copied) after BC-28's two smoke tests. CS-08 was scoped as a research spike because the answer depends
+on a customization-overlay design that did not exist, and it ran after CS-03 (the canonical folder)
+and CS-04 (the user tier) so the question could be asked of the real tree. The spike built the model
+with the shipped CLI rather than reasoning about it: a `lite` consumer with its four spell folders
+gitignored, a fresh clone, today's `spell update`, an edit, a second clone, and a live `codex exec`.
+
+**Decision:**
+
+1. **Arcane does not open a program to make spell delivery content restorable and gitignored.**
+   Consumer repositories keep committing the canonical spells and the generated shims, exactly as
+   ARC-045 ships them. This is a no-go *for now*, recorded with what would reopen it (open questions
+   below), not a permanent rejection of the idea.
+2. **The package-referenced variant — a package-resident spell folder reached through a symlink or
+   junction — is rejected outright**, closing Q-010's mechanism question. ARC-027's constraint stands
+   (this maintainer's own environment runs `core.symlinks=false`, and the copier's traversal guard
+   refuses links by design), and the VS Code setting whose junction-following BC-28 observed
+   (`chat.promptFilesLocations`) is now deprecated by VS Code itself — "This setting and the Local
+   agent will be removed in a future release" (AI settings reference, fetched 2026-09-09).
+3. **The mechanism a future restore model would need stays exactly where it is.** `spell update`'s
+   same-version restore of missing tracked files (CS-03), the manifest's per-file hash record
+   (ARC-038) and its `scope` field (CS-04) are not to be removed or specialized away; a later "go"
+   builds on them rather than re-creating them.
+4. **Any future adoption starts from a customization-overlay design, not from the restore step.**
+   The gate for reopening this decision is a design in which an operator's edit to a restorable file
+   survives a fresh clone — because the edit lives in something git commits — together with a
+   restore trigger that works in a repository with no `package.json` (the docs and governance-only
+   profiles). A "go" is a new program (PLAN.md's own rule); it is never folded into Codex Support.
+
+**Reasoning:**
+
+- **The restore step is already solved, so building it would prove nothing.** On a fresh clone of a
+  consumer whose spell folders were gitignored, one `spell update` at the same version restored all
+  160 delivery files (`Already at v1.1.1, but 160 tracked files are missing — restoring.`), and Codex
+  listed the restored, ignored skills as available — discovery is a directory scan that never
+  consults git. If the mechanism were the question, the answer would be yes; it is not the question.
+- **The crux is edits, and the prototype showed exactly how they are lost.** An edit appended to a
+  restored spell was invisible to `git status`, left nothing to commit, and was absent from a second
+  fresh clone, which restored the vendor file. The only trace was the recorded hash in that one
+  clone's own manifest — the record ARC-038 uses to *detect* an edit, on a file no other checkout
+  has. This is the silent-data-loss class the program's PRD (R5) exists to forbid; the shipped model
+  protects edits precisely because the files are committed.
+- **The motivation has been answered by other means.** The question arose from 41 full prompt bodies
+  duplicated in two formats per repository. After ARC-045 a repository carries 41 canonical files and
+  123 three-line shims; after CS-04 a machine has one copy at `~/.arcane`; after CS-05 a repository
+  can carry none. What a restore model would still remove is the canonical folder in repositories
+  that keep the repo tier — the one file class operators customize (the customized-shim remedy tells
+  them to put their edits there).
+- **Restoring only the shims (the intermediate option) is nearly pointless and not free.** It removes
+  123 tiny generated files from git and, in exchange, needs a restore trigger in repositories without
+  npm, and inherits a dependency's supply-chain trust into `.agents/skills/` and `.claude/commands/`
+  — the same exposure BC-28 flagged for `node_modules` traversal — where committed files at least
+  pass through code review.
+
+**Consequences:**
+
+- Nothing changes in `spell init`, `spell update`, the registry or the parity guards. This decision
+  costs no code and removes no capability.
+- Q-010 in Become Current's operator queue is closed by reference to this ADR once accepted; the
+  channel scan it also wanted (MCP prompts, Claude Code plugin marketplaces, Microsoft APM) remains
+  out of scope and unevaluated, as Q-010 itself already disclosed.
+- One incidental finding is filed separately: on a `core.autocrlf=true` checkout, a restoring
+  `spell update` rewrites the manifest with LF and the next `spell update` refuses on the resulting
+  line-ending-only difference (`TODO.md`, "refuses on a line-ending-only modification of a file it
+  just wrote"). Unrelated to the restore question; found by running it.
+
+**Rejected alternatives:**
+
+- **Go now — open the program.** Rejected: the design work it would start with (the overlay) has no
+  requirement behind it any more, since the duplication is handled by the user tier and the opt-out,
+  and the prototype's data-loss demonstration is exactly the failure mode the current model was
+  built to prevent.
+- **Restore the shims only, keep the canonical folder committed** (PLAN.md's option b). Rejected as
+  not worth a program: three-line generated files, 123 per repository, in exchange for a trigger
+  problem and a trust problem.
+- **Restore the canonical folder as well** (option c). Rejected: moves the customization problem
+  onto the one file class operators edit; requires the overlay design as a precondition.
+- **Symlink or junction the package-resident folder into place** (Q-010's mechanism). Rejected
+  outright, decision 2.
+- **Decide nothing and leave Q-010 parked.** Rejected: the program's Definition of Done requires an
+  explicit go/no-go (AC9), and a parked question re-argues itself every time distribution comes up.
+
+**Open questions (what would reopen decision 1):**
+
+- A customization-overlay design in which an edit to a restorable file lives in committed content —
+  the canonical spell itself if canonical stays committed, or a committed overlay re-applied after
+  restore — and is proven to survive a fresh clone.
+- A restore trigger for repositories without an npm lifecycle (a hook Arcane installs, or a
+  `spell doctor` finding that names the command), so the docs and governance-only profiles are not
+  second-class.
+- A cost the committed model still imposes after CS-05 ships that the user tier and the opt-out do
+  not remove — none is known today.

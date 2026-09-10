@@ -179,9 +179,13 @@ than growing a third format that copies content again.
   `spells-docs` migration fixture in `test/update.test.ts` (edited, untouched and dry-run cases),
   designed after a live run of the pre-CS-03 `update` against a real consumer showed it merging an
   edit "successfully" into the new shim.
-- [ ] **AC9** — `docs/research/restore-based-delivery.md` and an ADR draft exist, stating an
+- [x] **AC9** — `docs/research/restore-based-delivery.md` and an ADR draft exist, stating an
   explicit go/no-go on the restore-based distribution model with named reasoning, before this
-  program's Definition of Done is declared met.
+  program's Definition of Done is declared met. *Met 2026-09-10 (CS-08):* the research doc states
+  **no-go** with eight findings from a live prototype (a gitignored consumer restored by today's
+  same-version `spell update`; edits to restored files lost by construction; Codex discovering
+  ignored skills), and ARC-046 records the decision as `Proposed` for the operator
+  (`docs/plans/codex-support/OPERATOR-QUEUE.md` Q-006).
 
 ## Dependencies
 
