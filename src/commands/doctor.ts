@@ -6,7 +6,12 @@ import { INCIDENT_QUEUE } from "../config/incidents.js";
 import type { Delegation, DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { runGit } from "../modules/git.js";
-import { readManifest, resolveSecretsScanExcludePrefixes } from "../modules/manifest.js";
+import {
+  readManifest,
+  resolveSecretsScanExcludePrefixes,
+  ManifestNotFoundError,
+} from "../modules/manifest.js";
+import { inspectUserTierFanout, resolveHomeDir, userTierRoot } from "../modules/user-tier.js";
 import { scanRepository } from "../modules/denylist-scan.js";
 import { SECRETS_RULES } from "../modules/secrets-scan.js";
 import {
@@ -317,6 +322,72 @@ export interface DoctorOptions {
   fix?: boolean;
   /** ARC-037 decision 7: run only the on-demand secrets scan, skipping the default battery. */
   leaks?: boolean;
+  /** The running CLI's version, for the user-tier compatibility check (CS-04). Passed by the CLI entry. */
+  packageVersion?: string;
+}
+
+/**
+ * ARC-045 decision 3 / CS-04. Non-blocking, always: the user tier is
+ * optional. Absent → pass with the pointer. Present → warn when the store's
+ * `major.minor` is behind (or ahead of) this CLI, or when a client file the
+ * store manifest recorded is gone -- both remedied by `spell update --user`.
+ * A recorded file the operator edited is reported in the pass message, not
+ * warned about: keeping it is the designed behavior, not a defect. Reads the
+ * store manifest and file hashes only; VS Code's own settings are neither
+ * read nor needed (the CS-04 architecture's finding 2).
+ */
+export async function checkUserTier(
+  homeDir: string = resolveHomeDir(),
+  cliVersion?: string,
+): Promise<CheckResult> {
+  const name = "User tier (ARC-045)";
+  const storeRoot = userTierRoot(homeDir);
+
+  let manifest;
+  try {
+    manifest = await readManifest(storeRoot);
+  } catch (err) {
+    if (err instanceof ManifestNotFoundError) {
+      return {
+        name,
+        passed: true,
+        blocking: false,
+        message: "no user tier installed (optional — `spell init --user` shares every spell across the repositories on this machine)",
+      };
+    }
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `could not read ${storeRoot}/.arcane.json (${err instanceof Error ? err.message : String(err)}) — remove it and re-run \`spell init --user\``,
+    };
+  }
+
+  const majorMinor = (v: string): string => v.split(".").slice(0, 2).join(".");
+  const problems: string[] = [];
+  if (cliVersion !== undefined && majorMinor(manifest.version) !== majorMinor(cliVersion)) {
+    problems.push(`installed at v${manifest.version}, this CLI is v${cliVersion}`);
+  }
+  const health = await inspectUserTierFanout(homeDir, manifest.fanout);
+  if (health.missing.length > 0) {
+    problems.push(`${health.missing.length} of ${health.total} client file(s) missing`);
+  }
+
+  if (problems.length > 0) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `${problems.join("; ")} — run \`spell update --user\` (regenerates missing files; never overwrites edited ones)`,
+    };
+  }
+  const customized = health.customized.length > 0 ? `, ${health.customized.length} customized` : "";
+  return {
+    name,
+    passed: true,
+    blocking: false,
+    message: `v${manifest.version} at ${storeRoot} — ${health.total} client file(s) in place${customized}`,
+  };
 }
 
 /**
@@ -637,6 +708,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkPlatformBranchPolicy(targetDir),
     checkDelegations(targetDir),
     checkMcpConfig(targetDir),
+    checkUserTier(resolveHomeDir(), options.packageVersion),
   ]);
 
   // Add session continuity checks

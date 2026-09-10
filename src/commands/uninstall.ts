@@ -1,5 +1,5 @@
 import { rm } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { confirm } from "@inquirer/prompts";
 import {
   readManifest,
@@ -8,6 +8,13 @@ import {
 import { stripMarkerSection } from "../modules/merger.js";
 import { isHookEnforced, blockedRemotes } from "../modules/push-safety.js";
 import { removeSecretsPrecommitHook } from "../modules/secrets-scan.js";
+import {
+  USER_TIER_SPELLS_DIR,
+  describeFanoutOutcomes,
+  removeDirectoryIfEmpty,
+  syncUserTierFanout,
+} from "../modules/user-tier.js";
+import type { ArcaneManifest } from "../types.js";
 
 /**
  * Runs the `spell uninstall` command.
@@ -17,10 +24,11 @@ import { removeSecretsPrecommitHook } from "../modules/secrets-scan.js";
  *
  * @param options.yes  Skip confirmation prompt
  * @param options.dryRun  Preview what would be removed without deleting files
+ * @param options.user  Uninstall the per-user tier at ~/.arcane instead (CS-04)
  * @param targetDir  Directory containing the Arcane installation
  */
 export async function runUninstall(
-  options: { yes?: boolean; dryRun?: boolean },
+  options: { yes?: boolean; dryRun?: boolean; user?: boolean },
   targetDir: string,
 ): Promise<void> {
   // Read existing manifest
@@ -29,11 +37,20 @@ export async function runUninstall(
     manifest = await readManifest(targetDir);
   } catch (err) {
     if (err instanceof ManifestNotFoundError) {
-      console.error('Not initialized. Run "spell init" first.');
+      console.error(`Not initialized. Run "spell init${options.user ? " --user" : ""}" first.`);
       process.exit(1);
       return; // guard: process.exit is mocked in tests
     }
     throw err;
+  }
+
+  // ARC-045 decision 3 / CS-04: the user tier has no push policy, no agent
+  // outputs, no marker sections and no hooks -- only the store and the client
+  // files it fanned out, which come off under the same hash rule they went
+  // on with.
+  if (options.user || manifest.scope === "user") {
+    await uninstallUserTier(options, targetDir, manifest);
+    return;
   }
 
   // A push-blocked repository must not be uninstalled while the block stands.
@@ -167,4 +184,78 @@ export async function runUninstall(
   }
 
   console.log(`\n✓ Uninstalled — ${removed} files removed.`);
+}
+
+// ─── spell uninstall --user ───────────────────────────────────────────────────
+
+/**
+ * Removes the user tier: every client file the store manifest recorded (only
+ * where its content still matches what Arcane wrote -- an edited one is kept
+ * and named, exactly as `update --user` treats it), then the store's spells
+ * and manifest, then the store directories if they are empty. `~/.arcane`
+ * itself is removed only when nothing else lives there (the version cache
+ * and the org-token file share it).
+ */
+async function uninstallUserTier(
+  options: { yes?: boolean; dryRun?: boolean },
+  storeRoot: string,
+  manifest: ArcaneManifest,
+): Promise<void> {
+  const homeDir = dirname(storeRoot);
+  const storeFiles = manifest.components.flatMap((c) => c.files);
+  const recordedCount = Object.keys(manifest.fanout ?? {}).length;
+
+  if (options.dryRun) {
+    for (const file of storeFiles) console.log(`[dry-run] Would remove: ${storeRoot}/${file}`);
+    const preview = await syncUserTierFanout({
+      homeDir,
+      storeRoot,
+      spellIds: [],
+      previous: manifest.fanout,
+      dryRun: true,
+    });
+    for (const line of describeFanoutOutcomes(preview.outcomes, true)) console.log(line);
+    console.log(`[dry-run] Would remove: ${storeRoot}/.arcane.json`);
+    console.log(
+      `\n[dry-run] ${storeFiles.length} spell(s), up to ${recordedCount} client file(s) + manifest would be removed from the user tier.`,
+    );
+    return;
+  }
+
+  if (!options.yes) {
+    const confirmed = await confirm({
+      message: `This will remove ${storeFiles.length} spells, ${recordedCount} client files and .arcane.json from the user tier at ${storeRoot}. Continue?`,
+      default: false,
+    });
+    if (!confirmed) {
+      console.log("Uninstall cancelled.");
+      return;
+    }
+  }
+
+  // Client files first (they reference the store), under the hash rule.
+  const fanout = await syncUserTierFanout({
+    homeDir,
+    storeRoot,
+    spellIds: [],
+    previous: manifest.fanout,
+  });
+
+  let removed = 0;
+  for (const file of storeFiles) {
+    await rm(join(storeRoot, file), { force: true });
+    removed++;
+  }
+  await rm(join(storeRoot, ".arcane.json"), { force: true });
+  await removeDirectoryIfEmpty(join(storeRoot, USER_TIER_SPELLS_DIR));
+  await removeDirectoryIfEmpty(storeRoot);
+
+  for (const line of describeFanoutOutcomes(fanout.outcomes)) console.log(`  ${line}`);
+  const pruned = fanout.outcomes.filter((o) => o.status === "pruned").length;
+  const kept = fanout.outcomes.filter((o) => o.status === "kept-edited").length;
+  console.log(
+    `\n✓ Uninstalled the user tier — ${removed} spells and ${pruned} client files removed${
+      kept > 0 ? `; ${kept} edited client file(s) kept` : ""
+    }.`,
+  );
 }

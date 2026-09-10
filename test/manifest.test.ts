@@ -444,6 +444,32 @@ describe("docs-mode manifest fields (EF-07 / EF-12)", () => {
     await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
   });
 
+  // ─── scope / fanout (ARC-045 decision 3, CS-04) ─────────────────────────
+
+  it("accepts scope: repo, scope: user, and no scope at all", async () => {
+    await write({});
+    expect((await readManifest(tempDir)).scope).toBeUndefined();
+    await write({ scope: "repo" });
+    expect((await readManifest(tempDir)).scope).toBe("repo");
+    await write({ scope: "user" });
+    expect((await readManifest(tempDir)).scope).toBe("user");
+  });
+
+  it("rejects an unsupported scope (machine is deliberately not modeled)", async () => {
+    await write({ scope: "machine" });
+    await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+  });
+
+  it("accepts a well-formed fanout record and rejects a malformed one", async () => {
+    const hash = "a".repeat(64);
+    await write({ scope: "user", fanout: { ".agents/skills/spell-plan/SKILL.md": hash } });
+    expect((await readManifest(tempDir)).fanout).toEqual({ ".agents/skills/spell-plan/SKILL.md": hash });
+    await write({ scope: "user", fanout: { ".agents/skills/spell-plan/SKILL.md": "not-a-digest" } });
+    await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+    await write({ scope: "user", fanout: ["not", "a", "record"] });
+    await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
+  });
+
   // "." is the whole point of EF-07's root-as-subject decision: an existing
   // archive comes under governance without being restructured first.
   it.each([".", "docs", "records/2026", "a/b/c"])(

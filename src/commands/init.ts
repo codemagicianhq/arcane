@@ -1,14 +1,24 @@
 import { select, confirm, input } from "@inquirer/prompts";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import chalk from "chalk";
-import { copyFile, copyDirectory } from "../modules/copier.js";
+import { copyFile, copyDirectory, fileExists } from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
   isValidSubjectRoot,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
-import { getProfile, listProfiles } from "../modules/registry.js";
+import { getComponent, getProfile, listProfiles } from "../modules/registry.js";
+import {
+  CLAUDE_PRECEDENCE_NOTE,
+  USER_FANOUT_PATHS,
+  USER_TIER_COMPONENTS,
+  VSCODE_USER_TIER_NOTE,
+  componentForScope,
+  describeFanoutOutcomes,
+  spellIdFromStorePath,
+  syncUserTierFanout,
+} from "../modules/user-tier.js";
 import {
   printDryRun,
   printStep,
@@ -148,6 +158,13 @@ export async function runInit(
   assetsDir: string,
   packageVersion: string,
 ): Promise<void> {
+  // The user tier is a different install with a different shape -- see
+  // runInitUser. `targetDir` is the store root (~/.arcane) in that case.
+  if (options.user) {
+    await runInitUser(options, targetDir, assetsDir, packageVersion);
+    return;
+  }
+
   // Validate profile option if provided
   if (options.profile && !VALID_PROFILES.includes(options.profile)) {
     throw new Error(
@@ -692,5 +709,142 @@ export async function runInit(
     step++,
     "Commit the new files: git add .arcane .github .claude AGENTS.md CLAUDE.md .arcane.json",
   );
+  console.log();
+}
+
+// ─── spell init --user ────────────────────────────────────────────────────────
+
+/**
+ * `spell init --user` (ARC-045 decision 3 / CS-04). `storeRoot` is `~/.arcane`,
+ * resolved by the CLI entry. Deliberately none of the repository ceremony
+ * above: no profile (the tier is spells-only and un-profiled), no git-state
+ * checks (the store is not a repository), none of the manifest questions
+ * (hub role, tracking mode, sensitivity and push policy describe a
+ * repository), no hooks, no agent setup. Copies the canonical spells into the
+ * store through the same copier and hash record a repository install uses,
+ * fans the user-level shims out to the clients' home directories, and records
+ * both in the store manifest so `update`/`status`/`uninstall --user` know
+ * exactly what Arcane wrote -- and nothing else.
+ */
+async function runInitUser(
+  options: SpellInitOptions,
+  storeRoot: string,
+  assetsDir: string,
+  packageVersion: string,
+): Promise<void> {
+  if (options.profile) {
+    throw new Error(
+      '"--profile" does not apply to "--user": the user tier always installs every spell and nothing else.',
+    );
+  }
+
+  try {
+    await readManifest(storeRoot);
+    console.log(chalk.hex("#a855f7")(`\n  ✦ Arcane v${packageVersion}\n`));
+    console.log(
+      `Already initialized (user tier at ${storeRoot}). Run "spell update --user" to update it.`,
+    );
+    return;
+  } catch (err) {
+    if (!(err instanceof ManifestNotFoundError)) throw err;
+  }
+
+  console.log(chalk.hex("#a855f7")(`\n  ✦ Arcane v${packageVersion}\n`));
+
+  // The store's parent is the home directory by construction (userTierRoot),
+  // and the fan-out paths are relative to it.
+  const homeDir = dirname(storeRoot);
+  const components = USER_TIER_COMPONENTS.map((name) =>
+    componentForScope(getComponent(name), "user"),
+  );
+  const spellIds = components
+    .flatMap((c) => c.files)
+    .map((file) => spellIdFromStorePath(file))
+    .filter((id): id is string => id !== undefined);
+
+  printSection(`📦 User tier — ${storeRoot}`);
+  console.log();
+  console.log(
+    `  ✨ ${spellIds.length} Spells → ${storeRoot}/spells/  ·  🔗 ${spellIds.length * 2} client files → ~/.agents/skills (Codex, Copilot), ~/.claude/commands (Claude Code)`,
+  );
+  console.log();
+
+  if (options.dryRun) {
+    for (const component of components) {
+      for (const file of component.files) printDryRun(`Would copy: ${file}`);
+    }
+    // The store does not exist yet in a dry run, so the shims cannot be
+    // rendered from it; list the paths and flag the one thing that would
+    // change the outcome -- a same-named file already there, which the real
+    // run leaves alone rather than claiming.
+    for (const id of spellIds) {
+      for (const client of ["codex", "claude"] as const) {
+        const relativePath = USER_FANOUT_PATHS[client](id);
+        if (await fileExists(join(homeDir, relativePath))) {
+          printDryRun(`Would leave alone (exists, not written by Arcane): ~/${relativePath}`);
+        } else {
+          printDryRun(`Would write: ~/${relativePath}`);
+        }
+      }
+    }
+    printDryRun(
+      `Would initialize the user tier — ${spellIds.length} spells, ${spellIds.length * 2} client files`,
+    );
+    return;
+  }
+
+  const installedComponents: InstalledComponent[] = [];
+  let fileCount = 0;
+  for (const component of components) {
+    const installedFiles: string[] = [];
+    const fileHashes: Record<string, string> = {};
+    for (const file of component.files) {
+      const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
+      fileHashes[file] = await copyFile(srcPath, storeRoot, file, { force: options.force });
+      installedFiles.push(file);
+      fileCount++;
+    }
+    installedComponents.push({
+      name: component.name,
+      files: installedFiles,
+      installedVersion: packageVersion,
+      fileHashes,
+    });
+  }
+
+  const fanout = await syncUserTierFanout({ homeDir, storeRoot, spellIds });
+
+  const manifest: ArcaneManifest = {
+    version: packageVersion,
+    // The tier is un-profiled; "full" records the profile its component set
+    // is drawn from, and every command reads `scope` before `profile`.
+    profile: "full",
+    installedAt: new Date().toISOString(),
+    components: installedComponents,
+    scope: "user",
+    fanout: fanout.record,
+  };
+  await writeManifest(storeRoot, manifest);
+
+  printStep(`✨ ${fileCount} Spells installed to ${storeRoot}/spells/`);
+  for (const line of describeFanoutOutcomes(fanout.outcomes)) {
+    if (line.startsWith("!")) printWarning(line.slice(2));
+    else printStep(`🔗 ${line}`);
+  }
+  printSuccess(
+    `Initialized the user tier — ${fileCount} spells, ${Object.keys(fanout.record).length} client files recorded`,
+  );
+
+  console.log();
+  printSection("🧭 Clients");
+  console.log();
+  for (const line of VSCODE_USER_TIER_NOTE) printInfo(line);
+  printInfo(CLAUDE_PRECEDENCE_NOTE);
+
+  console.log();
+  printSection("🚀 Next steps");
+  console.log();
+  printNextStep(1, "Reload VS Code, and start a fresh Codex or Claude Code session, so the pickers see the new files");
+  printNextStep(2, "`spell status --user` shows the tier; `spell update --user` refreshes it after upgrading the CLI");
   console.log();
 }

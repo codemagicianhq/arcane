@@ -22,12 +22,41 @@ export interface InstalledComponent {
   fileHashes?: Record<string, string>;
 }
 
+/**
+ * Where an Arcane install lives (ARC-045 decision 3 / CS-04). `"repo"` is a
+ * repository's own install -- the only kind that existed before 1.1.0, and
+ * still the default. `"user"` is the per-user tier: one store at `~/.arcane/`
+ * holding canonical spells for every repository on the machine, with
+ * generated client shims fanned out to each client's home-directory
+ * discovery root (see `src/modules/user-tier.ts`). A machine-wide (all-users)
+ * scope is deliberately not modeled -- it needs elevated write access, which
+ * agent-policies.md forbids agents (features/codex-support/PRD.md, Won't Have).
+ */
+export type InstallScope = "repo" | "user";
+
 export interface ArcaneManifest {
   version: string;
   profile: Profile;
   installedAt: string;
   components: InstalledComponent[];
   selfHosted?: boolean;
+  /**
+   * Which tier this manifest describes. Absent means `"repo"`, so every
+   * manifest written before 1.1.0 keeps its meaning unchanged; only
+   * `spell init --user` writes `"user"`, into `~/.arcane/.arcane.json`.
+   */
+  scope?: InstallScope;
+  /**
+   * User tier only: the client files the fan-out wrote outside the store,
+   * keyed by home-relative POSIX path (`.agents/skills/<id>/SKILL.md`,
+   * `.claude/commands/<id>.md`) with the SHA-256 of the content Arcane
+   * wrote -- `fileHashes`' rule, applied to files that live outside any
+   * Arcane target directory. A later `update`/`uninstall --user` deletes or
+   * rewrites only a file whose content still matches its entry; an edited
+   * file is kept and reported, and a same-named file with no entry was never
+   * Arcane's and is never claimed.
+   */
+  fanout?: Record<string, string>;
   tracking_mode?: TrackingMode;
   external_provider?: ExternalProvider | null;
   /**
@@ -180,6 +209,8 @@ export interface SpellInitOptions {
   profile?: Profile;
   force?: boolean;
   dryRun?: boolean;
+  /** Install the per-user tier at `~/.arcane` instead of a repository (CS-04). */
+  user?: boolean;
 }
 
 export interface SpellAddOptions {
@@ -191,6 +222,8 @@ export interface SpellUpdateOptions {
   dryRun?: boolean;
   /** Delete orphaned managed files (TODO.md T10 / ARC-038), hash-checked so an edited file is reported, never silently destroyed. */
   prune?: boolean;
+  /** Update the per-user tier at `~/.arcane` instead of a repository (CS-04). */
+  user?: boolean;
 }
 
 export interface VersionCheckResult {

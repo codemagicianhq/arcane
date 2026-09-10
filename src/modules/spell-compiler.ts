@@ -184,11 +184,19 @@ This prompt is the Arcane \`${id}\` spell. Read [\`${path}\`](../../${path}) and
  * the "use PROACTIVELY" framing that encourages unprompted invocation).
  * The `@` include is Claude Code's own mechanism for splicing a repo-relative
  * file into the command, unchanged by CS-03 -- only its target moved.
+ * `canonicalRef` defaults to the repository-relative canonical path; the
+ * user tier (CS-04) passes the ABSOLUTE path of the spell in `~/.arcane`,
+ * since a personal command in `~/.claude/commands/` runs from any working
+ * directory and a relative path would resolve against the wrong root.
  */
-export function renderClaudeCommandStub(id: string, frontmatter: PromptFrontmatter): string {
+export function renderClaudeCommandStub(
+  id: string,
+  frontmatter: PromptFrontmatter,
+  canonicalRef: string = canonicalSpellPath(id),
+): string {
   const title = deriveStubTitle(frontmatter.name);
   const description = frontmatter.claudeDescription ?? frontmatter.description;
-  const promptPath = canonicalSpellPath(id);
+  const promptPath = canonicalRef;
 
   return `---
 description: ${description}
