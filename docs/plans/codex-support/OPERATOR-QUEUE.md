@@ -70,6 +70,13 @@ entry to *this* queue once it runs.
   over continuing the `0.x` line. ARC-045 is now `Accepted` (Q-002) — one of the two preconditions
   above is met. Only the CHANGELOG catch-up remains before CS-03 itself may start, and this item is not
   marked done until both are satisfied and CS-03's own PR applies `npm version major`.
+- **Applied (2026-09-09):** both preconditions are met — ARC-045 Accepted (Q-002) and the CHANGELOG
+  catch-up merged as [PR #231](https://github.com/codemagicianhq/arcane/pull/231) — and CS-03's PR,
+  [PR #232](https://github.com/codemagicianhq/arcane/pull/232), carries
+  `chore(release): bump version to 1.0.0` (`npm version major`) plus the `## [1.0.0]` changelog entry.
+  The PR is left open for the operator's merge — that merge is the act this item's `[x]` records. Mark
+  it done with the merge commit once `publish.yml` has **succeeded**, not merely once the PR is merged
+  (the 0.34.3 lesson recorded in `CHANGELOG.md`: a merged bump is not a published one).
 - **Status:** [ ] open
 
 <!-- The loop appends Q-004+ below this line. -->

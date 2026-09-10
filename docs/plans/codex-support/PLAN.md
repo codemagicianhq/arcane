@@ -236,12 +236,28 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   **Report:** The architectural decision behind bringing every AI client to parity and fixing
   duplicate spells across projects is written down and accepted. · category: decision
 - [ ] **CS-03 — Canonical move: `.arcane/spells/` + all clients as shims.** Route: `chain`. Size: L
-  (~10-12 stories — the program's largest epic). Bump: **major, operator-confirmed** (recommended
-  1.0.0; gated at `OPERATOR-QUEUE.md` Q-003). Dependencies: CS-02 (ARC-045 Accepted). Risk: High —
-  the one breaking change in this program; consumer migration logic (hash-match replace vs.
-  hash-mismatch preserve-and-warn) is the epic's own empirical-first step to verify against a real
-  fixture before trusting it. **Precondition: CHANGELOG.md catch-up lands first** (own small PR,
-  no version bump, sequenced immediately before this epic). **Report:**
+  (~10-12 stories; shipped as 10). Bump: **major — `1.0.0`**, operator-confirmed at
+  `OPERATOR-QUEUE.md` Q-003. Dependencies: CS-02 (ARC-045 Accepted 2026-09-09). Risk: High — the one
+  breaking change in this program. Precondition met: the CHANGELOG catch-up landed as
+  [PR #231](https://github.com/codemagicianhq/arcane/pull/231). **Premise corrected on the record
+  (Loop Protocol step 3):** the consumer-migration fixture, run against a real `0.39.0` consumer
+  *before* building, showed the pre-CS-03 `spell update` does not conflict on a hand-edited prompt —
+  it three-way merges the edit "successfully" into the new shim (edit dangling underneath, reported
+  as `Merged your edits`), conflicts only for an in-body edit, and is silent for installs without
+  recorded hashes; the same fixture exposed an ARC-038 defect (an edit survived exactly one update,
+  because the merged file's hash was recorded), fixed in this epic. Design and evidence:
+  `features/codex-support/architecture.md`. **Shipped in
+  [PR #232](https://github.com/codemagicianhq/arcane/pull/232) — open,
+  CI green, awaiting the operator's merge (never self-merged, per Authority & Delegation):** canonical
+  move (41 files, history preserved) + `renderCopilotPromptShim` / retargeted Claude and Codex
+  renderers + `runShimParity` + registry four-per-spell + every gate retargeted + 28 test files
+  repointed; `spell update` keeps customized shims, restores missing tracked files at the same version,
+  and records the vendor hash after a merge; governance/README/CHANGELOG `1.0.0`; EV-01 re-confirmed
+  for Claude Code and Codex, Copilot recorded as an operator check
+  (`docs/research/skill-discovery-smoke-tests.md`). Tick this box when the operator has merged.
+  **Report:** Every spell now has exactly one home, and Copilot, Claude Code and Codex all read from
+  it through tiny generated pointers — spells can no longer drift between clients, and updating never
+  silently overwrites a spell you customized. · category: feature
 - [ ] **CS-04 — User tier install.** Route: `chain`. Size: M (~6-7 stories). Bump: minor.
   Dependencies: CS-03. Risk: Medium — new CLI surface (`--user`), new module
   (`src/modules/user-tier.ts`), `HOME`/`USERPROFILE` test stubbing. **Report:**

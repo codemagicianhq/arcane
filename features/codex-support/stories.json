@@ -18,9 +18,9 @@
         "spell-brainstorm's TODO.md link and spell-arcane-version's .arcane.json link resolve from .arcane/spells/"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 8a80759. 41 `git mv` + _fragments moved; `git log --follow -- src/assets/.arcane/spells/spell-plan.md` lists the same 6 commits as the old path. Post-codemod grep of the canonical folder for `prompt.md`/`.github/prompts`/`../../../`: 0 files. test/prompt-path-resolution.test.ts (2 tests) resolves every ../../ link from the new folder."
     },
     {
       "id": "CS03-S2",
@@ -33,9 +33,9 @@
         "Unit tests in test/spell-compiler.test.ts cover each renderer's golden string, CRLF frontmatter, and the helpers"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 8a80759. test/spell-compiler.test.ts: 44 tests green — golden strings for all three renderers, extractFrontmatterBlock (verbatim, CRLF, missing block), isClientShimPath positives/negatives incl. backslash and ./ forms, renderCopilotPromptShim rejects a canonical file the parser rejects."
     },
     {
       "id": "CS03-S3",
@@ -47,9 +47,9 @@
         "Root .github/prompts/*.prompt.md are shims byte-identical to src/assets/; root .arcane/spells/ exists with 41 files"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 8a80759. `fix:self-host-parity` repaired 287 of 322 (shims 123, copies 164); `check:self-host-parity`: 322 items match. runShimParity temp-tree tests: 3 drifted per id in target order, stale shim detected, fix then check clean, fragments/stray files/orphan shims ignored. Regression guard: no shipped Copilot prompt carries a body."
     },
     {
       "id": "CS03-S4",
@@ -61,9 +61,9 @@
         "LEGACY_COMPONENT_MIGRATIONS byte-identical to before"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 8a80759. registry: 41/41/41/41 canonical/copilot/claude/codex lines; test/registry.test.ts 231 tests green incl. the 4-per-spell shape per component. Live `spell init --profile full` from the built CLI into a scratch consumer: 41 canonical, 41 prompts, 41 skills; summary line `✨ 41 Spells (Copilot, Claude Code, Codex)`. LEGACY lists untouched (git diff shows only file-list insertions and the comment)."
     },
     {
       "id": "CS03-S5",
@@ -76,9 +76,9 @@
         "npm run build passes the org-token lint over .arcane/spells/"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 8a80759. check:spell-catalog passes (artifacts unchanged — ids/descriptions, not paths). check-citations.test.ts: living docs include src/assets/.arcane/spells and a bare `spell-plan.md` citation resolves there. adr-reference-gate.test.ts: a missing ADR in .arcane/spells/spell-fixture.md is reported (and a missing shipped root is treated as empty). org-token-lint.test.ts: a token in .arcane/spells/spell-fixture.md fails the build gate. `npm run build`: 242 files, lint clean."
     },
     {
       "id": "CS03-S6",
@@ -92,9 +92,9 @@
         "All existing update tests pass unchanged except the two whose assertions encoded the old behavior"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0c5a47b. test/update.test.ts: AC8 edited/untouched/dry-run fixtures on the real `spells-docs` component (edited file byte-identical, `Kept customized (not merged)` + summary with remedy, fetchPublishedFile never called, pre-edit hash carried forward, siblings replaced, canonical written); variant-D regression (recorded hash == vendor hash after merge; edit survives update 2); could-not-fetch keeps the recorded hash; same-version restore of a deleted tracked file; initOnly still 'Already up to date.'. Two existing 'Already up to date.' tests now seed the tracked file. update/lifecycle/hub-retrofit suites green."
     },
     {
       "id": "CS03-S7",
@@ -106,9 +106,9 @@
         "docs-profile-registry-split's SPELLS_ON_DISK counts .arcane/spells/spell-*.md"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 8a80759. 19 files repointed mechanically (zero old-location mentions left outside the intentional set); registry, docs-profile-registry-split (SPELLS_ON_DISK from .arcane/spells; canonical == prompts == commands == skills per component), spell-catalog, check-citations, adr-reference-gate, org-token-lint edited by hand. Full suite: 84 files / 1373 tests green after the golden-pair regen (3ca0185)."
     },
     {
       "id": "CS03-S8",
@@ -120,9 +120,9 @@
         "check:stale-claims Class A and check:adr-references pass"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commits 649d4ce and 051a6ea. Governance/instructions/README/project/portable-bootstrap updated and root copies regenerated (parity 322 clean); CHANGELOG 1.0.0 with the migration table; ARC-045 implementation note; six living-doc citations retargeted to canonical filenames — check:citations now reports only the pre-existing update.ts:235 finding; check:adr-references and check:stale-claims (Class A) pass."
     },
     {
       "id": "CS03-S9",
@@ -134,9 +134,9 @@
         "Research doc gains a dated 'CS-03 re-confirmation' section with both transcripts and the Copilot deferral"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 051a6ea. Claude Code: `Skill spell-status` through the regenerated stub loaded the canonical body (Executive Summary, Steps 0–6, Output, Rules) and the snapshot ran. Codex: `codex exec --sandbox read-only` in a consumer installed from the 1.0.0 build — tool trace shows `Get-Content -Raw '.arcane\\spells\\spell-status.md'`; answer: `.arcane/spells/spell-status.md` / `## Executive Summary` / `CS03-EV01-DONE`. Copilot: operator check documented with the fallback named. Recorded in docs/research/skill-discovery-smoke-tests.md ('CS-03 re-confirmation')."
     },
     {
       "id": "CS03-S10",
@@ -148,9 +148,9 @@
         "PLAN.md, PRD.md, OPERATOR-QUEUE.md and the show-report golden pair are consistent at HEAD"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit e84d63e (1.0.0; check:version-bump passes against main). PR #232 opened with the ship report and `## For the record`, left open for the operator (never self-merged). PLAN.md CS-03 entry (premise correction + Report line, box left unticked until the operator merges), PRD AC3/AC4/AC8 ticked, OPERATOR-QUEUE.md Q-003 'Applied' note (status left open), TODO.md items, show-report golden pair regenerated trailer-free at HEAD."
     }
   ]
 }
