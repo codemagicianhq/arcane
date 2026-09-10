@@ -105,3 +105,32 @@ entry to *this* queue once it runs.
   the shim instead of running the spell, record that instead: the remedy is the `render()` mode variance
   ARC-045 allowed for — an inlined-body Copilot renderer — a small follow-up epic, not a redesign.
 - **Status:** [ ] open
+
+## Q-005 — Try the user tier in Claude Code and VS Code Copilot (a few minutes, once)
+
+- **What:** Install the user tier for real (`spell init --user`, `arcane-cli` `1.1.0` or later), then
+  (1) in **Claude Code**, from a directory that is *not* an Arcane repository, run `/spell-status` and
+  confirm the spell runs (the snapshot line) rather than paraphrasing its stub; (2) in **VS Code
+  Copilot Chat**, open a folder that is *not* an Arcane repository, type `/`, confirm `spell-status` is
+  listed, and run it. Record both results here. Keep the tier if you like it — `spell uninstall --user`
+  removes exactly what it wrote and nothing else.
+- **Why:** CS-04 fans every spell out to `~/.claude/commands/<id>.md` (Claude Code) and
+  `~/.agents/skills/<id>/SKILL.md` (Codex and Copilot), each naming the spell's absolute path in
+  `~/.arcane`. Codex was observed live from an empty directory, twice
+  (`docs/research/skill-discovery-smoke-tests.md`, "CS-04"). Claude Code's user-level `@` include
+  could not be observed from the executing session (its skill list is fixed at startup, and a nested
+  CLI is not logged in), and Copilot Chat cannot be driven from an agent session at all — these two are
+  the clients only you can observe (EV-01). Both are documented to work, and the Claude stub carries the
+  read-and-follow sentence as well as the include.
+- **Preconditions:** [PR #234](https://github.com/codemagicianhq/arcane/pull/234) merged and `1.1.0`
+  on npm (`npm view arcane-cli version`); `npm install -g arcane-cli@latest`.
+- **Exact commands:** `spell init --user` → Claude Code: `/spell-status` outside any repository →
+  Copilot Chat: the `/` picker outside any repository → `spell status --user`. Inside a repository that
+  still carries its own spells, Claude Code runs the *user tier's* copy (its documented "personal over
+  project" rule) and Copilot lists both the repository prompt and the user skill — expected until CS-05's
+  repo opt-out.
+- **Rollback / if it fails:** `spell uninstall --user` (hash-checked; never deletes a file it did not
+  write). If a client paraphrases instead of running the spell, record it here: the remedy is an
+  inlined-body renderer for that client's user-level file — the `render()` mode variance ARC-045
+  allowed for — a small follow-up, not a redesign.
+- **Status:** [ ] open

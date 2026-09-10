@@ -160,6 +160,12 @@ than growing a third format that copies content again.
   set to a single per-machine location; two disposable repositories in one VS Code workspace, both
   configured for the user tier, show exactly one set of `/spell-*` entries and one set of the 12
   Arcanos agent modes — verified by direct count in VS Code, recorded in the same research doc.
+  *Partially met 2026-09-10 (CS-04, [PR #234](https://github.com/codemagicianhq/arcane/pull/234)):*
+  the install half — `spell init --user` installs the full spell set once at `~/.arcane` and fans a
+  client file per spell out to `~/.agents/skills` (Codex, Copilot) and `~/.claude/commands` (Claude
+  Code); Codex verified live from an empty directory. Still open: the agent set (CS-06), the
+  repository opt-out that removes the per-repository duplicates (CS-05), and the VS Code direct count
+  — an operator observation (`OPERATOR-QUEUE.md` Q-005).
 - [ ] **AC6** — A repository with `spell_scope: "user"` (or equivalent field) passes `spell doctor`
   when a compatible user-tier install exists, and fails with an actionable remedy message when it
   does not.
