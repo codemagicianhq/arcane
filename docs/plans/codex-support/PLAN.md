@@ -261,9 +261,33 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   **Report:** Every spell now has exactly one home, and Copilot, Claude Code and Codex all read from
   it through tiny generated pointers — spells can no longer drift between clients, and updating never
   silently overwrites a spell you customized. · category: feature
-- [ ] **CS-04 — User tier install.** Route: `chain`. Size: M (~6-7 stories). Bump: minor.
-  Dependencies: CS-03. Risk: Medium — new CLI surface (`--user`), new module
-  (`src/modules/user-tier.ts`), `HOME`/`USERPROFILE` test stubbing. **Report:**
+- [x] **CS-04 — User tier install.** Route: `chain`. Size: M (~6-7 stories; shipped as 7). Bump:
+  minor (`1.0.0` → `1.1.0`). Dependencies: CS-03. Risk: Medium — new CLI surface (`--user`), new
+  module (`src/modules/user-tier.ts`), `HOME`/`USERPROFILE` test stubbing. **Premise corrected on the
+  record (Loop Protocol step 3), against vendor documentation fetched before building:** VS Code has
+  deprecated `chat.promptFilesLocations` and its siblings ("will be removed in a future release") and
+  discovers `~/.agents/skills` by default, so the planned printed settings snippet became a printed
+  note that no setting is needed; and because Copilot also scans `~/.claude/skills`, the Claude Code
+  file went to `~/.claude/commands/<id>.md` rather than `~/.claude/skills/<id>/SKILL.md`, so Copilot
+  does not list every spell twice (both recorded as ARC-045 implementation variances in
+  `DECISIONS.md`). Naming Test call (ARC-045 open question 1): `--user` on the four verbs, not a
+  `spell user` noun. Design and evidence: `features/codex-support/architecture.md` ("CS-04"). **Shipped
+  in [PR #234](https://github.com/codemagicianhq/arcane/pull/234), self-merged under the standing
+  delegation (rebase; no operator action needed for this epic) — the `1.1.0` bump rides in it, and the
+  merge and publish evidence is recorded at session close:** `spell init|update|status|uninstall
+  --user`; the `~/.arcane` store (canonical spells only, through a scope-aware view of the registry —
+  copier, hash record, same-version restore and the ARC-038 merge reused unchanged); the fan-out to
+  `~/.agents/skills` (Codex + Copilot) and `~/.claude/commands` (Claude Code) with absolute paths,
+  recorded in the manifest's `fanout` map and reconciled under the hash rule (edited → kept and named;
+  never-recorded → never claimed; pruned only while hash-matched); `spell doctor`'s non-blocking
+  user-tier row; the `scope`/`fanout` manifest fields; a general fix to the merge path's published-file
+  fetch (asset path). Codex followed a user-level skill to an absolute path from an empty directory —
+  before the design and again against the real `spell init --user` output; Claude Code and Copilot at
+  the user tier are the operator's Q-005. AC5's second half (one set of `/spell-*` across two
+  repositories in one workspace) waits for CS-05's opt-out.
+  **Report:** Install Arcane's spells once on your machine and every AI client — Codex, Copilot,
+  Claude Code — finds them from any project, with nothing to configure and nothing of yours ever
+  overwritten. · category: feature
 - [ ] **CS-05 — Repo opt-out (`spell_scope`).** Route: `chain`. Size: S-M (~4-5 stories).
   Bump: minor (may combine with CS-04's bump if shipped in the same PR window). Dependencies:
   CS-04. Risk: Medium — the migration/prune logic must never silently drop an operator-edited file
