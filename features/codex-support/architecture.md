@@ -388,9 +388,12 @@ Dry-run prints the same decisions with a `[dry-run] Would …` prefix and writes
 - `spell doctor`: `checkUserTier()`, non-blocking. No store → `pass`, "no user tier installed
   (optional — `spell init --user`)", the same shape as `checkMcpConfig`'s "nothing to check" row.
   Store present → `major.minor` of the store versus the CLI (differs → `warn`, remedy `spell update
-  --user`) and fan-out integrity from the manifest record (missing or edited files → `warn` with
-  counts and the same remedy). Reads only the store manifest and file hashes — it does not read VS
-  Code's settings (profile-specific JSONC, and after finding 2 there is nothing in them to check).
+  --user`) and fan-out integrity from the manifest record (missing files → `warn` with counts and the
+  same remedy; an *edited* file is the designed keep state, so it is counted in the pass message and
+  not warned about — amended after the Phase 5 review, finding F6, to match what shipped). Reads only
+  the store manifest and file hashes — it does not read VS Code's settings (profile-specific JSONC,
+  and after finding 2 there is nothing in them to check). Never throws: an odd store manifest (no
+  `version`, a recorded path that is now a directory) becomes one non-blocking row (F2).
 
 **D5 — `index.ts` wiring.** One option string on all four commands: `--user` — "operate on the
 per-user tier at ~/.arcane (spells shared by every repository on this machine)". The action
@@ -424,6 +427,21 @@ ARC-045 gains an implementation note recording D3's Claude location and D6's rat
 implementation-level variances of decision 3; the research doc gains a "CS-04 user-tier probes"
 section (findings 1 and 3); PLAN.md's CS-04 entry carries the premise correction; Q-005 asks the
 operator for the Claude Code and Copilot user-level checks this session could not perform.
+
+**Post-review amendments (2026-09-10, Phase 5 findings F1–F7; 0 HIGH, 2 MEDIUM, 5 LOW).** F1: the
+fan-out renders a spell whose store copy is missing from the CLI's vendor asset (`fallbackDir`), so
+`update --user --dry-run` previews correctly before anything is restored, and a spell with neither
+source is reported `unrenderable` — its client files neither rewritten nor pruned, record carried.
+F2: `checkUserTier` never throws (above). F3/F7: every fan-out path is classified with `lstat` before
+it is hashed, rewritten or deleted — a directory or a symlink (dangling or not) where a file would go
+is a collision, and one sitting at a recorded path is kept and never followed; `fanout` keys that are
+absolute, drive-qualified, backslashed or `..`-climbing are rejected when the manifest is read
+(`isValidFanoutPath`). F4: a manifest with `scope: "user"` is honored without `--user` only when the
+directory *is* `~/.arcane`; anywhere else `update`/`status`/`uninstall` refuse with a message rather
+than fan out relative to the wrong home. F5: the retrofit test forces a TTY so the "no retrofit
+question" assertion is not vacuous; tests added for F1, F2, `--prune --user`, and the invariant
+`componentForScope` relies on (no `spells-*` component carries `directories`/`skipExisting`/
+`initOnly`). F6: D4 amended above.
 
 ### Component view
 

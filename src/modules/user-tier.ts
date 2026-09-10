@@ -37,12 +37,13 @@
  */
 
 import { createHash } from "node:crypto";
-import { mkdir, readdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { fileExists, hashFile } from "./copier.js";
+import { hashFile } from "./copier.js";
 import { SPELL_COMPONENT_NAMES } from "./registry.js";
 import {
+  canonicalSpellPath,
   parsePromptFrontmatter,
   renderClaudeCommandStub,
   renderCodexSkill,
@@ -182,15 +183,52 @@ export interface FanoutFile {
   content: string;
 }
 
+export interface RenderedFanout {
+  files: FanoutFile[];
+  /** Spell ids whose source could be read from neither the store nor the fallback. */
+  missing: string[];
+}
+
+async function readSpellSource(
+  storeRoot: string,
+  id: string,
+  fallbackDir: string | undefined,
+): Promise<string | undefined> {
+  for (const candidate of [
+    join(storeRoot, storeSpellPath(id)),
+    ...(fallbackDir ? [join(fallbackDir, canonicalSpellPath(id))] : []),
+  ]) {
+    try {
+      return await readFile(candidate, "utf-8");
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+    }
+  }
+  return undefined;
+}
+
 /**
- * Renders the desired fan-out for the given spells from their store copies:
- * the Codex skill and the Claude command, each pointing at the spell's
- * absolute path in the store.
+ * Renders the desired fan-out for the given spells: the Codex skill and the
+ * Claude command per spell, each pointing at the spell's absolute path in
+ * the store. The frontmatter comes from the store copy, or -- when that file
+ * is missing and `fallbackDir` (the CLI's assets root) is given -- from the
+ * vendor asset the next restore would write, which is what lets a dry run
+ * preview the fan-out before anything has been restored. A spell with
+ * neither source is reported in `missing`, never thrown on.
  */
-export async function renderUserFanout(storeRoot: string, spellIds: string[]): Promise<FanoutFile[]> {
+export async function renderUserFanout(
+  storeRoot: string,
+  spellIds: string[],
+  fallbackDir?: string,
+): Promise<RenderedFanout> {
   const files: FanoutFile[] = [];
+  const missing: string[] = [];
   for (const id of [...spellIds].sort()) {
-    const canonical = await readFile(join(storeRoot, storeSpellPath(id)), "utf-8");
+    const canonical = await readSpellSource(storeRoot, id, fallbackDir);
+    if (canonical === undefined) {
+      missing.push(id);
+      continue;
+    }
     const frontmatter = parsePromptFrontmatter(canonical);
     const absolutePath = absoluteStoreSpellPath(storeRoot, id);
     files.push({
@@ -204,7 +242,27 @@ export async function renderUserFanout(storeRoot: string, spellIds: string[]): P
       content: renderClaudeCommandStub(id, frontmatter, absolutePath),
     });
   }
-  return files;
+  return { files, missing };
+}
+
+type TargetState = "absent" | "file" | "other";
+
+/**
+ * What is at a fan-out path, without following links: nothing, a regular
+ * file, or something else (a directory, a symlink -- dangling or not -- a
+ * device). Only a regular file is ever hashed, rewritten or deleted; anything
+ * else is left exactly as found. `lstat` rather than `access`/`stat` so a
+ * symlink an operator planted at the path is seen as the link, never written
+ * through to wherever it points.
+ */
+async function classifyTarget(path: string): Promise<TargetState> {
+  try {
+    const stats = await lstat(path);
+    return stats.isFile() ? "file" : "other";
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return "absent";
+    throw err;
+  }
 }
 
 export type FanoutStatus =
@@ -214,14 +272,16 @@ export type FanoutStatus =
   | "unchanged"
   /** Recorded, but the operator edited it: kept byte-untouched, recorded hash carried forward. */
   | "customized"
-  /** A same-named file Arcane never recorded: kept, warned, not claimed. */
+  /** A same-named file Arcane never recorded, or something that is not a regular file: kept, warned, not claimed. */
   | "collision"
   /** No longer desired, hash-matched: deleted (and its per-spell directory, once empty). */
   | "pruned"
-  /** No longer desired, but edited since Arcane wrote it: kept, still recorded. */
+  /** No longer desired, but edited since Arcane wrote it (or no longer a regular file): kept, still recorded. */
   | "kept-edited"
   /** No longer desired and already gone from disk: record dropped. */
-  | "gone";
+  | "gone"
+  /** Desired, but the spell's source is missing from the store and the fallback: nothing written or deleted, record carried forward. */
+  | "unrenderable";
 
 export interface FanoutOutcome {
   relativePath: string;
@@ -243,6 +303,8 @@ export interface FanoutSyncOptions {
   /** The manifest's current `fanout` record, if any. */
   previous?: Record<string, string>;
   dryRun?: boolean;
+  /** The CLI's assets root: renders a spell whose store copy is missing from the vendor asset instead (see renderUserFanout). */
+  fallbackDir?: string;
 }
 
 function sha256(content: string): string {
@@ -290,19 +352,35 @@ export async function removeDirectoryIfEmpty(dir: string): Promise<void> {
  * Dry-run performs no I/O beyond reading and reports the same decisions.
  */
 export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<FanoutSyncResult> {
-  const desired = await renderUserFanout(options.storeRoot, options.spellIds);
+  const rendered = await renderUserFanout(options.storeRoot, options.spellIds, options.fallbackDir);
+  const desired = rendered.files;
   const previous = options.previous ?? {};
   const dryRun = Boolean(options.dryRun);
   const record: Record<string, string> = {};
   const outcomes: FanoutOutcome[] = [];
   const desiredPaths = new Set(desired.map((f) => f.relativePath));
 
+  // A spell whose source is gone from both the store and this CLI's assets
+  // (a component the registry no longer ships, whose store file --prune
+  // already removed) cannot be rendered. Its client files are neither
+  // rewritten nor pruned -- they still point at a spell the operator may
+  // restore -- and stay recorded so a later run recognizes them.
+  for (const id of rendered.missing) {
+    for (const client of ["codex", "claude"] as const) {
+      const relativePath = USER_FANOUT_PATHS[client](id);
+      desiredPaths.add(relativePath);
+      if (previous[relativePath] !== undefined) record[relativePath] = previous[relativePath];
+      outcomes.push({ relativePath, status: "unrenderable" });
+    }
+  }
+
   for (const file of desired) {
     const target = join(options.homeDir, file.relativePath);
     const recorded = previous[file.relativePath];
     const newHash = sha256(file.content);
+    const state = await classifyTarget(target);
 
-    if (!(await fileExists(target))) {
+    if (state === "absent") {
       if (!dryRun) {
         await mkdir(dirname(target), { recursive: true });
         await writeFile(target, file.content, "utf-8");
@@ -312,14 +390,16 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
       continue;
     }
 
-    const currentHash = await hashFile(target);
-    if (recorded === undefined) {
+    if (state === "other" || recorded === undefined) {
       // Not ours: an operator's own skill or command that happens to share
-      // the spell's name. Recording it would claim it, and `uninstall --user`
-      // deletes what the record lists.
+      // the spell's name, or a directory or symlink where a file would go.
+      // Recording it would claim it, and `uninstall --user` deletes what the
+      // record lists; writing through a symlink would land wherever it points.
       outcomes.push({ relativePath: file.relativePath, status: "collision" });
       continue;
     }
+
+    const currentHash = await hashFile(target);
     if (currentHash !== recorded) {
       record[file.relativePath] = recorded;
       outcomes.push({ relativePath: file.relativePath, status: "customized" });
@@ -338,12 +418,14 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
   for (const [relativePath, recorded] of Object.entries(previous)) {
     if (desiredPaths.has(relativePath)) continue;
     const target = join(options.homeDir, relativePath);
-    if (!(await fileExists(target))) {
+    const state = await classifyTarget(target);
+    if (state === "absent") {
       outcomes.push({ relativePath, status: "gone" });
       continue;
     }
-    const currentHash = await hashFile(target);
-    if (currentHash !== recorded) {
+    // Not a regular file any more (a directory or a link now sits there), or
+    // edited since Arcane wrote it: never deleted, still recorded.
+    if (state === "other" || (await hashFile(target)) !== recorded) {
       record[relativePath] = recorded;
       outcomes.push({ relativePath, status: "kept-edited" });
       continue;
@@ -369,6 +451,7 @@ export function summarizeFanout(outcomes: FanoutOutcome[]): Record<FanoutStatus,
     pruned: 0,
     "kept-edited": 0,
     gone: 0,
+    unrenderable: 0,
   };
   for (const outcome of outcomes) counts[outcome.status]++;
   return counts;
@@ -416,7 +499,12 @@ export function describeFanoutOutcomes(outcomes: FanoutOutcome[], dryRun = false
   }
   if (counts.collision > 0) {
     lines.push(
-      `! ${dryRun ? "Would leave" : "Left"} ${counts.collision} existing file(s) alone (not written by Arcane — a skill or command of the same name already exists there):\n${paths("collision")}\n  Move or rename it and run \`spell update --user\` to install Arcane's.`,
+      `! ${dryRun ? "Would leave" : "Left"} ${counts.collision} existing path(s) alone (not written by Arcane — a skill or command of the same name, a directory or a link already exists there):\n${paths("collision")}\n  Move or rename it and run \`spell update --user\` to install Arcane's.`,
+    );
+  }
+  if (counts.unrenderable > 0) {
+    lines.push(
+      `! ${dryRun ? "Would keep" : "Kept"} ${counts.unrenderable} client file(s) whose spell source is missing from the store and from this CLI (left as they are):\n${paths("unrenderable")}\n  Restore the spell with \`spell update --user\`, or delete these files if the spell is no longer shipped.`,
     );
   }
   if (counts["kept-edited"] > 0) {
@@ -456,13 +544,53 @@ export async function inspectUserTierFanout(
     const client = clientOfFanoutPath(relativePath);
     if (client !== undefined) health.byClient[client]++;
     const target = join(homeDir, relativePath);
-    if (!(await fileExists(target))) {
+    const state = await classifyTarget(target);
+    if (state === "absent") {
       health.missing.push(relativePath);
       continue;
     }
-    if ((await hashFile(target)) !== recorded) health.customized.push(relativePath);
+    // A directory or link where Arcane's file was is "not what Arcane wrote",
+    // the same as an edit -- and never something to hash or touch.
+    if (state === "other" || (await hashFile(target)) !== recorded) health.customized.push(relativePath);
   }
   return health;
+}
+
+/**
+ * Whether `targetDir` is this machine's store, `~/.arcane`. A manifest with
+ * `scope: "user"` found anywhere else -- a backup copy, a moved directory --
+ * must not be operated on as the user tier without `--user`: the fan-out is
+ * anchored at the store's parent, and that parent would be the wrong home.
+ */
+export function isUserTierStore(targetDir: string): boolean {
+  return resolve(targetDir) === resolve(userTierRoot());
+}
+
+/**
+ * Resolves which tier a command is operating on. `--user` is authoritative
+ * (the CLI entry resolved `targetDir` to the store). Without it, a manifest
+ * declaring `scope: "user"` is honored only when `targetDir` IS the store;
+ * anywhere else the caller must refuse rather than fan out relative to the
+ * wrong directory.
+ */
+export function resolveInstallScope(
+  targetDir: string,
+  manifestScope: InstallScope | undefined,
+  userFlag: boolean | undefined,
+): { scope: InstallScope; misplacedUserManifest: boolean } {
+  if (userFlag) return { scope: "user", misplacedUserManifest: false };
+  if (manifestScope !== "user") return { scope: "repo", misplacedUserManifest: false };
+  return isUserTierStore(targetDir)
+    ? { scope: "user", misplacedUserManifest: false }
+    : { scope: "repo", misplacedUserManifest: true };
+}
+
+/** The message a command prints before exiting when it finds a user-tier manifest outside the store. */
+export function misplacedUserManifestMessage(targetDir: string): string {
+  return (
+    `This .arcane.json belongs to the user tier (scope: "user"), but ${targetDir} is not the store (${userTierRoot()}). ` +
+    "Run the command with --user to operate on the store, or from the store directory itself."
+  );
 }
 
 // ─── What the commands print about VS Code ────────────────────────────────────

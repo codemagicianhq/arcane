@@ -812,7 +812,7 @@ async function runInitUser(
     });
   }
 
-  const fanout = await syncUserTierFanout({ homeDir, storeRoot, spellIds });
+  const fanout = await syncUserTierFanout({ homeDir, storeRoot, spellIds, fallbackDir: assetsDir });
 
   const manifest: ArcaneManifest = {
     version: packageVersion,

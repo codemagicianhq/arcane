@@ -13,7 +13,10 @@ import {
   componentForScope,
   describeFanoutOutcomes,
   inspectUserTierFanout,
+  isUserTierStore,
+  misplacedUserManifestMessage,
   renderUserFanout,
+  resolveInstallScope,
   spellIdFromCanonicalPath,
   spellIdFromStorePath,
   spellIdsInStore,
@@ -151,6 +154,31 @@ describe("componentForScope", () => {
     ]);
     expect(ids).toEqual(["spell-alpha", "spell-zeta"]);
   });
+
+  it("pins the registry invariant the user view relies on: no spells-* component carries directories, skipExisting or initOnly", () => {
+    for (const name of SPELL_COMPONENT_NAMES) {
+      const component = getComponent(name);
+      expect(component.directories, name).toBeUndefined();
+      expect(component.skipExisting, name).toBeFalsy();
+      expect(component.initOnly, name).toBeFalsy();
+    }
+  });
+});
+
+describe("resolveInstallScope", () => {
+  it("--user is authoritative; a repo manifest is repo; a user manifest is honored only at the store itself", () => {
+    expect(resolveInstallScope(join(home, "anywhere"), undefined, true)).toEqual({ scope: "user", misplacedUserManifest: false });
+    expect(resolveInstallScope(join(home, "repo"), "repo", undefined)).toEqual({ scope: "repo", misplacedUserManifest: false });
+    expect(resolveInstallScope(join(home, "repo"), undefined, undefined)).toEqual({ scope: "repo", misplacedUserManifest: false });
+    expect(resolveInstallScope(storeRoot, "user", undefined)).toEqual({ scope: "user", misplacedUserManifest: false });
+    expect(resolveInstallScope(`${storeRoot}/`, "user", undefined).scope).toBe("user");
+    expect(resolveInstallScope(join(home, "backup", ".arcane"), "user", undefined)).toEqual({ scope: "repo", misplacedUserManifest: true });
+    expect(isUserTierStore(storeRoot)).toBe(true);
+    expect(isUserTierStore(join(home, "backup", ".arcane"))).toBe(false);
+    const message = misplacedUserManifestMessage(join(home, "backup", ".arcane"));
+    expect(message).toContain("--user");
+    expect(message).toContain(storeRoot);
+  });
 });
 
 // ─── Rendering ────────────────────────────────────────────────────────────────
@@ -158,7 +186,8 @@ describe("componentForScope", () => {
 describe("renderUserFanout", () => {
   it("renders two files per spell, both carrying the ABSOLUTE forward-slash store path and never a repo-relative one", async () => {
     await seedStoreSpell("spell-status");
-    const files = await renderUserFanout(storeRoot, ["spell-status"]);
+    const { files, missing } = await renderUserFanout(storeRoot, ["spell-status"]);
+    expect(missing).toEqual([]);
     expect(files.map((f) => f.relativePath)).toEqual([
       ".agents/skills/spell-status/SKILL.md",
       ".claude/commands/spell-status.md",
@@ -290,6 +319,63 @@ describe("syncUserTierFanout", () => {
     expect(again.outcomes.find((o) => o.relativePath === editedClaude)?.status).toBe("gone");
     expect(again.record[editedClaude]).toBeUndefined();
     await expect(fs.access(join(home, ".claude/commands"))).resolves.toBeUndefined();
+  });
+
+  it("renders a spell whose store copy is missing from the fallback assets, so a dry run previews a restore correctly (review F1)", async () => {
+    await removeFixtureDir(join(storeRoot, storeSpellPath("spell-plan")));
+
+    const dry = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids, dryRun: true, fallbackDir: ASSETS_DIR });
+    expect(summarizeFanout(dry.outcomes)).toMatchObject({ written: 4, unrenderable: 0 });
+    await expect(fs.access(join(home, ".agents"))).rejects.toThrow();
+
+    const real = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids, fallbackDir: ASSETS_DIR });
+    const claude = USER_FANOUT_PATHS.claude("spell-plan");
+    // Rendered from the vendor asset, but pointing at the STORE path the restore will fill.
+    expect(await fs.readFile(join(home, claude), "utf8")).toContain(absoluteStoreSpellPath(storeRoot, "spell-plan"));
+    expect(real.record[claude]).toBe(await hashFile(join(home, claude)));
+  });
+
+  it("reports a spell with no source anywhere as unrenderable: nothing written or pruned, record carried forward", async () => {
+    const first = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids });
+    await removeFixtureDir(join(storeRoot, storeSpellPath("spell-plan")));
+
+    const again = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids, previous: first.record });
+
+    const codex = USER_FANOUT_PATHS.codex("spell-plan");
+    const claude = USER_FANOUT_PATHS.claude("spell-plan");
+    expect(again.outcomes.filter((o) => o.status === "unrenderable").map((o) => o.relativePath).sort()).toEqual(
+      [codex, claude].sort(),
+    );
+    expect(again.record[codex]).toBe(first.record[codex]);
+    expect(again.record[claude]).toBe(first.record[claude]);
+    await expect(fs.access(join(home, codex))).resolves.toBeUndefined();
+    await expect(fs.access(join(home, claude))).resolves.toBeUndefined();
+    expect(describeFanoutOutcomes(again.outcomes).some((l) => l.includes("spell source is missing"))).toBe(true);
+    // The other spell is unaffected.
+    expect(again.outcomes.find((o) => o.relativePath === USER_FANOUT_PATHS.codex("spell-status"))?.status).toBe("unchanged");
+  });
+
+  it("a directory where a client file would go is a collision, and one sitting at a recorded path is kept and never deleted (review F3/F7)", async () => {
+    const claudePlan = USER_FANOUT_PATHS.claude("spell-plan");
+    await fs.mkdir(join(home, claudePlan), { recursive: true }); // a DIRECTORY at the command's path
+
+    const first = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids });
+    expect(first.outcomes.find((o) => o.relativePath === claudePlan)?.status).toBe("collision");
+    expect(first.record[claudePlan]).toBeUndefined();
+    expect((await fs.lstat(join(home, claudePlan))).isDirectory()).toBe(true);
+
+    // Replace a recorded file with a directory, then drop its spell: kept-edited, still recorded, untouched.
+    const codexStatus = USER_FANOUT_PATHS.codex("spell-status");
+    await removeFixtureDir(join(home, codexStatus));
+    await fs.mkdir(join(home, codexStatus), { recursive: true });
+    const pruned = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ["spell-plan"], previous: first.record });
+    expect(pruned.outcomes.find((o) => o.relativePath === codexStatus)?.status).toBe("kept-edited");
+    expect(pruned.record[codexStatus]).toBe(first.record[codexStatus]);
+    expect((await fs.lstat(join(home, codexStatus))).isDirectory()).toBe(true);
+
+    // The read-only view counts it as customized instead of throwing.
+    const health = await inspectUserTierFanout(home, pruned.record);
+    expect(health.customized).toContain(codexStatus);
   });
 
   it("dry-run reads and decides but writes nothing", async () => {

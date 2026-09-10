@@ -1117,13 +1117,88 @@ describe("spell update — handler", () => {
       const { select, confirm } = await import("@inquirer/prompts");
       vi.mocked(select).mockClear();
       vi.mocked(confirm).mockClear();
-
-      await runUpdate({ user: true }, storeRoot, ASSETS_DIR, "0.2.0");
+      // Force a TTY: the retrofit wizard is TTY-gated, so without this the
+      // prompt assertions would hold for a repository manifest too and prove
+      // nothing about the user tier (review finding F5).
+      const realIsTTY = process.stdin.isTTY;
+      process.stdin.isTTY = true;
+      try {
+        await runUpdate({ user: true }, storeRoot, ASSETS_DIR, "0.2.0");
+      } finally {
+        process.stdin.isTTY = realIsTTY;
+      }
 
       expect(inspectGitRepositoryMock).not.toHaveBeenCalled();
       expect(vi.mocked(select)).not.toHaveBeenCalled();
       expect(vi.mocked(confirm)).not.toHaveBeenCalled();
       expect((await readManifestFile(storeRoot)).version).toBe("0.2.0");
+    });
+
+    it("--dry-run with a deleted store spell previews the restore and the fan-out without throwing (review F1)", async () => {
+      await removeFixtureDir(join(storeRoot, storeFile));
+
+      await expect(runUpdate({ user: true, dryRun: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION)).resolves.toBeUndefined();
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining(`[dry-run] Would restore missing: ${storeFile}`));
+      await expect(fs.access(join(storeRoot, storeFile))).rejects.toThrow();
+      // Rendered from the vendor asset and found current on disk: nothing to write.
+      expect(vi.mocked(console.log).mock.calls.some((c) => String(c[0]).includes("Would write"))).toBe(false);
+
+      // The version-change dry run takes the other path to the same fan-out call.
+      await expect(runUpdate({ user: true, dryRun: true }, storeRoot, ASSETS_DIR, "0.2.0")).resolves.toBeUndefined();
+      await expect(fs.access(join(storeRoot, storeFile))).rejects.toThrow();
+    });
+
+    it("--prune removes an orphaned store spell and, with it, the client files it fanned out", async () => {
+      // A spell the registry no longer ships: tracked, on disk and recorded, but absent from the registry.
+      const manifest = await readManifestFile(storeRoot);
+      const oldStore = storeSpellPath("spell-old");
+      const oldCodex = USER_FANOUT_PATHS.codex("spell-old");
+      const oldClaude = USER_FANOUT_PATHS.claude("spell-old");
+      await fs.writeFile(join(storeRoot, oldStore), await fs.readFile(join(storeRoot, storeFile), "utf8"), "utf8");
+      for (const rel of [oldCodex, oldClaude]) {
+        await fs.mkdir(join(home, rel, ".."), { recursive: true });
+        await fs.writeFile(join(home, rel), "shim for spell-old\n", "utf8");
+      }
+      const component = manifest.components.find((c) => c.files.includes(storeFile))!;
+      component.files.push(oldStore);
+      component.fileHashes![oldStore] = await hashFile(join(storeRoot, oldStore));
+      manifest.fanout![oldCodex] = await hashFile(join(home, oldCodex));
+      manifest.fanout![oldClaude] = await hashFile(join(home, oldClaude));
+      await fs.writeFile(join(storeRoot, ".arcane.json"), JSON.stringify(manifest, null, 2));
+
+      await runUpdate({ user: true, prune: true }, storeRoot, ASSETS_DIR, "0.2.0");
+
+      await expect(fs.access(join(storeRoot, oldStore))).rejects.toThrow();
+      await expect(fs.access(join(home, oldCodex))).rejects.toThrow();
+      await expect(fs.access(join(home, ".agents/skills/spell-old"))).rejects.toThrow();
+      await expect(fs.access(join(home, oldClaude))).rejects.toThrow();
+      const after = await readManifestFile(storeRoot);
+      expect(after.fanout![oldCodex]).toBeUndefined();
+      expect(after.fanout![oldClaude]).toBeUndefined();
+      expect(after.components.some((c) => c.files.includes(oldStore))).toBe(false);
+      // The live spell is untouched.
+      await expect(fs.access(join(home, codexFile))).resolves.toBeUndefined();
+    });
+
+    it("refuses a scope: user manifest found outside the store when --user is not given (review F4)", async () => {
+      const elsewhere = await fs.mkdtemp(join(tmpdir(), "update-user-misplaced-"));
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+      try {
+        await fs.writeFile(
+          join(elsewhere, ".arcane.json"),
+          JSON.stringify({ version: PACKAGE_VERSION, profile: "full", installedAt: "x", components: [], scope: "user" }),
+        );
+
+        await runUpdate({}, elsewhere, ASSETS_DIR, PACKAGE_VERSION);
+
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("is not the store"));
+        expect(exitSpy).toHaveBeenCalledWith(1);
+        expect(inspectGitRepositoryMock).not.toHaveBeenCalled();
+        await expect(fs.access(join(elsewhere, "..", ".agents"))).rejects.toThrow();
+      } finally {
+        await removeFixtureDir(elsewhere);
+      }
     });
 
     it("prints 'Already up to date.' at the same version and leaves an intact fan-out untouched", async () => {

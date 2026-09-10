@@ -413,6 +413,20 @@ describe("spell status — handler", () => {
       expect(output()).toContain("spell update --user");
     });
 
+    it("refuses a scope: user manifest found outside the store when --user is not given (review F4)", async () => {
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+      await writeManifest(tmpDir, {
+        scope: "user",
+        components: [{ name: "spells-session", files: ["spells/spell-status.md"], installedVersion: PACKAGE_VERSION }],
+      });
+
+      await runStatus(tmpDir, PACKAGE_VERSION);
+
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining("is not the store"));
+      expect(exitSpy).toHaveBeenCalledWith(1);
+      expect(output()).not.toContain("Scope:");
+    });
+
     it("--user without a store points at spell init --user", async () => {
       const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
 

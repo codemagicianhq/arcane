@@ -13,6 +13,8 @@ import {
   FANOUT_CLIENT_LABELS,
   VSCODE_USER_TIER_NOTE,
   inspectUserTierFanout,
+  misplacedUserManifestMessage,
+  resolveInstallScope,
   userTierRoot,
 } from "../modules/user-tier.js";
 import type { InstallScope } from "../types.js";
@@ -48,7 +50,13 @@ export async function runStatus(
     throw err;
   }
 
-  const scope: InstallScope = options.user || manifest.scope === "user" ? "user" : "repo";
+  const resolvedScope = resolveInstallScope(targetDir, manifest.scope, options.user);
+  if (resolvedScope.misplacedUserManifest) {
+    console.error(misplacedUserManifestMessage(targetDir));
+    process.exit(1);
+    return;
+  }
+  const scope: InstallScope = resolvedScope.scope;
 
   if (manifest.components.length === 0) {
     console.log("No components installed.");

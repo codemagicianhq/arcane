@@ -418,12 +418,41 @@ describe("spell uninstall — handler", () => {
       expect(await fileExists(join(storeRoot, ".arcane.json"))).toBe(true);
     });
 
-    it("a manifest with scope: user is uninstalled as the user tier even without the flag", async () => {
-      await runUninstall({ yes: true }, storeRoot);
+    it("a manifest with scope: user is uninstalled as the user tier without the flag when the directory IS the store", async () => {
+      // The inference is honored only at ~/.arcane itself (review F4), so
+      // point the home directory at this fixture for the duration.
+      const saved = { USERPROFILE: process.env["USERPROFILE"], HOME: process.env["HOME"] };
+      process.env["USERPROFILE"] = home;
+      process.env["HOME"] = home;
+      try {
+        await runUninstall({ yes: true }, storeRoot);
+      } finally {
+        for (const [key, value] of Object.entries(saved)) {
+          if (value === undefined) delete process.env[key];
+          else process.env[key] = value;
+        }
+      }
 
       expect(await fileExists(join(home, codexFile))).toBe(false);
       expect(await fileExists(join(home, claudeFile))).toBe(false);
       expect(await fileExists(join(storeRoot, ".arcane.json"))).toBe(false);
+    });
+
+    it("refuses a scope: user manifest found outside the store when --user is not given (review F4)", async () => {
+      const elsewhere = await fs.mkdtemp(join(tmpdir(), "uninstall-user-misplaced-"));
+      const consoleSpy = vi.spyOn(console, "error");
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
+      try {
+        await writeManifest(elsewhere, { scope: "user", fanout: {} });
+
+        await runUninstall({ yes: true }, elsewhere);
+
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("is not the store"));
+        expect(exitSpy).toHaveBeenCalledWith(1);
+        expect(await fileExists(join(elsewhere, ".arcane.json"))).toBe(true);
+      } finally {
+        await removeFixtureDir(elsewhere);
+      }
     });
 
     it("points a missing store at spell init --user", async () => {

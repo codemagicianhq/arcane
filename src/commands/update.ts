@@ -19,6 +19,8 @@ import { isClientShimPath } from "../modules/spell-compiler.js";
 import {
   componentForScope,
   describeFanoutOutcomes,
+  misplacedUserManifestMessage,
+  resolveInstallScope,
   spellIdsInStore,
   syncUserTierFanout,
 } from "../modules/user-tier.js";
@@ -182,7 +184,13 @@ export async function runUpdate(
   // live outside the store and are reconciled after the store itself (see
   // the fan-out calls below). Everything else in this command runs unchanged
   // over the store through componentForScope.
-  const scope: InstallScope = options.user || manifest.scope === "user" ? "user" : "repo";
+  const resolvedScope = resolveInstallScope(targetDir, manifest.scope, options.user);
+  if (resolvedScope.misplacedUserManifest) {
+    console.error(misplacedUserManifestMessage(targetDir));
+    process.exit(1);
+    return;
+  }
+  const scope: InstallScope = resolvedScope.scope;
   const homeDir = dirname(targetDir);
 
   if (scope === "repo") {
@@ -235,6 +243,7 @@ export async function runUpdate(
           spellIds: spellIdsInStore(manifest.components),
           previous: manifest.fanout,
           dryRun: options.dryRun,
+          fallbackDir: assetsDir,
         });
         for (const line of describeFanoutOutcomes(fanout.outcomes, options.dryRun)) console.log(`  ${line}`);
         if (!options.dryRun && JSON.stringify(fanout.record) !== JSON.stringify(manifest.fanout ?? {})) {
@@ -525,6 +534,9 @@ export async function runUpdate(
       spellIds: spellIdsInStore(updatedComponents),
       previous: manifest.fanout,
       dryRun: options.dryRun,
+      // A dry run has restored nothing yet, so a missing store spell renders
+      // from the vendor asset the real run would write (review finding F1).
+      fallbackDir: assetsDir,
     });
     const lines = describeFanoutOutcomes(fanout.outcomes, options.dryRun);
     if (lines.length > 0) console.log();
