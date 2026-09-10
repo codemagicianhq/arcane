@@ -49,6 +49,12 @@
       "title": "Confirm the version number for CS-03",
       "reason": "a merged version bump auto-publishes to npm within minutes",
       "href": "https://github.com/codemagicianhq/arcane/pull/231"
+    },
+    {
+      "id": "Q-004",
+      "title": "Confirm the Copilot shim in VS Code (one minute)",
+      "reason": "CS-03 turned every `.github/prompts/*.prompt.md` into a generated shim — the canonical",
+      "href": "https://github.com/codemagicianhq/arcane/pull/232"
     }
   ],
   "sections": [
@@ -144,11 +150,43 @@
       ]
     }
   ],
+  "corrections": {
+    "checked": 12,
+    "corrected": 9,
+    "unverifiable": 0,
+    "scopeNote": "Codex Support corrections logged in docs/verification-ledger.md",
+    "highlights": [
+      {
+        "id": "correction-1",
+        "title": "\"The CHANGELOG catch-up is 0.23.0 → 0.39.0\" (the brief given to the research…",
+        "description": "Fourteen published 0.22.x releases (BC-01 through BC-17) sat outside the brief; written from their commits. The file now covers 0.22.1–0.39.0, 60 entries, every version cross-checked against npm.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      },
+      {
+        "id": "correction-2",
+        "title": "\"v0.34.3 is a release like the others\" (a ## [0.34.3] heading in the draft)",
+        "description": "Tagged and GitHub-released, never on npm — the shallow-clone publish failure SR-03 fixed. Folded into 0.35.0's entry with the cause.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      },
+      {
+        "id": "correction-3",
+        "title": "\"All 60 CHANGELOG dates match their tags — dateMismatch: []\" (this session's…",
+        "description": "The first pass compared nothing. The re-run compared 60 and found 0 mismatches — the claim became true only once the check itself was fixed.",
+        "descriptionState": "authored",
+        "category": "fix",
+        "refs": []
+      }
+    ]
+  },
   "parked": [],
   "cast": [
     {
       "name": "claude",
-      "commits": 22,
+      "commits": 23,
       "source": "commit-trailer"
     }
   ],
@@ -158,7 +196,7 @@
       "docs/plans/codex-support/OPERATOR-QUEUE.md",
       "docs/verification-ledger.md"
     ],
-    "compiledAt": "pending (CS-00 merge)",
+    "compiledAt": "2026-09-09 (CS-00 merged — PR #220)",
     "templateVersion": "v0-interim"
   }
 }
