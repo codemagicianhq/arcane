@@ -2711,3 +2711,33 @@ authored content.
   not state whether linked files are attached, so the operator's own Copilot Chat check is recorded as
   pending in `docs/research/skill-discovery-smoke-tests.md`. No client has needed the inlined-body
   fallback.
+
+**Implementation note (2026-09-10, CS-04 — decision 3 shipped as `1.1.0`, with two implementation-level
+variances recorded against vendor documentation):**
+
+- The tier is `spell init|update|status|uninstall --user` (open question 1, resolved by the Naming
+  Test: a per-user modifier flag on an existing verb is the established idiom — `pip install --user`,
+  `git config --global`). The store `~/.arcane/` holds canonical spells only (`~/.arcane/spells/<id>.md`,
+  its own `.arcane.json` with `scope: "user"`), written through the same copier, hash record and
+  three-way merge a repository install uses; the client files are rendered by a fan-out with the
+  spell's absolute path and recorded in the manifest's `fanout` map, so they are rewritten or removed
+  only while hash-matched, an edited one is kept and named, and a same-named file Arcane never wrote is
+  never claimed.
+- **Variance 1 — the Claude Code location is `~/.claude/commands/<id>.md`, not `~/.claude/skills/`.**
+  VS Code's agent-skills documentation (fetched 2026-09-09) lists `~/.claude/skills` among Copilot's
+  default skill locations alongside `~/.agents/skills`; a Claude skill there would list every spell
+  twice in Copilot's picker. Claude Code's own documentation treats `.claude/commands/<name>.md` and
+  `.claude/skills/<name>/SKILL.md` as the same invocable thing, and `~/.claude/commands` is outside
+  Copilot's scan set.
+- **Variance 2 — no VS Code settings snippet is printed, because none is needed.** The same
+  documentation marks `chat.promptFilesLocations` and its siblings deprecated ("This setting and the
+  Local agent will be removed in a future release"); Copilot reads `~/.agents/skills` by default and
+  lists skills under `/`. The commands print that finding and its reason instead. "Never
+  auto-applied" holds trivially.
+- The Codex file at `~/.agents/skills/<id>/SKILL.md` serves Codex and Copilot at once; there is no
+  `~/.copilot/skills` or `~/.codex/skills` target. Evidence: Codex followed a user-level skill to an
+  absolute path from an unrelated working directory, twice — a probe before the design and the real
+  `spell init --user` output afterwards (`docs/research/skill-discovery-smoke-tests.md`, "CS-04");
+  Claude Code's user-level `@` include and Copilot's user-level picker are the operator's Q-005.
+- Decision 4 (`spell_scope`, CS-05) is unchanged; until it ships, Claude Code's documented "personal
+  over project" precedence means the user tier's copy runs in a repository that still carries its own.

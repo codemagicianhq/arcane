@@ -19,9 +19,9 @@
         "npm run typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0d89536. test/manifest.test.ts: scope repo/user/absent accepted, `machine` rejected, fanout record validated (64-hex digests) and malformed records rejected. test/user-tier.test.ts 'locations' + 'componentForScope': userTierRoot follows USERPROFILE/HOME between calls; store/canonical id round-trips in both slash styles; absoluteStoreSpellPath has no backslash; componentForScope repo identity, user view = one spells/<id>.md per spell with sourceOverrides to the canonical asset, every mapped asset exists on disk. typecheck + lint clean."
     },
     {
       "id": "CS04-S2",
@@ -36,9 +36,9 @@
         "Rendered content contains the absolute canonical path with forward slashes and never a repo-relative .arcane/spells path"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0d89536. test/user-tier.test.ts 'renderUserFanout' + 'syncUserTierFanout' (8 cases): first run 4 written/4 recorded, second run 4 unchanged; missing recorded file restored; edited file byte-identical + customized + hash carried forward (idempotent on the third run); foreign same-named file = collision, never recorded, untouched by a later empty-set prune; claude_description change rewrites both shims of that spell only; dropped spell pruned with its emptied .agents/skills/<id> directory while an edited command is kept-edited then gone, and ~/.claude/commands is never removed; dry-run writes nothing for both write and prune; describeFanoutOutcomes lines. One implementation defect caught by these tests before commit: fs.rm on an empty directory is EISDIR without recursive -- switched to rmdir (removes exactly an empty directory). test/spell-compiler.test.ts: renderClaudeCommandStub renders over an explicit absolute reference."
     },
     {
       "id": "CS04-S3",
@@ -52,9 +52,9 @@
         "spell --help shows --user on init, update, status and uninstall"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0d89536. test/init.test.ts '--user' (6 cases): store manifest scope user with 41 spells/<id>.md hashes matching disk, no repo-relative shim and no repo-only fields, fanout of 82 entries whose hashes match ~/.agents/skills/<id>/SKILL.md and ~/.claude/commands/<id>.md carrying the absolute forward-slash store path; select/confirm/input and inspectGitRepository/ensureLocalPullRebase never called; --dry-run lists Would copy/Would write and creates nothing; second init says Already initialized (user tier at ...) + spell update --user; --profile with --user rejected; a foreign same-named skill left alone, not recorded, named in the output. Built CLI: `<cmd> --help` shows --user for init, update, status, uninstall (checked live). Live EV-01 against the real home: 41/41/41 files written, output as designed (docs/research/skill-discovery-smoke-tests.md, CS-04)."
     },
     {
       "id": "CS04-S4",
@@ -68,9 +68,9 @@
         "Existing repo-tier update tests pass unchanged"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0d89536. test/update.test.ts '--user' (8 cases, fixture = a real runInit --user): no git check and no retrofit prompt across a version bump; Already up to date at the same version leaves the manifest byte-equal; a deleted client file is restored on a same-version run (Wrote 1 client file(s)) and re-recorded; a deleted store spell is restored through the ordinary path (Restored missing: spells/spell-status.md); an edited store spell merges with fetchPublishedFile called at the ASSET path .arcane/spells/spell-status.md and the vendor hash recorded; an edited client file kept + Kept 1 customized + hash carried forward across the bump; --dry-run reports Would write 1 client file(s) and changes nothing; a missing store points at spell init --user. All pre-existing update tests green."
     },
     {
       "id": "CS04-S5",
@@ -83,9 +83,9 @@
         "uninstall --user --dry-run lists what would be removed and deletes nothing; no push-safety or marker-section code runs for scope user"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0d89536. test/status.test.ts 'scope and --user' (4 cases): Scope: user + Client files: 2 (1 Codex/Copilot skills, 1 Claude Code commands) + the VS Code note; 1 missing, 1 customized with the spell update --user remedy; missing store -> spell init --user + exit 1; repo status prints Scope: repo and the User tier: v1.1.0 at <store> line only once a store exists in the (env-stubbed) home. test/uninstall.test.ts '--user' (5 cases): client files, the emptied .agents/skills/<id> directory, store spell, manifest and the emptied store all removed while ~/.claude/commands survives; edited client file kept and named (--yes skips the prompt); --dry-run lists and removes nothing; a scope: user manifest is handled as the tier even without the flag; missing store -> spell init --user. Live: status --user and uninstall --user run against the real tier (research doc, CS-04 EV-01)."
     },
     {
       "id": "CS04-S6",
@@ -98,9 +98,9 @@
         "Existing doctor tests pass unchanged"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit 0d89536. test/doctor-user-tier.test.ts (7 cases): no store -> pass naming spell init --user; matching major.minor with every client file in place -> pass with the store path and count; major.minor drift -> warn (blocking false) with the remedy; a missing recorded client file -> warn '1 of 2 client file(s) missing'; an edited client file -> pass message counts it as customized (kept-as-designed, so not a warning -- a deliberate narrowing of the AC's 'or edited'); unknown CLI version skips the comparison; unreadable store manifest -> warn 'could not read'. The version reaches the check via DoctorOptions.packageVersion from the CLI entry (bundle-safe; doctor.ts cannot require package.json relative to itself once tsup flattens it). Live: `spell doctor` in this repo printed `✓ [pass] User tier (ARC-045)` while the real tier was installed. Existing doctor suites green."
     },
     {
       "id": "CS04-S7",

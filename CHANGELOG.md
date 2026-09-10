@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.1.0] - 2026-09-10
+
+The user tier: install the spell library once per machine and let every client find it from any repository (CS-04 of the Codex Support program, [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) decision 3).
+
+### Added
+
+- **`spell init --user`, `spell update --user`, `spell status --user`, `spell uninstall --user`.** The user tier is a store at `~/.arcane/` holding the 41 canonical spells (`~/.arcane/spells/<id>.md`, with its own `.arcane.json`) plus, per spell, one Codex skill at `~/.agents/skills/<id>/SKILL.md` and one Claude Code command at `~/.claude/commands/<id>.md`, both pointing at the spell's absolute path in the store. Codex and VS Code Copilot both read `~/.agents/skills` by default; Claude Code reads `~/.claude/commands`. No VS Code setting is required, and none is written. The tier carries spell delivery only — governance, continuity files and repository configuration stay with the repository. `init --user` asks no question and touches no git state.
+- **The manifest records the tier and the fan-out.** `.arcane.json` gains an optional `scope` (`"repo"`, the default and the meaning of every existing manifest, or `"user"`) and, for the user tier, a `fanout` map of every client file Arcane wrote outside the store with its content hash. `update --user` and `uninstall --user` rewrite or delete a client file only while its content still matches that record; an edited one is kept and named, and a same-named file Arcane never wrote is left alone and never claimed. A store spell you edit gets the same three-way merge on `update --user` a repository file gets.
+- **`spell doctor` reports the user tier**, non-blocking: not installed (optional), current, behind or ahead of the CLI's `major.minor`, or with client files missing — each with `spell update --user` as the remedy. `spell status` in a repository prints its scope and, when a user tier exists on the machine, that tier's version.
+
+### Fixed
+
+- **`spell update`'s three-way merge fetches the previously published file by its asset path**, so a component installed under a different name than its source (`sourceOverrides` — `.gitattributes`/`.gitignore`, and now the user tier's store) merges against the right base instead of a 404.
+
+### Notes
+
+- **Why there is no VS Code settings snippet:** VS Code's AI settings reference (fetched 2026-09-09) marks `chat.promptFilesLocations`, `chat.agentFilesLocations`, `chat.agentSkillsLocations` and `chat.instructionsFilesLocations` as deprecated ("This setting and the Local agent will be removed in a future release"), and its agent-skills page lists `~/.agents/skills` and `~/.claude/skills` among the locations read by default. The user tier lands where Copilot already looks. The Claude Code file is a *command* rather than a skill because Copilot scans `~/.claude/skills` too — a skill there would list every spell twice.
+- **Precedence:** Claude Code runs a personal command over a project command of the same name, so in a repository that still carries its own spells `/spell-*` runs the user tier's copy. Codex and Copilot list both tiers' entries until the repository opts out (CS-05).
+- Codex following a user-level skill to an absolute path from an unrelated directory was observed live (`docs/research/skill-discovery-smoke-tests.md`); the Claude Code and Copilot user-level checks are recorded as an operator item (`docs/plans/codex-support/OPERATOR-QUEUE.md` Q-005).
+
 ## [1.0.0] - 2026-09-09
 
 The first stable-contract release: one authored source per spell, and every AI client a thin generated shim over it. This is the one breaking change of the Codex Support program (CS-03, [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier)); everything after it is additive again.
