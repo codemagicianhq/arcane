@@ -15,12 +15,12 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 3 of 9 epics shipped"
+    "dek": "active — 4 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "3/9",
+      "value": "4/9",
       "label": "epics shipped",
       "derived": true
     },
@@ -44,12 +44,6 @@
     }
   ],
   "needsYou": [
-    {
-      "id": "Q-003",
-      "title": "Confirm the version number for CS-03",
-      "reason": "a merged version bump auto-publishes to npm within minutes",
-      "href": "https://github.com/codemagicianhq/arcane/pull/231"
-    },
     {
       "id": "Q-004",
       "title": "Confirm the Copilot shim in VS Code (one minute)",
@@ -186,7 +180,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 23,
+      "commits": 24,
       "source": "commit-trailer"
     }
   ],
