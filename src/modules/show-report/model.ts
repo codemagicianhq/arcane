@@ -210,13 +210,21 @@ export async function buildShowReportModel(options: BuildShowReportModelOptions)
     // A finished program's close is the commit `main` stood at when its own
     // `completed:` day ended (any path, by landing date) -- see getCloseCommit
     // for why neither "last commit touching PLAN.md" nor author dates hold up.
-    // An in-progress program has no bound: "as of now".
-    const closeSha = await getCloseCommit(options.rootDir, frontmatter.completed);
+    // An in-progress program has no bound -- "as of now" -- except that its
+    // own committed report must not count as "something happened": the
+    // generated outputs next to the plan are excluded from the search.
+    const reportDir = options.planRelPath.split("/").slice(0, -1).join("/");
+    const generatedOutputs = ["show-report.json", "show-report.html"].map((f) =>
+      reportDir ? `${reportDir}/${f}` : f,
+    );
+    const closeSha = await getCloseCommit(options.rootDir, frontmatter.completed, generatedOutputs);
     if (closeSha) {
       const [from, to, castMap] = await Promise.all([
         getVersionAtRef(options.rootDir, baselineSha),
         getVersionAtRef(options.rootDir, closeSha),
-        getCast(options.rootDir, baselineSha, closeSha),
+        // Regeneration-only commits are never part of the cast, for a closed
+        // program as much as an active one.
+        getCast(options.rootDir, baselineSha, closeSha, generatedOutputs),
       ]);
       if (from && to) versionSpan = { from, to };
       for (const [name, count] of castMap) cast.set(name, count);

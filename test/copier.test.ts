@@ -7,8 +7,11 @@ import {
   validateTargetPath,
   copyFile,
   copyDirectory,
+  fileMatchesHash,
+  hashContent,
   hashFile,
   ensureDir,
+  removeWithin,
 } from "../src/modules/copier.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
 
@@ -59,6 +62,77 @@ describe("copier", () => {
 
     it("accepts a top-level filename", () => {
       expect(() => validateTargetPath(tempDir, "file.md")).not.toThrow();
+    });
+  });
+
+  // ─── Line endings and the recorded hash (TODO.md, "a recorded file hash is byte-exact") ──
+
+  describe("hashContent / fileMatchesHash", () => {
+    const lf = "# Title\n\nline one\nline two\n";
+    const crlf = lf.replace(/\n/g, "\r\n");
+    const cr = lf.replace(/\n/g, "\r");
+
+    it("hashes CRLF, lone-CR and LF versions of the same text identically", () => {
+      expect(hashContent(crlf)).toBe(hashContent(lf));
+      expect(hashContent(cr)).toBe(hashContent(lf));
+      expect(hashContent(Buffer.from(crlf, "utf-8"))).toBe(hashContent(lf));
+    });
+
+    it("is the plain SHA-256 for content that already uses LF", () => {
+      expect(hashContent(lf)).toBe(createHash("sha256").update(lf).digest("hex"));
+    });
+
+    it("still tells genuinely different content apart", () => {
+      expect(hashContent(lf)).not.toBe(hashContent(`${lf}extra\n`));
+      expect(hashContent(lf)).not.toBe(hashContent(lf.replace("one", "1")));
+    });
+
+    it("hashFile normalizes too, and copyFile records the normalized digest", async () => {
+      const crlfFile = join(tempDir, "crlf.md");
+      await fs.writeFile(crlfFile, crlf);
+      expect(await hashFile(crlfFile)).toBe(hashContent(lf));
+      expect(await copyFile(crlfFile, tempDir, "copied.md")).toBe(hashContent(lf));
+    });
+
+    it("fileMatchesHash accepts the normalized digest and, for records written before normalization, the raw-bytes digest", async () => {
+      const crlfFile = join(tempDir, "legacy.md");
+      await fs.writeFile(crlfFile, crlf);
+      const rawCrlfDigest = createHash("sha256").update(crlf).digest("hex");
+      expect(await fileMatchesHash(crlfFile, hashContent(lf))).toBe(true); // current rule
+      expect(await fileMatchesHash(crlfFile, rawCrlfDigest)).toBe(true); // pre-normalization record
+      expect(await fileMatchesHash(crlfFile, hashContent(`${lf}edit\n`))).toBe(false);
+    });
+
+    it("a file git rewrote from CRLF to LF still matches the hash recorded at install", async () => {
+      const file = join(tempDir, "rewritten.md");
+      await fs.writeFile(file, crlf);
+      const recorded = await hashFile(file);
+      await fs.writeFile(file, lf); // what `text=auto eol=lf` does on the next checkout
+      expect(await fileMatchesHash(file, recorded)).toBe(true);
+    });
+  });
+
+  // ─── removeWithin (TODO.md, "two delete paths apply manifest-controlled paths without the traversal guard") ──
+
+  describe("removeWithin", () => {
+    it("deletes a file inside the target directory and tolerates a missing one", async () => {
+      await fs.writeFile(join(tempDir, "victim.md"), "x");
+      await removeWithin(tempDir, "victim.md");
+      await expect(fs.access(join(tempDir, "victim.md"))).rejects.toThrow();
+      await expect(removeWithin(tempDir, "victim.md")).resolves.toBeUndefined();
+    });
+
+    it("refuses a path that resolves outside the target directory and deletes nothing", async () => {
+      const outside = await fs.mkdtemp(join(tmpdir(), "copier-outside-"));
+      try {
+        const victim = join(outside, "keep-me.md");
+        await fs.writeFile(victim, "precious");
+        const escaping = `../${outside.split(/[\\/]/).pop()}/keep-me.md`;
+        await expect(removeWithin(tempDir, escaping)).rejects.toThrow(/Path traversal detected/);
+        await expect(fs.readFile(victim, "utf-8")).resolves.toBe("precious");
+      } finally {
+        await removeFixtureDir(outside);
+      }
     });
   });
 

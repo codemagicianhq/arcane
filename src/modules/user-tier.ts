@@ -36,11 +36,10 @@
  * and is never claimed.
  */
 
-import { createHash } from "node:crypto";
 import { lstat, mkdir, readdir, readFile, rm, rmdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { hashFile } from "./copier.js";
+import { fileMatchesHash, hashContent, hashFile, validateTargetPath } from "./copier.js";
 import { SPELL_COMPONENT_NAMES } from "./registry.js";
 import {
   canonicalSpellPath,
@@ -307,10 +306,6 @@ export interface FanoutSyncOptions {
   fallbackDir?: string;
 }
 
-function sha256(content: string): string {
-  return createHash("sha256").update(content, "utf-8").digest("hex");
-}
-
 /**
  * The per-spell directory a recorded path lives in, when its shape has one
  * (`.agents/skills/<id>/SKILL.md` -> `.agents/skills/<id>`). The Claude shape
@@ -375,9 +370,12 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
   }
 
   for (const file of desired) {
+    // Template-derived, so this cannot fail -- kept as the same invariant the
+    // prune loop below enforces on recorded keys.
+    validateTargetPath(options.homeDir, file.relativePath);
     const target = join(options.homeDir, file.relativePath);
     const recorded = previous[file.relativePath];
-    const newHash = sha256(file.content);
+    const newHash = hashContent(file.content);
     const state = await classifyTarget(target);
 
     if (state === "absent") {
@@ -399,12 +397,12 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
       continue;
     }
 
-    const currentHash = await hashFile(target);
-    if (currentHash !== recorded) {
+    if (!(await fileMatchesHash(target, recorded))) {
       record[file.relativePath] = recorded;
       outcomes.push({ relativePath: file.relativePath, status: "customized" });
       continue;
     }
+    const currentHash = await hashFile(target);
     if (currentHash === newHash) {
       record[file.relativePath] = newHash;
       outcomes.push({ relativePath: file.relativePath, status: "unchanged" });
@@ -417,6 +415,10 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
 
   for (const [relativePath, recorded] of Object.entries(previous)) {
     if (desiredPaths.has(relativePath)) continue;
+    // Recorded keys are validated when the manifest is read
+    // (isValidFanoutPath); this is the module's own guard, so a caller that
+    // hands over an unvalidated record still cannot delete outside home.
+    validateTargetPath(options.homeDir, relativePath);
     const target = join(options.homeDir, relativePath);
     const state = await classifyTarget(target);
     if (state === "absent") {
@@ -425,7 +427,7 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
     }
     // Not a regular file any more (a directory or a link now sits there), or
     // edited since Arcane wrote it: never deleted, still recorded.
-    if (state === "other" || (await hashFile(target)) !== recorded) {
+    if (state === "other" || !(await fileMatchesHash(target, recorded))) {
       record[relativePath] = recorded;
       outcomes.push({ relativePath, status: "kept-edited" });
       continue;
@@ -551,7 +553,7 @@ export async function inspectUserTierFanout(
     }
     // A directory or link where Arcane's file was is "not what Arcane wrote",
     // the same as an edit -- and never something to hash or touch.
-    if (state === "other" || (await hashFile(target)) !== recorded) health.customized.push(relativePath);
+    if (state === "other" || !(await fileMatchesHash(target, recorded))) health.customized.push(relativePath);
   }
   return health;
 }

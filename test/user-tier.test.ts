@@ -206,6 +206,34 @@ describe("renderUserFanout", () => {
   });
 });
 
+describe("renderUserFanout — a store path containing a space (TODO.md, \"a home path containing a space is untested\")", () => {
+  it("quotes the Claude include and keeps the Codex sentence's backticks; nothing else changes", async () => {
+    const spacedHome = await fs.mkdtemp(join(tmpdir(), "user tier home "));
+    try {
+      const spacedStore = join(spacedHome, ".arcane");
+      const dest = join(spacedStore, storeSpellPath("spell-status"));
+      await fs.mkdir(join(dest, ".."), { recursive: true });
+      await fs.copyFile(join(ASSETS_DIR, canonicalSpellPath("spell-status")), dest);
+
+      const { files, missing } = await renderUserFanout(spacedStore, ["spell-status"]);
+      expect(missing).toEqual([]);
+      const abs = absoluteStoreSpellPath(spacedStore, "spell-status");
+      expect(abs).toContain(" ");
+      const claude = files.find((f) => f.client === "claude")!;
+      expect(claude.content).toContain(`\n@"${abs}"\n`);
+      const codex = files.find((f) => f.client === "codex")!;
+      expect(codex.content).toContain(`Read \`${abs}\` and follow it`);
+      // And a real sync round-trips: written once, unchanged the second time.
+      const first = await syncUserTierFanout({ homeDir: spacedHome, storeRoot: spacedStore, spellIds: ["spell-status"] });
+      expect(summarizeFanout(first.outcomes).written).toBe(2);
+      const second = await syncUserTierFanout({ homeDir: spacedHome, storeRoot: spacedStore, spellIds: ["spell-status"], previous: first.record });
+      expect(summarizeFanout(second.outcomes).unchanged).toBe(2);
+    } finally {
+      await removeFixtureDir(spacedHome);
+    }
+  });
+});
+
 // ─── The reconciliation rules ─────────────────────────────────────────────────
 
 describe("syncUserTierFanout", () => {
@@ -376,6 +404,18 @@ describe("syncUserTierFanout", () => {
     // The read-only view counts it as customized instead of throwing.
     const health = await inspectUserTierFanout(home, pruned.record);
     expect(health.customized).toContain(codexStatus);
+  });
+
+  it("a client file rewritten from LF to CRLF is still unchanged, not customized (hashes are line-ending-normalized)", async () => {
+    const first = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids });
+    const target = USER_FANOUT_PATHS.claude("spell-status");
+    const content = await fs.readFile(join(home, target), "utf8");
+    await fs.writeFile(join(home, target), content.replace(/\n/g, "\r\n"), "utf8");
+
+    const again = await syncUserTierFanout({ homeDir: home, storeRoot, spellIds: ids, previous: first.record });
+    expect(again.outcomes.find((o) => o.relativePath === target)?.status).toBe("unchanged");
+    const health = await inspectUserTierFanout(home, again.record);
+    expect(health.customized).toEqual([]);
   });
 
   it("dry-run reads and decides but writes nothing", async () => {
