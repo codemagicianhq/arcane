@@ -1,7 +1,8 @@
 ---
 status: active
-scope: CS-03 — canonical spell move (docs/plans/codex-support/PLAN.md); later epics append their own sections
+scope: CS-03 — canonical spell move, and CS-04 — user tier install (docs/plans/codex-support/PLAN.md); later epics append their own sections
 created: 2026-09-09
+updated: 2026-09-09 (CS-04 section)
 prd: PRD.md
 adr: ARC-045 (Accepted 2026-09-09)
 ---
@@ -14,7 +15,9 @@ satisfying), [[git-conventions]] (the commit-scope table that names where spells
 
 This document is `spell-architect`'s output for the Codex Support program, one section per epic.
 CS-01 shipped without one (its mechanism was small enough to live in the ADR); CS-03 is the
-program's largest and only breaking epic, so its design is written down before it is built.
+program's largest and only breaking epic, so its design is written down before it is built; CS-04
+(below) introduces a new CLI surface and the first Arcane files written outside a repository, so it
+is written down too.
 
 ---
 
@@ -225,3 +228,273 @@ to 1.0.0`; then program bookkeeping; then the trailer-free show-report regenerat
   file-read fallback until the operator opens VS Code — flagged in the ship report's disclosure.
 - Rollback before consumers update is a revert of the PR; after, `spell update` to the reverted
   version reverses the shims the same way it introduced them (hash-matched files are replaced).
+
+---
+
+## CS-04 — User tier install: `--user`, the `~/.arcane` store, and the home-directory fan-out
+
+### Inputs
+
+- **Requirements:** [PRD.md](PRD.md) R3 (a user-level install tier for spells — AC5). This epic
+  delivers the install half of AC5: one canonical spell set per machine, discoverable by every
+  client from any working directory. AC5's second half — two repositories in one VS Code workspace
+  showing exactly one set of `/spell-*` entries — needs CS-05's repo opt-out (until then every repo
+  still carries its own shims) and an operator count in VS Code; it stays open here on purpose.
+  R4/AC6/AC7 (`spell_scope`) are CS-05; agents at the user tier are CS-06.
+- **Decision record:** `DECISIONS.md` ARC-045 decision 3 (a user tier at `~/.arcane/`, copied never
+  linked, shims fanned out to each client's home-directory discovery location, VS Code guidance
+  printed and never auto-applied) and decision 5 (the repository keeps governance, continuity and
+  configuration — the tier carries spell *delivery* content only). Open question 1 of that ADR —
+  the CLI surface — is resolved below as D1.
+- **Version:** minor (`1.1.0`), applied by `npm version minor` in its own `chore(release)` commit.
+  Self-mergeable under the `codex-support-plan` delegation.
+
+### Empirical-first findings (2026-09-09, before any code was written)
+
+1. **Codex follows a user-level skill to an absolute path from an unrelated working directory.**
+   A probe skill at `~/.agents/skills/arcane-probe-user/SKILL.md` whose body named an absolute
+   path under the session scratchpad (forward slashes, `C:/Users/…/cs04-user-target.md`) was invoked
+   via `codex exec --cd <empty directory> --sandbox read-only`. Complete stdout:
+   `MARKER-CS04-ABS-PATH-CONFIRMED`; the trace shows `Get-Content -Raw '<that absolute path>'`,
+   no path rewriting. The probe was removed afterwards. This is the same evidence bar as CS-00's
+   Test 3 (`docs/research/skill-discovery-smoke-tests.md`), one tier up, and it settles the Codex
+   fan-out shape: `renderCodexSkill()` output with an absolute canonical path.
+2. **VS Code has deprecated the settings this epic was planned around.** Its AI settings reference
+   (fetched 2026-09-09) marks `chat.promptFilesLocations`, `chat.agentFilesLocations`,
+   `chat.agentSkillsLocations` and `chat.instructionsFilesLocations` deprecated — "This setting and
+   the Local agent will be removed in a future release" — and points prompt-file users at a
+   migration to **agent skills**. Its agent-skills page says skills are discovered from
+   `.github/skills`, `.claude/skills`, `.agents/skills` in a workspace and from `~/.copilot/skills`,
+   `~/.claude/skills`, `~/.agents/skills` for the user, with `chat.useAgentSkills` on by default and
+   every skill listed under `/` in the chat input. **Correction to the epic's premise, on the
+   record:** PLAN.md and ARC-045 decision 3 planned a printed `chat.promptFilesLocations` snippet.
+   Printing it would recommend a setting the vendor has announced it will remove, for a location
+   Copilot already covers without any setting: the user-level Codex skill folder. The user tier
+   therefore needs **no VS Code setting at all** and prints an informational note instead (D6).
+   Corollary: because Copilot also scans `~/.claude/skills`, a Claude fan-out at
+   `~/.claude/skills/<id>/SKILL.md` (the ADR's literal wording) would list every spell **twice** in
+   Copilot's picker. The Claude fan-out goes to `~/.claude/commands/<id>.md` instead (D3) — Claude
+   Code's personal-commands location, which its documentation keeps supported and treats as the
+   same thing as a skill (`.claude/commands/deploy.md` and `.claude/skills/deploy/SKILL.md` "both
+   create `/deploy` and work the same way"), and which is outside Copilot's scan set.
+3. **Claude Code's user-level `@` include could not be observed from this session.** A personal
+   probe command with an absolute-path `@` include was written to `~/.claude/commands/`, but the
+   running session's skill list is fixed at startup (the Skill tool reports it unknown) and a nested
+   `claude -p` reports "Not logged in" — a separate credential store, which an agent session must
+   not work around. The file was removed. Recorded as **deferred to the operator** (Q-005), and
+   mitigated by design rather than assumed: the Claude stub carries the read-and-follow sentence
+   *and* the `@` include (as the repo-tier stub already does), so an include that fails to inline
+   degrades to the file-read path Codex was proven to take. What the documentation does say
+   (checked 2026-09-09, documentation not observation): `@` file paths "can be relative or
+   absolute"; `~/.claude/commands/<command-name>.md` files are "available across all your projects
+   on that machine"; and "personal takes precedence over project" when names clash (D7).
+4. **`os.homedir()` follows `USERPROFILE`/`HOME` at call time** (checked with node on this
+   machine): tests stub the environment, never the function — the same "spawn the real thing"
+   standard `test/org-token-lint.test.ts` holds itself to. `version-check.ts` computes its home path
+   at module load, which is exactly the pattern a stub cannot reach; the user-tier code resolves the
+   home directory on every call.
+5. **The operator's home already holds foreign skills** (28 third-party entries under
+   `~/.agents/skills`, one under `~/.claude/skills`, no `~/.claude/commands`, no `~/.arcane`). The
+   fan-out therefore needs a collision rule for a same-named file Arcane never wrote (D3).
+
+### Decisions
+
+**D1 — CLI surface: `--user` on `init`, `update`, `status`, `uninstall`.** By the Naming Test
+(`naming-conventions.md`, "if an established industry term exists for the thing, use the real
+term"): the per-user tier of an existing verb is an established modifier flag — `pip install
+--user`, `git config --global`, `npm --global` — and reads naturally on all four verbs; a `spell
+user <verb>` noun would fork every verb into two spellings for one behavior. No existing option
+collides. `InstallScope = "repo" | "user"` in `types.ts`; `ArcaneManifest.scope?: InstallScope`
+(absent means `repo`, so every existing manifest is unchanged), validated in `manifest.ts` like the
+other enums. `SpellInitOptions`/`SpellUpdateOptions` gain `user?: boolean`; `index.ts` resolves
+`targetDir` to the store (D2) when the flag is set.
+
+**D2 — The store is `~/.arcane/`, a repo-shaped Arcane target that holds canonical spells only.**
+`userTierRoot()` = `join(homedir(), ".arcane")`; the manifest is `~/.arcane/.arcane.json`; the
+spells are `~/.arcane/spells/<id>.md`. The layout comes from a **scope-aware view of the registry**
+rather than new copy logic: `componentForScope(component, "user")` keeps only a component's
+canonical files, strips the leading `.arcane/` from the installed path (`spells/<id>.md`) and maps
+each to its asset through the `sourceOverrides` mechanism the registry already has for dotfiles.
+`USER_TIER_COMPONENTS` is `SPELL_COMPONENT_NAMES` (every `spells-*` component, un-profiled; the
+user manifest records `profile: "full"` as the source of that set). Everything downstream is
+reused unchanged: `copyFile` (its traversal guard holds — every store file is under `~/.arcane`),
+`fileHashes`, `findMissingTrackedFiles` and the same-version restore, the ARC-038 three-way merge
+(an operator who edits `~/.arcane/spells/<id>.md` gets exactly the merge a repo canonical file
+gets), orphan reporting, `--prune`, `--dry-run`, `--force`.
+
+Why canonical-only: the repo-tier shims are repository-relative (`@.arcane/spells/<id>.md`, "Read
+`.arcane/spells/<id>.md`", `../../.arcane/spells/<id>.md`) and would be inert in the store — no
+client scans `~/.arcane/.github/prompts` and the setting that could is deprecated (finding 2). The
+user-level shims are rendered by the fan-out with absolute paths instead (D3). Why not
+`targetDir = ~` (which would drop the registry's own shim layout straight into `~/.claude/commands`
+and `~/.agents/skills`): a manifest at `~/.arcane.json`, a stray `~/.github/prompts/`, and a
+traversal guard weakened to "anywhere under home" — rejected. One general fix falls out: the merge
+path fetches the previously published vendor file by its **asset** path
+(`sourceOverrides[file] ?? file`), which is also what a repo-tier `sourceOverrides` file needs and
+never got.
+
+**D3 — The fan-out (`src/modules/user-tier.ts`): two files per spell, at the clients' own home
+discovery roots, rendered with an absolute canonical path.**
+
+| Client(s) | File | Renderer | Why there |
+|---|---|---|---|
+| Codex CLI/extension **and** VS Code Copilot | `~/.agents/skills/<id>/SKILL.md` | `renderCodexSkill(id, fm, absolutePath)` | Codex reads it (CS-00 Test 2, finding 1); Copilot's default skill locations include it (finding 2) |
+| Claude Code | `~/.claude/commands/<id>.md` | `renderClaudeCommandStub(id, fm, absolutePath)` — the stub gains an optional third parameter, default `canonicalSpellPath(id)` | personal commands; outside Copilot's scan set, so no double listing (finding 2) |
+
+The absolute path is rendered with forward slashes (`C:/Users/<you>/.arcane/spells/<id>.md`) —
+the form Codex accepted verbatim, valid on Windows, and free of backslash escaping inside Markdown
+and YAML. No `~/.copilot/skills` (Copilot already reads `~/.agents/skills`) and no `~/.codex/skills`
+(CS-00). Written with `node:fs` directly, not `copier.copyFile` — its guard forbids leaving
+`targetDir`, and these files must (the OpenClaw precedent in `agent-generator.ts`, "writes outside
+targetDir" by design).
+
+The manifest records what the fan-out wrote as `fanout?: Record<string, string>`: home-relative
+POSIX path (`.agents/skills/spell-plan/SKILL.md`) → SHA-256 of the content Arcane wrote. Every run
+(`init --user`, `update --user`, `uninstall --user`) reconciles the desired set against that record
+with the ARC-038 discipline, applied outside the store:
+
+| On disk | Recorded | Action |
+|---|---|---|
+| absent | — | write, record |
+| present, hash == recorded | yes | rewrite only if the rendered content changed; record |
+| present, hash ≠ recorded | yes | **keep byte-untouched**, warn "customized — not overwritten", carry the recorded hash forward (CS-03 D5's rule) |
+| present | **no** | **collision** with a file Arcane never wrote (an operator's own skill or command of the same name): keep, warn, do not record — never claim ownership of a file we did not write (the same rule `update.ts` applies to preserved files) |
+| recorded, no longer desired (spell dropped, or uninstall) | yes | remove only if hash == recorded, then remove the emptied `<id>` directory; edited → keep + warn; already gone → drop the record |
+
+Dry-run prints the same decisions with a `[dry-run] Would …` prefix and writes nothing.
+
+**D4 — Command behavior under `--user`.**
+
+- `spell init --user`: no profile prompt, no git-state checks (the store is not a repository), none
+  of the manifest questions or `MANIFEST_RETROFITS` (repository semantics), no hooks, no agent
+  setup. Installs `USER_TIER_COMPONENTS` into the store, writes the manifest with `scope: "user"`,
+  runs the fan-out, records `fanout`, then prints the store path, the spell count, the fan-out counts
+  per client, the VS Code note (D6) and two next steps (reload VS Code; `spell status --user`).
+  "Already initialized" behaves as it does for a repo.
+- `spell update --user`: reads the store manifest; skips the git checks and the commit-first
+  warning (a hash baseline and the published vendor file are the merge inputs — no repository is
+  involved); runs the ordinary update over the scope view (same-version restore included); then
+  re-runs the fan-out so a renderer change regenerates every shim and a dropped spell's shims are
+  pruned; retrofits are skipped for `scope: "user"`; `--dry-run` and `--prune` behave as for a
+  repo.
+- `spell status --user`: the store's component table, `Scope: user`, one fan-out line (`82 client
+  files — 41 Claude Code commands, 41 Codex/Copilot skills; N customized, M missing`), the version
+  footer. Plain `spell status` (repo) gains `Scope: repo` and, only when a user tier exists on the
+  machine, `User tier: v<version> at <store> (spell status --user)`.
+- `spell uninstall --user`: reconciles the fan-out against an empty desired set (hash-checked
+  removal, customized files kept and listed), removes the store files and the manifest; skips the
+  push-policy refusal and the repository-only cleanups (agent directories, marker sections, hooks);
+  `--yes` and `--dry-run` as for a repo.
+- `spell doctor`: `checkUserTier()`, non-blocking. No store → `pass`, "no user tier installed
+  (optional — `spell init --user`)", the same shape as `checkMcpConfig`'s "nothing to check" row.
+  Store present → `major.minor` of the store versus the CLI (differs → `warn`, remedy `spell update
+  --user`) and fan-out integrity from the manifest record (missing or edited files → `warn` with
+  counts and the same remedy). Reads only the store manifest and file hashes — it does not read VS
+  Code's settings (profile-specific JSONC, and after finding 2 there is nothing in them to check).
+
+**D5 — `index.ts` wiring.** One option string on all four commands: `--user` — "operate on the
+per-user tier at ~/.arcane (spells shared by every repository on this machine)". The action
+handlers pass `userTierRoot()` as `targetDir` and `{ user: true }` in the options; nothing else in
+the command modules branches on the flag except the points D4 names.
+
+**D6 — The VS Code note.** Printed by `init --user` and `status --user`, never applied:
+
+> VS Code Copilot: no settings change is needed — Copilot discovers `~/.agents/skills` by default
+> (`chat.useAgentSkills`, on by default) and lists each spell under `/`. Reload the window after
+> installing. VS Code has deprecated `chat.promptFilesLocations`; the user tier does not use it.
+
+ARC-045 decision 3's "printed — never auto-applied" holds; what is printed is the finding that no
+setting is required, with its reason, rather than a snippet for a deprecated one.
+
+**D7 — Coexistence and precedence are documented, not engineered away here.** Claude Code's
+documented rule is "personal over project": once the user tier is installed, `/spell-*` in a repo
+that still carries its own shims runs the user-tier copy. Codex and Copilot list both tiers'
+entries until CS-05's repo opt-out removes the repository's. README and `status --user` say so;
+CS-05 is where duplication ends.
+
+**D8 — Tests, with the home directory stubbed by environment.** Every user-tier test sets
+`process.env.USERPROFILE` and `process.env.HOME` to a fresh temp directory in `beforeEach` and
+restores both in `afterEach` (the stash pattern `test/org-token-lint.test.ts` uses). Coverage in
+the Testing strategy below.
+
+**D9 — Release and records.** `1.1.0`; `CHANGELOG.md` `## [1.1.0]` (Added: the user tier; Notes:
+the VS Code deprecation finding and the precedence rule); README "Once per machine" subsection
+under Quick start; `portable-bootstrap.md`'s "Framework-managed spells" bullet gains the tier;
+ARC-045 gains an implementation note recording D3's Claude location and D6's rationale as
+implementation-level variances of decision 3; the research doc gains a "CS-04 user-tier probes"
+section (findings 1 and 3); PLAN.md's CS-04 entry carries the premise correction; Q-005 asks the
+operator for the Claude Code and Copilot user-level checks this session could not perform.
+
+### Component view
+
+```mermaid
+flowchart LR
+    R["registry: spells-* components<br/>(4 files per spell)"] -- "componentForScope(·, user)" --> V["canonical files only<br/>spells/&lt;id&gt;.md ← .arcane/spells/&lt;id&gt;.md"]
+    V -- "copyFile / fileHashes" --> S["~/.arcane/spells/&lt;id&gt;.md<br/>~/.arcane/.arcane.json (scope: user, fanout)"]
+    S -- "renderCodexSkill(absolute)" --> A["~/.agents/skills/&lt;id&gt;/SKILL.md<br/>(Codex + Copilot)"]
+    S -- "renderClaudeCommandStub(absolute)" --> C["~/.claude/commands/&lt;id&gt;.md<br/>(Claude Code)"]
+    A & C -. "hash record: write / keep customized / collision / prune" .-> S
+```
+
+```mermaid
+flowchart TD
+    F["fan-out file f (desired)"] --> E{"exists on disk?"}
+    E -- no --> W["write; record hash"]
+    E -- yes --> H{"recorded hash?"}
+    H -- no --> X["collision: keep, warn, do not record"]
+    H -- yes --> M{"on-disk == recorded?"}
+    M -- yes --> U["rewrite if content changed; record"]
+    M -- no --> K["keep untouched; warn customized; carry hash forward"]
+```
+
+### Testing strategy
+
+- **Unit (`test/user-tier.test.ts`):** `userTierRoot()` follows the stubbed home;
+  `componentForScope` keeps exactly the canonical files with stripped paths and correct
+  `sourceOverrides` (and returns repo components untouched); absolute-path rendering uses forward
+  slashes; the fan-out engine on a temp home — first run writes 2 files per spell and records them,
+  a second run is a no-op, a renderer change rewrites and re-records, an edited file is kept and
+  its hash carried forward, a same-named foreign file is kept and never recorded, a dropped spell's
+  files are pruned only when hash-matched and the emptied directory goes with them, dry-run writes
+  nothing and prints the decisions.
+- **Command integration:** `init --user` (store layout, manifest `scope`/`fanout`, no prompt
+  function called, git module untouched, `--dry-run`, "Already initialized"); `update --user`
+  (same-version restore of a deleted store spell, fan-out regenerated, an edited store spell goes
+  through the merge path with the network mocked, `--dry-run`); `status --user` (scope line,
+  fan-out counts, customized/missing counts) and plain `status` (scope line; user-tier line only
+  when a store exists); `uninstall --user` (customized shim kept and listed, everything else and
+  the emptied directories removed, `--dry-run`, `--yes`); `doctor` (no store → pass; version
+  mismatch → warn; missing fan-out file → warn); `manifest.ts` rejects an unsupported `scope`.
+- **Repository gates on the real tree:** full `npm test`, `npm run build`, `check:version-bump`
+  (bump present), `check:self-host-parity`, `check:spell-catalog`, `check:adr-references`,
+  `check:citations`, `check:stale-claims`, `check:followups`.
+- **Client observation (EV-01):** Codex at the user tier — observed (finding 1) and repeated
+  against the real `spell init --user` output from the built CLI before uninstalling it again;
+  Claude Code and Copilot at the user tier — operator (Q-005).
+
+### Blast radius
+
+| Area | Files | Treatment |
+|---|---:|---|
+| `src/` | 10 | `types.ts` (scope, fanout, options), `modules/manifest.ts` (scope validation), **new** `modules/user-tier.ts`, `modules/spell-compiler.ts` (optional canonical-ref parameter), `commands/init.ts`, `update.ts`, `status.ts`, `uninstall.ts`, `doctor.ts`, `index.ts` |
+| `test/` | 7 | new `user-tier.test.ts`, `doctor-user-tier.test.ts`; `--user` cases in `init`, `update`, `status`, `uninstall`; a `scope` case beside the existing manifest-field tests |
+| Distributed prose | 1 | `portable-bootstrap.md` (source + root copy via parity) |
+| Root docs | 6 | README, CHANGELOG, DECISIONS.md (implementation note), research doc, PLAN.md, OPERATOR-QUEUE.md |
+
+### Commit plan
+
+Architecture and stories first (this commit, with the consumed handoff marker and two Low drift
+fixes from the session opener). The feature lands as **one** commit — types, manifest validation,
+the module, the compiler parameter, the five command edits, the wiring and every test, because the
+tree is red at any intermediate point. Then docs and changelog; then `chore(release): bump version
+to 1.1.0`; then program bookkeeping; then the trailer-free show-report regeneration.
+
+### Risks and rollback
+
+- Nothing here changes a repository install: `scope` is optional and absent, `fanout` is written
+  only by `--user`, and no repo-tier code path reads either. Rollback for a consumer is `spell
+  uninstall --user`, which removes only hash-matched files and reports what it left.
+- The Claude Code user-level include is verified by documentation and the read-and-follow fallback
+  until the operator runs Q-005 — disclosed in the ship report, as CS-03 disclosed Copilot.
+- A future VS Code that drops `~/.agents/skills` from its defaults would need a Copilot-specific
+  fan-out target; `CLIENT_SHIM_PATHS`-style, one renderer line, no redesign.

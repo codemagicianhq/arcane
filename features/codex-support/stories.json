@@ -1,156 +1,121 @@
 {
-  "feature": "CS-03 — canonical spell move: .arcane/spells/ + every client a generated shim (Codex Support program)",
-  "branchName": "sessions/2026-09-09-cs03-canonical-spells",
+  "feature": "CS-04 — user tier install: --user, the ~/.arcane store, and the home-directory fan-out (Codex Support program)",
+  "branchName": "sessions/2026-09-09-cs04-user-tier",
   "assignedAgent": "claude (role: Backend/Full-stack — no roster installed in this repository)",
   "trackingMode": "internal",
   "externalProvider": null,
   "prd": "features/codex-support/PRD.md",
   "architecture": "features/codex-support/architecture.md",
+  "previousEpic": "CS-03 stories are preserved in git history (commit 8d32d3a) and in PR #232",
   "stories": [
     {
-      "id": "CS03-S1",
-      "title": "Move the canonical source and fragments; fix body links",
-      "description": "git mv all 41 src/assets/.github/prompts/spell-*.prompt.md to src/assets/.arcane/spells/<id>.md and _fragments/ to .arcane/spells/_fragments/, keeping frontmatter byte-identical (architecture D1). Rewrite sibling references spell-x.prompt.md -> spell-x.md in the six bodies that carry them and fix the two pre-existing broken links (architecture D6).",
+      "id": "CS04-S1",
+      "title": "Types, manifest scope, store paths and the scope-aware registry view",
+      "description": "Add InstallScope = \"repo\" | \"user\", ArcaneManifest.scope? and fanout?, and user? on the init/update options in src/types.ts; validate scope in src/modules/manifest.ts like the other enums; create src/modules/user-tier.ts with userTierRoot() (homedir resolved on every call), USER_TIER_COMPONENTS (= SPELL_COMPONENT_NAMES), componentForScope(component, scope) (user: canonical files only, installed path spells/<id>.md, asset mapped via sourceOverrides) and toAbsoluteSpellPath(root, id) with forward slashes (architecture D1, D2).",
       "acceptanceCriteria": [
-        "41 files exist at src/assets/.arcane/spells/spell-*.md with git history preserved (git log --follow shows the pre-move commits)",
-        "src/assets/.arcane/spells/_fragments/tracking-mode-declaration.md exists and no file remains under src/assets/.github/prompts/_fragments/",
-        "grep -r 'prompt.md' src/assets/.arcane/spells/ returns no sibling reference",
-        "spell-brainstorm's TODO.md link and spell-arcane-version's .arcane.json link resolve from .arcane/spells/"
+        "readManifest rejects scope values other than repo/user with ManifestInvalidFieldError and accepts a manifest with no scope",
+        "componentForScope(c, \"repo\") returns c unchanged; componentForScope(c, \"user\") lists exactly one file per spell (spells/<id>.md) with sourceOverrides mapping each to .arcane/spells/<id>.md",
+        "userTierRoot() changes when USERPROFILE/HOME change between calls",
+        "npm run typecheck passes"
       ],
       "priority": 1,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 8a80759. 41 `git mv` + _fragments moved; `git log --follow -- src/assets/.arcane/spells/spell-plan.md` lists the same 6 commits as the old path. Post-codemod grep of the canonical folder for `prompt.md`/`.github/prompts`/`../../../`: 0 files. test/prompt-path-resolution.test.ts (2 tests) resolves every ../../ link from the new folder."
+      "testEvidence": null
     },
     {
-      "id": "CS03-S2",
-      "title": "Compiler: Copilot shim renderer, retargeted Claude/Codex renderers, path helpers",
-      "description": "Add canonicalSpellPath(id), isClientShimPath(path), extractFrontmatterBlock(content) and renderCopilotPromptShim(id, content) to src/modules/spell-compiler.ts; retarget renderClaudeCommandStub to @.arcane/spells/<id>.md; callers pass canonicalSpellPath(id) to renderCodexSkill (architecture D2). Update the module header.",
+      "id": "CS04-S2",
+      "title": "Fan-out engine with the ARC-038 hash discipline outside the store",
+      "description": "In src/modules/user-tier.ts implement syncUserTierFanout({ homeDir, storeRoot, spellIds, previous, dryRun }) producing the desired set (~/.agents/skills/<id>/SKILL.md via renderCodexSkill and ~/.claude/commands/<id>.md via renderClaudeCommandStub, both with the absolute forward-slash canonical path) and reconciling it against the recorded fanout map: write/record, rewrite-on-change, keep-customized (hash carried forward), collision (never recorded), prune only when hash-matched plus emptied-directory removal, dry-run parity. renderClaudeCommandStub gains an optional canonicalRef parameter defaulting to canonicalSpellPath(id) (architecture D3).",
       "acceptanceCriteria": [
-        "renderCopilotPromptShim output = the canonical frontmatter block verbatim + one body paragraph containing both the relative Markdown link ../../.arcane/spells/<id>.md and the read-and-follow sentence",
-        "renderClaudeCommandStub output references .arcane/spells/<id>.md twice and never .github/prompts",
-        "isClientShimPath is true for the three shim shapes and false for .arcane/spells/<id>.md, governance files, and near-miss paths",
-        "Unit tests in test/spell-compiler.test.ts cover each renderer's golden string, CRLF frontmatter, and the helpers"
+        "First run on an empty temp home writes 2 files per spell and returns a record with one hash per file; a second run writes nothing and reports every file unchanged",
+        "An edited fan-out file is left byte-identical, reported as customized, and its previously recorded hash is carried forward",
+        "A same-named file that was never recorded is left untouched, reported as a collision, and absent from the returned record",
+        "A spell removed from the desired set has its recorded, hash-matched files deleted and its emptied <id> directory removed; an edited one is kept and reported",
+        "dryRun writes nothing to disk and reports the same decisions",
+        "Rendered content contains the absolute canonical path with forward slashes and never a repo-relative .arcane/spells path"
       ],
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 8a80759. test/spell-compiler.test.ts: 44 tests green — golden strings for all three renderers, extractFrontmatterBlock (verbatim, CRLF, missing block), isClientShimPath positives/negatives incl. backslash and ./ forms, renderCopilotPromptShim rejects a canonical file the parser rejects."
+      "testEvidence": null
     },
     {
-      "id": "CS03-S3",
-      "title": "Parity: one shim axis over three targets, fragments from the new folder, regenerate everything",
-      "description": "In scripts/self-host-parity.ts replace runStubParity/runSkillParity with runShimParity(mode, assetsDir) enumerating ids from .arcane/spells/spell-*.md; point runFragmentParity at .arcane/spells/_fragments/; run npm run fix:self-host-parity so all 123 shim files in src/assets/ and every root dogfood copy (including root .arcane/spells/) are regenerated (architecture D3).",
+      "id": "CS04-S3",
+      "title": "spell init --user and the CLI wiring",
+      "description": "Add --user to init/update/status/uninstall in src/index.ts (targetDir = userTierRoot(), options carry user: true). In src/commands/init.ts a user-scope path installs USER_TIER_COMPONENTS through componentForScope into the store, writes the manifest with scope: \"user\" and fanout, runs the fan-out and prints the store path, counts, the VS Code note and next steps — with no profile prompt, no git checks, no manifest questions, no hooks, no agent setup; --dry-run and --force honored (architecture D4, D5, D6).",
       "acceptanceCriteria": [
-        "npm run check:self-host-parity passes and reports 41 ids x 3 targets on the shim axis",
-        "A temp-tree test proves a hand-edited shim of each kind is reported as drifted and repaired in fix mode",
-        "Root .github/prompts/*.prompt.md are shims byte-identical to src/assets/; root .arcane/spells/ exists with 41 files"
+        "runInit({ user: true, profile: undefined }, ...) on a stubbed home creates ~/.arcane/.arcane.json with scope user, 41 files under ~/.arcane/spells/, 41 files under ~/.agents/skills/<id>/SKILL.md and 41 under ~/.claude/commands/, and a fanout record of 82 entries",
+        "No @inquirer/prompts function and no git module function is called during a --user init",
+        "--dry-run writes nothing and prints the would-copy/would-write lines; a second init reports Already initialized",
+        "The printed output contains the VS Code note naming chat.useAgentSkills and stating that chat.promptFilesLocations is not used",
+        "spell --help shows --user on init, update, status and uninstall"
       ],
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 8a80759. `fix:self-host-parity` repaired 287 of 322 (shims 123, copies 164); `check:self-host-parity`: 322 items match. runShimParity temp-tree tests: 3 drifted per id in target order, stale shim detected, fix then check clean, fragments/stray files/orphan shims ignored. Regression guard: no shipped Copilot prompt carries a body."
+      "testEvidence": null
     },
     {
-      "id": "CS03-S4",
-      "title": "Registry and init: four files per spell, canonical first",
-      "description": "Every spells-* component in src/modules/registry.ts lists .arcane/spells/<id>.md before its three shims; the block comment describes the model; src/commands/init.ts counts canonical spells in its summary (architecture D4). LEGACY_COMPONENT_MIGRATIONS is untouched.",
+      "id": "CS04-S4",
+      "title": "spell update --user: store update through the scope view, then fan-out regeneration",
+      "description": "In src/commands/update.ts: for scope user skip the git checks and the commit-first warning, resolve registry components through componentForScope, fetch the previously published vendor file by its asset path (sourceOverrides[file] ?? file — the general fix), skip retrofits, and after the store update reconcile the fan-out (regenerating changed shims, pruning dropped spells) and persist the new fanout record; --dry-run and --prune as for a repo (architecture D2, D4).",
       "acceptanceCriteria": [
-        "test/registry.test.ts asserts exactly 4 files per spell id in the order canonical, Copilot, Claude, Codex for every spells-* component",
-        "spell init --profile full into a temp repo installs 41 canonical files and 123 shims and reports 41 spells",
-        "LEGACY_COMPONENT_MIGRATIONS byte-identical to before"
+        "A deleted ~/.arcane/spells/<id>.md is restored by a same-version spell update --user and its missing fan-out files are rewritten",
+        "An edited store spell goes through the three-way merge with the network mocked, and the fetch is requested at the asset path .arcane/spells/<id>.md",
+        "A --user update never calls inspectGitRepository and never asks a retrofit question",
+        "--dry-run reports the store and fan-out decisions without writing",
+        "Existing repo-tier update tests pass unchanged"
       ],
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 8a80759. registry: 41/41/41/41 canonical/copilot/claude/codex lines; test/registry.test.ts 231 tests green incl. the 4-per-spell shape per component. Live `spell init --profile full` from the built CLI into a scratch consumer: 41 canonical, 41 prompts, 41 skills; summary line `✨ 41 Spells (Copilot, Claude Code, Codex)`. LEGACY lists untouched (git diff shows only file-list insertions and the comment)."
+      "testEvidence": null
     },
     {
-      "id": "CS03-S5",
-      "title": "Gates enumerate the canonical folder",
-      "description": "spell-catalog.ts prefix/suffix -> .arcane/spells/ + .md; copy-assets.ts scans .arcane/spells/*.md (plus the shims) with the org-token rules; check-distributed-adr-references.ts SCAN_ROOTS and scripts/lib/living-docs.ts include src/assets/.arcane/spells; check-citations.ts resolves cited paths under .arcane/spells (architecture D7). Regenerate docs/spell-catalog.json + README block.",
+      "id": "CS04-S5",
+      "title": "spell status --user and spell uninstall --user",
+      "description": "status: for the store print the component table, Scope: user, one fan-out line with per-client counts plus customized/missing counts, then the version footer; plain repo status prints Scope: repo and, only when a store exists, a User tier line. uninstall: reconcile the fan-out against an empty set (hash-checked, customized kept and listed), remove store files and the manifest, skip the push-policy refusal and repository-only cleanups; --yes and --dry-run honored (architecture D4).",
       "acceptanceCriteria": [
-        "npm run check:spell-catalog passes with totalSpells 41",
-        "check:citations / check:stale-claims / check:followups scan sets include the 41 canonical files (test in test/check-citations.test.ts)",
-        "test/org-token-lint.test.ts and test/adr-reference-gate.test.ts fixtures exercise the new folder",
-        "npm run build passes the org-token lint over .arcane/spells/"
+        "status --user output contains Scope: user and the fan-out counts; a customized fan-out file is counted as customized and a deleted one as missing",
+        "Plain status prints Scope: repo, and the User tier line appears only when ~/.arcane/.arcane.json exists in the stubbed home",
+        "uninstall --user removes every hash-matched fan-out file, its emptied <id> directories, the store files and the manifest; an edited fan-out file is kept and named in the output",
+        "uninstall --user --dry-run lists what would be removed and deletes nothing; no push-safety or marker-section code runs for scope user"
       ],
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 8a80759. check:spell-catalog passes (artifacts unchanged — ids/descriptions, not paths). check-citations.test.ts: living docs include src/assets/.arcane/spells and a bare `spell-plan.md` citation resolves there. adr-reference-gate.test.ts: a missing ADR in .arcane/spells/spell-fixture.md is reported (and a missing shipped root is treated as empty). org-token-lint.test.ts: a token in .arcane/spells/spell-fixture.md fails the build gate. `npm run build`: 242 files, lint clean."
+      "testEvidence": null
     },
     {
-      "id": "CS03-S6",
-      "title": "spell update migration: preserve customized shims, restore on demand, fix the second-update loss",
-      "description": "In src/commands/update.ts: shim path + recorded-hash mismatch => keep the file untouched, warn with the remedy, carry the recorded hash forward, dry-run parity; 'Already up to date' only when every tracked file is present, otherwise restore missing files at the same version; after a successful merge record the vendor content's hash, not the merged file's (architecture D5, empirical variants A-D).",
+      "id": "CS04-S6",
+      "title": "spell doctor: non-blocking user-tier check",
+      "description": "Add checkUserTier() to src/commands/doctor.ts and the runDoctor check list: no store → pass with the optional-install message; store present → warn when the store's major.minor differs from the CLI's, and warn when the recorded fan-out has missing or edited files, each with the spell update --user remedy; never blocking, never reading VS Code settings (architecture D4).",
       "acceptanceCriteria": [
-        "AC8 fixture test: one hand-edited .github/prompts/<id>.prompt.md is byte-identical after update, a warning names it, the untouched sibling is replaced by the shim, .arcane/spells/<id>.md is written, and the manifest still records the pre-edit hash for the edited file",
-        "Dry-run prints the same decision without writing",
-        "Two consecutive updates through the merge path keep an operator edit (Variant D regression)",
-        "A deleted tracked file is restored by a same-version spell update; with nothing missing the command still prints 'Already up to date.'",
-        "All existing update tests pass unchanged except the two whose assertions encoded the old behavior"
+        "With no store in the stubbed home the check passes and names spell init --user",
+        "A store at a different major.minor produces a warn row (blocking false) naming spell update --user",
+        "A missing or edited recorded fan-out file produces a warn row with counts; doctor's exit code is unaffected",
+        "Existing doctor tests pass unchanged"
       ],
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 0c5a47b. test/update.test.ts: AC8 edited/untouched/dry-run fixtures on the real `spells-docs` component (edited file byte-identical, `Kept customized (not merged)` + summary with remedy, fetchPublishedFile never called, pre-edit hash carried forward, siblings replaced, canonical written); variant-D regression (recorded hash == vendor hash after merge; edit survives update 2); could-not-fetch keeps the recorded hash; same-version restore of a deleted tracked file; initOnly still 'Already up to date.'. Two existing 'Already up to date.' tests now seed the tracked file. update/lifecycle/hub-retrofit suites green."
+      "testEvidence": null
     },
     {
-      "id": "CS03-S7",
-      "title": "Repoint every test that read the old location",
-      "description": "The 17 content-reading tests (shared PROMPTS constant), 8 path-only tests, and 3 directory-enumerating tests move to .arcane/spells/ and .md; repo-wide checks (trunk-checkout scoping, path resolution, worktree vantage) scan the canonical folder; test/spell-routing.test.ts keeps reading the Claude stubs.",
+      "id": "CS04-S7",
+      "title": "Docs, changelog, ADR note, research record, 1.1.0, bookkeeping, PR",
+      "description": "README Once-per-machine subsection, CHANGELOG ## [1.1.0], portable-bootstrap.md tier sentence (source + parity copy), ARC-045 implementation note (Claude location, VS Code note rationale), research doc CS-04 section (Codex probe transcript, Claude deferral), live EV-01 against the built CLI's real spell init --user then uninstall --user; npm version minor as its own commit; PLAN.md CS-04 tick with the premise correction and Report line; OPERATOR-QUEUE.md Q-005; PRD AC5 status note; show-report regenerated trailer-free; PR with ## For the record; self-merge under the delegation once the three required checks are green (architecture D9).",
       "acceptanceCriteria": [
-        "grep -l '.github/prompts' test/ lists only files that intentionally assert shim paths",
-        "npm test passes in full (84+ files) with no test skipped for the move",
-        "docs-profile-registry-split's SPELLS_ON_DISK counts .arcane/spells/spell-*.md"
+        "npm run check:version-bump passes (1.1.0 differs from main) and every gate in the architecture's Testing strategy is green",
+        "The research doc carries the Codex user-tier transcript and the Claude Code deferral with Q-005 named",
+        "PLAN.md, OPERATOR-QUEUE.md, PRD.md, DECISIONS.md and the show-report golden pair are consistent at HEAD",
+        "PR merged by rebase under the codex-support-plan delegation; branch deleted after a content-verified check"
       ],
       "priority": 7,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 8a80759. 19 files repointed mechanically (zero old-location mentions left outside the intentional set); registry, docs-profile-registry-split (SPELLS_ON_DISK from .arcane/spells; canonical == prompts == commands == skills per component), spell-catalog, check-citations, adr-reference-gate, org-token-lint edited by hand. Full suite: 84 files / 1373 tests green after the golden-pair regen (3ca0185)."
-    },
-    {
-      "id": "CS03-S8",
-      "title": "Docs, governance, changelog",
-      "description": "Update the six src/assets prose sites (development-methodology links now ../spells/<id>.md, git-conventions scope row, spell-authoring-standards D2/Bronze row, universal-agent-rules client note, product-excellence-standards wiki-link, agent-output.instructions), project.md, README's install paragraph, portable-bootstrap's 'Where Documents Live' row, an ARC-045 implementation note in DECISIONS.md, and CHANGELOG.md's ## [1.0.0] entry with a consumer migration section (architecture D6, D8).",
-      "acceptanceCriteria": [
-        "No governance doc under src/assets names .github/prompts as the place a spell is authored",
-        "CHANGELOG.md has ## [1.0.0] - 2026-09-09 with Changed/Fixed/Notes and a migration section covering hashed, customized and pre-0.32.0 installs",
-        "check:stale-claims Class A and check:adr-references pass"
-      ],
-      "priority": 8,
-      "passes": true,
-      "assignedTo": "claude",
-      "testEvidence": "Commits 649d4ce and 051a6ea. Governance/instructions/README/project/portable-bootstrap updated and root copies regenerated (parity 322 clean); CHANGELOG 1.0.0 with the migration table; ARC-045 implementation note; six living-doc citations retargeted to canonical filenames — check:citations now reports only the pre-existing update.ts:235 finding; check:adr-references and check:stale-claims (Class A) pass."
-    },
-    {
-      "id": "CS03-S9",
-      "title": "Dogfood and client re-confirmation (DoD 3, EV-01)",
-      "description": "Invoke a spell through its regenerated Claude Code stub in this session and confirm the canonical body loads; run codex exec in a fixture consumer installed from the new build and confirm the skill reads .arcane/spells/<id>.md; record both, and the deferred Copilot operator check, in docs/research/skill-discovery-smoke-tests.md (architecture D9).",
-      "acceptanceCriteria": [
-        "Claude Code: the Skill invocation output contains a heading that exists only in the canonical body",
-        "Codex: the transcript shows a shell read of .arcane/spells/<id>.md and the marker returned",
-        "Research doc gains a dated 'CS-03 re-confirmation' section with both transcripts and the Copilot deferral"
-      ],
-      "priority": 9,
-      "passes": true,
-      "assignedTo": "claude",
-      "testEvidence": "Commit 051a6ea. Claude Code: `Skill spell-status` through the regenerated stub loaded the canonical body (Executive Summary, Steps 0–6, Output, Rules) and the snapshot ran. Codex: `codex exec --sandbox read-only` in a consumer installed from the 1.0.0 build — tool trace shows `Get-Content -Raw '.arcane\\spells\\spell-status.md'`; answer: `.arcane/spells/spell-status.md` / `## Executive Summary` / `CS03-EV01-DONE`. Copilot: operator check documented with the fallback named. Recorded in docs/research/skill-discovery-smoke-tests.md ('CS-03 re-confirmation')."
-    },
-    {
-      "id": "CS03-S10",
-      "title": "Version 1.0.0, program bookkeeping, PR",
-      "description": "npm version major (own chore(release) commit); PLAN.md CS-03 ticked with the premise correction and Report line; PRD AC3/AC4/AC8 ticked; OPERATOR-QUEUE.md Q-003 note (applied, awaiting operator merge — status left open); TODO.md gains the CRLF-vs-recorded-hash edge found in variant C; show-report regenerated trailer-free; PR opened with ## For the record and left for the operator.",
-      "acceptanceCriteria": [
-        "npm run check:version-bump passes (1.0.0 differs from main)",
-        "PR is green on all three required checks and NOT merged by the session",
-        "PLAN.md, PRD.md, OPERATOR-QUEUE.md and the show-report golden pair are consistent at HEAD"
-      ],
-      "priority": 10,
-      "passes": true,
-      "assignedTo": "claude",
-      "testEvidence": "Commit e84d63e (1.0.0; check:version-bump passes against main). PR #232 opened with the ship report and `## For the record`, left open for the operator (never self-merged). PLAN.md CS-03 entry (premise correction + Report line, box left unticked until the operator merges), PRD AC3/AC4/AC8 ticked, OPERATOR-QUEUE.md Q-003 'Applied' note (status left open), TODO.md items, show-report golden pair regenerated trailer-free at HEAD."
+      "testEvidence": null
     }
   ]
 }
