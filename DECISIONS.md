@@ -1548,7 +1548,7 @@ Verified live against the actual platform state on 2026-08-25, not assumed: the 
 
 4. **The silent stranded-commit mode is made loud by extending [ARC-034](#arc-034--push-safety-for-sensitive-repositories)'s existing pre-push hook**, not by adding a second, competing hook: before accepting a push, check whether the current branch's associated PR (`gh pr view --json state`) is already `CLOSED` or `MERGED`, and warn — loudly, not blocking, since pushing to a branch behind a closed PR is sometimes intentional — rather than accepting the push into a void with no error at all, which is what turned this from a process gap into a shipped defect the first time. **Enforcement: executable check** (ARC-023 mode 1).
 
-5. **Unchanged: the authorization gate in `spell-create-pull-request.prompt.md#authorization-gate:40`.** That gate decides whether an *agent* is permitted to request auto-merge at a given power level. This decision governs a different question — whether the *platform* honors that request once made — and the two compose: an agent still needs power-level authorization to ask for auto-merge, and the platform now additionally withholds it while a round is open, regardless of who asked.
+5. **Unchanged: the authorization gate in `spell-create-pull-request.md#authorization-gate:40`.** That gate decides whether an *agent* is permitted to request auto-merge at a given power level. This decision governs a different question — whether the *platform* honors that request once made — and the two compose: an agent still needs power-level authorization to ask for auto-merge, and the platform now additionally withholds it while a round is open, regardless of who asked.
 
 6. **A new record (ARC-035), not an amendment to ARC-024.** The mechanisms do not overlap: ARC-024 is a queue gate over filed, severity-tagged records; this is a merge-time gate over review state that never touches the incident queue. `Related:` link added in both directions.
 
@@ -2683,3 +2683,31 @@ authored content.
   body per-client, a `render()` mode variance rather than a change to this decision's model.
 - The final version number for CS-03 — recommended `1.0.0` ("one source of truth, N thin clients"),
   operator-confirmed at that epic via `OPERATOR-QUEUE.md` Q-003, not decided here.
+
+**Implementation note (2026-09-09, CS-03 — decisions 1 and 2 shipped as `1.0.0`):**
+
+- The canonical source moved with `git mv` (history follows the file) and byte-identical frontmatter;
+  every client surface is `render()` output over it — `renderCopilotPromptShim()` (new: the canonical
+  frontmatter block verbatim, then a relative Markdown link plus the read-and-follow sentence),
+  `renderClaudeCommandStub()` and `renderCodexSkill()` retargeted. The path contract lives once, in
+  `spell-compiler.ts` (`canonicalSpellPath`, `isClientShimPath`); `runShimParity` checks all three
+  targets from the canonical folder; every `spells-*` component lists four files per spell.
+- **The migration premise, corrected against the tree before building**
+  (`features/codex-support/architecture.md`, empirical-first findings): the plan framed the consumer
+  risk as "hash mismatch → conflict". Run against a real `0.39.0` consumer fixture, the pre-CS-03
+  `spell update` three-way merged an appended edit *successfully* into the new shim — the edit
+  dangling underneath, reported as `Merged your edits` — and left conflict markers over a vanished
+  body for an in-body edit. The shipped behavior keeps a customized shim byte-untouched, writes the
+  canonical file beside it, names it with the remedy, carries the recorded hash forward, and restores
+  missing tracked files at the same version so the remedy has a path back.
+- **A latent ARC-038 defect the same fixture exposed is fixed here:** after a successful merge the
+  merged file's hash was recorded as "what Arcane last wrote", so an operator's edit survived exactly
+  one update. The recorded hash is now the vendor content's.
+- **Open question 2 (does each client follow an external file reference?), as of this epic:** Codex —
+  yes, proven live in CS-00 and re-confirmed against a `1.0.0` consumer after the move; Claude Code —
+  yes, the regenerated stub's `@` include resolved the relocated file in the session that shipped
+  this; VS Code Copilot — the shim carries both a relative link and the explicit instruction, every
+  spell runs `agent: agent` so the model has a file-read tool either way, and the documentation does
+  not state whether linked files are attached, so the operator's own Copilot Chat check is recorded as
+  pending in `docs/research/skill-discovery-smoke-tests.md`. No client has needed the inlined-body
+  fallback.

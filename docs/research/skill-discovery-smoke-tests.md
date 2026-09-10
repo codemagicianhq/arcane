@@ -4,7 +4,7 @@ audience: both
 last_updated: 2026-09-09
 status: active
 tags: [research, distribution, codex, claude-code, skills, smoke-test, codex-support]
-sources: [a live empirical test performed 2026-09-09 against installed codex-cli 0.153.4, this session's own Claude Code available-skills listing (system reminder, 2026-09-09), IDEAS.md I13, docs/research/delivery-channels-smoke-tests.md]
+sources: [a live empirical test performed 2026-09-09 against installed codex-cli 0.153.4, this session's own Claude Code available-skills listing (system reminder, 2026-09-09), IDEAS.md I13, docs/research/delivery-channels-smoke-tests.md, a second live codex exec run 2026-09-09 against a consumer installed from the 1.0.0 build (CS-03), the same session's Skill invocation of spell-status through the regenerated .claude/commands stub, VS Code's prompt-files documentation fetched 2026-09-09]
 ---
 
 # Skill Discovery Smoke Tests
@@ -39,6 +39,9 @@ which turned out to be reachable even though it is not on `PATH`.
   Neither can be driven from a non-interactive session; both require the operator's own client.
   Deferred to CS-04's own acceptance check (AC5), where multi-root duplication is actually
   decision-relevant — CS-01 does not touch the Copilot surface at all.
+- **Re-confirmed after CS-03's canonical move (2026-09-09, see the last section):** Claude Code's `@`
+  include and Codex's read-and-follow shim both resolved the relocated `.arcane/spells/<id>.md` on the
+  first attempt; VS Code Copilot remains a one-minute operator check, with the fallback named.
 
 **Confidence caveat, stated directly:** the Codex findings are empirical observations from one live
 test session against `codex-cli 0.153.4` on this machine, not from Codex's own published
@@ -190,3 +193,84 @@ only, `.claude/commands` stays untouched — is now **empirically confirmed**, n
 The one addition worth making: `renderCodexSkill()`'s body should stay terse (Test 1's context-budget
 finding), and CS-01's PR description should note the skills-context-budget constraint so a future
 session isn't surprised if the operator reports a truncated description in practice.
+
+## CS-03 re-confirmation (2026-09-09) — after the canonical move
+
+`docs/plans/codex-support/PLAN.md`'s Definition of Done item 3 requires the clients to be re-checked
+by direct observation once the canonical source moved to `.arcane/spells/<id>.md` and every client
+file became a generated shim (ARC-045; shipped as `1.0.0`). Same evidence bar as above: the client's
+own behavior, never the filesystem.
+
+### Claude Code — observed in the session that shipped the move
+
+Invoking `spell-status` through the regenerated `.claude/commands/spell-status.md` (a `description`,
+a title, the sentence "See the full prompt at `.arcane/spells/spell-status.md`", and the include line
+`@.arcane/spells/spell-status.md`) loaded the full canonical body into the session: the harness
+resolved the `@` include and returned the spell's Executive Summary, Steps 0–6, Output and Rules
+sections, none of which exist in the stub. The workflow then ran normally (the read-only snapshot
+line). Same mechanism as before the move with only its target changed; it worked on the first
+invocation after `npm run fix:self-host-parity` regenerated the root copies.
+
+### Codex CLI — `codex exec` against a consumer installed from the new build
+
+A disposable consumer repository under the session scratchpad was initialized with the built `1.0.0`
+CLI (`spell init --profile full`: 41 canonical files, 41 Copilot shims, 41 Codex skills; the init
+summary reads `✨ 41 Spells (Copilot, Claude Code, Codex)`). Its
+`.agents/skills/spell-status/SKILL.md` body is the regenerated one:
+
+> This skill is the Arcane `spell-status` spell. Read `.arcane/spells/spell-status.md` and follow it as the complete workflow.
+
+Invocation — unchanged from Test 3 except for the prompt, and `< /dev/null` (see the note below):
+
+```
+codex exec --cd <consumer> --sandbox read-only --skip-git-repo-check \
+  "Use the spell-status skill, but do NOT run its workflow. Instead reply with exactly three lines:
+   (1) the relative path of the file the skill told you to read, (2) that file's first line
+   beginning with '## ' verbatim, (3) the literal text CS03-EV01-DONE."
+```
+
+Complete stdout:
+
+```
+.arcane/spells/spell-status.md
+## Executive Summary
+CS03-EV01-DONE
+```
+
+`## Executive Summary` is the canonical file's first heading and appears nowhere in the skill file, so
+Codex read the file the shim named, at the bare repository-relative path — exactly the behavior Test 3
+predicted for this path shape. The tool trace on stderr shows the two reads it issued, in order: the
+skill file itself, then
+
+```
+exec
+"C:\Program Files\PowerShell\7\pwsh.exe" -Command "Get-Content -Raw '.arcane\spells\spell-status.md'" in <consumer>
+```
+
+— a shell read of the canonical file at the relative path the shim named, no path rewriting. stderr carried the same two pre-existing, unrelated items as Test 1
+(the malformed third-party `azure-app-onboard` skills under `~/.agents/skills/`, and the
+skills-context-budget truncation warning) and nothing about `spell-status`.
+
+**Operational note for anyone repeating this:** `codex exec` reads additional input from stdin when
+stdin is neither a terminal nor closed. Launched from a background shell it printed `Reading
+additional input from stdin...` and waited indefinitely (killed after roughly ten minutes); with
+`< /dev/null` it completed in well under a minute. The CS-00 runs never hit this because they ran in
+the foreground.
+
+### VS Code Copilot — not driven; what the operator should check
+
+The Copilot shim carries the canonical frontmatter block verbatim (so the `/spell-*` picker entries
+and their descriptions are byte-identical to before the move), then one paragraph with a relative
+Markdown link (`../../.arcane/spells/<id>.md`, resolved from the prompt file's own location per VS
+Code's prompt-file documentation) and the read-and-follow sentence. That documentation, fetched
+2026-09-09, lists `name`/`description`/`argument-hint`/`agent`/`model`/`tools` as the recognized
+fields and says relative links resolve from the prompt file, but does **not** state whether a linked
+file's content is attached automatically — so the shim carries both mechanisms, and every spell runs
+`agent: agent`, which gives the model a file-read tool regardless. No non-interactive path exists to
+drive Copilot Chat from this session, exactly as CS-00 recorded.
+
+**Operator check (a minute in VS Code, in this repository or any `1.0.0` consumer):** open Copilot
+Chat in agent mode, run `/spell-status`, and confirm the response is the snapshot line (branch,
+counts, last session) rather than a paraphrase of the shim sentence. If it is the paraphrase, the
+Copilot renderer falls back to an inlined body for that client only — the `render()` mode variance
+ARC-045 allowed for — and nothing else in the design changes.
