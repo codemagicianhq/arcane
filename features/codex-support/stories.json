@@ -113,9 +113,9 @@
         "PR merged by rebase under the codex-support-plan delegation; branch deleted after a content-verified check"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commits e0e26a7 (docs), cd94592 (1.1.0 bump; check:version-bump passes), fd588d0 (fan-out key hardening), ff477cb (PLAN/Q-005/PRD/TODO), 81f18dc (Phase 5 review: 0 HIGH / 2 MEDIUM / 5 LOW, all addressed), two trailer-free show-report regenerations. Gates green at push: full suite 86 files / 1432 tests, build (242 assets), self-host parity (322), spell catalog, ADR references, stale-claims Class A; citations/followups/Class B report only pre-existing items. Research doc carries the Codex user-tier transcript, the Claude Code deferral and Q-005. PR #234 opened with the ship report and `## For the record`, three required checks green on head 665a910, rebase-merged 2026-09-10T15:46Z (dac7a8f); release v1.1.0 published, publish.yml run 34497846257 succeeded, npm 1.1.0 at 15:47Z, tarball inspected. Branch deleted after `git cherry` showed every commit landed."
     }
   ]
 }
