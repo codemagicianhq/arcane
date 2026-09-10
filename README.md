@@ -109,7 +109,7 @@ Plus session and operational spells — `/spell-open-session`, `/spell-close-ses
 
 ## What's in the box
 
-Arcane isn't a prompt snippet — it's a full framework. Everything installs into your repo as plain, reviewable markdown.
+Arcane isn't a prompt snippet — it's a full framework. Everything installs into your repo as plain, reviewable markdown. Each spell is authored once, in `.arcane/spells/`, and reaches Copilot, Claude Code and Codex through thin generated shims — one source of truth, no per-client copies to drift apart.
 
 | Layer | What you get |
 | --- | --- |

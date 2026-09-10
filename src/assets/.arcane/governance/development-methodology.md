@@ -196,7 +196,7 @@ Without this chain, agents make conflicting decisions across stories (e.g., one 
 3. Check for missing test coverage, architecture violations, security issues
 4. Defer unrelated findings to a backlog (don't derail the current change)
 
-**Enforcement: explicitly advisory prose (ARC-023) — no script counts or verifies lens coverage; this text now matches `spell-review.prompt.md`'s own current Rules section (coverage of effort, not a count of findings) rather than the superseded "minimum of 3" framing an earlier version of this rule stated.**
+**Enforcement: explicitly advisory prose (ARC-023) — no script counts or verifies lens coverage; this text now matches `spell-review.md`'s own current Rules section (coverage of effort, not a count of findings) rather than the superseded "minimum of 3" framing an earlier version of this rule stated.**
 
 ### Append-Only Progress
 
@@ -281,9 +281,9 @@ For features that should run end-to-end with minimal human intervention, use `sp
 spell-full-cycle = spell-plan → [spell-enchant] → spell-architect → [spell-implement → spell-test → spell-review]* → spell-ship
 ```
 
-The entire pipeline runs autonomously with a single human gate at PR approval. Includes optional PRD enchantment between Plan and Architect (runs automatically if any quality dimension scores Bronze, or if `--enchant` is specified). Requires three inputs: feature description, tracking configuration (`tracking_mode` and optional `external_provider`), and target repo. In ADO mode, include the ADO work item ID; in GitHub mode, include the issue number if one already exists. **Each phase has built-in quality gates that halt the pipeline on failure rather than producing garbage for downstream phases. Enforcement: structured spell gate (ARC-023) — `spell-full-cycle.prompt.md` encodes explicit per-phase `Gate:` steps (e.g., Phase 4: "If coverage is below threshold or any acceptance criterion lacks a test, loop back to Phase 3... Maximum 2 coverage-fix loops before halting"; Phase 5: "If any HIGH severity finding exists, loop back to Phase 3... Maximum 2 review-fix loops before halting") plus a human/authority gate before merge.**
+The entire pipeline runs autonomously with a single human gate at PR approval. Includes optional PRD enchantment between Plan and Architect (runs automatically if any quality dimension scores Bronze, or if `--enchant` is specified). Requires three inputs: feature description, tracking configuration (`tracking_mode` and optional `external_provider`), and target repo. In ADO mode, include the ADO work item ID; in GitHub mode, include the issue number if one already exists. **Each phase has built-in quality gates that halt the pipeline on failure rather than producing garbage for downstream phases. Enforcement: structured spell gate (ARC-023) — `spell-full-cycle.md` encodes explicit per-phase `Gate:` steps (e.g., Phase 4: "If coverage is below threshold or any acceptance criterion lacks a test, loop back to Phase 3... Maximum 2 coverage-fix loops before halting"; Phase 5: "If any HIGH severity finding exists, loop back to Phase 3... Maximum 2 review-fix loops before halting") plus a human/authority gate before merge.**
 
-See [.github/prompts/spell-full-cycle.prompt.md](../.github/prompts/spell-full-cycle.prompt.md) for the complete prompt.
+See [.arcane/spells/spell-full-cycle.md](../spells/spell-full-cycle.md) for the complete prompt.
 
 ---
 
@@ -305,9 +305,9 @@ spell-plan → [spell-enchant] → spell-scope → [spell-architect → spell-im
 
 Each epic then runs through its own Spell Loop cycle (architect → implement → test → review → ship).
 
-**Before starting the next epic after a major output checkpoint (execution plan, architecture + stories, full test evidence, or ship recommendation), run `spell-commit-work` to preserve progress and checkpoint branch state. Enforcement: explicitly advisory prose (ARC-023) — `spell-full-cycle.prompt.md`'s Rules section frames this as a recommendation ("recommend running `spell-commit-work` before starting the next epic"), and nothing blocks epic-start if it is skipped.**
+**Before starting the next epic after a major output checkpoint (execution plan, architecture + stories, full test evidence, or ship recommendation), run `spell-commit-work` to preserve progress and checkpoint branch state. Enforcement: explicitly advisory prose (ARC-023) — `spell-full-cycle.md`'s Rules section frames this as a recommendation ("recommend running `spell-commit-work` before starting the next epic"), and nothing blocks epic-start if it is skipped.**
 
-See [.github/prompts/spell-scope.prompt.md](../.github/prompts/spell-scope.prompt.md) for the complete prompt.
+See [.arcane/spells/spell-scope.md](../spells/spell-scope.md) for the complete prompt.
 
 ---
 
@@ -413,4 +413,4 @@ The Spell Loop is a candidate for open-source release as a productized automatio
 2. **Power-level governance** — agents have scoped autonomy per repo
 3. **Git attribution** — every commit traces back to the agent that produced it
 4. **Progressive context chain** — structured planning phases feed each successive phase with richer context
-5. **Spell prompt packaging** — portable `.prompt.md` files that work across AI IDEs
+5. **Spell packaging** — one portable spell file per workflow (`.arcane/spells/*.md`), reaching Copilot, Claude Code and Codex through thin generated shims rather than per-client copies (ARC-045)
