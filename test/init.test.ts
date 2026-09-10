@@ -413,7 +413,7 @@ describe("spell init — handler", () => {
       expect(manifest.fanout![foreign]).toBeUndefined();
       expect(Object.keys(manifest.fanout!)).toHaveLength(EXPECTED_SPELLS * 2 - 1);
       const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
-      expect(output).toContain("Left 1 existing file(s) alone");
+      expect(output).toContain("Left 1 existing path(s) alone");
       expect(output).toContain(`~/${foreign}`);
     });
   });

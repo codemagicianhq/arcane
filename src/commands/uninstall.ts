@@ -11,7 +11,9 @@ import { removeSecretsPrecommitHook } from "../modules/secrets-scan.js";
 import {
   USER_TIER_SPELLS_DIR,
   describeFanoutOutcomes,
+  misplacedUserManifestMessage,
   removeDirectoryIfEmpty,
+  resolveInstallScope,
   syncUserTierFanout,
 } from "../modules/user-tier.js";
 import type { ArcaneManifest } from "../types.js";
@@ -48,7 +50,13 @@ export async function runUninstall(
   // outputs, no marker sections and no hooks -- only the store and the client
   // files it fanned out, which come off under the same hash rule they went
   // on with.
-  if (options.user || manifest.scope === "user") {
+  const resolvedScope = resolveInstallScope(targetDir, manifest.scope, options.user);
+  if (resolvedScope.misplacedUserManifest) {
+    console.error(misplacedUserManifestMessage(targetDir));
+    process.exit(1);
+    return;
+  }
+  if (resolvedScope.scope === "user") {
     await uninstallUserTier(options, targetDir, manifest);
     return;
   }

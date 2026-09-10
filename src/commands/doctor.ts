@@ -363,31 +363,53 @@ export async function checkUserTier(
     };
   }
 
-  const majorMinor = (v: string): string => v.split(".").slice(0, 2).join(".");
-  const problems: string[] = [];
-  if (cliVersion !== undefined && majorMinor(manifest.version) !== majorMinor(cliVersion)) {
-    problems.push(`installed at v${manifest.version}, this CLI is v${cliVersion}`);
-  }
-  const health = await inspectUserTierFanout(homeDir, manifest.fanout);
-  if (health.missing.length > 0) {
-    problems.push(`${health.missing.length} of ${health.total} client file(s) missing`);
-  }
+  // Everything below reads a file the operator (or an older/foreign tool)
+  // may have shaped oddly. readManifest validates the enum fields, not
+  // `version`; a check that throws here would take the whole `spell doctor`
+  // run down with it, in every repository on the machine (review finding
+  // F2), so every failure becomes one non-blocking row instead.
+  try {
+    if (typeof manifest.version !== "string" || manifest.version.length === 0) {
+      return {
+        name,
+        passed: false,
+        blocking: false,
+        message: `${storeRoot}/.arcane.json has no version field — remove the store and re-run \`spell init --user\``,
+      };
+    }
+    const majorMinor = (v: string): string => v.split(".").slice(0, 2).join(".");
+    const problems: string[] = [];
+    if (cliVersion !== undefined && majorMinor(manifest.version) !== majorMinor(cliVersion)) {
+      problems.push(`installed at v${manifest.version}, this CLI is v${cliVersion}`);
+    }
+    const health = await inspectUserTierFanout(homeDir, manifest.fanout);
+    if (health.missing.length > 0) {
+      problems.push(`${health.missing.length} of ${health.total} client file(s) missing`);
+    }
 
-  if (problems.length > 0) {
+    if (problems.length > 0) {
+      return {
+        name,
+        passed: false,
+        blocking: false,
+        message: `${problems.join("; ")} — run \`spell update --user\` (regenerates missing files; never overwrites edited ones)`,
+      };
+    }
+    const customized = health.customized.length > 0 ? `, ${health.customized.length} customized` : "";
+    return {
+      name,
+      passed: true,
+      blocking: false,
+      message: `v${manifest.version} at ${storeRoot} — ${health.total} client file(s) in place${customized}`,
+    };
+  } catch (err) {
     return {
       name,
       passed: false,
       blocking: false,
-      message: `${problems.join("; ")} — run \`spell update --user\` (regenerates missing files; never overwrites edited ones)`,
+      message: `could not inspect the user tier at ${storeRoot} (${err instanceof Error ? err.message : String(err)}) — run \`spell update --user\`; if that fails too, remove the store and re-run \`spell init --user\``,
     };
   }
-  const customized = health.customized.length > 0 ? `, ${health.customized.length} customized` : "";
-  return {
-    name,
-    passed: true,
-    blocking: false,
-    message: `v${manifest.version} at ${storeRoot} — ${health.total} client file(s) in place${customized}`,
-  };
 }
 
 /**

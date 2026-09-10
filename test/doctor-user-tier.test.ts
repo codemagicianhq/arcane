@@ -92,6 +92,26 @@ describe("checkUserTier (ARC-045 / CS-04)", () => {
     expect(result.passed).toBe(true);
   });
 
+  it("warns, non-blocking, when the store manifest has no version — and never throws (review F2)", async () => {
+    const storeRoot = userTierRoot(home);
+    await fs.mkdir(storeRoot, { recursive: true });
+    await fs.writeFile(join(storeRoot, ".arcane.json"), JSON.stringify({ components: [], scope: "user" }), "utf8");
+    const result = await checkUserTier(home, "1.1.0");
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+    expect(result.message).toContain("no version field");
+  });
+
+  it("counts a recorded path that is now a directory as customized instead of throwing (review F2)", async () => {
+    const { record } = await installTier("1.1.0");
+    const [victim] = Object.keys(record);
+    await removeFixtureDir(join(home, victim!));
+    await fs.mkdir(join(home, victim!), { recursive: true });
+    const result = await checkUserTier(home, "1.1.0");
+    expect(result.passed).toBe(true);
+    expect(result.message).toContain("1 customized");
+  });
+
   it("warns, non-blocking, when the store manifest is unreadable", async () => {
     const storeRoot = userTierRoot(home);
     await fs.mkdir(storeRoot, { recursive: true });
