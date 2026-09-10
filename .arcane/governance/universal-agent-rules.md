@@ -156,6 +156,8 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 | Any new tool | This file | Read this, then follow links above |
 
 This table covers standing repository instructions only, not spell discovery. Spells reach each
-client through a separate mechanism: `.github/prompts/*.prompt.md` for Copilot,
-`.claude/commands/*.md` for Claude Code, and `.agents/skills/*/SKILL.md` for Codex (CS-01) — all
-three generated from one canonical source (ARC-039), never hand-authored per client.
+client through a separate mechanism: one canonical source per spell at `.arcane/spells/<id>.md`
+(ARC-045), from which three thin shims are generated — `.github/prompts/*.prompt.md` for Copilot,
+`.claude/commands/*.md` for Claude Code, and `.agents/skills/*/SKILL.md` for Codex (CS-01) — never
+hand-authored per client. A shim carries no workflow of its own: when a spell must be read in full,
+read the canonical file.

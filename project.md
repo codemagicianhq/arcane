@@ -24,8 +24,10 @@ into a consuming repository.
   without adopting a heavyweight framework. Near-zero friction for a solo developer is a hard
   constraint, not a preference.
 - **AI agents themselves.** Much of what this repository ships is read by agents rather than humans:
-  the spell prompts under `.github/prompts/`, the governance corpus under `.arcane/governance/`, and
-  the standing instructions merged into `CLAUDE.md` / `AGENTS.md` / `.github/copilot-instructions.md`.
+  the spells under `.arcane/spells/` (reaching each client through generated shims under
+  `.github/prompts/`, `.claude/commands/` and `.agents/skills/`), the governance corpus under
+  `.arcane/governance/`, and the standing instructions merged into `CLAUDE.md` / `AGENTS.md` /
+  `.github/copilot-instructions.md`.
   Prose here is an interface, and ambiguity in it is a defect.
 - **Consumer repositories**, which receive the managed files and must survive `spell update` without
   losing local modifications.
@@ -33,7 +35,7 @@ into a consuming repository.
 ## Scope
 
 **In this repository:** the CLI (`src/`), the distributable methodology assets (`src/assets/`), the
-dogfooded copy of those assets installed at the root (`.arcane/`, `.github/prompts/`), the decision
+dogfooded copy of those assets installed at the root (`.arcane/`, `.github/`, `.claude/`, `.agents/`), the decision
 record, and the intake queue under `docs/intake/`.
 
 **Outside it:** DMC and the operations repositories. ARC-028's DMC rendering contract is the standing

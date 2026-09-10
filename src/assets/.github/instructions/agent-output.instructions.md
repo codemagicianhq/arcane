@@ -58,19 +58,20 @@ stale number is invisible until someone tries.
   `DECISIONS.md` either fails to resolve, or worse, silently resolves to the
   *consumer's own* `DECISIONS.md` (an empty per-consumer starter template, not
   Arcane's real decision record) — wrong content, not just a dead link.
-- **Spell prompts and instructions this framework ships**
-  (`.github/prompts/*.prompt.md`, `.github/instructions/*.md`): **plain text only —
-  cite the bare ID, no link at all** (`ARC-035`, not `[ARC-035](...)`). A full
-  canonical URL is *also* unsafe here, not just a same-repo link: it bakes a literal
-  `github.com/{GITHUB_ORG}/{REPO_NAME}` — this project's own org and repo name — into
-  content the org-token portability gate (`scripts/org-token-lint.ts`, D2 in
-  `spell-authoring-standards.md`) exists specifically to keep out of distributed
-  spells. **Confirmed live 2026-08-31 (BC-06):** the build's `Org-token lint` failed
-  on exactly this pattern in three prompt files, including two this same correction
-  pass had introduced minutes earlier while fixing the *other* link defect. Known
-  gap: the portability scan today only walks `.github/prompts/`, so a full URL in a
-  `.github/instructions/*.md` file — like this one's own Merge Strategy section, two
-  paragraphs down — ships uncaught; tracked in `TODO.md`.
+- **Spells and instructions this framework ships**
+  (`.arcane/spells/*.md`, the generated `.github/prompts/*.prompt.md` shims,
+  `.github/instructions/*.md`): **plain text only — cite the bare ID, no link at all**
+  (`ARC-035`, not `[ARC-035](...)`). A full canonical URL is *also* unsafe here, not
+  just a same-repo link: it bakes a literal `github.com/{GITHUB_ORG}/{REPO_NAME}` —
+  this project's own org and repo name — into content the org-token portability gate
+  (`scripts/org-token-lint.ts`, D2 in `spell-authoring-standards.md`) exists
+  specifically to keep out of distributed spells. **Confirmed live 2026-08-31
+  (BC-06):** the build's `Org-token lint` failed on exactly this pattern in three
+  prompt files, including two this same correction pass had introduced minutes
+  earlier while fixing the *other* link defect. The portability scan walks
+  `.arcane/spells/`, `.github/prompts/`, `.github/instructions/` and
+  `.agents/skills/` (the instructions gap first noted here closed 2026-09-01; the
+  canonical folder joined in CS-03).
 - **Cross-repo references from anywhere else** (chat, PR output, another repo
   entirely): the full canonical-repo URL.
 

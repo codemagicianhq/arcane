@@ -146,12 +146,16 @@ than growing a third format that copies content again.
   `spell-plan`) appears in Codex's own skill listing and, when invoked, executes the referenced
   workflow — verified by direct observation in Codex, not by filesystem inspection alone, and
   recorded in `docs/research/skill-discovery-smoke-tests.md`.
-- [ ] **AC3** — Every spell's Copilot prompt, Claude Code command, and Codex skill file are each
+- [x] **AC3** — Every spell's Copilot prompt, Claude Code command, and Codex skill file are each
   generated from one canonical source file by a documented `render*()` function; no client file
-  contains authored prose that isn't in the canonical source.
-- [ ] **AC4** — A change to a spell's canonical source, followed by `npm run fix:self-host-parity`,
+  contains authored prose that isn't in the canonical source. *Met 2026-09-09 (CS-03):*
+  `renderCopilotPromptShim()` / `renderClaudeCommandStub()` / `renderCodexSkill()` over
+  `.arcane/spells/<id>.md`; `test/spell-compiler.test.ts` guards that no shipped Copilot prompt
+  carries a body.
+- [x] **AC4** — A change to a spell's canonical source, followed by `npm run fix:self-host-parity`,
   updates all three client-format files identically; `npm run check:self-host-parity` fails if any
-  one of them is hand-edited out of sync.
+  one of them is hand-edited out of sync. *Met 2026-09-09 (CS-03):* `runShimParity` over the three
+  targets; drift and repair covered on a temp tree and on the real assets.
 - [ ] **AC5** — `spell init --user` (or the chosen CLI surface) installs the full spell and agent
   set to a single per-machine location; two disposable repositories in one VS Code workspace, both
   configured for the user tier, show exactly one set of `/spell-*` entries and one set of the 12
@@ -162,10 +166,13 @@ than growing a third format that copies content again.
 - [ ] **AC7** — `spell init`/`spell update` on a repo opted into the user tier does not write
   repo-local `.github/prompts`, `.claude/commands`, `.github/agents`, or `.agents/skills` files;
   running the same commands on a repo NOT opted in is unaffected (default behavior unchanged).
-- [ ] **AC8** — A fixture consumer repo with one hand-edited distributed prompt file, run through
+- [x] **AC8** — A fixture consumer repo with one hand-edited distributed prompt file, run through
   the canonical-source migration via `spell update`, retains the hand-edited file's content
   unmodified and surfaces an explicit warning naming the file; every non-edited file is replaced
-  by the new shim. Covered by an automated regression test.
+  by the new shim. Covered by an automated regression test. *Met 2026-09-09 (CS-03):* the
+  `spells-docs` migration fixture in `test/update.test.ts` (edited, untouched and dry-run cases),
+  designed after a live run of the pre-CS-03 `update` against a real consumer showed it merging an
+  edit "successfully" into the new shim.
 - [ ] **AC9** — `docs/research/restore-based-delivery.md` and an ADR draft exist, stating an
   explicit go/no-go on the restore-based distribution model with named reasoning, before this
   program's Definition of Done is declared met.

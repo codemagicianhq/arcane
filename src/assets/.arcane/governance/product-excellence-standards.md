@@ -11,7 +11,7 @@ tags:
 
 ## Purpose
 
-Define what "the best version of an app" means across every dimension — UX, accessibility, performance, security, and polish. This document provides the **PRD Quality Scorecard** that [[.github/prompts/spell-enchant.prompt|spell-enchant]] evaluates against when enchanting a PRD from functional to exceptional.
+Define what "the best version of an app" means across every dimension — UX, accessibility, performance, security, and polish. This document provides the **PRD Quality Scorecard** that [[.arcane/spells/spell-enchant|spell-enchant]] evaluates against when enchanting a PRD from functional to exceptional.
 
 ## Quality Dimensions
 

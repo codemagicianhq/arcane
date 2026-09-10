@@ -48,7 +48,7 @@ this broader ≥ Silver gate is not fully verified by any coded scorer or workfl
 
 | Tier | Bar |
 | --- | --- |
-| Bronze | No real organization, person, venture, or machine names. Org-specific values use `{UPPER_SNAKE}` placeholders. Enforcement: executable check (ARC-023) — `scripts/org-token-lint.ts` scans `.github/prompts/*.prompt.md` against the `ARCANE_ORG_TOKENS` denylist and runs automatically as part of `npm run build`, failing the build on a match; `spell ward --gate` (`src/commands/ward.ts`) runs the same denylist-scanning engine standalone but is not currently wired into CI as its own gate. |
+| Bronze | No real organization, person, venture, or machine names. Org-specific values use `{UPPER_SNAKE}` placeholders. Enforcement: executable check (ARC-023) — `scripts/org-token-lint.ts` scans `.arcane/spells/*.md` (and every generated client shim) against the `ARCANE_ORG_TOKENS` denylist and runs automatically as part of `npm run build`, failing the build on a match; `spell ward --gate` (`src/commands/ward.ts`) runs the same denylist-scanning engine standalone but is not currently wired into CI as its own gate. |
 | Silver | + every placeholder has an inline resolution note: *"resolve from `.arcane.json` / frontmatter; ask if unset."* Enforcement: explicitly advisory prose (ARC-023) — part of the D2 hard gate by name, but this specific bar is self-graded; no check verifies a placeholder carries an inline resolution note. |
 | Gold | + no hard assumption of a specific tracker, CI/CD platform, cloud/deployment vendor, agent roster, or directory layout — the spell works in a vanilla consuming repo with no Arcane context files present. |
 
@@ -118,6 +118,14 @@ this broader ≥ Silver gate is not fully verified by any coded scorer or workfl
 
 Arcane spells ship to other repositories and, eventually, open source. Keep them portable:
 
+- **Author in one place (ARC-045):** a spell's body lives only in `.arcane/spells/<id>.md`. The
+  Copilot prompt (`.github/prompts/<id>.prompt.md`), the Claude Code command
+  (`.claude/commands/<id>.md`) and the Codex skill (`.agents/skills/<id>/SKILL.md`) are generated
+  from it by `npm run fix:self-host-parity` and carry no prose of their own — never edit one by
+  hand. Relative links inside a spell resolve from `.arcane/spells/`, two levels below the repo
+  root (`../../.arcane/governance/…`, `../../README.md`); refer to a sibling spell as
+  `spell-x.md`. Enforcement: executable check (ARC-023) — `npm run check:self-host-parity`
+  re-renders every shim from its canonical file and fails CI on any byte of difference.
 - **Never hard-code** an org name, person, venture, product, or machine name. Use a documented
   `{UPPER_SNAKE}` placeholder: `{ADO_ORG}`, `{ADO_PROJECT}`, `{BUSINESS_NAME}`, `{OPERATOR_NAME}`.
   Enforcement: executable check (ARC-023) — same mechanism as D2 Bronze above: the `org-token-lint`

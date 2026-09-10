@@ -55,7 +55,7 @@ Scope indicates what part of the repo changed. Use singular, lowercase.
 
 | Scope            | Area                                              |
 | ---------------- | ------------------------------------------------- |
-| `prompts`        | `.github/prompts/*.prompt.md`                     |
+| `prompts`        | `.arcane/spells/*.md` (canonical spells) and their generated client shims |
 | `agents`         | `agents/` directory, agent config, policies       |
 | `security`       | `security/` directory, threat model, hardening    |
 | `infrastructure` | `infrastructure/` directory, hardware, OS setup   |
@@ -116,7 +116,7 @@ messages with proper type and scope.
 Implements ADR-019 spell- naming convention.
 
 Changes:
-- Created .github/prompts/spell-commit-work.prompt.md
+- Created .arcane/spells/spell-commit-work.md
 - Created governance/git-conventions.md as reference doc
 - Updated TODO.md to mark git conventions doc complete
 ```

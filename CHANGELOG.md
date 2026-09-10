@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.0.0] - 2026-09-09
+
+The first stable-contract release: one authored source per spell, and every AI client a thin generated shim over it. This is the one breaking change of the Codex Support program (CS-03, [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier)); everything after it is additive again.
+
+### Changed
+
+- **BREAKING: the canonical spell source moves from `.github/prompts/<id>.prompt.md` to `.arcane/spells/<id>.md`** — the one relocation [ARC-033](DECISIONS.md#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) decision 1 anticipated needing. The 41 spell files moved with their history and byte-identical frontmatter; the shared fragments moved to `.arcane/spells/_fragments/`. `.github/prompts/<id>.prompt.md` is now a generated Copilot shim: the canonical frontmatter block verbatim (so Copilot's picker sees exactly the fields it saw before), then one paragraph with a relative link to the canonical file and the read-and-follow sentence proven live against Codex. The Claude Code command (`@.arcane/spells/<id>.md`) and the Codex skill point at the same file. No client file carries prose of its own any more, and `check:self-host-parity` re-renders all 123 shims from their sources on every build.
+- **Every `spells-*` component now lists four files per spell** — the canonical source first, then the Copilot, Claude Code and Codex shims — so `spell init`, `spell update` and `spell uninstall` carry a spell as one unit. `spell init`'s summary counts spells once, not per client.
+- **Where a spell is authored is written down** in `spell-authoring-standards.md` (D2), `portable-bootstrap.md` ("Where Documents Live"), `universal-agent-rules.md`, `git-conventions.md`'s scope table and `agent-output.instructions.md`: edit `.arcane/spells/<id>.md`, never a shim. Relative links inside a spell resolve from two levels below the repo root, exactly as they did from `.github/prompts/`.
+
+### Fixed
+
+- **`spell update` never merges an operator's edit into a generated shim.** Updating a hand-edited prompt to a shim-shaped vendor file used to either three-way merge "successfully" — the shim with the edit dangling underneath, reported as `Merged your edits` — or write conflict markers over a body that was gone; both were observed against a real consumer fixture before the migration was designed. A customized Copilot prompt, Claude command or Codex skill is now kept byte-untouched, the canonical spell is written beside it, one summary names each such file with the remedy, and the previously recorded hash is carried forward so the next update recognizes the customization again. Dry-run reports the same decision.
+- **An operator's edit now survives every update, not just one.** After a successful three-way merge, `spell update` recorded the merged file's hash as "what Arcane last wrote", so the *next* update read the file as untouched and overwrote it — reproduced against real published history: update one merged the edit, update two lost it. Present since ARC-038 shipped in `0.32.0`. The recorded hash is now the vendor content's, so later updates merge again against the right base; the "could not fetch the merge base" branch keeps the recorded hash for the same reason.
+- **A same-version `spell update` restores missing tracked files** instead of stopping at "Already up to date." — the remedy after porting a customized shim's edits into the canonical spell: delete the old file, run `spell update`, the generated shim comes back. `initOnly` files are never restored this way (EF-17).
+- **Four long-broken links now resolve:** `spell-brainstorm`'s `../../../TODO.md`, `spell-arcane-version`'s bare `.arcane.json`, and the two `development-methodology.md` links that pointed at `../.github/prompts/…` from inside `.arcane/governance/`.
+
+### Migration
+
+Run `spell update` from a committed, clean working tree (it refuses to run otherwise).
+
+| Your install | What happens |
+|---|---|
+| `0.32.0` or later, spells untouched | Every prompt, command and skill is replaced by its shim and `.arcane/spells/` appears with the 41 canonical files. Nothing to do. |
+| `0.32.0` or later, a prompt or command hand-edited | That file is kept exactly as you left it and named in the summary; it keeps working in its client. To converge: move the edit into `.arcane/spells/<id>.md`, delete the old file, run `spell update` again. |
+| Before `0.32.0` (no recorded file hashes) | Files are overwritten, as they always were for such installs — commit first, then recover any local edit from git history and port it into `.arcane/spells/<id>.md`. |
+
+Governance content under `.arcane/governance/` is unaffected. A consumer on an older CLI sees no change until it updates.
+
+### Notes
+
+- CS-03 of the Codex Support program (`docs/plans/codex-support/`). The user-level install tier (CS-04), the repository opt-out (CS-05) and agent delivery at the user tier (CS-06) follow as minor releases on this contract.
+
 ## [0.39.0] - 2026-09-09
 
 Adds OpenAI Codex as a third client target, and opens the Codex Support program.
