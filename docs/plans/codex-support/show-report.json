@@ -54,6 +54,11 @@
       "title": "Accept, revise, or reject ARC-046 (restore-based delivery: no-go)",
       "reason": "Accepting an ADR is never within a delegation's grant in this repository. The evidence is",
       "href": "https://github.com/codemagicianhq/arcane/pull/237"
+    },
+    {
+      "id": "Q-008",
+      "title": "Decide whether `spell_scope` keeps `repo` as its default",
+      "reason": "The research is in [docs/research/default-spell-scope.md](../../research/default-spell-scope.md),"
     }
   ],
   "sections": [
