@@ -1,121 +1,91 @@
 {
-  "feature": "CS-04 — user tier install: --user, the ~/.arcane store, and the home-directory fan-out (Codex Support program)",
-  "branchName": "sessions/2026-09-09-cs04-user-tier",
+  "feature": "CS-05 — repo opt-out: spell_scope, a repository takes its spells from the user tier (Codex Support program)",
+  "branchName": "sessions/2026-09-10-cs05-repo-opt-out",
   "assignedAgent": "claude (role: Backend/Full-stack — no roster installed in this repository)",
   "trackingMode": "internal",
   "externalProvider": null,
   "prd": "features/codex-support/PRD.md",
   "architecture": "features/codex-support/architecture.md",
-  "previousEpic": "CS-03 stories are preserved in git history (commit 8d32d3a) and in PR #232",
+  "previousEpics": "CS-03 stories in commit 8d32d3a / PR #232; CS-04 stories in PR #234",
   "stories": [
     {
-      "id": "CS04-S1",
-      "title": "Types, manifest scope, store paths and the scope-aware registry view",
-      "description": "Add InstallScope = \"repo\" | \"user\", ArcaneManifest.scope? and fanout?, and user? on the init/update options in src/types.ts; validate scope in src/modules/manifest.ts like the other enums; create src/modules/user-tier.ts with userTierRoot() (homedir resolved on every call), USER_TIER_COMPONENTS (= SPELL_COMPONENT_NAMES), componentForScope(component, scope) (user: canonical files only, installed path spells/<id>.md, asset mapped via sourceOverrides) and toAbsoluteSpellPath(root, id) with forward slashes (architecture D1, D2).",
+      "id": "CS05-S1",
+      "title": "The field, its validation, and the scope-aware component view",
+      "description": "Add spell_scope?: InstallScope to ArcaneManifest in src/types.ts (absent = repo) and validate it in src/modules/manifest.ts exactly as scope is validated; add componentForSpellScope(component, spellScope) to src/modules/user-tier.ts — identity for repo, files: [] for a spells-* component under user, every other component untouched (architecture D1, D2).",
       "acceptanceCriteria": [
-        "readManifest rejects scope values other than repo/user with ManifestInvalidFieldError and accepts a manifest with no scope",
-        "componentForScope(c, \"repo\") returns c unchanged; componentForScope(c, \"user\") lists exactly one file per spell (spells/<id>.md) with sourceOverrides mapping each to .arcane/spells/<id>.md",
-        "userTierRoot() changes when USERPROFILE/HOME change between calls",
-        "npm run typecheck passes"
+        "readManifest accepts spell_scope absent, \"repo\" and \"user\", and rejects any other value with ManifestInvalidFieldError",
+        "componentForSpellScope(c, \"repo\") returns the same object; under \"user\" every spells-* component has files: [] and no other component changes",
+        "A test pins that the set of components carrying a canonical or client-shim path is exactly SPELL_COMPONENT_NAMES, so a future client cannot drift past this design",
+        "npm run typecheck and eslint pass"
       ],
       "priority": 1,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 0d89536. test/manifest.test.ts: scope repo/user/absent accepted, `machine` rejected, fanout record validated (64-hex digests) and malformed records rejected. test/user-tier.test.ts 'locations' + 'componentForScope': userTierRoot follows USERPROFILE/HOME between calls; store/canonical id round-trips in both slash styles; absoluteStoreSpellPath has no backslash; componentForScope repo identity, user view = one spells/<id>.md per spell with sourceOverrides to the canonical asset, every mapped asset exists on disk. typecheck + lint clean."
+      "testEvidence": null
     },
     {
-      "id": "CS04-S2",
-      "title": "Fan-out engine with the ARC-038 hash discipline outside the store",
-      "description": "In src/modules/user-tier.ts implement syncUserTierFanout({ homeDir, storeRoot, spellIds, previous, dryRun }) producing the desired set (~/.agents/skills/<id>/SKILL.md via renderCodexSkill and ~/.claude/commands/<id>.md via renderClaudeCommandStub, both with the absolute forward-slash canonical path) and reconciling it against the recorded fanout map: write/record, rewrite-on-change, keep-customized (hash carried forward), collision (never recorded), prune only when hash-matched plus emptied-directory removal, dry-run parity. renderClaudeCommandStub gains an optional canonicalRef parameter defaulting to canonicalSpellPath(id) (architecture D3).",
+      "id": "CS05-S2",
+      "title": "spell init: ask only when a user tier exists, default No, install no spell files when opted in",
+      "description": "In src/commands/init.ts add Step 5f — interactive-only, and only when readManifest(userTierRoot()) succeeds — asking whether this repository should take its spells from the tier, defaulting to No; resolve the profile's components through componentForSpellScope before the copy loop; record spell_scope in the manifest; adjust the preview/summary counts so an opted-in install does not claim spells it did not write (architecture D4).",
       "acceptanceCriteria": [
-        "First run on an empty temp home writes 2 files per spell and returns a record with one hash per file; a second run writes nothing and reports every file unchanged",
-        "An edited fan-out file is left byte-identical, reported as customized, and its previously recorded hash is carried forward",
-        "A same-named file that was never recorded is left untouched, reported as a collision, and absent from the returned record",
-        "A spell removed from the desired set has its recorded, hash-matched files deleted and its emptied <id> directory removed; an edited one is kept and reported",
-        "dryRun writes nothing to disk and reports the same decisions",
-        "Rendered content contains the absolute canonical path with forward slashes and never a repo-relative .arcane/spells path"
+        "With a store in the stubbed home and the question answered yes: zero files under .arcane/spells, .github/prompts, .claude/commands and .agents/skills; governance and instructions still installed; manifest records spell_scope: \"user\"",
+        "Answering no (the default) installs exactly what it installs today and records spell_scope: \"repo\"",
+        "No store in the home => the question is never asked and the manifest has no spell_scope",
+        "A scripted --profile install never asks and never opts in",
+        "The printed summary does not report spells for an opted-in install"
       ],
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 0d89536. test/user-tier.test.ts 'renderUserFanout' + 'syncUserTierFanout' (8 cases): first run 4 written/4 recorded, second run 4 unchanged; missing recorded file restored; edited file byte-identical + customized + hash carried forward (idempotent on the third run); foreign same-named file = collision, never recorded, untouched by a later empty-set prune; claude_description change rewrites both shims of that spell only; dropped spell pruned with its emptied .agents/skills/<id> directory while an edited command is kept-edited then gone, and ~/.claude/commands is never removed; dry-run writes nothing for both write and prune; describeFanoutOutcomes lines. One implementation defect caught by these tests before commit: fs.rm on an empty directory is EISDIR without recursive -- switched to rmdir (removes exactly an empty directory). test/spell-compiler.test.ts: renderClaudeCommandStub renders over an explicit absolute reference."
+      "testEvidence": null
     },
     {
-      "id": "CS04-S3",
-      "title": "spell init --user and the CLI wiring",
-      "description": "Add --user to init/update/status/uninstall in src/index.ts (targetDir = userTierRoot(), options carry user: true). In src/commands/init.ts a user-scope path installs USER_TIER_COMPONENTS through componentForScope into the store, writes the manifest with scope: \"user\" and fanout, runs the fan-out and prints the store path, counts, the VS Code note and next steps — with no profile prompt, no git checks, no manifest questions, no hooks, no agent setup; --dry-run and --force honored (architecture D4, D5, D6).",
+      "id": "CS05-S3",
+      "title": "spell update: honor the opt-out and explain the orphans it creates",
+      "description": "In src/commands/update.ts resolve each component through componentForSpellScope in the repo scope, so an opted-in repository installs no spell files; extend the existing orphan summary with one sentence naming the opt-out as the reason when it applies. No new prune logic — resolveOrphan already reports always and deletes only under --prune while the recorded hash holds (architecture D3).",
       "acceptanceCriteria": [
-        "runInit({ user: true, profile: undefined }, ...) on a stubbed home creates ~/.arcane/.arcane.json with scope user, 41 files under ~/.arcane/spells/, 41 files under ~/.agents/skills/<id>/SKILL.md and 41 under ~/.claude/commands/, and a fanout record of 82 entries",
-        "No @inquirer/prompts function and no git module function is called during a --user init",
-        "--dry-run writes nothing and prints the would-copy/would-write lines; a second init reports Already initialized",
-        "The printed output contains the VS Code note naming chat.useAgentSkills and stating that chat.promptFilesLocations is not used",
-        "spell --help shows --user on init, update, status and uninstall"
+        "A repository that opts in after install reports every previously-installed spell file as orphaned and deletes none",
+        "With --prune the hash-matched spell files are removed and an operator-edited one is kept and named",
+        "The orphan summary names the opt-out as the reason when spell_scope is \"user\"",
+        "--dry-run writes nothing; a repository that has not opted in behaves exactly as before (existing update tests unchanged)",
+        "Switching back to \"repo\" and running spell update reinstalls every spell file"
       ],
       "priority": 3,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 0d89536. test/init.test.ts '--user' (6 cases): store manifest scope user with 41 spells/<id>.md hashes matching disk, no repo-relative shim and no repo-only fields, fanout of 82 entries whose hashes match ~/.agents/skills/<id>/SKILL.md and ~/.claude/commands/<id>.md carrying the absolute forward-slash store path; select/confirm/input and inspectGitRepository/ensureLocalPullRebase never called; --dry-run lists Would copy/Would write and creates nothing; second init says Already initialized (user tier at ...) + spell update --user; --profile with --user rejected; a foreign same-named skill left alone, not recorded, named in the output. Built CLI: `<cmd> --help` shows --user for init, update, status, uninstall (checked live). Live EV-01 against the real home: 41/41/41 files written, output as designed (docs/research/skill-discovery-smoke-tests.md, CS-04)."
+      "testEvidence": null
     },
     {
-      "id": "CS04-S4",
-      "title": "spell update --user: store update through the scope view, then fan-out regeneration",
-      "description": "In src/commands/update.ts: for scope user skip the git checks and the commit-first warning, resolve registry components through componentForScope, fetch the previously published vendor file by its asset path (sourceOverrides[file] ?? file — the general fix), skip retrofits, and after the store update reconcile the fan-out (regenerating changed shims, pruning dropped spells) and persist the new fanout record; --dry-run and --prune as for a repo (architecture D2, D4).",
+      "id": "CS05-S4",
+      "title": "spell doctor checkSpellScope (blocking) and the status scope line",
+      "description": "Add checkSpellScope to src/commands/doctor.ts and its check list: non-blocking pass when the repository has not opted in; when it has, a blocking FAIL if the store is missing or unreadable, a non-blocking warn on major.minor skew, and a pass that names the store, the spell count and a named probe (spell-status) when compatible. In src/commands/status.ts print Scope: repo (spells: user tier) when opted in, and say so when the store is absent (architecture D6, D7).",
       "acceptanceCriteria": [
-        "A deleted ~/.arcane/spells/<id>.md is restored by a same-version spell update --user and its missing fan-out files are rewritten",
-        "An edited store spell goes through the three-way merge with the network mocked, and the fetch is requested at the asset path .arcane/spells/<id>.md",
-        "A --user update never calls inspectGitRepository and never asks a retrofit question",
-        "--dry-run reports the store and fan-out decisions without writing",
-        "Existing repo-tier update tests pass unchanged"
+        "Not opted in => non-blocking pass, doctor's exit code unchanged",
+        "Opted in with a compatible store => pass naming the store path, the spell count and the probed spell",
+        "Opted in with no store => passed false and blocking (not blocking: false), message names `spell init --user`",
+        "Opted in with a store at a different major.minor => warn, non-blocking, names `spell update --user`",
+        "status prints Scope: repo (spells: user tier) when opted in and flags a missing store",
+        "Existing doctor and status suites pass unchanged"
       ],
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 0d89536. test/update.test.ts '--user' (8 cases, fixture = a real runInit --user): no git check and no retrofit prompt across a version bump; Already up to date at the same version leaves the manifest byte-equal; a deleted client file is restored on a same-version run (Wrote 1 client file(s)) and re-recorded; a deleted store spell is restored through the ordinary path (Restored missing: spells/spell-status.md); an edited store spell merges with fetchPublishedFile called at the ASSET path .arcane/spells/spell-status.md and the vendor hash recorded; an edited client file kept + Kept 1 customized + hash carried forward across the bump; --dry-run reports Would write 1 client file(s) and changes nothing; a missing store points at spell init --user. All pre-existing update tests green."
+      "testEvidence": null
     },
     {
-      "id": "CS04-S5",
-      "title": "spell status --user and spell uninstall --user",
-      "description": "status: for the store print the component table, Scope: user, one fan-out line with per-client counts plus customized/missing counts, then the version footer; plain repo status prints Scope: repo and, only when a store exists, a User tier line. uninstall: reconcile the fan-out against an empty set (hash-checked, customized kept and listed), remove store files and the manifest, skip the push-policy refusal and repository-only cleanups; --yes and --dry-run honored (architecture D4).",
+      "id": "CS05-S5",
+      "title": "Live two-repository check, docs, 1.2.0, bookkeeping, PR",
+      "description": "EV-01 with the built CLI: two repositories beside one user tier, one opted in and one not, confirming the opted-in one installs zero spell files, the other is unaffected, and doctor fails loudly once the store is removed. README's Once per machine subsection gains the repository half; CHANGELOG ## [1.2.0]; portable-bootstrap.md clause (source + parity copy); ARC-045 implementation note for decision 4; npm version minor as its own commit; PLAN.md CS-05 ticked with its Report line; PRD AC6/AC7 ticked; show-report regenerated in its own report-only commit; PR opened and self-merged under the codex-support-plan delegation once the three required checks are green (architecture D9).",
       "acceptanceCriteria": [
-        "status --user output contains Scope: user and the fan-out counts; a customized fan-out file is counted as customized and a deleted one as missing",
-        "Plain status prints Scope: repo, and the User tier line appears only when ~/.arcane/.arcane.json exists in the stubbed home",
-        "uninstall --user removes every hash-matched fan-out file, its emptied <id> directories, the store files and the manifest; an edited fan-out file is kept and named in the output",
-        "uninstall --user --dry-run lists what would be removed and deletes nothing; no push-safety or marker-section code runs for scope user"
+        "The live check is recorded with its real output in docs/research/skill-discovery-smoke-tests.md",
+        "npm run check:version-bump passes (1.2.0 differs from main) and every gate in the architecture's Testing strategy is green",
+        "PLAN.md, PRD.md, DECISIONS.md, CHANGELOG.md and the show-report golden pair are consistent at HEAD",
+        "PR merged by rebase under the delegation; branch deleted after a content-verified check"
       ],
       "priority": 5,
-      "passes": true,
+      "passes": false,
       "assignedTo": "claude",
-      "testEvidence": "Commit 0d89536. test/status.test.ts 'scope and --user' (4 cases): Scope: user + Client files: 2 (1 Codex/Copilot skills, 1 Claude Code commands) + the VS Code note; 1 missing, 1 customized with the spell update --user remedy; missing store -> spell init --user + exit 1; repo status prints Scope: repo and the User tier: v1.1.0 at <store> line only once a store exists in the (env-stubbed) home. test/uninstall.test.ts '--user' (5 cases): client files, the emptied .agents/skills/<id> directory, store spell, manifest and the emptied store all removed while ~/.claude/commands survives; edited client file kept and named (--yes skips the prompt); --dry-run lists and removes nothing; a scope: user manifest is handled as the tier even without the flag; missing store -> spell init --user. Live: status --user and uninstall --user run against the real tier (research doc, CS-04 EV-01)."
-    },
-    {
-      "id": "CS04-S6",
-      "title": "spell doctor: non-blocking user-tier check",
-      "description": "Add checkUserTier() to src/commands/doctor.ts and the runDoctor check list: no store → pass with the optional-install message; store present → warn when the store's major.minor differs from the CLI's, and warn when the recorded fan-out has missing or edited files, each with the spell update --user remedy; never blocking, never reading VS Code settings (architecture D4).",
-      "acceptanceCriteria": [
-        "With no store in the stubbed home the check passes and names spell init --user",
-        "A store at a different major.minor produces a warn row (blocking false) naming spell update --user",
-        "A missing or edited recorded fan-out file produces a warn row with counts; doctor's exit code is unaffected",
-        "Existing doctor tests pass unchanged"
-      ],
-      "priority": 6,
-      "passes": true,
-      "assignedTo": "claude",
-      "testEvidence": "Commit 0d89536. test/doctor-user-tier.test.ts (7 cases): no store -> pass naming spell init --user; matching major.minor with every client file in place -> pass with the store path and count; major.minor drift -> warn (blocking false) with the remedy; a missing recorded client file -> warn '1 of 2 client file(s) missing'; an edited client file -> pass message counts it as customized (kept-as-designed, so not a warning -- a deliberate narrowing of the AC's 'or edited'); unknown CLI version skips the comparison; unreadable store manifest -> warn 'could not read'. The version reaches the check via DoctorOptions.packageVersion from the CLI entry (bundle-safe; doctor.ts cannot require package.json relative to itself once tsup flattens it). Live: `spell doctor` in this repo printed `✓ [pass] User tier (ARC-045)` while the real tier was installed. Existing doctor suites green."
-    },
-    {
-      "id": "CS04-S7",
-      "title": "Docs, changelog, ADR note, research record, 1.1.0, bookkeeping, PR",
-      "description": "README Once-per-machine subsection, CHANGELOG ## [1.1.0], portable-bootstrap.md tier sentence (source + parity copy), ARC-045 implementation note (Claude location, VS Code note rationale), research doc CS-04 section (Codex probe transcript, Claude deferral), live EV-01 against the built CLI's real spell init --user then uninstall --user; npm version minor as its own commit; PLAN.md CS-04 tick with the premise correction and Report line; OPERATOR-QUEUE.md Q-005; PRD AC5 status note; show-report regenerated trailer-free; PR with ## For the record; self-merge under the delegation once the three required checks are green (architecture D9).",
-      "acceptanceCriteria": [
-        "npm run check:version-bump passes (1.1.0 differs from main) and every gate in the architecture's Testing strategy is green",
-        "The research doc carries the Codex user-tier transcript and the Claude Code deferral with Q-005 named",
-        "PLAN.md, OPERATOR-QUEUE.md, PRD.md, DECISIONS.md and the show-report golden pair are consistent at HEAD",
-        "PR merged by rebase under the codex-support-plan delegation; branch deleted after a content-verified check"
-      ],
-      "priority": 7,
-      "passes": true,
-      "assignedTo": "claude",
-      "testEvidence": "Commits e0e26a7 (docs), cd94592 (1.1.0 bump; check:version-bump passes), fd588d0 (fan-out key hardening), ff477cb (PLAN/Q-005/PRD/TODO), 81f18dc (Phase 5 review: 0 HIGH / 2 MEDIUM / 5 LOW, all addressed), two trailer-free show-report regenerations. Gates green at push: full suite 86 files / 1432 tests, build (242 assets), self-host parity (322), spell catalog, ADR references, stale-claims Class A; citations/followups/Class B report only pre-existing items. Research doc carries the Codex user-tier transcript, the Claude Code deferral and Q-005. PR #234 opened with the ship report and `## For the record`, three required checks green on head 665a910, rebase-merged 2026-09-10T15:46Z (dac7a8f); release v1.1.0 published, publish.yml run 34497846257 succeeded, npm 1.1.0 at 15:47Z, tarball inspected. Branch deleted after `git cherry` showed every commit landed."
+      "testEvidence": null
     }
   ]
 }
