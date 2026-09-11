@@ -166,12 +166,17 @@ than growing a third format that copies content again.
   Code); Codex verified live from an empty directory. Still open: the agent set (CS-06), the
   repository opt-out that removes the per-repository duplicates (CS-05), and the VS Code direct count
   — an operator observation (`OPERATOR-QUEUE.md` Q-005).
-- [ ] **AC6** — A repository with `spell_scope: "user"` (or equivalent field) passes `spell doctor`
+- [x] **AC6** — A repository with `spell_scope: "user"` (or equivalent field) passes `spell doctor`
   when a compatible user-tier install exists, and fails with an actionable remedy message when it
-  does not.
-- [ ] **AC7** — `spell init`/`spell update` on a repo opted into the user tier does not write
+  does not. *Met 2026-09-10 (CS-05):* `checkSpellScope` — the one blocking user-tier check. Verified
+  live: pass with exit 0 against a real store, then `✗ [FAIL]` with exit 1 naming the store path and
+  `spell init --user` once the store was removed.
+- [x] **AC7** — `spell init`/`spell update` on a repo opted into the user tier does not write
   repo-local `.github/prompts`, `.claude/commands`, `.github/agents`, or `.agents/skills` files;
   running the same commands on a repo NOT opted in is unaffected (default behavior unchanged).
+  *Met 2026-09-10 (CS-05)* for spells: `componentForSpellScope` empties every `spells-*` component,
+  and two repositories beside one tier went to 0 and 160 spell paths respectively. `.github/agents`
+  is agent delivery and stays with CS-06.
 - [x] **AC8** — A fixture consumer repo with one hand-edited distributed prompt file, run through
   the canonical-source migration via `spell update`, retains the hand-edited file's content
   unmodified and surfaces an explicit warning naming the file; every non-edited file is replaced

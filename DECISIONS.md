@@ -2743,6 +2743,44 @@ variances recorded against vendor documentation):**
 - Decision 4 (`spell_scope`, CS-05) is unchanged; until it ships, Claude Code's documented "personal
   over project" precedence means the user tier's copy runs in a repository that still carries its own.
 
+**Implementation note (2026-09-10, CS-05 — decision 4 shipped as `1.2.0`):**
+
+- The field is `spell_scope?: "repo" | "user"` on the repository manifest, absent meaning `"repo"`,
+  validated like `scope` so a typo fails loudly instead of silently reinstalling spells. It is
+  deliberately distinct from CS-04's `scope`: `scope` says what a manifest IS (a repository install,
+  or the user store), `spell_scope` says where a repository takes its spells FROM.
+- **Shape:** the opt-out empties the `spells-*` components (`componentForSpellScope`) rather than
+  filtering installed paths by prefix. A prefix list would have been a fourth place the client-surface
+  shapes are written down, beside `CLIENT_SHIM_PATHS`, `CLIENT_SHIM_PATH_PATTERNS` and
+  `CANONICAL_SPELLS_DIR`, and would have missed a fifth client silently; "which components deliver
+  spells" is already derived (`SPELL_COMPONENT_NAMES`), and a test pins that the two definitions
+  coincide. Governance, instructions, continuity files, hooks and templates are returned untouched,
+  which is decision 5 holding in code.
+- **Removal is the existing orphan path, not new logic** — a premise correction recorded against the
+  plan, which framed CS-05's risk as prune logic to get right. Measured on a real consumer before
+  building: of 170 tracked files, 169 still matched their recorded hash and 1 (an edited shim) did
+  not, and `resolveOrphan` already reports every unmanaged file, deletes only under `--prune`, and
+  only while `fileMatchesHash` holds.
+- **`spell init` asks only when a user tier exists, and defaults to No.** The field is committed and
+  inherited by every clone, so a shared repository must not opt out because one contributor's machine
+  happened to have a tier. Scripted installs never ask and never opt in; the retrofit is a silent
+  `"repo"` rather than a `MANIFEST_RETROFITS` question, which would have asked every repository on
+  every machine about a store most do not have.
+- **`checkSpellScope` is the one BLOCKING user-tier check**, and only in a repository that opted in:
+  with no store such a repository has no spells in any client, which is the "silently unreachable"
+  state this decision exists to prevent. It verifies rather than assumes — counts the store's spells
+  and probes a named one. CS-04's `checkUserTier` stays advisory; the two ask different questions.
+- **The sharpest argument for this decision turned out not to be clutter.** While a repository and the
+  user tier both own a spell's name, which copy a client runs is not predictable from the vendor
+  documentation: in the session that designed this epic, `/spell-full-cycle` resolved through the user
+  tier's absolute include while `/spell-open-session` resolved through the project copy, minutes
+  apart (`docs/research/skill-discovery-smoke-tests.md`, "CS-05"). One owner per name removes the
+  question rather than answering it.
+- **Dropped from the epic, on the record:** the plan's sketch called for a pointer line in the marker
+  blocks. Checked against the tree, the only marker sections Arcane writes (`AGENTS.md`, `CLAUDE.md`,
+  `copilot-instructions.md`) carry the agent roster, not spell routing — there is no spell-routing
+  block for a pointer to live in, and agent delivery at the user tier is CS-06's subject.
+
 ---
 
 ## ARC-046 — Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained

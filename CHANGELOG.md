@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.2.0] - 2026-09-10
+
+A repository can now take its spells from the user tier instead of carrying its own (CS-05 of the Codex Support program, [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) decision 4).
+
+### Added
+
+- **`spell_scope` on `.arcane.json`** — `"user"` opts a repository out of carrying its own canonical spells and client shims; absent (or `"repo"`) is the default and the meaning of every manifest written before this release, so nothing changes for a repository that does not opt in. `spell init` offers the choice only when the machine already has a user tier, only interactively, and **defaults to No**: the field is committed and inherited by every clone, so a shared repository must not stop carrying its spells because one contributor's machine had a tier. Governance, instructions, continuity files, hooks and templates never move tier.
+- **`spell update` acts on the opt-out immediately and deletes nothing on its own.** The repository's spell files become orphans: listed on every run with the reason named, and removed only by `spell update --prune`, and only while each file still matches the hash Arcane recorded for it. A file you edited is kept and named. Setting the field back to `"repo"` and running `spell update` reinstalls every spell file, at the same version.
+- **`spell doctor` gains a blocking `Spell scope` check** for a repository that opted in: it fails, with `spell init --user` as the remedy, when the user tier is missing, unreadable, empty, or at a different `major.minor` — because an opted-in repository with no store has no spells in any client. `spell status` says `Scope: repo (spells: user tier)`.
+
+### Fixed
+
+- **An orphaned file that is still on disk stays tracked in the manifest** until it is actually removed. It used to be reported once and then dropped, which made the `spell update --prune` the same run had just recommended find nothing on the next invocation, left a file Arcane had written untracked for `spell uninstall`, and would have let a later re-install overwrite an operator's edits to it without a word.
+- **Pruning no longer leaves empty directories behind.** Removing a component's files now removes the directories they emptied, stopping at the first non-empty one and never at the repository root.
+
+### Notes
+
+- **Why this matters beyond picker clutter:** while a repository and the user tier both own a spell's name, which copy a client actually runs is not predictable from the documentation — observed directly during this work, where two commands in one session resolved to different tiers. A repository that opts out has no copy of its own, so there is nothing to resolve.
+
 ## [1.1.1] - 2026-09-10
 
 Four findings the Codex Support program's own sessions and reviews had left open, closed together.

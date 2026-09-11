@@ -231,7 +231,24 @@ spell update --user     # after upgrading the CLI
 spell uninstall --user  # removes only what it wrote; an edited client file is kept and named
 ```
 
-Codex, VS Code Copilot and Claude Code each discover the user tier from their own home-directory locations (`~/.agents/skills` and `~/.claude/commands`), so no VS Code setting is needed. Claude Code runs a personal command over a project command of the same name, so in a repository that still carries its own spells `/spell-*` runs the user tier's copy. Governance stays per repository — only spell delivery moves up a level.
+Codex, VS Code Copilot and Claude Code each discover the user tier from their own home-directory locations (`~/.agents/skills` and `~/.claude/commands`), so no VS Code setting is needed. Governance stays per repository — only spell delivery moves up a level.
+
+**Then let a repository stop carrying its own copies.** `spell init` offers this when the machine already has a tier, and an existing repository opts in by setting one field:
+
+```jsonc
+// .arcane.json
+{ "spell_scope": "user" }   // absent, or "repo", means this repository carries its own spells
+```
+
+```bash
+spell update          # lists the spell files this repository no longer manages — deletes nothing
+spell update --prune  # removes the untouched ones; anything you edited is kept and named
+spell doctor          # fails loudly if the user tier it now depends on is missing
+```
+
+This is what removes the duplication: with the repository's own copies gone, one workspace holding ten Arcane projects shows one set of `/spell-*` entries, not ten. It is also what makes the answer predictable — while both tiers own a command name, which copy a client runs is not something you can read off the docs.
+
+**Shared, team and cloud repositories should stay `repo`.** The field is committed and inherited by every clone, so opting in tells *everyone* who clones that repository to get their spells from a machine-wide install they may not have. Reverse it by setting the field back and running `spell update`, which reinstalls every spell file.
 
 ---
 
