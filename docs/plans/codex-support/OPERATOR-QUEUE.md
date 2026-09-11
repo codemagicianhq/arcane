@@ -188,7 +188,12 @@ entry to *this* queue once it runs.
   ```
 - **Rollback:** set the field back to `"repo"` (or delete it) and run `spell update` — it reinstalls
   every spell file at the same version. Nothing you edited is deleted at any point.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **pass**, counted by the operator on a two-folder workspace built
+  for the purpose (two disposable repositories at `1.3.1`, `lite` profile, each with its own full
+  Arcanos roster). **Before** the opt-out: **3** entries for `spell-status` — `/Spell-Status` twice,
+  one per folder, plus one lowercase `/spell-status`. **After** both opted in: **1**, the lowercase
+  entry, resolving to `~/.agents/skills`. The before-count was predicted in writing first and matched
+  exactly. Recorded in `docs/research/skill-discovery-smoke-tests.md` ("AC5 measured").
 
 ## Q-006 — Accept, revise, or reject ARC-046 (restore-based delivery: no-go)
 
@@ -287,4 +292,10 @@ entry to *this* queue once it runs.
 - **Rollback / if it fails:** if the home location turns out not to resolve, say so here — the fix is
   one string (`~/.claude/agents` instead of `~/.copilot/agents`), and nothing else in ARC-047 moves.
   To undo the tier entirely: `spell uninstall --user` removes exactly the files it recorded writing.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **pass**, counted in the same workspace and the same sitting as
+  Q-007. **Before:** each Arcano appeared **3** times — once per folder plus once from
+  `~/.copilot/agents`, since agents deduplicate nowhere. **After** both opted in: **1**. This also
+  settles ARC-047's one unverified premise: the operator's VS Code has no `agentHost`,
+  `useAgentSkills` or `*FilesLocations` setting, and the agent rendered to `~/.copilot/agents` was in
+  the picker, so the home rows resolve by default. The one-string fallback ARC-047 named is not
+  needed. Recorded in `docs/research/skill-discovery-smoke-tests.md` ("AC5 measured").

@@ -41,7 +41,7 @@ for the distribution-model question CS-08 unparks.
 ## Definition of Done
 
 1. Every PRD acceptance criterion (AC1–AC9) is met, evidenced, and cross-referenced from the epic
-   that shipped it.
+   that shipped it. **Met 2026-09-11** — AC5, the last one open, closed by the operator's count.
 2. `npm run check:self-host-parity`, `check:spell-catalog`, and `check:version-bump` pass on `main`
    after every epic that touches `src/assets/` or `src/modules/registry.ts`.
 3. Codex (CLI and/or VS Code extension), Claude Code, and VS Code Copilot each discover and can
@@ -49,7 +49,9 @@ for the distribution-model question CS-08 unparks.
    inspection alone, recorded in the CS-00 research doc and re-confirmed after CS-03's canonical
    move.
 4. A two-repository VS Code workspace, both opted into the user tier, shows exactly one set of
-   `/spell-*` entries and one set of the 12 Arcanos agent modes (AC5).
+   `/spell-*` entries and one set of the 12 Arcanos agent modes (AC5). **Met 2026-09-11** — counted
+   before and after: 3 per spell and 3 per Arcano with both repositories carrying their own files,
+   1 of each with both opted in.
 5. [ARC-045](../../../DECISIONS.md) is `Accepted` before CS-03 starts; the canonical-source move
    ships under an explicit, operator-confirmed version number.
 6. `docs/research/restore-based-delivery.md` states an explicit go/no-go on the restore-based
