@@ -20,7 +20,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | ARC                                                                                                | Title                                                                          | Date       | Status     |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------- | ---------- |
 | [ARC-001](#arc-001--arcane-ops-separation-dual-prefix-adr-strategy-and-content-ownership)          | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership        | 2026-05-04 | Accepted   |
-| [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                            | Distribute VS Code Agent Mode Files via spell init                             | 2026-05-14 | Accepted   |
+| [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                            | Distribute VS Code Agent Mode Files via spell init                             | 2026-05-14 | Superseded |
 | [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)              | Agent Persona Schema v2 and Operations-Comms Persona Replacement               | 2026-05-18 | Accepted   |
 | [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                            | Image-Prompt Asset Ownership Model                                             | 2026-05-19 | Accepted   |
 | [ARC-005](#arc-005--session-handoff-prompt-automatic-continuation-context)                         | Session Handoff Prompt: Automatic Continuation Context                         | 2026-05-25 | Accepted   |
@@ -65,6 +65,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
 | [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
 | [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Proposed   |
+| [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) | Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier | 2026-09-11 | Proposed   |
 
 ---
 
@@ -142,7 +143,12 @@ These ADRs were recorded before the ARC-NNN sequence existed. They document fram
 ## ARC-002 — Distribute VS Code Agent Mode Files via spell init
 
 **Date:** 2026-05-14
-**Status:** Accepted
+**Status:** Superseded by [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) (2026-09-11)
+
+> **Superseded.** The `agent-files` component this ADR registers was retired before this
+> repository's public history begins, leaving only a code comment as the record; ARC-047 puts the
+> reasoning on the record and replaces this decision. Kept for its context section, which describes
+> the serialization bug ARC-012's parity guard now prevents.
 
 **Context:**
 
@@ -2898,3 +2904,104 @@ gitignored, a fresh clone, today's `spell update`, an edit, a second clone, and 
   second-class.
 - A cost the committed model still imposes after CS-05 ships that the user tier and the opt-out do
   not remove — none is known today.
+
+## ARC-047 — Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier
+
+**Date:** 2026-09-11
+**Status:** Proposed (2026-09-11, drafted by CS-06 of the Codex Support program; operator decision via
+[docs/plans/codex-support/OPERATOR-QUEUE.md Q-009](docs/plans/codex-support/OPERATOR-QUEUE.md#q-009--accept-revise-or-reject-arc-047-agents-are-roster-rendered-and-get-a-user-tier))
+**Supersedes:** [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)
+**Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier),
+[ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard),
+[ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content)
+
+**Context:**
+
+Two questions, one subject, and the first of them has been unanswered on the record for months.
+
+**Why agent files stopped shipping through the registry.** ARC-002 decided in 2026-05-14 to register
+an `agent-files` component listing twelve fixed `.agent.md` paths and install them from every profile
+except `governance-only`. It is still marked `Accepted`. It describes the opposite of what ships: no
+such component exists, and `src/modules/registry.ts` carries a four-line comment saying it was retired
+because installing a fixed-name set "shipped stale names and collided with the generated output".
+That comment is the entire record. There is no superseding ADR, no CHANGELOG entry, and no commit
+message, because this repository's public history begins at `0.14.0`, after the change. An operator
+asked why agents are delivered differently from spells and the honest answer was that nobody wrote it
+down.
+
+The reasoning holds up, and it is structural rather than incidental. A `.agent.md` file's filename and
+its contents are both chosen per repository: `applyNamingStrategy` resolves each role through the
+roster's `naming_strategy` (`arcanos`, `generic`, `random`, `custom`), and `syncAgents` slugs the
+resulting display name into the filename. A registry component declares fixed paths, so it
+structurally cannot deliver a file whose name the consumer picks. Spells are the opposite case: one
+canonical body, byte-identical in every install, which is exactly why they ship through the registry
+and agents cannot. ARC-012's alternatives section separately rejected rendering agent files on the
+consumer at install time, because that moves the render logic and the persona YAML into every install
+and changes the distribution contract.
+
+**Why agents now need a tier of their own.** ARC-045 gave spells a user tier and a repository opt-out.
+An operator's two-folder VS Code workspace then showed each of the twelve Arcanos twice, one per
+folder, while agent *skills* in the same workspace collapsed to a single entry
+(`docs/research/skill-discovery-smoke-tests.md`, 2026-09-11). Custom agent files are per-folder and do
+not deduplicate. Nothing in the spell work touched them, because `spell update` does not manage agent
+files at all.
+
+**Decision:**
+
+1. **Agent files are roster-rendered, never registry-distributed.** ARC-002 decision 2 and 3 are
+   reversed: there is no `agent-files` component and there will not be one. `spell agents init` and
+   `spell agents sync` render `.github/agents/<slug>.agent.md` from the roster and the role
+   definitions; `spell init` and `spell update` do not deliver them, which is why an upgrade never
+   changes them.
+2. **The user tier stores the roster, exactly as a repository does.** `spell agents init|sync|list
+   --user` operate on `~/.arcane` — `agents.yaml` and `agents/<role>.yaml` at the store root, because
+   the store already plays the role a repository's `.arcane/` layer plays, which is why its spells sit
+   at `~/.arcane/spells/<id>.md` rather than a directory deeper.
+3. **The home fan-out target is `~/.copilot/agents/<slug>.agent.md`, and only that.** VS Code resolves
+   four custom-agent locations — `.github/agents` and `.claude/agents` in a workspace,
+   `~/.copilot/agents` and `~/.claude/agents` in the home directory. `~/.copilot/agents` is the only
+   one of the four read by VS Code alone. `~/.claude/agents` is also Claude Code's own user-scope
+   subagent directory, and filling it would make every rostered persona delegatable in every Claude
+   Code session on the machine — a new client surface rather than the tier move this decision is
+   about. Writing to both home locations is rejected outright: they sit in one discovery table with no
+   deduplication, so a file in each is two picker entries.
+4. **The user-tier file is byte-identical to the repository-tier one.** Same renderer, same slug, same
+   `.agent.md` suffix, different directory.
+5. **The fan-out is hash-recorded in the store manifest and reconciled under ARC-038's rule.** An
+   agent file whose content no longer matches what Arcane wrote is the operator's: never overwritten,
+   never deleted, named instead. `spell uninstall --user` removes exactly what the record lists. The
+   reconcile is scoped per client, so `spell update --user` and `spell agents sync --user` share one
+   record without either erasing the other's entries.
+6. **A repository with `spell_scope: "user"` receives no `.github/agents` files and keeps its roster
+   tables.** The picker does not deduplicate, so a tier beside a repository's own agent files makes
+   the list longer rather than shorter — the opt-out is the mechanism that produces one set, not a
+   convenience on top of one. The marker-merged roster tables in `CLAUDE.md`, `AGENTS.md` and
+   `.github/copilot-instructions.md` stay: repository continuity content, not a client discovery
+   surface (ARC-045 decision 5).
+7. **Agent files left over from before an opt-out are reported, never deleted.** No component tracks
+   them, so no recorded hash exists to prove one untouched, and inventing one to justify a delete is
+   more surface than the problem deserves. `spell agents sync` names them with the `git rm` line that
+   removes them.
+8. **`spell agents --user` requires the store `spell init --user` creates.** There is deliberately no
+   second, agents-only store shape: one store, one manifest, one fan-out record.
+9. **The blocking `spell doctor` check extends to agents only where agents are expected.** An opted-out
+   repository that has its own roster and finds none in the tier fails with the remedy; one that has
+   never run `spell agents init` expects nothing and passes.
+10. **No new manifest field.** `spell_scope` governs both, per ARC-045 decision 6.
+
+**Consequences:**
+
+- An operator who opts a repository into the user tier and runs `spell agents sync --user` once sees
+  one set of agent modes per machine instead of one set per open folder.
+- Repositories that do not opt out are unchanged, and gain a second set of entries if the tier is also
+  populated — the same trade the spell tier already makes, with the same remedy.
+- OpenClaw output is untouched; it has always written to `~/.openclaw` and has no per-folder problem.
+- **Unverified at the time of writing, deliberately:** that VS Code resolves the two home agent rows
+  without opting into Agent Host. The shipped build shows no such gate and the operator's VS Code
+  already lists a user-tier *skill* from the sibling table's user row with no settings set, but the
+  agent half is an inference until someone counts a picker. `OPERATOR-QUEUE.md` Q-010 is that count.
+  If it fails, the fan-out target changes by one string and nothing else in this decision moves.
+- ARC-002 is superseded in full. Its context section remains useful history: the `[object Object]`
+  serialization bug it describes is the same class ARC-012's parity guard now prevents.
+
+---

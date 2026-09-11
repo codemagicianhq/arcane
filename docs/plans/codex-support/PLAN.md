@@ -325,8 +325,26 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   **Report:** Open several Arcane projects at once and you now see one set of spells instead of one
   set per folder — a repository can take its spells from your machine-wide install, and anything you
   edited is named rather than removed. · category: feature
-- [ ] **CS-06 — Agents at the user tier.** Route: `chain`. Size: S-M (~4 stories). Bump: minor
-  (may combine with CS-04/05's bump). Dependencies: CS-04. Risk: Low. **Report:**
+- [x] **CS-06 — Agents at the user tier.** Route: `chain`. Size: S-M (~4 stories). Bump: minor
+  (`1.3.0`). Dependencies: CS-04. Risk: Low. **Shipped 2026-09-11.** The plan's design for this epic
+  was wrong twice over — it targeted `~/.arcane/.github/agents` plus a `chat.agentFilesLocations`
+  snippet, and CS-04 had already found that setting vendor-deprecated. Rather than argue from
+  documentation that contradicts itself, the architecture reads the discovery tables out of the
+  shipped VS Code build: four custom-agent locations, two of them in the home directory, and a loader
+  that builds one picker entry per file and sorts by name with **no dedup step**. That turned the
+  operator's "agents are listed twice" report into a mechanism and settled the epic's shape — a user
+  tier alone cannot reduce the count for a repository that still carries its own agent files, so the
+  opt-out is the whole fix rather than a convenience. Delivered: `--user` on all three `spell agents`
+  subcommands with the roster at the store root; a home fan-out to `~/.copilot/agents` reconciled
+  through CS-04's hash-guarded machinery, now scoped per client so two commands share one record; the
+  opt-out that stops `.github/agents` writes while keeping the roster tables; a report naming
+  leftovers and the `git rm` line rather than deleting files no component ever tracked; and the
+  blocking doctor row, failed only where a repository actually expects agents. ARC-047 drafted
+  `Proposed`, superseding ARC-002, which had been `Accepted` while describing the opposite of shipped
+  behavior. One premise is named unverified rather than hidden: that VS Code resolves the home agent
+  rows without opting into Agent Host — `OPERATOR-QUEUE.md` Q-010 is the count that closes it.
+  **Report:** Your Arcanos can now live once on your machine instead of once per project, and a
+  project that takes its spells from there stops carrying its own copies of them. · category: feature
 - [ ] **CS-07 — Docs, PRD close, drift.** Route: `direct`. Size: S. Bump: no. Dependencies: CS-05,
   CS-06, CS-08. Risk: Low. README, `portable-bootstrap.md`, `spell-authoring-standards.md`, PRD
   `status: complete`, final `spell-check-drift` GO. **Report:**

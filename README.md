@@ -233,6 +233,16 @@ spell uninstall --user  # removes only what it wrote; an edited client file is k
 
 Codex, VS Code Copilot and Claude Code each discover the user tier from their own home-directory locations (`~/.agents/skills` and `~/.claude/commands`), so no VS Code setting is needed. Governance stays per repository — only spell delivery moves up a level.
 
+**Agents move the same way.** Your agent roster can live once per machine too:
+
+```bash
+spell agents init --user   # ~/.arcane/agents.yaml plus one definition file per role
+spell agents sync --user   # renders ~/.copilot/agents/<name>.agent.md — VS Code agent modes
+spell agents list --user   # the roster the tier holds
+```
+
+Unlike spells, agent files are never delivered by `spell init` or `spell update`: they are rendered from your roster, whose naming strategy decides each file's name and contents, so an upgrade leaves them alone by design (ARC-047). And unlike skills, VS Code does **not** collapse two agents that share a name — a repository carrying its own `.github/agents` files adds a second entry beside the tier's rather than replacing it, so opting the repository out is what produces one set.
+
 **Then let a repository stop carrying its own copies.** `spell init` offers this when the machine already has a tier, and an existing repository opts in by setting one field:
 
 ```jsonc
@@ -243,6 +253,7 @@ Codex, VS Code Copilot and Claude Code each discover the user tier from their ow
 ```bash
 spell update          # lists the spell files this repository no longer manages — deletes nothing
 spell update --prune  # removes the untouched ones; anything you edited is kept and named
+spell agents sync     # stops writing .github/agents here; names the leftovers and the git rm line
 spell doctor          # fails loudly if the user tier it now depends on is missing
 ```
 

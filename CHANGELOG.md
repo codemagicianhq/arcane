@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.3.0] - 2026-09-11
+
+The agent roster can now live once per machine, and a repository that takes its spells from the user tier stops carrying its own agent files (CS-06 of the Codex Support program, [ARC-047](DECISIONS.md#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier)).
+
+### Added
+
+- `spell agents init|sync|list --user` operate on the store at `~/.arcane`: the roster and its per-role definitions sit at the store root, and a sync renders one `~/.copilot/agents/<name>.agent.md` per agent — the home location VS Code resolves for machine-wide agent modes, and the only one of the four custom-agent locations read by VS Code alone.
+- The user tier's agent files go through the same fan-out reconcile as its spells: hash-recorded in the store manifest, so a file you edited is recognized, kept and named rather than overwritten, and `spell uninstall --user` removes exactly what Arcane wrote. The reconcile is now scoped per client, so `spell update --user` and `spell agents sync --user` share one record without either erasing the other's entries.
+- `spell doctor`'s blocking scope check covers agents where agents are expected: an opted-out repository that has its own roster and finds none in the tier fails with the remedy; one that has never run `spell agents init` passes.
+
+### Changed
+
+- A repository with `spell_scope: "user"` receives no `.github/agents` files. Its roster tables in `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` are unchanged — those are continuity content, not a client discovery surface. Agent files left from before the opt-out are named along with the `git rm` line that removes them, and are never deleted automatically: no component ever tracked them, so no recorded hash exists to prove one untouched.
+- [ARC-002](DECISIONS.md#arc-002--distribute-vs-code-agent-mode-files-via-spell-init) is superseded. It decided to ship twelve fixed agent files as a registry component; that component was retired long ago, leaving a code comment as the only record. ARC-047 puts the reasoning on the record: a `.agent.md` file's name and contents are chosen per repository by the roster's naming strategy, and a registry component declares fixed paths, so it structurally cannot deliver one.
+
+### Notes
+
+- Repositories that have not opted out are unaffected. With a populated tier beside them they will list each agent twice, because VS Code does not deduplicate agents by name — the same trade the spell tier already makes, with the same remedy.
+
 ## [1.2.0] - 2026-09-10
 
 A repository can now take its spells from the user tier instead of carrying its own (CS-05 of the Codex Support program, [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) decision 4).
