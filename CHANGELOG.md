@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.3.1] - 2026-09-11
+
+Documentation only. Three shipped governance documents were left incomplete rather than wrong by the user-tier work, and CS-07's drift pass corrected them.
+
+### Changed
+
+- `universal-agent-rules.md` described how spells reach each client without mentioning that spells *or* the agent roster can be installed once per machine at `~/.arcane`, or that a repository with `spell_scope: "user"` carries neither its own spell files nor its own `.github/agents/*.agent.md`. Standing repository instructions still never move tier, and the note now says so explicitly.
+- `spell-authoring-standards.md` told authors that a spell's relative links resolve two levels below the repository root, with no note that the user tier has no repository to resolve against. Authors are now pointed at D2 Gold's existing "works in a vanilla consuming repo" bar as the thing that makes a spell safe at either tier.
+- The README's `spell_scope` comment still said a repository "carries its own spells" after the field started governing agent files too.
+
 ## [1.3.0] - 2026-09-11
 
 The agent roster can now live once per machine, and a repository that takes its spells from the user tier stops carrying its own agent files (CS-06 of the Codex Support program, [ARC-047](DECISIONS.md#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier)).
