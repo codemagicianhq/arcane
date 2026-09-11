@@ -74,6 +74,17 @@ export interface ArcaneManifest {
    * files and repository configuration never move tier (ARC-045 decision 5).
    */
   spell_scope?: InstallScope;
+  /**
+   * USER STORE ONLY. The answer `spell init` should pre-select for its
+   * spell-scope question in a NEW repository on this machine (ARC-048).
+   *
+   * A preference, never a default: it changes which answer is highlighted for
+   * someone who is being asked and can say no. It is read only at `init`
+   * time, so no existing repository's manifest is ever rewritten by setting
+   * it, and a repository with no `spell_scope` field still means "repo"
+   * permanently -- that is the part this deliberately does NOT change.
+   */
+  default_spell_scope?: InstallScope;
   tracking_mode?: TrackingMode;
   external_provider?: ExternalProvider | null;
   /**
@@ -241,6 +252,12 @@ export interface SpellUpdateOptions {
   prune?: boolean;
   /** Update the per-user tier at `~/.arcane` instead of a repository (CS-04). */
   user?: boolean;
+  /**
+   * Record the answer `spell init` should pre-select for its spell-scope
+   * question in NEW repositories on this machine (ARC-048). `--user` only:
+   * the preference lives in the store, not in any repository.
+   */
+  defaultScope?: InstallScope;
 }
 
 export interface VersionCheckResult {

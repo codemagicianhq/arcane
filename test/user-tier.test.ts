@@ -6,6 +6,7 @@ import { hashFile } from "../src/modules/copier.js";
 import { getAllComponents, getComponent, SPELL_COMPONENT_NAMES } from "../src/modules/registry.js";
 import { canonicalSpellPath, isClientShimPath } from "../src/modules/spell-compiler.js";
 import {
+  preferredSpellScope,
   USER_FANOUT_PATHS,
   USER_TIER_COMPONENTS,
   absoluteStoreSpellPath,
@@ -537,3 +538,20 @@ function getAllComponentNamesCarryingSpellFiles(): string[] {
   }
   return names;
 }
+
+describe("preferredSpellScope — a preference, never a default (ARC-048)", () => {
+  it("resolves the store's stated preference", () => {
+    expect(preferredSpellScope({ default_spell_scope: "user" })).toBe("user");
+    expect(preferredSpellScope({ default_spell_scope: "repo" })).toBe("repo");
+  });
+
+  it("resolves to repo for anything it cannot read as a preference", () => {
+    // An absent store, an unreadable one, and a junk value are all the same
+    // answer: a preference that cannot be read is not a reason to change what
+    // someone is offered.
+    expect(preferredSpellScope(null)).toBe("repo");
+    expect(preferredSpellScope({})).toBe("repo");
+    expect(preferredSpellScope({ default_spell_scope: "machine" })).toBe("repo");
+    expect(preferredSpellScope({ default_spell_scope: true })).toBe("repo");
+  });
+});

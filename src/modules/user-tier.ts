@@ -176,6 +176,26 @@ export function componentForSpellScope(
 export function effectiveSpellScope(manifest: { spell_scope?: InstallScope }): InstallScope {
   return manifest.spell_scope ?? "repo";
 }
+
+/**
+ * The answer `spell init` should pre-select for its spell-scope question on
+ * this machine (ARC-048): the store's `default_spell_scope` when one is set,
+ * `"repo"` otherwise.
+ *
+ * Deliberately narrow. This changes which answer is HIGHLIGHTED to someone who
+ * is being asked and can decline; it is not a default and it never rewrites an
+ * existing repository. A repository whose manifest carries no `spell_scope`
+ * still means `"repo"` permanently, on every machine, forever -- flipping THAT
+ * would retroactively change every repository that predates the field, on a
+ * release chain with no step where a human looks.
+ *
+ * Absent store, unreadable store, or an unrecognized value all resolve to
+ * `"repo"`: a preference that cannot be read is not a reason to change what
+ * someone is offered.
+ */
+export function preferredSpellScope(manifest: { default_spell_scope?: unknown } | null): InstallScope {
+  return manifest?.default_spell_scope === "user" ? "user" : "repo";
+}
 /** The spell ids a store manifest's components track, deduplicated and sorted. */
 export function spellIdsInStore(components: InstalledComponent[]): string[] {
   const ids = new Set<string>();

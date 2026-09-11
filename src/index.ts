@@ -132,9 +132,36 @@ program
     "Also delete orphaned managed files (tracked before this update, no longer part of any current component). Hash-checked: an edited file is reported, never silently deleted",
   )
   .option("--user", USER_FLAG_DESCRIPTION)
-  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean }) => {
+  .option(
+    "--default-scope <scope>",
+    "With --user: remember repo | user as the answer `spell init` pre-selects for NEW repositories on this machine. Never rewrites an existing repository, and the question is still asked",
+  )
+  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean; defaultScope?: string }) => {
+    if (opts.defaultScope !== undefined) {
+      if (!opts.user) {
+        console.error(
+          "\n  ✗ --default-scope applies to the user tier only. It records a preference in" +
+            "\n    ~/.arcane, not in a repository. Re-run it as:" +
+            "\n\n      spell update --user --default-scope " + opts.defaultScope + "\n",
+        );
+        process.exit(1);
+      }
+      if (opts.defaultScope !== "repo" && opts.defaultScope !== "user") {
+        console.error(
+          "\n  ✗ --default-scope takes repo or user, not: " + opts.defaultScope + "\n",
+        );
+        process.exit(1);
+      }
+    }
     await runUpdate(
-      { dryRun: opts.dryRun, prune: opts.prune, user: opts.user },
+      {
+        dryRun: opts.dryRun,
+        prune: opts.prune,
+        user: opts.user,
+        ...(opts.defaultScope === undefined
+          ? {}
+          : { defaultScope: opts.defaultScope as InstallScope }),
+      },
       targetDirFor(opts),
       ASSETS_DIR,
       pkg.version,

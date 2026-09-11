@@ -66,6 +66,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
 | [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Proposed   |
 | [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) | Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier | 2026-09-11 | Accepted   |
+| [ARC-048](#arc-048--an-absent-spell_scope-means-repo-permanently-new-repositories-may-be-pre-selected) | An Absent `spell_scope` Means `repo`, Permanently; New Repositories May Be Pre-Selected | 2026-09-11 | Accepted   |
 
 ---
 
@@ -3036,5 +3037,76 @@ files at all.
   is the check that closes it, and it is queued rather than assumed.
 - ARC-002 is superseded in full. Its context section remains useful history: the `[object Object]`
   serialization bug it describes is the same class ARC-012's parity guard now prevents.
+
+---
+
+## ARC-048 — An Absent `spell_scope` Means `repo`, Permanently; New Repositories May Be Pre-Selected
+
+**Date:** 2026-09-11
+**Status:** Accepted (2026-09-11, decided by the operator via
+[docs/plans/codex-support/OPERATOR-QUEUE.md Q-008](docs/plans/codex-support/OPERATOR-QUEUE.md#q-008--decide-whether-spell_scope-keeps-repo-as-its-default))
+**Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier),
+[ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier)
+
+**Context:**
+
+Having installed the user tier and watched it work in three clients, the operator asked whether it
+should become the default — a repository takes its spells from `~/.arcane` unless it opts back in.
+The research is in `docs/research/default-spell-scope.md`.
+
+The question conflates two changes that look alike and are not. **Flipping the default** is
+retroactive: the field shipped days ago, so effectively no repository sets it, and "the default" is
+not a preference for new installs but the live setting of every repository that already exists.
+**Pre-selecting an answer** is prospective: it changes which option is highlighted for someone who is
+being asked and can decline.
+
+Three findings decide the first half, two of them verified in this repository rather than argued:
+
+1. `effectiveSpellScope` resolves an absent field to `repo`, and the chain from a merged version bump
+   to npm is fully automatic — there is no point between "the default changed" and "every consumer
+   picks it up" at which a person looks.
+2. The failure in a home-less environment is silent rather than loud. A CI runner, a cloud client, a
+   second machine and a collaborator's clone all have the repository and none has the store. The
+   Spell Routing block in `CLAUDE.md` and `AGENTS.md` keeps naming spells the client cannot resolve,
+   so an agent improvises the workflow instead of failing. **Inference, not measurement.**
+3. **Verified by grep across `.github/workflows/*.yml`, the `package.json` scripts and all 41
+   canonical spells:** no workflow, no git hook and no spell runs `spell doctor`. `checkSpellScope`,
+   the one blocking check for a missing tier, fires when a human types the command — which is not
+   when the failure happens.
+
+**Decision:**
+
+1. **An absent `spell_scope` means `"repo"`. Permanently.** This is not a default awaiting review; it
+   is the contract for every repository that predates the field and every one that never answers the
+   question. Nothing reads a machine's preference to decide what an existing manifest means.
+2. **A machine may state a preference, and it pre-selects for NEW repositories only.**
+   `default_spell_scope` in the store's own manifest (`~/.arcane/.arcane.json`) sets which answer
+   `spell init` highlights for its scope question. Set with
+   `spell update --user --default-scope repo|user`. Read at `init` time only, so no existing
+   repository's manifest is ever rewritten by setting it.
+3. **The question is still asked.** A preference changes the highlighted answer, never the outcome,
+   and never suppresses the prompt. An operator who answers against their own preference gets what
+   they answered.
+4. **Anything unreadable resolves to `repo`** — absent store, unreadable store, unrecognized value. A
+   preference that cannot be read is not a reason to change what someone is offered.
+5. **The opt-out is made loud before it is made easy.** `spell update` in a repository whose
+   `spell_scope` is `"user"` checks that the store exists and warns, naming the store path and both
+   remedies, when it does not. This is the gate the research put on decision 2: `spell doctor`
+   already fails on this and nothing runs `spell doctor`, so the check moved to a command people
+   actually run.
+6. **Shared, CI-visible and cloud-opened repositories stay `repo` as doctrine, not detection.** A
+   repository cannot reliably tell whether someone will open it in a cloud client tomorrow.
+
+**Consequences:**
+
+- The operator stops re-answering the same question in every new repository, which was the real
+  request, without a single existing repository changing behavior.
+- A repository cloned onto a machine with no store now says so during `spell update` rather than
+  silently under-serving the agent. That is a new warning on an existing command, not a new failure.
+- Rejected: flipping the default outright. It is reversible only by editing every affected
+  repository, and the release chain gives no one a chance to notice first. If it is ever revisited,
+  it is a program whose first epic is the home-less-environment story, not a patch.
+- Rejected: inferring the preference from machine state (a store exists, therefore prefer it).
+  Presence of a store says nothing about whether the *next* repository should depend on it.
 
 ---

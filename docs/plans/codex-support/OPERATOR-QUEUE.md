@@ -241,7 +241,15 @@ entry to *this* queue once it runs.
   automatic `checkSpellScope` run) as TODO items. If you want the flip anyway, say so — that is a new
   program, not a patch, and its first epic is the home-less-environment story.
 - **Rollback:** nothing is implemented either way; the decision is reversible by a later ADR.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **accepted, and the narrow half built the same day**
+  ([ARC-048](../../../DECISIONS.md)). The operator kept `repo` as the permanent meaning of an absent
+  field and took the preselect for new repositories only: "for the flip, just as suggested, for new
+  repos only not old ones." `default_spell_scope` now lives in the store's own manifest, set with
+  `spell update --user --default-scope repo|user`, read only at `spell init` time. The question is
+  still asked either way — a preference changes which answer is highlighted, never the outcome. The
+  research's gate came with it: `spell update` in an opted-out repository now checks that the store
+  exists and warns loudly, naming the path and both remedies, because `spell doctor` already failed
+  on this and nothing runs `spell doctor`.
 
 ## Q-009 — Accept, revise, or reject ARC-047 (agents are roster-rendered, and get a user tier)
 
@@ -336,4 +344,12 @@ entry to *this* queue once it runs.
   that is a one-line change per role, not a redesign.
 - **Rollback:** `spell uninstall --user` removes exactly the files it recorded writing, in both the
   old and the new location.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **pass on all three checks**, reported by the operator from both
+  the Claude Code terminal and the desktop app. All twelve personas appear, each with its role.
+  Invocation by name works: "use the Merlin agent to review this architecture" dispatched a real
+  background agent that answered in character. And the negative check held — a generic architecture
+  question was answered directly, with no persona involved. Both clients went further than the check
+  asked and stated the rule back unprompted: *"these only run when you ask for them by name — I won't
+  route to them on my own."* The description written for ARC-047 decision 11 is doing exactly its
+  job. This closes the last evidence gap in that ADR: the Claude Code half rested on published
+  documentation, and is now observed.

@@ -16,6 +16,7 @@ import {
   VSCODE_USER_TIER_NOTE,
   componentForScope,
   componentForSpellScope,
+  preferredSpellScope,
   describeFanoutOutcomes,
   spellIdFromStorePath,
   SPELL_FANOUT_CLIENTS,
@@ -271,15 +272,22 @@ export async function runInit(
   // Asked only when this machine actually has a user tier -- most do not, and
   // a question about a store that does not exist is noise -- and only in an
   // interactive install, the same gate every other manifest question uses.
-  // The default is No on purpose: opting out is committed to .arcane.json and
-  // inherited by every clone, so a shared or team repository must not stop
-  // carrying its spells just because the machine that happened to run
-  // `spell init` had a tier installed.
+  // The question is always asked; only which answer is pre-selected changes.
+  // No on purpose unless this machine says otherwise (ARC-048): opting out is
+  // committed to .arcane.json and inherited by every clone, so a shared or
+  // team repository must not stop carrying its spells just because the machine
+  // that happened to run `spell init` had a tier installed. An operator who
+  // has decided for their own machine sets `default_spell_scope` in the store
+  // and gets their answer pre-selected -- in NEW repositories only, since this
+  // is read at init time and rewrites no existing manifest.
   let spell_scope: InstallScope | undefined;
   if (!options.profile && !options.dryRun) {
     let storeVersion: string | undefined;
+    let preferred: InstallScope = "repo";
     try {
-      storeVersion = (await readManifest(userTierRoot())).version;
+      const store = await readManifest(userTierRoot());
+      storeVersion = store.version;
+      preferred = preferredSpellScope(store);
     } catch {
       // No user tier on this machine (or an unreadable one) -- do not ask.
     }
@@ -287,7 +295,7 @@ export async function runInit(
       console.log();
       const useTier = await confirm({
         message: `This machine has an Arcane user tier (v${storeVersion}). Use it for this repository's spells instead of installing copies here?`,
-        default: false,
+        default: preferred === "user",
       });
       // Recorded either way, like the hub question: "asked and declined" is
       // worth telling apart from "predates the field".
