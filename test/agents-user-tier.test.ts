@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { loadRoster, agentsBaseDir, projectAgentsDir } from "../src/modules/agent-loader.js";
 import { syncAgents } from "../src/modules/agent-generator.js";
 import { readManifest, writeManifest } from "../src/modules/manifest.js";
+import { runUninstall } from "../src/commands/uninstall.js";
 import {
   USER_AGENT_FANOUT_DIR,
   syncUserTierFanout,
@@ -228,5 +229,20 @@ describe("the store round-trips through loadRoster", () => {
     expect(roster.roster.map((r) => r.name)).toEqual(["Merlin", "Bess"]);
     const manifest = await readManifest(storeRoot);
     expect(manifest.scope).toBe("user");
+  });
+});
+
+describe("uninstall --user leaves nothing of the agent tier behind", () => {
+  it("removes the roster and the definition files it wrote", async () => {
+    const storeRoot = await emptyStore();
+    const agentsDir = join(agentsBaseDir(storeRoot, "user"), "agents");
+    await fs.mkdir(agentsDir, { recursive: true });
+    await fs.writeFile(join(storeRoot, "agents.yaml"), "schema_version: 2\n", "utf8");
+    await fs.writeFile(join(agentsDir, "qa-lead.yaml"), "id: qa-lead\n", "utf8");
+
+    await runUninstall({ yes: true, user: true }, storeRoot);
+
+    await expect(fs.access(join(storeRoot, "agents.yaml"))).rejects.toThrow();
+    await expect(fs.access(agentsDir)).rejects.toThrow();
   });
 });

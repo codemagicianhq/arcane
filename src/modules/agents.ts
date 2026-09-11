@@ -165,6 +165,11 @@ export async function runAgentsInit(
 ): Promise<void> {
   // Check for existing roster
   const scope: InstallScope = options.scope ?? "repo";
+  // Before anything is written: the user tier's roster lives in the store
+  // `spell init --user` owns, and its fan-out is recorded in that store's
+  // manifest. Checking after the roster is written would leave a half-built
+  // tier behind on the way to the same error.
+  if (scope === "user") await requireUserStore(targetDir);
   const baseDir = agentsBaseDir(targetDir, scope);
   const label = scope === "user" ? "~/.arcane" : ".arcane";
   if (!options.force && (await rosterExists(targetDir, scope))) {
