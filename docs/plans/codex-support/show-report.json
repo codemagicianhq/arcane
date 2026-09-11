@@ -9,30 +9,30 @@
     "started": "2026-09-09",
     "versionSpan": {
       "from": "0.38.3",
-      "to": "1.1.1"
+      "to": "1.2.0"
     }
   },
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 6 of 9 epics shipped"
+    "dek": "active — 7 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "6/9",
+      "value": "7/9",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 7,
+      "value": 8,
       "label": "pull requests",
       "derived": true
     },
     {
       "id": "version-span",
-      "value": "0.38.3 → 1.1.1",
+      "value": "0.38.3 → 1.2.0",
       "label": "version span",
       "derived": true
     },
@@ -127,10 +127,13 @@
         {
           "id": "CS-05",
           "title": "Repo opt-out (`spell_scope`)",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Open several Arcane projects at once and you now see one set of spells instead of one set per folder — a repository can take its spells from your machine-wide install, and anything you edited is named rather than removed.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/238",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/238"
+          ]
         },
         {
           "id": "CS-06",
@@ -198,7 +201,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 39,
+      "commits": 45,
       "source": "commit-trailer"
     }
   ],
