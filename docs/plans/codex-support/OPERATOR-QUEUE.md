@@ -214,3 +214,26 @@ entry to *this* queue once it runs.
   customization-overlay design — it is not folded into Codex Support.
 - **Rollback:** an accepted ADR can be superseded by a later ADR; nothing is implemented either way.
 - **Status:** [ ] open
+
+## Q-008 — Decide whether `spell_scope` keeps `repo` as its default
+
+- **What:** After trying the user tier in three clients you asked whether it should become the default
+  — a repository takes its spells from `~/.arcane` unless it opts back in. Decide: keep `repo` as the
+  default permanently (the recommendation), or open a program to flip it.
+- **Why:** The research is in [docs/research/default-spell-scope.md](../../research/default-spell-scope.md),
+  commissioned at your request. It recommends **no**, on three grounds: the default is retroactive
+  (almost no repository sets the field, so flipping it changes every existing one at once, and the
+  merged-bump-to-npm chain has no step where a human looks); the failure in a home-less environment —
+  a CI runner, a cloud client, a second machine, a collaborator's clone — is silent rather than loud,
+  because the Spell Routing table keeps naming spells the client cannot find; and nothing catches it,
+  since no workflow, hook, or spell runs `spell doctor` (verified by grep). Your three-client check
+  established that the tier *works*, which is a different claim from the tier being safe to *assume*.
+- **Preconditions:** CS-05 shipped (met — `1.2.0`). Nothing blocks on this decision; the default is
+  already `repo` and stays that way unless you say otherwise.
+- **Exact commands:** read the research doc; record the decision here. If you accept the
+  recommendation, the executing session drafts a short ADR making the default permanent and files the
+  three follow-ups (a `default_spell_scope` preference for new inits only, a loud opt-out, and an
+  automatic `checkSpellScope` run) as TODO items. If you want the flip anyway, say so — that is a new
+  program, not a patch, and its first epic is the home-less-environment story.
+- **Rollback:** nothing is implemented either way; the decision is reversible by a later ADR.
+- **Status:** [ ] open
