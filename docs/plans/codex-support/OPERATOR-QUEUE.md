@@ -104,7 +104,12 @@ entry to *this* queue once it runs.
 - **Rollback / if it fails:** nothing to undo on a pass — record the result here. If Copilot paraphrases
   the shim instead of running the spell, record that instead: the remedy is the `render()` mode variance
   ARC-045 allowed for — an inlined-body Copilot renderer — a small follow-up epic, not a redesign.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **pass**, reported by the operator. `/spell-status` run inside an
+  Arcane repository through the repo shim returned the real snapshot line, not a paraphrase:
+  `[sessions/2026-09-08-codex-support-scoping] ↑unknown | 1● 0✎ 0? | 134 TODOs | 102 ADRs | last session: 2026-09-08`.
+  The counts are read from that repository's own files, so the spell body ran. No inlined-body
+  renderer is needed for Copilot; ARC-045's fallback stays unused. Recorded by the executing session
+  after the operator's act, as Q-001 through Q-003 were.
 
 ## Q-005 — Try the user tier in Claude Code and VS Code Copilot (a few minutes, once)
 
@@ -146,6 +151,43 @@ entry to *this* queue once it runs.
   run step (1) from a folder that is **not** an Arcane repository, where only the tier can answer.
   CS-05 now lets a repository opt out entirely (`spell_scope: "user"`), which is the real fix for
   the ambiguity — trying that in one of your repositories is a good second half of this check.
+- **Status:** [x] done 2026-09-11 for the client checks; the opt-out trial moved to Q-007. **Both
+  clients pass**, reported by the operator. From a folder that is **not** an Arcane repository,
+  `/spell-status` ran through the user tier in **Claude Code (terminal)**, **VS Code**, and the
+  **Claude Code desktop app**, all three returning the same real output — `Not a git repository, and
+  no Arcane session files exist yet (TODO.md, DECISIONS.md, journal/ all missing).` followed by the
+  snapshot line `not a git repository — [unknown] … | 0 TODOs | 0 ADRs | last session: none`. That is
+  the spell body executing against an empty directory, so the personal command's absolute `@` include
+  and the user-level skill both resolve in practice, not only in documentation. AC5's first half is
+  therefore met by direct observation; the picker **count** across a multi-root workspace is what
+  Q-007 now covers, because the same session found the counts are more interesting than expected.
+
+## Q-007 — Try the repository opt-out, and count the picker (the other half of AC5)
+
+- **What:** In one repository you are happy to experiment in, add `"spell_scope": "user"` to the top
+  level of its `.arcane.json`, commit, then run `spell update` (reports, deletes nothing) and
+  `spell update --prune` (removes the untouched copies, keeps anything you edited and names it).
+  Then open that repository beside another Arcane repository in one VS Code workspace and count the
+  `/spell-*` entries per spell, and the agent modes.
+- **Why:** this is AC5's second half and the program's original motivation — "two repositories in one
+  workspace show exactly one set of `/spell-*` entries". It needs a human looking at a picker. The
+  mechanism is already verified end to end (two disposable repositories went to 0 and 160 spell files
+  with governance untouched, `docs/research/skill-discovery-smoke-tests.md`, "CS-05"); the count is
+  not, and 2026-09-11's operator testing showed the counting rules are subtler than the plan assumed
+  (see `TODO.md`, "every spell is listed twice in VS Code Copilot").
+- **Preconditions (met):** `arcane-cli` 1.2.0 installed, the user tier installed and current on this
+  machine, and at least one repository already updated to 1.2.0.
+- **Exact commands:**
+  ```bash
+  # in the repository you are opting out
+  node -e "const f='.arcane.json',fs=require('fs'),m=JSON.parse(fs.readFileSync(f));m.spell_scope='user';fs.writeFileSync(f,JSON.stringify(m,null,2))"
+  git add .arcane.json && git commit -m "chore(arcane): take spells from the user tier"
+  spell update            # lists what it no longer manages; deletes nothing
+  spell update --prune    # removes the untouched copies
+  spell doctor            # must pass the "Spell scope (ARC-045)" row
+  ```
+- **Rollback:** set the field back to `"repo"` (or delete it) and run `spell update` — it reinstalls
+  every spell file at the same version. Nothing you edited is deleted at any point.
 - **Status:** [ ] open
 
 ## Q-006 — Accept, revise, or reject ARC-046 (restore-based delivery: no-go)
