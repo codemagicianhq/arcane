@@ -237,3 +237,54 @@ entry to *this* queue once it runs.
   program, not a patch, and its first epic is the home-less-environment story.
 - **Rollback:** nothing is implemented either way; the decision is reversible by a later ADR.
 - **Status:** [ ] open
+
+## Q-009 — Accept, revise, or reject ARC-047 (agents are roster-rendered, and get a user tier)
+
+- **What:** Decide on the ADR CS-06 drafts as `Proposed` in `DECISIONS.md`: "Agents Are
+  Roster-Rendered, Not Registry-Distributed, and Get a User Tier". It supersedes
+  [ARC-002](../../../DECISIONS.md), which is still marked `Accepted` and describes the opposite of
+  what ships.
+- **Why:** Accepting an ADR is never within a delegation's grant in this repository. This one also
+  settles a question you asked directly and that nobody had written down: why agent files come from
+  `spell agents init`/`sync` rather than from the installer like spells and governance. The answer is
+  structural — a `.agent.md` file's name and contents are chosen per repository by the roster's
+  naming strategy, and a registry component declares fixed paths, so it cannot deliver a file whose
+  name the consumer picks. ARC-002 decided the opposite in 2026-05-14, the code retired it before
+  this repository's public history begins, and the entire surviving record is a four-line comment in
+  `src/modules/registry.ts`.
+- **Preconditions:** CS-04 shipped (met — the user tier exists to extend). CS-06's PR carries the
+  draft and the implementation together; merging that PR is self-mergeable under the delegation, and
+  is separate from this decision, which is the `Status:` flip.
+- **Exact commands:** read ARC-047 in `DECISIONS.md`; record the decision here; if accepted, flip its
+  `Status:` to `Accepted` (or ask the executing session to do so).
+- **Rollback:** an accepted ADR can be superseded by a later ADR.
+- **Status:** [ ] open
+
+## Q-010 — Count the agent modes, once, in a two-folder workspace (the last EV-01)
+
+- **What:** After CS-06 ships and you have run `spell agents sync --user` once, open two Arcane
+  repositories in a single VS Code workspace with at least one of them opted out
+  (`spell_scope: "user"`), and count the agent modes per persona in the picker.
+- **Why:** This is the one premise CS-06 could not verify from inside an agent session, and it is
+  named as unverified in ARC-047's consequences rather than hidden. The VS Code build on this machine
+  carries the discovery table literally, with `~/.copilot/agents` as a `storage: "user"` row beside
+  the workspace rows, and the *sibling* table's user row is already confirmed live — your VS Code
+  lists a user-tier skill from `~/.agents/skills` with none of the relevant settings set. The agent
+  half is an inference from that, not a measurement. The vendor documentation describes home-directory
+  agent discovery as an Agent Host behavior and calls Agent Host opt-in, which the shipped build does
+  not appear to gate on; that disagreement is exactly why a human has to look.
+- **Preconditions:** CS-06 merged and published; `spell agents sync --user` run once; one repository
+  opted out with its leftover `.github/agents` files removed (the sync prints the `git rm` line).
+- **Exact commands:**
+  ```bash
+  spell agents init --user     # once per machine, if you have not already
+  spell agents sync --user     # writes ~/.copilot/agents/<name>.agent.md per agent
+  spell doctor                 # in the opted-out repository: the scope row must pass
+  ```
+  Then open the two-folder workspace and count. **Pass:** one entry per persona. **Also worth
+  recording:** whether the opted-out repository's personas appear at all, which is what proves the
+  home location resolves.
+- **Rollback / if it fails:** if the home location turns out not to resolve, say so here — the fix is
+  one string (`~/.claude/agents` instead of `~/.copilot/agents`), and nothing else in ARC-047 moves.
+  To undo the tier entirely: `spell uninstall --user` removes exactly the files it recorded writing.
+- **Status:** [ ] open
