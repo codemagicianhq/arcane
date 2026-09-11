@@ -125,7 +125,12 @@ Arcane spells ship to other repositories and, eventually, open source. Keep them
   hand. Relative links inside a spell resolve from `.arcane/spells/`, two levels below the repo
   root (`../../.arcane/governance/…`, `../../README.md`); refer to a sibling spell as
   `spell-x.md`. Enforcement: executable check (ARC-023) — `npm run check:self-host-parity`
-  re-renders every shim from its canonical file and fails CI on any byte of difference.
+  re-renders every shim from its canonical file and fails CI on any byte of difference. **A spell
+  may also be installed once per machine** at `~/.arcane/spells/<id>.md` (ARC-045 decision 3), where
+  a `../../` link has no repository to resolve against: write a spell so that a broken context link
+  degrades to a named, skippable step rather than a dead end, which D2 Gold already asks for in its
+  "works in a vanilla consuming repo with no Arcane context files present" bar. Enforcement:
+  explicitly advisory prose (ARC-023) — nothing resolves a spell's links from the user tier.
 - **Never hard-code** an org name, person, venture, product, or machine name. Use a documented
   `{UPPER_SNAKE}` placeholder: `{ADO_ORG}`, `{ADO_PROJECT}`, `{BUSINESS_NAME}`, `{OPERATOR_NAME}`.
   Enforcement: executable check (ARC-023) — same mechanism as D2 Bronze above: the `org-token-lint`

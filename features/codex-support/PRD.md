@@ -1,5 +1,5 @@
 ---
-status: planned
+status: accepted
 tracking_mode: internal
 external_provider: null
 source_intake: operator idea 2026-09-08, promoted via spell-manifest 2026-09-08
@@ -139,13 +139,21 @@ than growing a third format that copies content again.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — `spell init --profile full` into a fresh repository produces
+- [x] **AC1** — `spell init --profile full` into a fresh repository produces
   `.agents/skills/<id>/SKILL.md` for every spell in the profile, with valid `name`/`description`
-  frontmatter, and `npm run check:self-host-parity` passes.
-- [ ] **AC2** — In OpenAI Codex (CLI and/or VS Code extension), an installed spell (e.g.
+  frontmatter, and `npm run check:self-host-parity` passes. *Met 2026-09-09 (CS-01), re-verified
+  2026-09-11 (CS-07) against the built `1.3.0`:* a fresh `git init` repository took 41 canonical
+  spells, 41 Codex skills, 41 Copilot prompts and 41 Claude Code commands, with `name: spell-*` and
+  a non-empty `description` in all 41 `SKILL.md` files and zero invalid; `check:self-host-parity`
+  passes over 322 items.
+- [x] **AC2** — In OpenAI Codex (CLI and/or VS Code extension), an installed spell (e.g.
   `spell-plan`) appears in Codex's own skill listing and, when invoked, executes the referenced
   workflow — verified by direct observation in Codex, not by filesystem inspection alone, and
-  recorded in `docs/research/skill-discovery-smoke-tests.md`.
+  recorded in `docs/research/skill-discovery-smoke-tests.md`. *Met 2026-09-09, twice:* CS-00's
+  Test 3 proved the read-and-follow shim mechanism end to end, and the "CS-03 re-confirmation"
+  section re-ran it against a consumer installed from the canonical-move build — `codex exec` named
+  the canonical file the shim points at and quoted its first heading back, so the skill was
+  discovered and the referenced workflow was read, not paraphrased.
 - [x] **AC3** — Every spell's Copilot prompt, Claude Code command, and Codex skill file are each
   generated from one canonical source file by a documented `render*()` function; no client file
   contains authored prose that isn't in the canonical source. *Met 2026-09-09 (CS-03):*
@@ -163,9 +171,15 @@ than growing a third format that copies content again.
   *Partially met 2026-09-10 (CS-04, [PR #234](https://github.com/codemagicianhq/arcane/pull/234)):*
   the install half — `spell init --user` installs the full spell set once at `~/.arcane` and fans a
   client file per spell out to `~/.agents/skills` (Codex, Copilot) and `~/.claude/commands` (Claude
-  Code); Codex verified live from an empty directory. Still open: the agent set (CS-06), the
-  repository opt-out that removes the per-repository duplicates (CS-05), and the VS Code direct count
-  — an operator observation (`OPERATOR-QUEUE.md` Q-005).
+  Code); Codex verified live from an empty directory. **Mechanism complete 2026-09-11 (CS-06):**
+  `spell agents init|sync --user` keeps one roster at `~/.arcane` and renders each agent to
+  `~/.copilot/agents`, and `spell_scope: "user"` now removes a repository's own spell files *and*
+  its agent files — which is what makes "exactly one set" reachable at all, since VS Code
+  deduplicates neither prompt files across folders nor agents across any location
+  (`docs/research/skill-discovery-smoke-tests.md`, CS-06: read out of the shipped build's own
+  loader). **The only thing left is the count itself**, which needs a human looking at two pickers:
+  `OPERATOR-QUEUE.md` Q-007 for the spells and Q-010 for the agents. This is the single acceptance
+  criterion the program cannot close on its own, and it is left open rather than argued closed.
 - [x] **AC6** — A repository with `spell_scope: "user"` (or equivalent field) passes `spell doctor`
   when a compatible user-tier install exists, and fails with an actionable remedy message when it
   does not. *Met 2026-09-10 (CS-05):* `checkSpellScope` — the one blocking user-tier check. Verified

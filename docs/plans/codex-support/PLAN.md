@@ -345,9 +345,23 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   rows without opting into Agent Host — `OPERATOR-QUEUE.md` Q-010 is the count that closes it.
   **Report:** Your Arcanos can now live once on your machine instead of once per project, and a
   project that takes its spells from there stops carrying its own copies of them. · category: feature
-- [ ] **CS-07 — Docs, PRD close, drift.** Route: `direct`. Size: S. Bump: no. Dependencies: CS-05,
-  CS-06, CS-08. Risk: Low. README, `portable-bootstrap.md`, `spell-authoring-standards.md`, PRD
-  `status: complete`, final `spell-check-drift` GO. **Report:**
+- [x] **CS-07 — Docs, PRD close, drift.** Route: `direct`. Size: S. Bump: no. Dependencies: CS-05,
+  CS-06, CS-08. Risk: Low. **Shipped 2026-09-11.** AC1 was re-verified against the built `1.3.0`
+  rather than taken from CS-01's word: a fresh `git init` repository took 41 canonical spells and 41
+  of each client file, with valid frontmatter in all 41 skills and zero invalid. AC2 was already
+  evidenced twice by live Codex observation and is marked accordingly. The PRD moves to
+  `status: accepted` with **eight of nine acceptance criteria met**; AC5 is left open on purpose,
+  because its remaining half is a human counting two pickers and nothing in this program can do it —
+  `OPERATOR-QUEUE.md` Q-007 and Q-010. Drift pass corrected three documents the tier work had made
+  incomplete rather than wrong: `universal-agent-rules.md` described spell discovery with no mention
+  that either spells or the roster can live at `~/.arcane`; `spell-authoring-standards.md` told
+  authors that relative links resolve two levels below the repository root without noting that the
+  user tier has no repository to resolve against; and the README's `spell_scope` comment still said
+  "its own spells" after the field started governing agents too. Four TODO items this program opened
+  and did not close are routed by name below, none of them silently.
+  **Report:** Codex can now run your spells, they can live once on your machine instead of once per
+  project, and the duplicate entries you were seeing in VS Code have a switch that turns them off.
+  · category: feature
 - [x] **CS-08 — Distribution-model spike (restore-based delivery).** Route: `adr` (research +
   ADR draft, no implementation). Size: M (research-heavy). Bump: no. Dependencies: CS-03 (needs the
   canonical folder to exist to spike against). Risk: Low — produces a decision, not code. Verdict
@@ -415,3 +429,21 @@ Seeded today with: **Q-001** (merge CS-00 — activates the grant above), **Q-00
 reject ARC-045), **Q-003** (confirm the version number for CS-03).
 
 ---
+
+## What this program did not close (CS-07, 2026-09-11)
+
+Definition of Done item 7 asks that no unchecked `TODO.md` item this program opened be left without a
+named destination. Four qualify. None is in this program's scope — each was found *while* doing this
+work, not *by* doing it — so each is named here rather than folded in or quietly dropped.
+
+| Finding | Severity | Where it goes |
+|---|---|---|
+| Every spell is listed twice in VS Code Copilot at the repo tier, because Copilot reads both `.github/prompts` and `.agents/skills` | MEDIUM | **An ADR of its own, not this program's.** The two candidate fixes point in opposite directions — move the repo-tier Codex skill to `.codex/skills`, or drop the Copilot prompt shim and let one file serve both — and the second is a breaking change to the distribution contract that reverses ARC-045's "all three client formats ship side by side". CS-05's opt-out already removes the double listing for any repository that opts out, which is why this is not urgent. |
+| `spell update` never surfaces a registry component added after a repository was installed | LOW | The follow-up the entry already specifies: a "newly available, not installed" list plus an optional `requires` on `ComponentDefinition`. Small, self-contained, no ADR needed. |
+| Upgrading across a legacy component rename forgets every file that component tracked, so a retired spell is left on disk and no `--prune` can reach it | MEDIUM | A bug fix with its root cause and regression test already written out in the entry. Independent of everything here. |
+| `spell doctor` can hang for a minute or more on Windows | MEDIUM | Unrelated to delivery; found incidentally during CS-05's EV-01. |
+
+Two more things this program deliberately leaves for the operator, both already queued: the ADR
+decisions (Q-006 ARC-046, Q-008 the default `spell_scope`, Q-009 ARC-047) and the two picker counts
+that are AC5's remaining half (Q-007 for spells, Q-010 for agents). **The counts are the only reason
+AC5 is not marked met**, and no amount of further work inside this program can close them.
