@@ -1,4 +1,4 @@
-import { access, readFile, mkdir, copyFile as fsCopyFile } from "node:fs/promises";
+import { access, readdir, readFile, mkdir, copyFile as fsCopyFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -11,7 +11,13 @@ import {
   resolveSecretsScanExcludePrefixes,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
-import { inspectUserTierFanout, resolveHomeDir, userTierRoot } from "../modules/user-tier.js";
+import {
+  USER_TIER_SPELLS_DIR,
+  effectiveSpellScope,
+  inspectUserTierFanout,
+  resolveHomeDir,
+  userTierRoot,
+} from "../modules/user-tier.js";
 import { scanRepository } from "../modules/denylist-scan.js";
 import { SECRETS_RULES } from "../modules/secrets-scan.js";
 import {
@@ -703,6 +709,100 @@ export async function checkPlatformBranchPolicy(targetDir: string): Promise<Chec
   };
 }
 
+/**
+ * ARC-045 decision 4 / CS-05. The one BLOCKING user-tier check, and it can
+ * only fire in a repository that opted out on purpose: a repository whose
+ * manifest says `spell_scope: "user"` has no spells of its own, so a missing
+ * store leaves every client with nothing to run -- exactly the silently
+ * unreachable state that decision exists to prevent. A repository that has
+ * not opted in (the default, and every manifest written before 1.2.0) gets a
+ * non-blocking pass, so the row never disappears without saying why.
+ *
+ * Complementary to checkUserTier above, not a duplicate: that one asks
+ * whether the tier is healthy and is always advisory; this one asks whether
+ * THIS repository depends on it.
+ */
+export async function checkSpellScope(
+  targetDir: string,
+  homeDir: string = resolveHomeDir(),
+): Promise<CheckResult> {
+  const name = "Spell scope (ARC-045)";
+
+  let manifest;
+  try {
+    manifest = await readManifest(targetDir);
+  } catch {
+    // No install here, or an unreadable manifest -- checkArcaneManifest
+    // above is what reports that; nothing to add.
+    return { name, passed: true, blocking: false, message: "no .arcane.json — nothing to check" };
+  }
+
+  if (effectiveSpellScope(manifest) === "repo") {
+    return {
+      name,
+      passed: true,
+      blocking: false,
+      message: "repo — this repository carries its own spells (the default)",
+    };
+  }
+
+  const storeRoot = userTierRoot(homeDir);
+  let store;
+  try {
+    store = await readManifest(storeRoot);
+  } catch (err) {
+    return {
+      name,
+      passed: false,
+      message:
+        `this repository takes its spells from the user tier (spell_scope: "user"), but ${storeRoot} ` +
+        `${err instanceof ManifestNotFoundError ? "is not installed" : `could not be read (${err instanceof Error ? err.message : String(err)})`}` +
+        " — no client can reach a spell here. Run `spell init --user`, or set spell_scope back to \"repo\" and run `spell update`.",
+    };
+  }
+
+  // Verified, not assumed: count the store's spells and probe a named one.
+  let spellCount = 0;
+  let probed = false;
+  const probe = "spell-status.md";
+  try {
+    const entries = await readdir(join(storeRoot, USER_TIER_SPELLS_DIR));
+    const spells = entries.filter((e) => e.startsWith("spell-") && e.endsWith(".md"));
+    spellCount = spells.length;
+    probed = spells.includes(probe);
+  } catch {
+    // Left at 0/false -- reported as the empty-store failure below.
+  }
+  if (spellCount === 0 || !probed) {
+    return {
+      name,
+      passed: false,
+      message:
+        `the user tier at ${storeRoot} holds ${spellCount} spell(s)` +
+        `${spellCount > 0 && !probed ? ` and not ${probe}` : ""}` +
+        " — this repository expects it to supply every spell. Run `spell update --user`.",
+    };
+  }
+
+  const majorMinor = (v: string): string => v.split(".").slice(0, 2).join(".");
+  if (typeof manifest.version === "string" && majorMinor(store.version) !== majorMinor(manifest.version)) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message:
+        `this repository is at v${manifest.version} but the user tier it uses is at v${store.version}` +
+        " — run `spell update --user` (and `spell update` here) to bring them together.",
+    };
+  }
+
+  return {
+    name,
+    passed: true,
+    blocking: false,
+    message: `user — ${spellCount} spell(s) from ${storeRoot} (v${store.version}), ${probe} present`,
+  };
+}
 export async function runDoctor(targetDir: string, options: DoctorOptions = {}, assetsDir?: string): Promise<void> {
   console.log("\nspell doctor — checking your Arcane environment\n");
 
@@ -731,6 +831,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkDelegations(targetDir),
     checkMcpConfig(targetDir),
     checkUserTier(resolveHomeDir(), options.packageVersion),
+    checkSpellScope(targetDir),
   ]);
 
   // Add session continuity checks

@@ -6,6 +6,7 @@ import {
   fileExists,
   fileMatchesHash,
   hashFile,
+  removeEmptyAncestors,
   removeWithin,
   validateTargetPath,
 } from "../modules/copier.js";
@@ -18,6 +19,7 @@ import { inspectGitRepository } from "../modules/git.js";
 import {
   getComponent,
   ComponentNotFoundError,
+  SPELL_COMPONENT_NAMES,
   LEGACY_COMPONENT_MIGRATIONS,
 } from "../modules/registry.js";
 import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from "../modules/hub.js";
@@ -26,7 +28,9 @@ import { fetchPublishedFile } from "../modules/npm-registry.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
 import {
   componentForScope,
+  componentForSpellScope,
   describeFanoutOutcomes,
+  effectiveSpellScope,
   misplacedUserManifestMessage,
   resolveInstallScope,
   spellIdsInStore,
@@ -133,6 +137,10 @@ export async function resolveOrphan(
     return "reported";
   }
   await removeWithin(targetDir, file);
+  // A component's files often sit in a directory of their own
+  // (.agents/skills/<id>/SKILL.md); leaving 41 empty directories behind is
+  // not "pruned".
+  await removeEmptyAncestors(targetDir, file);
   console.log(`  Pruned orphaned file: ${file}`);
   return "pruned";
 }
@@ -151,21 +159,53 @@ export async function resolveOrphan(
  * it always was, not on every same-version run. A component the registry no
  * longer knows has nothing to restore from.
  */
+/**
+ * Spell components a repository is RE-ADOPTING: it previously opted out
+ * (`spell_scope: "user"`, so their manifest entries were emptied and their
+ * files pruned) and has now switched back. Their files are shipped by the
+ * registry but neither tracked nor on disk, so without naming this case a
+ * same-version `spell update` would answer "Already up to date." and the
+ * repository would stay empty until the next release -- a rollback that
+ * silently does nothing (ARC-045 decision 4 / CS-05).
+ *
+ * Deliberately narrow. It does NOT relax CS-03's rule that an untracked
+ * registry file is neither created nor claimed on a same-version run: only
+ * a spell component whose manifest entry lists zero files qualifies, which
+ * is a state nothing but the opt-out produces.
+ */
+export function findReadoptedSpellComponents(
+  components: InstalledComponent[],
+  scope: InstallScope = "repo",
+  spellScope: InstallScope = "repo",
+): Set<string> {
+  if (scope !== "repo" || spellScope !== "repo") return new Set();
+  return new Set(
+    components
+      .filter((c) => SPELL_COMPONENT_NAMES.includes(c.name) && c.files.length === 0)
+      .map((c) => c.name),
+  );
+}
 export async function findMissingTrackedFiles(
   targetDir: string,
   components: InstalledComponent[],
   scope: InstallScope = "repo",
+  spellScope: InstallScope = "repo",
+  readopted: Set<string> = new Set(),
 ): Promise<string[]> {
   const missing: string[] = [];
   for (const installed of components) {
     let component: RegistryComponent;
     try {
-      component = componentForScope(getComponent(installed.name), scope);
+      component = componentForSpellScope(
+        componentForScope(getComponent(installed.name), scope),
+        scope === "repo" ? spellScope : "repo",
+      );
     } catch {
       continue;
     }
     if (component.initOnly || component.skipExisting) continue;
-    for (const file of installed.files) {
+    const candidates = readopted.has(installed.name) ? component.files : installed.files;
+    for (const file of candidates) {
       if (!component.files.includes(file)) continue;
       if (!(await fileExists(join(targetDir, file)))) missing.push(file);
     }
@@ -173,6 +213,46 @@ export async function findMissingTrackedFiles(
   return missing;
 }
 
+/**
+ * Tracked files the current registry no longer ships for their component --
+ * the orphan candidates. Existence is deliberately not checked here: that is
+ * `resolveOrphan`'s job, and this only has to answer whether a run has
+ * anything to say at all.
+ *
+ * It exists because of the opt-out (ARC-045 decision 4 / CS-05). A
+ * repository that sets `spell_scope: "user"` without a version change would
+ * otherwise meet the `Already up to date.` short-circuit below -- nothing
+ * missing, nothing to write -- and its now-unmanaged spell files would go
+ * unmentioned until the next release. The opt-out has to be visible on the
+ * very next `spell update`, which is the command an operator runs after
+ * editing the field.
+ */
+export function findUnmanagedTrackedFiles(
+  components: InstalledComponent[],
+  scope: InstallScope = "repo",
+  spellScope: InstallScope = "repo",
+): string[] {
+  const unmanaged: string[] = [];
+  for (const installed of components) {
+    let component: RegistryComponent;
+    try {
+      component = componentForSpellScope(
+        componentForScope(getComponent(installed.name), scope),
+        scope === "repo" ? spellScope : "repo",
+      );
+    } catch {
+      // Component gone from the registry entirely: every file it tracked is
+      // an orphan, and the main loop already reports that case by itself.
+      unmanaged.push(...installed.files);
+      continue;
+    }
+    const shipped = new Set(component.files);
+    for (const file of installed.files) {
+      if (!shipped.has(file)) unmanaged.push(file);
+    }
+  }
+  return unmanaged;
+}
 export async function runUpdate(
   options: SpellUpdateOptions,
   targetDir: string,
@@ -207,6 +287,14 @@ export async function runUpdate(
     return;
   }
   const scope: InstallScope = resolvedScope.scope;
+  // ARC-045 decision 4 / CS-05: where THIS repository takes its spells
+  // from. Absent means "repo", so every manifest written before 1.2.0
+  // behaves exactly as it did. Meaningless for the store itself, which is
+  // the thing being pointed at -- hence the scope === "repo" guards below.
+  const spellScope: InstallScope = effectiveSpellScope(manifest);
+  // Components this repository is re-adopting after opting back in; see
+  // findReadoptedSpellComponents. Empty in every other case.
+  const readopted = findReadoptedSpellComponents(manifest.components, scope, spellScope);
   const homeDir = dirname(targetDir);
 
   if (scope === "repo") {
@@ -246,8 +334,9 @@ export async function runUpdate(
   // ARC-045 / CS-03 remedy path; see findMissingTrackedFiles).
   let sameVersionRestore = false;
   if (manifest.version === packageVersion && manifest.components.length > 0) {
-    const missing = await findMissingTrackedFiles(targetDir, manifest.components, scope);
-    if (missing.length === 0) {
+    const missing = await findMissingTrackedFiles(targetDir, manifest.components, scope, spellScope, readopted);
+    const unmanaged = findUnmanagedTrackedFiles(manifest.components, scope, spellScope);
+    if (missing.length === 0 && unmanaged.length === 0) {
       console.log("Already up to date.");
       // The user tier's client files can go missing (or a renderer can
       // change) with the store itself intact -- reconcile them on every
@@ -269,9 +358,16 @@ export async function runUpdate(
       return;
     }
     sameVersionRestore = true;
-    console.log(
-      `${options.dryRun ? "[dry-run] " : ""}Already at v${packageVersion}, but ${missing.length} tracked file${missing.length === 1 ? " is" : "s are"} missing — restoring.`,
-    );
+    const prefix = options.dryRun ? "[dry-run] " : "";
+    if (missing.length > 0) {
+      console.log(
+        `${prefix}Already at v${packageVersion}, but ${missing.length} tracked file${missing.length === 1 ? " is" : "s are"} missing — restoring.`,
+      );
+    } else {
+      console.log(
+        `${prefix}Already at v${packageVersion}, but ${unmanaged.length} tracked file${unmanaged.length === 1 ? " is" : "s are"} no longer managed here — reviewing.`,
+      );
+    }
   }
 
   if (manifest.components.length === 0) {
@@ -300,7 +396,15 @@ export async function runUpdate(
     // Look up the current registry definition (source of truth for file paths)
     let component;
     try {
-      component = componentForScope(getComponent(installed.name), scope);
+      // ARC-045 decision 4 / CS-05: in a repository that takes its spells
+      // from the user tier, every spells-* component installs nothing -- and
+      // the files it installed before opting out fall through to the orphan
+      // path below, which reports them always and deletes them only under
+      // --prune, only while their recorded hash still holds.
+      component = componentForSpellScope(
+        componentForScope(getComponent(installed.name), scope),
+        scope === "repo" ? spellScope : "repo",
+      );
     } catch (err) {
       if (err instanceof ComponentNotFoundError) {
         // Component removed from registry entirely -- every file it used to
@@ -360,7 +464,7 @@ export async function runUpdate(
       // nor claimed, and a user-owned (skipExisting) file is left to the
       // version-change backfill it always had.
       if (sameVersionRestore) {
-        const tracked = installed.files.includes(file);
+        const tracked = installed.files.includes(file) || readopted.has(installed.name);
         const restorable = tracked && !targetExists && !component.skipExisting;
         if (!restorable) {
           if (tracked) {
@@ -492,13 +596,35 @@ export async function runUpdate(
     // this update is about to write.
     for (const file of installed.files) {
       if (updatedFiles.includes(file)) continue;
+      const recordedHash = installed.fileHashes?.[file];
       const status = await resolveOrphan(
         targetDir,
         file,
-        installed.fileHashes?.[file],
+        recordedHash,
         Boolean(options.prune) && !options.dryRun,
       );
       orphanReport.push({ file, status });
+
+      // An orphan the operator EDITED keeps its manifest entry and its
+      // recorded hash. Dropping it would untrack a file that is still on
+      // disk, and re-adopting the component later -- switching spell_scope
+      // back to "repo" (CS-05), or a component returning to the registry --
+      // would then see an untracked file and overwrite the edit without a
+      // word, the exact silent loss ARC-038 decision 1 forbids. An unedited
+      // orphan needs none of this: it is byte-identical to what Arcane wrote,
+      // so a later overwrite loses nothing.
+      if (status === "reported" && recordedHash !== undefined) {
+        try {
+          validateTargetPath(targetDir, file);
+          const orphanPath = join(targetDir, file);
+          if ((await fileExists(orphanPath)) && !(await fileMatchesHash(orphanPath, recordedHash))) {
+            updatedFiles.push(file);
+            fileHashes[file] = recordedHash;
+          }
+        } catch {
+          // Escaping path: already refused and reported by resolveOrphan.
+        }
+      }
     }
 
     updatedComponents.push({
@@ -521,6 +647,11 @@ export async function runUpdate(
     for (const { file, status } of orphansToReport) {
       const marker = status === "pruned" ? "pruned" : options.prune ? "kept (see reason above)" : "not removed";
       console.log(`    ${file} — ${marker}`);
+    }
+    if (scope === "repo" && spellScope === "user") {
+      console.log(
+        '  This repository takes its spells from the user tier (spell_scope: "user"), so the files above are no longer managed here — every client reads ~/.arcane instead.',
+      );
     }
     if (!options.prune) {
       console.log("  Run `spell update --prune` to remove the ones that are safe to delete.");

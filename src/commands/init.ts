@@ -15,9 +15,11 @@ import {
   USER_TIER_COMPONENTS,
   VSCODE_USER_TIER_NOTE,
   componentForScope,
+  componentForSpellScope,
   describeFanoutOutcomes,
   spellIdFromStorePath,
   syncUserTierFanout,
+  userTierRoot,
 } from "../modules/user-tier.js";
 import {
   printDryRun,
@@ -47,6 +49,7 @@ import type {
   ContentSensitivity,
   ExternalProvider,
   HubRole,
+  InstallScope,
   InstalledComponent,
   Profile,
   RegistryComponent,
@@ -257,7 +260,42 @@ export async function runInit(
   }
 
   // ── Step 2: Resolve components ─────────────────────────────────────────
-  const components = getProfile(profile);
+  const profileComponents = getProfile(profile);
+
+  // ── Step 2b: Spell scope (ARC-045 decision 4 / CS-05) ──────────────────
+  // Asked here rather than beside the other manifest questions (Steps 5a-5e)
+  // because it changes WHAT gets installed, not just what gets recorded: the
+  // preview below and the copy loop both have to reflect it.
+  //
+  // Asked only when this machine actually has a user tier -- most do not, and
+  // a question about a store that does not exist is noise -- and only in an
+  // interactive install, the same gate every other manifest question uses.
+  // The default is No on purpose: opting out is committed to .arcane.json and
+  // inherited by every clone, so a shared or team repository must not stop
+  // carrying its spells just because the machine that happened to run
+  // `spell init` had a tier installed.
+  let spell_scope: InstallScope | undefined;
+  if (!options.profile && !options.dryRun) {
+    let storeVersion: string | undefined;
+    try {
+      storeVersion = (await readManifest(userTierRoot())).version;
+    } catch {
+      // No user tier on this machine (or an unreadable one) -- do not ask.
+    }
+    if (storeVersion !== undefined) {
+      console.log();
+      const useTier = await confirm({
+        message: `This machine has an Arcane user tier (v${storeVersion}). Use it for this repository's spells instead of installing copies here?`,
+        default: false,
+      });
+      // Recorded either way, like the hub question: "asked and declined" is
+      // worth telling apart from "predates the field".
+      spell_scope = useTier ? "user" : "repo";
+    }
+  }
+  const components = profileComponents.map((component) =>
+    componentForSpellScope(component, spell_scope ?? "repo"),
+  );
 
   // ── Step 3: Preview what will be installed ─────────────────────────────
   const groups = categorizeComponents(components);
@@ -506,6 +544,7 @@ export async function runInit(
     profile,
     installedAt: new Date().toISOString(),
     components: installedComponents,
+    ...(spell_scope ? { spell_scope } : {}),
     ...(role ? { role } : {}),
     ...(tracking_mode ? { tracking_mode, external_provider } : {}),
     ...(subject_root !== undefined ? { subject_root } : {}),

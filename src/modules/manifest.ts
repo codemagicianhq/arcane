@@ -189,6 +189,12 @@ function validateTrackingFields(manifest: ArcaneManifest, filePath: string): voi
   if (manifest.scope !== undefined && !VALID_INSTALL_SCOPES.includes(manifest.scope)) {
     throw new ManifestInvalidFieldError(filePath, "scope", manifest.scope);
   }
+  // ARC-045 decision 4 / CS-05. Validated rather than defaulted on a bad
+  // value: a typo here would otherwise read as "repo" and silently reinstall
+  // spells into a repository that meant to opt out.
+  if (manifest.spell_scope !== undefined && !VALID_INSTALL_SCOPES.includes(manifest.spell_scope)) {
+    throw new ManifestInvalidFieldError(filePath, "spell_scope", manifest.spell_scope);
+  }
   if (manifest.fanout !== undefined && !isValidFanoutRecord(manifest.fanout)) {
     throw new ManifestInvalidFieldError(filePath, "fanout", manifest.fanout);
   }

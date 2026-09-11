@@ -460,6 +460,28 @@ describe("docs-mode manifest fields (EF-07 / EF-12)", () => {
     await expect(readManifest(tempDir)).rejects.toThrow(ManifestInvalidFieldError);
   });
 
+  it("accepts spell_scope absent, repo and user — and rejects anything else (ARC-045 decision 4 / CS-05)", async () => {
+    await write({});
+    expect((await readManifest(tempDir)).spell_scope).toBeUndefined();
+    await write({ spell_scope: "repo" });
+    expect((await readManifest(tempDir)).spell_scope).toBe("repo");
+    await write({ spell_scope: "user" });
+    expect((await readManifest(tempDir)).spell_scope).toBe("user");
+    // A typo must fail loudly: read as "repo" it would silently reinstall
+    // spells into a repository that meant to opt out.
+    for (const bad of ["machine", "User", "", "repo ", true]) {
+      await write({ spell_scope: bad });
+      await expect(readManifest(tempDir), JSON.stringify(bad)).rejects.toThrow(ManifestInvalidFieldError);
+    }
+  });
+
+  it("keeps scope and spell_scope independent — the store is never the thing that opts out", async () => {
+    await write({ scope: "user", spell_scope: "repo" });
+    const m = await readManifest(tempDir);
+    expect(m.scope).toBe("user");
+    expect(m.spell_scope).toBe("repo");
+  });
+
   it("accepts a well-formed fanout record and rejects a malformed one", async () => {
     const hash = "a".repeat(64);
     await write({ scope: "user", fanout: { ".agents/skills/spell-plan/SKILL.md": hash } });
