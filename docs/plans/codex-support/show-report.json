@@ -45,16 +45,9 @@
   ],
   "needsYou": [
     {
-      "id": "Q-004",
-      "title": "Confirm the Copilot shim in VS Code (one minute)",
-      "reason": "CS-03 turned every `.github/prompts/*.prompt.md` into a generated shim — the canonical",
-      "href": "https://github.com/codemagicianhq/arcane/pull/232"
-    },
-    {
-      "id": "Q-005",
-      "title": "Try the user tier in Claude Code and VS Code Copilot (a few minutes, once)",
-      "reason": "CS-04 fans every spell out to `~/.claude/commands/<id>.md` (Claude Code) and",
-      "href": "https://github.com/codemagicianhq/arcane/pull/234"
+      "id": "Q-007",
+      "title": "Try the repository opt-out, and count the picker (the other half of AC5)",
+      "reason": "this is AC5's second half and the program's original motivation — \"two repositories in one"
     },
     {
       "id": "Q-006",
@@ -201,7 +194,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 46,
+      "commits": 47,
       "source": "commit-trailer"
     }
   ],
