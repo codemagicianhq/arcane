@@ -88,6 +88,34 @@ ${denied}
 `;
 }
 
+/**
+ * The user tier's agent file. Same body as the repository tier's, one field
+ * different: `description`.
+ *
+ * That field does two jobs at once here. VS Code shows it as the picker's
+ * subtitle; Claude Code READS it to decide whether to hand work to this
+ * subagent on its own. Twelve personas installed once per machine become
+ * visible in every project on that machine, including ones with nothing to do
+ * with Arcane, so the wording says plainly that the persona is something you
+ * ask for by name rather than something to route work to (ARC-047, amended --
+ * an operator who wants automatic delegation changes this one line).
+ */
+export function renderUserTierAgent(def: AgentDefinition, name: string): string {
+  // The persona description is hard-wrapped YAML prose. Taking its first
+  // LINE cuts mid-sentence ("...and system design. Reviews"); collapse the
+  // wrapping first, then take the first whole sentence.
+  const collapsed = def.persona.description.replace(/\s+/g, " ").trim();
+  const firstSentence = /^.*?[.!?](?=\s|$)/.exec(collapsed)?.[0] ?? def.role;
+  // Everything after the rendered frontmatter block, kept verbatim: only
+  // the description differs between the two tiers.
+  const repoFile = renderCopilotAgent(def, name);
+  const body = repoFile.slice(repoFile.indexOf("---", 3) + 3);
+  return `---
+name: ${name}
+description: ${def.role}. ${firstSentence} Use only when explicitly asked for ${name} by name; do not delegate to this persona automatically.
+---${body}`;
+}
+
 export function renderCopilotAgent(def: AgentDefinition, name: string): string {
   const firstLine = def.persona.description.split("\n")[0]?.trim() ?? def.role;
   const rules = def.persona.behavioral_rules.map((r) => `- ${r}`).join("\n");
@@ -228,7 +256,10 @@ export async function syncAgents(
   const unmanagedAgentFiles: string[] = [];
 
   // ── Load all definitions ──────────────────────────────────────────────────
-  const projectDefs = projectAgentsDir(targetDir, userTier ? "user" : "repo");
+  // When the roster came from the user tier, its definition files come with
+  // it: an operator who customized a role in the store should see that
+  // customization, not the vendor default (CS-06 follow-up / ARC-045 d6).
+  const projectDefs = options.definitionsDir ?? projectAgentsDir(targetDir, userTier ? "user" : "repo");
   const bundledDefs = join(assetsDir, "agents");
 
   const resolved: ResolvedEntry[] = [];
@@ -347,7 +378,9 @@ export async function syncAgents(
       // Slugify: lowercase, spaces → hyphens (e.g. "QA Lead" → "qa-lead.agent.md")
       const slug = displayName.toLowerCase().replace(/\s+/g, "-");
       const fileName = `${slug}.agent.md`;
-      const content = renderCopilotAgent(def, displayName);
+      const content = userTier
+        ? renderUserTierAgent(def, displayName)
+        : renderCopilotAgent(def, displayName);
 
       // The user tier renders the same bytes to a home-relative path and
       // hands them back rather than writing them here: the write goes through

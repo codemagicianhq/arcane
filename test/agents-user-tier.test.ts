@@ -4,10 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadRoster, agentsBaseDir, projectAgentsDir } from "../src/modules/agent-loader.js";
 import { syncAgents } from "../src/modules/agent-generator.js";
+import { resolveRoster } from "../src/modules/agents.js";
+import { stringify } from "yaml";
 import { readManifest, writeManifest } from "../src/modules/manifest.js";
 import { runUninstall } from "../src/commands/uninstall.js";
 import {
+  LEGACY_USER_AGENT_FANOUT_DIR,
   USER_AGENT_FANOUT_DIR,
+  clientOfFanoutPath,
   describeFanoutOutcomes,
   syncUserTierFanout,
   userAgentFanoutPath,
@@ -96,13 +100,35 @@ describe("syncAgents at the user tier", () => {
     await expect(fs.access(join(storeRoot, ".github", "agents"))).rejects.toThrow();
   });
 
-  it("targets ~/.copilot/agents, the one home location VS Code alone reads", () => {
-    expect(USER_AGENT_FANOUT_DIR).toBe(".copilot/agents");
-    expect(userAgentFanoutPath("merlin")).toBe(".copilot/agents/merlin.agent.md");
-    // Never the other home location: it is Claude Code's own subagent
-    // directory, and filling it would create a client surface this tier does
-    // not intend (ARC-047 decision 3).
-    expect(userAgentFanoutPath("merlin")).not.toContain(".claude");
+  it("targets ~/.claude/agents, the one home location both clients read", () => {
+    expect(USER_AGENT_FANOUT_DIR).toBe(".claude/agents");
+    expect(userAgentFanoutPath("merlin")).toBe(".claude/agents/merlin.md");
+    // A plain .md, not .agent.md: VS Code registers every .md under a
+    // `.claude/agents` directory as an agent, and Claude Code expects .md for
+    // a subagent. One name both accept (ARC-047 decision 3, amended).
+    expect(userAgentFanoutPath("merlin").endsWith(".agent.md")).toBe(false);
+  });
+
+  it("still recognizes the pre-amendment location as its own, so a sync can prune it", () => {
+    expect(clientOfFanoutPath(`${LEGACY_USER_AGENT_FANOUT_DIR}/merlin.agent.md`)).toBe("copilot-agents");
+    expect(clientOfFanoutPath(userAgentFanoutPath("merlin"))).toBe("copilot-agents");
+    // An unrecognized path is treated as another command's and never pruned,
+    // which is exactly how the old copies would have been stranded.
+    expect(clientOfFanoutPath("somewhere/else/merlin.md")).toBeUndefined();
+  });
+
+  it("writes a description that reads as a label and gates automatic delegation", async () => {
+    const storeRoot = await emptyStore();
+    const { userAgentFiles } = await syncAgents(storeRoot, ASSETS_DIR, ROSTER, { scope: "user" });
+    const merlin = userAgentFiles.find((f) => f.relativePath.endsWith("merlin.md"));
+    expect(merlin?.content).toContain("name: Merlin");
+    expect(merlin?.content).toContain("Use only when explicitly asked for Merlin by name");
+    // The persona prose is hard-wrapped YAML; a first-LINE slice cut it
+    // mid-sentence ("...and system design. Reviews").
+    expect(merlin?.content).not.toMatch(/Reviews Use only when/);
+    // Everything below the frontmatter is the repository tier's file verbatim.
+    expect(merlin?.content).toContain("## Behavioral Rules");
+    expect(merlin?.content).toContain("## Tools");
   });
 });
 
@@ -260,7 +286,7 @@ describe("the output names the tier the run actually wrote", () => {
       ownedClients: ["copilot-agents"],
     });
     const lines = describeFanoutOutcomes(outcomes);
-    expect(lines[0]).toContain("2 Copilot agent modes");
+    expect(lines[0]).toContain("2 agent personas (VS Code + Claude Code)");
     // A correct agent run used to read as a broken one by reporting zero of
     // the two spell clients it was never going to write.
     expect(lines[0]).not.toContain("0 ");
@@ -270,5 +296,61 @@ describe("the output names the tier the run actually wrote", () => {
     await expect(loadRoster(repo, "user")).rejects.toThrow(/~\/\.arcane\/agents\.yaml/);
     await expect(loadRoster(repo, "user")).rejects.toThrow(/spell agents init --user/);
     await expect(loadRoster(repo)).rejects.toThrow(/^No agent roster found at \.arcane/);
+  });
+});
+
+describe("resolveRoster — a repository that opted in and has no roster of its own", () => {
+  async function storeWithRoster(): Promise<string> {
+    const storeRoot = await emptyStore();
+    await fs.writeFile(join(storeRoot, "agents.yaml"), stringify(ROSTER), "utf8");
+    return storeRoot;
+  }
+
+  it("falls back to the user tier's roster, and says where its definitions live", async () => {
+    await storeWithRoster();
+    await writeManifest(repo, {
+      version: "1.3.2",
+      profile: "full",
+      installedAt: "2026-09-11T00:00:00.000Z",
+      components: [],
+      spell_scope: "user",
+    });
+
+    const resolved = await resolveRoster(repo, "repo", home);
+    expect(resolved.fromUserTier).toBe(true);
+    expect(resolved.roster.roster.map((r) => r.name)).toEqual(["Merlin", "Bess"]);
+    expect(resolved.definitionsDir).toBe(join(userTierRoot(home), "agents"));
+  });
+
+  it("prefers the repository's own roster when it has one", async () => {
+    await storeWithRoster();
+    await writeManifest(repo, {
+      version: "1.3.2",
+      profile: "full",
+      installedAt: "2026-09-11T00:00:00.000Z",
+      components: [],
+      spell_scope: "user",
+    });
+    await fs.mkdir(join(repo, ".arcane"), { recursive: true });
+    await fs.writeFile(
+      join(repo, ".arcane", "agents.yaml"),
+      stringify({ ...ROSTER, roster: [{ definition: "qa-lead", name: "Bess", id: "bess" }] }),
+      "utf8",
+    );
+
+    const resolved = await resolveRoster(repo, "repo", home);
+    expect(resolved.fromUserTier).toBe(false);
+    expect(resolved.roster.roster.map((r) => r.name)).toEqual(["Bess"]);
+  });
+
+  it("still refuses when the repository has NOT opted in — no roster means no roster", async () => {
+    await storeWithRoster();
+    await writeManifest(repo, {
+      version: "1.3.2",
+      profile: "full",
+      installedAt: "2026-09-11T00:00:00.000Z",
+      components: [],
+    });
+    await expect(resolveRoster(repo, "repo", home)).rejects.toThrow(/No agent roster found/);
   });
 });

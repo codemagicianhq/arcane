@@ -263,7 +263,17 @@ entry to *this* queue once it runs.
 - **Exact commands:** read ARC-047 in `DECISIONS.md`; record the decision here; if accepted, flip its
   `Status:` to `Accepted` (or ask the executing session to do so).
 - **Rollback:** an accepted ADR can be superseded by a later ADR.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **accepted with one revision**, decided by the operator after a
+  question that turned out to matter: "if I go with option 1, are you saying the agents won't be
+  available in Claude Code?" Checking the answer found that the roster tables reach Claude Code
+  through `CLAUDE.md` today, **but only when the repository has a roster of its own** — a repository
+  that opted in and never ran `spell agents init` got no tables at all, which contradicts ARC-045
+  decision 6. Two changes followed. The fallback is a bug fix (ARC-047 decision 12). The revision is
+  decisions 3 and 4: the operator asked for Claude Code subagents, and because the two home locations
+  share one discovery table with no deduplication, *adding* `~/.claude/agents` would have listed every
+  persona twice in VS Code. The files **moved** there instead — one file, both clients, one entry
+  each — with the delegation call recorded as decision 11: descriptions gate automatic delegation
+  rather than invite it, reversible in one line per role if the operator changes their mind.
 
 ## Q-010 — Count the agent modes, once, in a two-folder workspace (the last EV-01)
 
@@ -299,3 +309,31 @@ entry to *this* queue once it runs.
   `useAgentSkills` or `*FilesLocations` setting, and the agent rendered to `~/.copilot/agents` was in
   the picker, so the home rows resolve by default. The one-string fallback ARC-047 named is not
   needed. Recorded in `docs/research/skill-discovery-smoke-tests.md` ("AC5 measured").
+
+## Q-011 — Confirm the personas in Claude Code (one minute, once)
+
+- **What:** In any Claude Code session started after upgrading, check that the twelve Arcanos appear
+  as available agent types, and that asking for one by name works.
+- **Why:** ARC-047 decision 3 rests on two different grades of evidence. The VS Code half was read
+  out of that client's own shipped discovery table and then counted in a picker. The Claude Code half
+  — that `~/.claude/agents/<name>.md` is a user-scope subagent — comes from Anthropic's published
+  documentation and has not been observed. A session's agent list is fixed at startup and a nested
+  CLI is not logged in, so no agent session can check it (the same EV-01 limit as Q-004 and Q-005).
+- **Preconditions:** `arcane-cli` at the version carrying ARC-047's amendment, and
+  `spell agents sync --user` run once after upgrading, which moves the files from
+  `~/.copilot/agents` to `~/.claude/agents` and prunes the old copies.
+- **Exact commands:**
+  ```bash
+  spell agents sync --user     # moves the files; prints what it wrote and what it removed
+  ls ~/.claude/agents          # expect one <name>.md per rostered agent
+  ```
+  Then start a **new** Claude Code session and ask it to list its available agents, or ask for one by
+  name: "use the Merlin agent to review this architecture". **Pass:** the persona is available and
+  answers in character.
+- **Worth checking while you are there:** that Claude Code does **not** route work to a persona on
+  its own. Each description ends "use only when explicitly asked for *name* by name; do not delegate
+  to this persona automatically" (ARC-047 decision 11). If you find it delegating anyway, say so —
+  that is a one-line change per role, not a redesign.
+- **Rollback:** `spell uninstall --user` removes exactly the files it recorded writing, in both the
+  old and the new location.
+- **Status:** [ ] open

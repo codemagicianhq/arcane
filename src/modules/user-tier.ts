@@ -190,8 +190,25 @@ export function spellIdsInStore(components: InstalledComponent[]): string[] {
 
 // ─── The fan-out ──────────────────────────────────────────────────────────────
 
-/** Home-relative directory holding the user tier's rendered agent files. */
-export const USER_AGENT_FANOUT_DIR = ".copilot/agents";
+/**
+ * Home-relative directory holding the user tier's rendered agent files.
+ *
+ * `~/.claude/agents` is read by BOTH clients: VS Code resolves it as the
+ * `claude-personal` row of its custom-agent table, and Claude Code reads it as
+ * its own user-scope subagent directory. One file therefore serves both, which
+ * is the only arrangement that adds Claude Code without also adding a second
+ * VS Code picker entry -- the four locations sit in one table with no
+ * deduplication (ARC-047, amended).
+ */
+export const USER_AGENT_FANOUT_DIR = ".claude/agents";
+
+/**
+ * Where the user tier's agent files lived before ARC-047 was amended. Still
+ * recognized as this client's own, so a `spell agents sync --user` after the
+ * upgrade prunes the old copies instead of stranding them -- an unrecognized
+ * path is treated as another command's and left alone forever.
+ */
+export const LEGACY_USER_AGENT_FANOUT_DIR = ".copilot/agents";
 
 export type FanoutClient = "codex" | "claude" | "copilot-agents";
 
@@ -220,18 +237,19 @@ export const USER_FANOUT_PATHS: Readonly<Record<SpellFanoutClient, (id: string) 
  * machine. That is a new client surface rather than a tier move, so it is
  * deliberately not written here.
  *
- * The `.agent.md` suffix matches the repository tier byte for byte: the user
- * tier changes a file's directory and nothing else.
+ * A plain `.md` suffix, not `.agent.md`: inside an `agents` directory under
+ * `.claude`, VS Code registers every `.md` file as an agent, and Claude Code
+ * expects `.md` for a subagent. One name both accept.
  */
 export function userAgentFanoutPath(slug: string): string {
-  return `${USER_AGENT_FANOUT_DIR}/${slug}.agent.md`;
+  return `${USER_AGENT_FANOUT_DIR}/${slug}.md`;
 }
 
 /** Human-readable label per client, for command output. */
 export const FANOUT_CLIENT_LABELS: Readonly<Record<FanoutClient, string>> = {
   codex: "Codex/Copilot skills",
   claude: "Claude Code commands",
-  "copilot-agents": "Copilot agent modes",
+  "copilot-agents": "agent personas (VS Code + Claude Code)",
 };
 
 /** The client a recorded fan-out path belongs to, or undefined for an unknown shape. */
@@ -240,6 +258,7 @@ export function clientOfFanoutPath(relativePath: string): FanoutClient | undefin
   if (normalized.startsWith(".agents/skills/")) return "codex";
   if (normalized.startsWith(".claude/commands/")) return "claude";
   if (normalized.startsWith(`${USER_AGENT_FANOUT_DIR}/`)) return "copilot-agents";
+  if (normalized.startsWith(`${LEGACY_USER_AGENT_FANOUT_DIR}/`)) return "copilot-agents";
   return undefined;
 }
 
