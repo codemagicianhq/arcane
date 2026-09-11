@@ -290,10 +290,38 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   **Report:** Install Arcane's spells once on your machine and every AI client — Codex, Copilot,
   Claude Code — finds them from any project, with nothing to configure and nothing of yours ever
   overwritten. · category: feature
-- [ ] **CS-05 — Repo opt-out (`spell_scope`).** Route: `chain`. Size: S-M (~4-5 stories).
-  Bump: minor (may combine with CS-04's bump if shipped in the same PR window). Dependencies:
-  CS-04. Risk: Medium — the migration/prune logic must never silently drop an operator-edited file
-  (ARC-038 hash rule). **Report:**
+- [x] **CS-05 — Repo opt-out (`spell_scope`).** Route: `chain`. Size: S-M (~4-5 stories; shipped
+  as 5). Bump: minor (`1.1.1` → `1.2.0`; shipped in its own PR, not combined with CS-04's).
+  Dependencies: CS-04. Risk: Medium — the migration/prune logic must never silently drop an
+  operator-edited file (ARC-038 hash rule). **Premise corrected on the record (Loop Protocol step
+  3):** there is no prune logic to write. Measured on a real consumer beside a stubbed-home user
+  tier *before* building — 170 tracked files, 170 hash-recorded, and after one hand edit exactly
+  169 matched and 1 did not — opting out turns the repository's spell files into orphans, and that
+  machinery already reports every run and deletes only under `--prune` while `fileMatchesHash`
+  holds. The epic's real job was to make the `spells-*` components install nothing. A second
+  finding reframed the epic's motivation: with both tiers present, which copy of a spell a client
+  runs is **not predictable** — `/spell-full-cycle` resolved through the user tier while
+  `/spell-open-session` resolved through the project copy, minutes apart in the session that
+  designed this (`docs/research/skill-discovery-smoke-tests.md`, "CS-05"), which is also the first
+  live confirmation that a personal command's absolute `@` include loads the canonical body.
+  Design: `features/codex-support/architecture.md` ("CS-05"). **Shipped in
+  [PR #238](https://github.com/codemagicianhq/arcane/pull/238), self-merged under the standing
+  delegation (rebase); merge and publish evidence recorded at session close:** `spell_scope` on the
+  manifest (absent = `repo`, validated); `componentForSpellScope` emptying the `spells-*`
+  components with a test pinning that those are exactly the components carrying a canonical or
+  shim path; `init` asking only when a store exists and defaulting to **No**; `update` making the
+  opt-out visible on the very next run and reversible on the run after that; a **blocking**
+  `spell doctor` check; and the `Scope: repo (spells: user tier)` status line. Three defects the
+  work surfaced and fixed: a same-version update short-circuited on "Already up to date." and
+  never mentioned the newly unmanaged files; switching back had the mirror problem; and pruning
+  left 41 empty directories behind. One data-loss path closed: an orphan still on disk now keeps
+  its manifest entry and recorded hash, so `--prune` can act on it later, `spell uninstall` cannot
+  leak it, and re-adoption cannot overwrite an edit in silence. EV-01: two repositories beside one
+  tier went to 0 and 160 spell paths, governance untouched, `doctor` exit 0 then exit 1 with the
+  store removed. PRD AC6 met; AC7 met for spells (agents stay with CS-06).
+  **Report:** Open several Arcane projects at once and you now see one set of spells instead of one
+  set per folder — a repository can take its spells from your machine-wide install, and anything you
+  edited is named rather than removed. · category: feature
 - [ ] **CS-06 — Agents at the user tier.** Route: `chain`. Size: S-M (~4 stories). Bump: minor
   (may combine with CS-04/05's bump). Dependencies: CS-04. Risk: Low. **Report:**
 - [ ] **CS-07 — Docs, PRD close, drift.** Route: `direct`. Size: S. Bump: no. Dependencies: CS-05,
