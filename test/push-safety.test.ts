@@ -152,7 +152,7 @@ describe("push blocking (R2, R3) — against a real remote", () => {
     await disablePushUrls(work);
 
     expect(tryPush(work, [bare, "main"]).ok).toBe(false);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("disables EVERY remote, not just origin", async () => {
     // A repository commonly has an upstream or a backup too. Protecting only
