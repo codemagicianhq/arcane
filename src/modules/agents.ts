@@ -28,6 +28,7 @@ import { applyNamingStrategy } from "./naming.js";
 import {
   agentsBaseDir,
   loadRoster,
+  projectAgentsDir,
   rosterExists,
   AgentConfigValidationError,
   AgentRosterNotFoundError,
@@ -69,6 +70,50 @@ async function requireUserStore(storeRoot: string): Promise<ArcaneManifest> {
     );
     process.exit(1);
     throw new Error("unreachable");
+  }
+}
+
+/**
+ * The roster a run should use, and where it came from.
+ *
+ * A repository that has opted into the user tier and has no roster of its own
+ * takes the tier's -- ARC-045 decision 6, "the user roster is authoritative
+ * for UI-visible agents when `spell_scope: "user"`". Without this a repository
+ * that never ran `spell agents init` gets no roster tables at all after opting
+ * in, even with a perfectly good roster sitting in the store: the half that
+ * removes the repository's files shipped, and the half that falls back for the
+ * tables did not. A repository's own roster always wins when it has one.
+ */
+export interface ResolvedRoster {
+  roster: AgentRoster;
+  /** The directory its per-role definition files live in, preferred over the bundled assets. */
+  definitionsDir: string;
+  /** True when it came from the user tier rather than this repository. */
+  fromUserTier: boolean;
+}
+
+export async function resolveRoster(
+  targetDir: string,
+  scope: InstallScope,
+  /** The home the store sits under. Defaults to the real one; a test points it elsewhere. */
+  homeDir?: string,
+): Promise<ResolvedRoster> {
+  try {
+    return {
+      roster: await loadRoster(targetDir, scope),
+      definitionsDir: projectAgentsDir(targetDir, scope),
+      fromUserTier: scope === "user",
+    };
+  } catch (err) {
+    const missing = err instanceof AgentRosterNotFoundError;
+    if (!missing || scope !== "repo" || (await repoSpellScope(targetDir)) !== "user") throw err;
+    // Opted in, and nothing local to read: the store is the authority.
+    const storeRoot = homeDir === undefined ? userTierRoot() : userTierRoot(homeDir);
+    return {
+      roster: await loadRoster(storeRoot, "user"),
+      definitionsDir: projectAgentsDir(storeRoot, "user"),
+      fromUserTier: true,
+    };
   }
 }
 
@@ -334,7 +379,7 @@ export async function runAgentsInit(
   printSuccess("Agent roster initialized");
   console.log(`    📋 Profile: ${profileId} · Naming: ${namingStrategy} · Agents: ${rosterEntries.length}`);
   console.log(
-    `    🔄 Synced: ${synced.length} outputs (${scope === "user" ? "Copilot agent modes in ~/.copilot/agents" : "Copilot, Claude, Codex, OpenClaw"})`,
+    `    🔄 Synced: ${synced.length} outputs (${scope === "user" ? "agent personas in ~/.claude/agents" : "Copilot, Claude, Codex, OpenClaw"})`,
   );
   if (skipped.length > 0) {
     console.log(`    ⚠️  Skipped: ${skipped.length} (${skipped.join(", ")})`);
@@ -363,8 +408,10 @@ export async function runAgentsSync(
 ): Promise<void> {
   const scope: InstallScope = options.scope ?? "repo";
   let roster: AgentRoster;
+  let definitionsDir: string | undefined;
+  let fromUserTier = false;
   try {
-    roster = await loadRoster(targetDir, scope);
+    ({ roster, definitionsDir, fromUserTier } = await resolveRoster(targetDir, scope));
   } catch (err) {
     if (
       err instanceof AgentRosterNotFoundError
@@ -383,11 +430,18 @@ export async function runAgentsSync(
     console.log("\n  Syncing agents...\n");
   }
 
+  if (fromUserTier && scope === "repo") {
+    console.log(
+      "  This repository has no roster of its own and takes its spells from the user tier," +
+        "\n  so its roster tables are built from ~/.arcane/agents.yaml.\n",
+    );
+  }
+
   const { synced, skipped, hasUnresolvedRoles } = await performAgentSync(
     targetDir,
     assetsDir,
     roster,
-    { ...options, scope },
+    { ...options, scope, ...(definitionsDir === undefined ? {} : { definitionsDir }) },
   );
 
   if (options.dryRun) {

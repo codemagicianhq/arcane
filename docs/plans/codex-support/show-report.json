@@ -56,9 +56,9 @@
       "reason": "The research is in [docs/research/default-spell-scope.md](../../research/default-spell-scope.md),"
     },
     {
-      "id": "Q-009",
-      "title": "Accept, revise, or reject ARC-047 (agents are roster-rendered, and get a user tier)",
-      "reason": "Accepting an ADR is never within a delegation's grant in this repository. This one also"
+      "id": "Q-011",
+      "title": "Confirm the personas in Claude Code (one minute, once)",
+      "reason": "ARC-047 decision 3 rests on two different grades of evidence. The VS Code half was read"
     }
   ],
   "sections": [

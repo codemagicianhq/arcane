@@ -237,11 +237,15 @@ Codex, VS Code Copilot and Claude Code each discover the user tier from their ow
 
 ```bash
 spell agents init --user   # ~/.arcane/agents.yaml plus one definition file per role
-spell agents sync --user   # renders ~/.copilot/agents/<name>.agent.md — VS Code agent modes
+spell agents sync --user   # renders ~/.claude/agents/<name>.md — read by VS Code and Claude Code
 spell agents list --user   # the roster the tier holds
 ```
 
 Unlike spells, agent files are never delivered by `spell init` or `spell update`: they are rendered from your roster, whose naming strategy decides each file's name and contents, so an upgrade leaves them alone by design (ARC-047). And unlike skills, VS Code does **not** collapse two agents that share a name — a repository carrying its own `.github/agents` files adds a second entry beside the tier's rather than replacing it, so opting the repository out is what produces one set.
+
+`~/.claude/agents` is read by VS Code **and** by Claude Code, so one file gives you the persona in both. Each description ends by saying the persona is for when you ask for it by name: Claude Code reads that field to decide whether to route work to a subagent unprompted, and twelve personas installed once per machine would otherwise start answering in projects that have nothing to do with Arcane. Change that sentence in `renderUserTierAgent` if you want the opposite.
+
+A repository that opts in and has no roster of its own now takes the machine-wide one for its roster tables, rather than refusing.
 
 **Then let a repository stop carrying its own copies.** `spell init` offers this when the machine already has a tier, and an existing repository opts in by setting one field:
 

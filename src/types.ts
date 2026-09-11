@@ -363,6 +363,12 @@ export interface AgentSyncOptions {
    * receives no `.github/agents` files -- its roster tables still merge.
    */
   spellScope?: InstallScope;
+  /**
+   * Where per-role definition files are read from, preferred over the bundled
+   * assets. Set when a repository's roster came from the user tier instead of
+   * from itself, so the store's customized roles travel with it.
+   */
+  definitionsDir?: string;
 }
 
 export interface AgentInitOptions {

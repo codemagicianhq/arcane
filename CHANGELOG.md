@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.4.0] - 2026-09-11
+
+Your agent personas now work in Claude Code as well as VS Code, from one file each, and a repository that takes its spells from the machine-wide tier no longer loses its roster tables ([ARC-047](DECISIONS.md#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier), accepted with one revision).
+
+### Changed
+
+- **The user tier's agent files moved from `~/.copilot/agents/<name>.agent.md` to `~/.claude/agents/<name>.md`.** That directory is read by VS Code *and* by Claude Code, so one file gives you the persona in both. Moving rather than adding is deliberate: the four custom-agent locations VS Code resolves sit in one table with no deduplication, so a file in each home location would have listed every persona twice. `spell agents sync --user` performs the move, pruning the old copies, and keeps any file you edited.
+- **Each user-tier agent's `description` now states that the persona is for explicit invocation.** Claude Code reads that field to decide whether to hand work to a subagent unprompted; twelve personas installed once per machine are visible in every project on that machine, including ones unrelated to Arcane. VS Code shows the same string as a label. One line per role reverses it if you want automatic routing.
+
+### Fixed
+
+- **A repository that opted into the user tier and had no roster of its own got no roster tables at all**, and `spell agents sync` refused with "No agent roster found". It now falls back to the machine-wide roster, which is what [ARC-045](DECISIONS.md#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) decision 6 already said should happen. A repository's own roster still wins when it has one, and the tier's definition files travel with the tier's roster so a role you customized in the store is not silently replaced by the vendor default.
+- The user-tier agent description no longer truncates mid-sentence. It was slicing the first *line* of hard-wrapped YAML prose, which cut "...and system design. Reviews" and left that dangling into the next sentence.
+
 ## [1.3.1] - 2026-09-11
 
 Documentation only. Three shipped governance documents were left incomplete rather than wrong by the user-tier work, and CS-07's drift pass corrected them.

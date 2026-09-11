@@ -65,7 +65,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
 | [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
 | [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Proposed   |
-| [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) | Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier | 2026-09-11 | Proposed   |
+| [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) | Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier | 2026-09-11 | Accepted   |
 
 ---
 
@@ -2908,8 +2908,19 @@ gitignored, a fresh clone, today's `spell update`, an edit, a second clone, and 
 ## ARC-047 — Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier
 
 **Date:** 2026-09-11
-**Status:** Proposed (2026-09-11, drafted by CS-06 of the Codex Support program; operator decision via
+**Status:** Accepted **with one revision**, 2026-09-11 (drafted by CS-06 of the Codex Support program;
+operator decision recorded at
 [docs/plans/codex-support/OPERATOR-QUEUE.md Q-009](docs/plans/codex-support/OPERATOR-QUEUE.md#q-009--accept-revise-or-reject-arc-047-agents-are-roster-rendered-and-get-a-user-tier))
+
+> **Revision, same day.** Decisions 3 and 4 as originally drafted put the user tier's agent files in
+> `~/.copilot/agents` specifically to keep Claude Code out of scope. The operator asked for Claude
+> Code subagents, which forced the question the original draft had deferred: the two home locations
+> sit in one discovery table with no deduplication, so *adding* `~/.claude/agents` beside
+> `~/.copilot/agents` would list every persona twice in VS Code — the duplication this whole program
+> exists to remove. Moving rather than adding is the only arrangement that serves both clients with
+> one entry each, and it carries a second consequence the operator decided explicitly: a subagent's
+> `description` is what Claude Code reads to decide whether to route work to it unasked. Decisions 3
+> and 4 below are the amended text; decision 11 records the delegation call.
 **Supersedes:** [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)
 **Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier),
 [ARC-012](#arc-012--generated-distributable-artifacts-require-a-parity-guard),
@@ -2957,16 +2968,20 @@ files at all.
    --user` operate on `~/.arcane` — `agents.yaml` and `agents/<role>.yaml` at the store root, because
    the store already plays the role a repository's `.arcane/` layer plays, which is why its spells sit
    at `~/.arcane/spells/<id>.md` rather than a directory deeper.
-3. **The home fan-out target is `~/.copilot/agents/<slug>.agent.md`, and only that.** VS Code resolves
-   four custom-agent locations — `.github/agents` and `.claude/agents` in a workspace,
-   `~/.copilot/agents` and `~/.claude/agents` in the home directory. `~/.copilot/agents` is the only
-   one of the four read by VS Code alone. `~/.claude/agents` is also Claude Code's own user-scope
-   subagent directory, and filling it would make every rostered persona delegatable in every Claude
-   Code session on the machine — a new client surface rather than the tier move this decision is
-   about. Writing to both home locations is rejected outright: they sit in one discovery table with no
-   deduplication, so a file in each is two picker entries.
-4. **The user-tier file is byte-identical to the repository-tier one.** Same renderer, same slug, same
-   `.agent.md` suffix, different directory.
+3. **The home fan-out target is `~/.claude/agents/<slug>.md`, and only that.** VS Code resolves four
+   custom-agent locations — `.github/agents` and `.claude/agents` in a workspace, `~/.copilot/agents`
+   and `~/.claude/agents` in the home directory. `~/.claude/agents` is the one read by **both**
+   clients: VS Code resolves it as the `claude-personal` row of that table, and Claude Code reads it
+   as its own user-scope subagent directory. One file therefore serves both. Writing to both home
+   locations is rejected outright, and this is the load-bearing part: the four rows sit in one table
+   with no deduplication, so a file in each is two picker entries, not one file found twice. A plain
+   `.md` suffix, not `.agent.md` — inside an `agents` directory under `.claude`, VS Code registers
+   every `.md` as an agent and Claude Code expects `.md` for a subagent.
+4. **The user-tier file is the repository-tier one with a different `description`, and nothing else.**
+   Same renderer for the body, same slug. Only that one field differs, for the reason in decision 11.
+   The pre-amendment location stays recognized as this client's own so an upgrade prunes the old
+   copies rather than stranding them — an unrecognized recorded path is treated as another command's
+   and would be left in place forever.
 5. **The fan-out is hash-recorded in the store manifest and reconciled under ARC-038's rule.** An
    agent file whose content no longer matches what Arcane wrote is the operator's: never overwritten,
    never deleted, named instead. `spell uninstall --user` removes exactly what the record lists. The
@@ -2988,6 +3003,20 @@ files at all.
    repository that has its own roster and finds none in the tier fails with the remedy; one that has
    never run `spell agents init` expects nothing and passes.
 10. **No new manifest field.** `spell_scope` governs both, per ARC-045 decision 6.
+11. **The subagent description gates automatic delegation rather than inviting it.** Claude Code reads
+    a subagent's `description` to decide whether to hand work to it without being asked. Twelve
+    personas installed once per machine are visible in every project on that machine, including ones
+    with nothing to do with Arcane, so each description ends "use only when explicitly asked for
+    *name* by name; do not delegate to this persona automatically." VS Code shows the same string as
+    the picker's subtitle, where it reads as a label. **This is one line per role to reverse** if the
+    operator later wants automatic routing.
+12. **A repository that opted in and has no roster of its own uses the tier's.** ARC-045 decision 6
+    said the user roster is authoritative for visible agents once a repository opts in. CS-06 shipped
+    the half that removes the repository's agent files and not the half that falls back for the roster
+    tables, so such a repository got no tables at all and `spell agents sync` refused outright. The
+    repository's own roster still wins whenever it has one, and the tier's definition files travel
+    with the tier's roster so a customized role in the store is not silently replaced by the vendor
+    default.
 
 **Consequences:**
 
@@ -2996,11 +3025,15 @@ files at all.
 - Repositories that do not opt out are unchanged, and gain a second set of entries if the tier is also
   populated — the same trade the spell tier already makes, with the same remedy.
 - OpenClaw output is untouched; it has always written to `~/.openclaw` and has no per-folder problem.
-- **Unverified at the time of writing, deliberately:** that VS Code resolves the two home agent rows
-  without opting into Agent Host. The shipped build shows no such gate and the operator's VS Code
-  already lists a user-tier *skill* from the sibling table's user row with no settings set, but the
-  agent half is an inference until someone counts a picker. `OPERATOR-QUEUE.md` Q-010 is that count.
-  If it fails, the fan-out target changes by one string and nothing else in this decision moves.
+- **Verified 2026-09-11, after drafting.** This ADR originally recorded, as an inference rather than
+  a measurement, that VS Code resolves the home agent rows without opting into Agent Host. The
+  operator then counted a two-folder workspace (`OPERATOR-QUEUE.md` Q-010): with none of the relevant
+  settings set, each persona appeared exactly once, from the home directory. The inference is now an
+  observation and the one-string fallback this paragraph used to name is not needed.
+- **Claude Code's side of decision 3 rests on documentation, not on a build.** The VS Code half was
+  read out of the shipped bundle's own discovery table; that `~/.claude/agents/<name>.md` is a
+  user-scope subagent comes from Anthropic's published documentation. An operator look in Claude Code
+  is the check that closes it, and it is queued rather than assumed.
 - ARC-002 is superseded in full. Its context section remains useful history: the `[object Object]`
   serialization bug it describes is the same class ARC-012's parity guard now prevents.
 
