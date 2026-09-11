@@ -351,6 +351,18 @@ export interface AgentSyncOptions {
   claude?: boolean;
   /** If false, skip Codex output. Defaults to true. */
   codex?: boolean;
+  /**
+   * Which tier this run writes (CS-06 / ARC-047). `"user"` renders the agent
+   * files to the home fan-out and writes no marker merges and no OpenClaw
+   * workspaces; absent or `"repo"` is today's behavior.
+   */
+  scope?: InstallScope;
+  /**
+   * The REPOSITORY's `spell_scope`, when this is a repo-tier run. `"user"`
+   * means the repository takes its client files from the user tier, so it
+   * receives no `.github/agents` files -- its roster tables still merge.
+   */
+  spellScope?: InstallScope;
 }
 
 export interface AgentInitOptions {
@@ -358,6 +370,8 @@ export interface AgentInitOptions {
   naming?: NamingStrategy;
   dryRun?: boolean;
   force?: boolean;
+  /** Which tier to initialize: the user tier's store, or this repository. */
+  scope?: InstallScope;
 }
 
 // ─── Delegation records (BC-19: solo-operator mode, no roster required) ──────

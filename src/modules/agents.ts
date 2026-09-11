@@ -9,7 +9,7 @@
 
 import { select, checkbox, Separator } from "@inquirer/prompts";
 import { mkdir, writeFile, copyFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { stringify } from "yaml";
 import type {
   AgentInitOptions,
@@ -26,6 +26,7 @@ import {
 } from "../config/agent-profiles.js";
 import { applyNamingStrategy } from "./naming.js";
 import {
+  agentsBaseDir,
   loadRoster,
   rosterExists,
   AgentConfigValidationError,
@@ -33,6 +34,120 @@ import {
 } from "./agent-loader.js";
 import { syncAgents } from "./agent-generator.js";
 import { printStep, printSuccess } from "./banner.js";
+import { readManifest, writeManifest } from "./manifest.js";
+import {
+  effectiveSpellScope,
+  describeFanoutOutcomes,
+  syncUserTierFanout,
+  userTierRoot,
+} from "./user-tier.js";
+import type { ArcaneManifest, InstallScope } from "../types.js";
+
+/**
+ * Where a run of `spell agents <sub>` operates: this repository, or the user
+ * tier's store at `~/.arcane` (CS-06 / ARC-047 decision 2). The store is the
+ * same one `spell init --user` creates -- the roster and its definition files
+ * sit beside the spells, in the same two paths a repository uses.
+ */
+export function agentsTargetDir(scope: InstallScope | undefined, cwd: string): string {
+  return scope === "user" ? userTierRoot() : cwd;
+}
+
+/**
+ * The user tier's store manifest, or a message saying how to create one.
+ * `spell agents --user` writes into the store `spell init --user` owns and
+ * records its fan-out in that manifest, so the store has to exist first --
+ * there is deliberately no second, agents-only store shape to reason about.
+ */
+async function requireUserStore(storeRoot: string): Promise<ArcaneManifest> {
+  try {
+    return await readManifest(storeRoot);
+  } catch {
+    console.error(
+      `\n  ✗ No user tier at ${storeRoot}.\n` +
+        "    Run `spell init --user` once to create it, then re-run this command.\n",
+    );
+    process.exit(1);
+    throw new Error("unreachable");
+  }
+}
+
+/**
+ * This repository's `spell_scope`, for a repo-tier run. A repository with no
+ * manifest at all is a plain directory as far as agents are concerned, and
+ * takes the default.
+ */
+async function repoSpellScope(targetDir: string): Promise<InstallScope> {
+  try {
+    return effectiveSpellScope(await readManifest(targetDir));
+  } catch {
+    return "repo";
+  }
+}
+
+/**
+ * Runs `syncAgents` for either tier and finishes what the tier needs.
+ *
+ * A repository run is unchanged. A user-tier run gets its rendered agent
+ * files reconciled through the same fan-out machinery CS-04 built for spells
+ * -- hash-recorded in the store manifest, so an operator's edit to one of
+ * them is recognized and never overwritten or deleted -- scoped to the agent
+ * client so `spell update --user` and this command can share one record
+ * without either erasing the other's entries.
+ */
+async function performAgentSync(
+  targetDir: string,
+  assetsDir: string,
+  roster: AgentRoster,
+  options: AgentSyncOptions,
+): Promise<{ synced: string[]; skipped: string[]; hasUnresolvedRoles: boolean }> {
+  const scope: InstallScope = options.scope ?? "repo";
+  const spellScope = scope === "user" ? undefined : await repoSpellScope(targetDir);
+  const result = await syncAgents(targetDir, assetsDir, roster, {
+    ...options,
+    scope,
+    ...(spellScope === undefined ? {} : { spellScope }),
+  });
+
+  if (scope === "user") {
+    const manifest = await requireUserStore(targetDir);
+    // The store root IS `<home>/.arcane` (userTierRoot), so the home the
+    // fan-out paths are relative to is its parent. Derived rather than read
+    // from the environment a second time: one source of truth per run, and a
+    // test can point the whole thing at a temporary home by passing a store
+    // root inside it.
+    const fanout = await syncUserTierFanout({
+      homeDir: dirname(targetDir),
+      storeRoot: targetDir,
+      spellIds: [],
+      extraFiles: result.userAgentFiles,
+      ownedClients: ["copilot-agents"],
+      previous: manifest.fanout,
+      dryRun: options.dryRun,
+      fallbackDir: assetsDir,
+    });
+    for (const line of describeFanoutOutcomes(fanout.outcomes, options.dryRun)) {
+      console.log(`  ${line}`);
+    }
+    if (!options.dryRun) {
+      await writeManifest(targetDir, { ...manifest, fanout: fanout.record });
+    }
+  }
+
+  if (result.unmanagedAgentFiles.length > 0) {
+    console.log(
+      `\n  ! This repository takes its spells from the user tier (spell_scope: "user"), so it no\n` +
+        `    longer receives agent files of its own. ${result.unmanagedAgentFiles.length} are still on disk\n` +
+        `    from before the opt-out. Nothing here deletes them -- no component ever tracked\n` +
+        `    them, so there is no recorded hash to prove one untouched. Remove them yourself:\n`,
+    );
+    for (const file of result.unmanagedAgentFiles) console.log(`      ${file}`);
+    console.log(`\n      git rm ${result.unmanagedAgentFiles.join(" ")}\n`);
+  }
+
+  return result;
+}
+
 
 // ─── spell agents init ────────────────────────────────────────────────────────
 
@@ -49,7 +164,10 @@ export async function runAgentsInit(
   assetsDir: string,
 ): Promise<void> {
   // Check for existing roster
-  if (!options.force && (await rosterExists(targetDir))) {
+  const scope: InstallScope = options.scope ?? "repo";
+  const baseDir = agentsBaseDir(targetDir, scope);
+  const label = scope === "user" ? "~/.arcane" : ".arcane";
+  if (!options.force && (await rosterExists(targetDir, scope))) {
     console.log(
       'Agent roster already exists at .arcane/agents.yaml. ' +
       'Run "spell agents sync" to regenerate outputs, or use --force to reinitialize.',
@@ -169,16 +287,12 @@ export async function runAgentsInit(
   };
 
   // ── Step 5: Write .arcane/agents.yaml ────────────────────────────────────
-  const arcaneDir = join(targetDir, ".arcane", "agents");
+  const arcaneDir = join(baseDir, "agents");
   if (!options.dryRun) {
     await mkdir(arcaneDir, { recursive: true });
-    await writeFile(
-      join(targetDir, ".arcane", "agents.yaml"),
-      stringify(roster),
-      "utf8",
-    );
+    await writeFile(join(baseDir, "agents.yaml"), stringify(roster), "utf8");
   } else {
-    console.log("  [dry-run] Would write: .arcane/agents.yaml");
+    console.log(`  [dry-run] Would write: ${label}/agents.yaml`);
   }
 
   // ── Step 6: Copy bundled definition files ─────────────────────────────────
@@ -192,7 +306,7 @@ export async function runAgentsInit(
         console.warn(`  ! Could not copy definition for "${roleId}" — skipping`);
       }
     } else {
-      console.log(`  [dry-run] Would copy: .arcane/agents/${roleId}.yaml`);
+      console.log(`  [dry-run] Would copy: ${label}/agents/${roleId}.yaml`);
     }
   }
 
@@ -205,11 +319,11 @@ export async function runAgentsInit(
 
   // ── Step 7: Auto-sync all clients ────────────────────────────────────────
   printStep("Syncing agent definitions to all clients...");
-  const { synced, skipped, hasUnresolvedRoles } = await syncAgents(
+  const { synced, skipped, hasUnresolvedRoles } = await performAgentSync(
     targetDir,
     assetsDir,
     roster,
-    { dryRun: false },
+    { dryRun: false, scope },
   );
 
   printSuccess("Agent roster initialized");
@@ -238,9 +352,10 @@ export async function runAgentsSync(
   targetDir: string,
   assetsDir: string,
 ): Promise<void> {
+  const scope: InstallScope = options.scope ?? "repo";
   let roster: AgentRoster;
   try {
-    roster = await loadRoster(targetDir);
+    roster = await loadRoster(targetDir, scope);
   } catch (err) {
     if (
       err instanceof AgentRosterNotFoundError
@@ -259,11 +374,11 @@ export async function runAgentsSync(
     console.log("\n  Syncing agents...\n");
   }
 
-  const { synced, skipped, hasUnresolvedRoles } = await syncAgents(
+  const { synced, skipped, hasUnresolvedRoles } = await performAgentSync(
     targetDir,
     assetsDir,
     roster,
-    options,
+    { ...options, scope },
   );
 
   if (options.dryRun) {
@@ -294,10 +409,13 @@ export async function runAgentsSync(
 // ─── spell agents list ────────────────────────────────────────────────────────
 
 /** Displays the current agent roster in a table. */
-export async function runAgentsList(targetDir: string): Promise<void> {
+export async function runAgentsList(
+  targetDir: string,
+  scope: InstallScope = "repo",
+): Promise<void> {
   let roster: AgentRoster;
   try {
-    roster = await loadRoster(targetDir);
+    roster = await loadRoster(targetDir, scope);
   } catch (err) {
     if (
       err instanceof AgentRosterNotFoundError

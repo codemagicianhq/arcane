@@ -18,6 +18,7 @@ import {
   componentForSpellScope,
   describeFanoutOutcomes,
   spellIdFromStorePath,
+  SPELL_FANOUT_CLIENTS,
   syncUserTierFanout,
   userTierRoot,
 } from "../modules/user-tier.js";
@@ -851,7 +852,7 @@ async function runInitUser(
     });
   }
 
-  const fanout = await syncUserTierFanout({ homeDir, storeRoot, spellIds, fallbackDir: assetsDir });
+  const fanout = await syncUserTierFanout({ homeDir, storeRoot, spellIds, fallbackDir: assetsDir, ownedClients: SPELL_FANOUT_CLIENTS });
 
   const manifest: ArcaneManifest = {
     version: packageVersion,

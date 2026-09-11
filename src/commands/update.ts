@@ -34,6 +34,7 @@ import {
   misplacedUserManifestMessage,
   resolveInstallScope,
   spellIdsInStore,
+  SPELL_FANOUT_CLIENTS,
   syncUserTierFanout,
 } from "../modules/user-tier.js";
 import type {
@@ -343,6 +344,7 @@ export async function runUpdate(
       // same-version run too. A no-op when nothing changed.
       if (scope === "user") {
         const fanout = await syncUserTierFanout({
+          ownedClients: SPELL_FANOUT_CLIENTS,
           homeDir,
           storeRoot: targetDir,
           spellIds: spellIdsInStore(manifest.components),
@@ -680,6 +682,7 @@ export async function runUpdate(
   let fanoutRecord: Record<string, string> | undefined;
   if (scope === "user") {
     const fanout = await syncUserTierFanout({
+      ownedClients: SPELL_FANOUT_CLIENTS,
       homeDir,
       storeRoot: targetDir,
       spellIds: spellIdsInStore(updatedComponents),

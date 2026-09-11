@@ -11,10 +11,10 @@ import { runDoctor } from "./commands/doctor.js";
 import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
 import { runReport } from "./commands/report.js";
-import { runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
+import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import { userTierRoot } from "./modules/user-tier.js";
-import type { Profile, AgentInitOptions, AgentProfileId, NamingStrategy, AgentSyncOptions } from "./types.js";
+import type { Profile, AgentInitOptions, AgentProfileId, InstallScope, NamingStrategy, AgentSyncOptions } from "./types.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json") as { version: string };
@@ -38,6 +38,13 @@ const program = new Command();
  */
 const USER_FLAG_DESCRIPTION =
   "Operate on the per-user tier at ~/.arcane — spells shared by every repository on this machine, fanned out to ~/.agents/skills (Codex, Copilot) and ~/.claude/commands (Claude Code)";
+
+/**
+ * The same flag on `spell agents`, which moves a different set of files: the
+ * roster and its rendered agent files, not spells.
+ */
+const USER_TIER_AGENTS_DESCRIPTION =
+  "Operate on the per-user tier at ~/.arcane — one agent roster shared by every repository on this machine, rendered to ~/.copilot/agents (VS Code agent modes)";
 
 function targetDirFor(opts: { user?: boolean }): string {
   return opts.user ? userTierRoot() : process.cwd();
@@ -228,21 +235,25 @@ agentsCommand
   )
   .option("--force", "Reinitialize even if roster already exists")
   .option("--dry-run", "Preview what would be created without writing files")
+  .option("--user", USER_TIER_AGENTS_DESCRIPTION)
   .action(
     async (opts: {
       profile?: string;
       naming?: string;
       force?: boolean;
       dryRun?: boolean;
+      user?: boolean;
     }) => {
+      const scope: InstallScope = opts.user ? "user" : "repo";
       await runAgentsInit(
         {
           profile: opts.profile as AgentProfileId | undefined,
           naming: opts.naming as NamingStrategy | undefined,
           force: opts.force,
           dryRun: opts.dryRun,
+          scope,
         } satisfies AgentInitOptions,
-        process.cwd(),
+        agentsTargetDir(scope, process.cwd()),
         ASSETS_DIR,
       );
     },
@@ -258,6 +269,7 @@ agentsCommand
   .option("--no-copilot", "Skip Copilot output")
   .option("--no-claude", "Skip Claude output")
   .option("--no-codex", "Skip Codex output")
+  .option("--user", USER_TIER_AGENTS_DESCRIPTION)
   .action(
     async (opts: {
       dryRun?: boolean;
@@ -265,7 +277,9 @@ agentsCommand
       copilot?: boolean;
       claude?: boolean;
       codex?: boolean;
+      user?: boolean;
     }) => {
+      const scope: InstallScope = opts.user ? "user" : "repo";
       await runAgentsSync(
         {
           dryRun: opts.dryRun,
@@ -273,8 +287,9 @@ agentsCommand
           copilot: opts.copilot,
           claude: opts.claude,
           codex: opts.codex,
+          scope,
         } satisfies AgentSyncOptions,
-        process.cwd(),
+        agentsTargetDir(scope, process.cwd()),
         ASSETS_DIR,
       );
     },
@@ -283,8 +298,10 @@ agentsCommand
 agentsCommand
   .command("list")
   .description("Show the current agent roster with assigned names and roles")
-  .action(async () => {
-    await runAgentsList(process.cwd());
+  .option("--user", USER_TIER_AGENTS_DESCRIPTION)
+  .action(async (opts: { user?: boolean }) => {
+    const scope: InstallScope = opts.user ? "user" : "repo";
+    await runAgentsList(agentsTargetDir(scope, process.cwd()), scope);
   });
 
 // Only parse argv when executed directly — not when imported in tests.

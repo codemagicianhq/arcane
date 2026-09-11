@@ -190,18 +190,48 @@ export function spellIdsInStore(components: InstalledComponent[]): string[] {
 
 // ─── The fan-out ──────────────────────────────────────────────────────────────
 
-export type FanoutClient = "codex" | "claude";
+/** Home-relative directory holding the user tier's rendered agent files. */
+export const USER_AGENT_FANOUT_DIR = ".copilot/agents";
+
+export type FanoutClient = "codex" | "claude" | "copilot-agents";
+
+/**
+ * The clients whose fan-out file is keyed by a spell id. The agent client is
+ * keyed by a roster slug instead, so it has no entry in `USER_FANOUT_PATHS`.
+ */
+export type SpellFanoutClient = Exclude<FanoutClient, "copilot-agents">;
+
+/** Every spell-keyed client, in the order a run renders them. */
+export const SPELL_FANOUT_CLIENTS: readonly SpellFanoutClient[] = ["codex", "claude"];
 
 /** Where each client's user-level shim goes, relative to the home directory. */
-export const USER_FANOUT_PATHS: Readonly<Record<FanoutClient, (id: string) => string>> = {
+export const USER_FANOUT_PATHS: Readonly<Record<SpellFanoutClient, (id: string) => string>> = {
   codex: (id) => `.agents/skills/${id}/SKILL.md`,
   claude: (id) => `.claude/commands/${id}.md`,
 };
+
+/**
+ * Where a user-tier agent file goes, relative to the home directory
+ * (CS-06 / ARC-047 decision 3). `~/.copilot/agents` is one of the four custom
+ * agent locations VS Code resolves by default, and the only one of them read
+ * by VS Code alone -- `~/.claude/agents`, the other home location, is also
+ * Claude Code's own user-scope subagent directory, and filling it would make
+ * every rostered persona delegatable in every Claude Code session on the
+ * machine. That is a new client surface rather than a tier move, so it is
+ * deliberately not written here.
+ *
+ * The `.agent.md` suffix matches the repository tier byte for byte: the user
+ * tier changes a file's directory and nothing else.
+ */
+export function userAgentFanoutPath(slug: string): string {
+  return `${USER_AGENT_FANOUT_DIR}/${slug}.agent.md`;
+}
 
 /** Human-readable label per client, for command output. */
 export const FANOUT_CLIENT_LABELS: Readonly<Record<FanoutClient, string>> = {
   codex: "Codex/Copilot skills",
   claude: "Claude Code commands",
+  "copilot-agents": "Copilot agent modes",
 };
 
 /** The client a recorded fan-out path belongs to, or undefined for an unknown shape. */
@@ -209,6 +239,7 @@ export function clientOfFanoutPath(relativePath: string): FanoutClient | undefin
   const normalized = relativePath.replace(/\\/g, "/");
   if (normalized.startsWith(".agents/skills/")) return "codex";
   if (normalized.startsWith(".claude/commands/")) return "claude";
+  if (normalized.startsWith(`${USER_AGENT_FANOUT_DIR}/`)) return "copilot-agents";
   return undefined;
 }
 
@@ -341,6 +372,20 @@ export interface FanoutSyncOptions {
   dryRun?: boolean;
   /** The CLI's assets root: renders a spell whose store copy is missing from the vendor asset instead (see renderUserFanout). */
   fallbackDir?: string;
+  /**
+   * Already-rendered fan-out files to reconcile alongside the spell files --
+   * the user tier's agent files, which come from a roster rather than from a
+   * spell id (CS-06).
+   */
+  extraFiles?: readonly FanoutFile[];
+  /**
+   * The clients this run owns. Recorded paths belonging to any other client
+   * are carried forward untouched instead of being pruned, so two commands
+   * can share one `fanout` record without each erasing the other's entries:
+   * `spell update --user` owns the spell clients, `spell agents sync --user`
+   * owns the agent client. Defaults to every client.
+   */
+  ownedClients?: readonly FanoutClient[];
 }
 
 /**
@@ -385,7 +430,10 @@ export async function removeDirectoryIfEmpty(dir: string): Promise<void> {
  */
 export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<FanoutSyncResult> {
   const rendered = await renderUserFanout(options.storeRoot, options.spellIds, options.fallbackDir);
-  const desired = rendered.files;
+  const desired = [...rendered.files, ...(options.extraFiles ?? [])];
+  const owned = options.ownedClients;
+  const ownsClient = (client: FanoutClient | undefined): boolean =>
+    owned === undefined || (client !== undefined && owned.includes(client));
   const previous = options.previous ?? {};
   const dryRun = Boolean(options.dryRun);
   const record: Record<string, string> = {};
@@ -398,7 +446,7 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
   // rewritten nor pruned -- they still point at a spell the operator may
   // restore -- and stay recorded so a later run recognizes them.
   for (const id of rendered.missing) {
-    for (const client of ["codex", "claude"] as const) {
+    for (const client of SPELL_FANOUT_CLIENTS) {
       const relativePath = USER_FANOUT_PATHS[client](id);
       desiredPaths.add(relativePath);
       if (previous[relativePath] !== undefined) record[relativePath] = previous[relativePath];
@@ -452,6 +500,13 @@ export async function syncUserTierFanout(options: FanoutSyncOptions): Promise<Fa
 
   for (const [relativePath, recorded] of Object.entries(previous)) {
     if (desiredPaths.has(relativePath)) continue;
+    // Another command's client: not this run's to prune, and dropping it from
+    // `record` would untrack a file Arcane wrote, which `uninstall --user`
+    // would then leak -- the same hazard the orphan path guards in `update`.
+    if (!ownsClient(clientOfFanoutPath(relativePath))) {
+      record[relativePath] = recorded;
+      continue;
+    }
     // Recorded keys are validated when the manifest is read
     // (isValidFanoutPath); this is the module's own guard, so a caller that
     // hands over an unvalidated record still cannot delete outside home.
@@ -508,7 +563,7 @@ export function describeFanoutOutcomes(outcomes: FanoutOutcome[], dryRun = false
   const lines: string[] = [];
   const prefix = dryRun ? "[dry-run] Would " : "";
   const byClient = (status: FanoutStatus): Record<FanoutClient, number> => {
-    const n: Record<FanoutClient, number> = { codex: 0, claude: 0 };
+    const n: Record<FanoutClient, number> = { codex: 0, claude: 0, "copilot-agents": 0 };
     for (const o of outcomes) {
       if (o.status !== status) continue;
       const client = clientOfFanoutPath(o.relativePath);
@@ -574,7 +629,7 @@ export async function inspectUserTierFanout(
 ): Promise<FanoutHealth> {
   const health: FanoutHealth = {
     total: 0,
-    byClient: { codex: 0, claude: 0 },
+    byClient: { codex: 0, claude: 0, "copilot-agents": 0 },
     missing: [],
     customized: [],
   };
