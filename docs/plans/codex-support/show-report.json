@@ -9,18 +9,18 @@
     "started": "2026-09-09",
     "versionSpan": {
       "from": "0.38.3",
-      "to": "1.2.0"
+      "to": "1.3.0"
     }
   },
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 7 of 9 epics shipped"
+    "dek": "active — 8 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "7/9",
+      "value": "8/9",
       "label": "epics shipped",
       "derived": true
     },
@@ -32,7 +32,7 @@
     },
     {
       "id": "version-span",
-      "value": "0.38.3 → 1.2.0",
+      "value": "0.38.3 → 1.3.0",
       "label": "version span",
       "derived": true
     },
@@ -59,6 +59,16 @@
       "id": "Q-008",
       "title": "Decide whether `spell_scope` keeps `repo` as its default",
       "reason": "The research is in [docs/research/default-spell-scope.md](../../research/default-spell-scope.md),"
+    },
+    {
+      "id": "Q-009",
+      "title": "Accept, revise, or reject ARC-047 (agents are roster-rendered, and get a user tier)",
+      "reason": "Accepting an ADR is never within a delegation's grant in this repository. This one also"
+    },
+    {
+      "id": "Q-010",
+      "title": "Count the agent modes, once, in a two-folder workspace (the last EV-01)",
+      "reason": "This is the one premise CS-06 could not verify from inside an agent session, and it is"
     }
   ],
   "sections": [
@@ -136,9 +146,9 @@
         {
           "id": "CS-06",
           "title": "Agents at the user tier",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
+          "description": "Your Arcanos can now live once on your machine instead of once per project, and a project that takes its spells from there stops carrying its own copies of them.",
+          "descriptionState": "authored",
+          "category": "feature",
           "refs": []
         },
         {
