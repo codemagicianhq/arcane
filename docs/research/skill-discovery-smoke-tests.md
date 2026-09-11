@@ -394,3 +394,64 @@ for keeps changes which copy of every `/spell-*` Claude Code runs in every repos
 3. If either client paraphrases instead of running the spell, the remedy is the same `render()` mode
    variance ARC-045 allowed for — an inlined-body renderer for that client's user-level file — a small
    follow-up, not a redesign. Record the result on the queue entry either way.
+
+## CS-05 (2026-09-10) — which tier's `/spell-*` actually runs, and the opt-out that settles it
+
+CS-05 gives a repository a way to stop carrying its own spells
+(`spell_scope: "user"`). Its motivation had always been stated as picker clutter across a
+multi-root workspace. Designing it produced a sharper reason, observed rather than argued.
+
+### Observation — with both tiers present, the answer is per-command
+
+In the session that designed CS-05, this repository carried its own `.claude/commands/spell-*.md`
+(each including `@.arcane/spells/<id>.md`, a repository-relative path) **and** the machine had the
+user tier installed, whose personal commands at `~/.claude/commands/spell-*.md` include the
+**absolute** `@C:/Users/<name>/.arcane/spells/<id>.md`. The two are distinguishable by exactly that
+line, so which file the harness loaded is visible in its own output.
+
+Minutes apart, in one session:
+
+| Invocation | Include the harness expanded | Which tier |
+|---|---|---|
+| `/spell-open-session` | `.arcane/spells/spell-open-session.md` | project |
+| `/spell-full-cycle` | `C:/Users/payini/.arcane/spells/spell-full-cycle.md` | **user** |
+
+Claude Code's documentation states that a personal command takes precedence over a project command
+of the same name. What was observed is that with both tiers installed the effective answer varied
+between two commands in a single session. No cause was established and none is claimed here — the
+point for CS-05 is narrower and does not depend on one: **while two tiers both own a command name,
+which copy runs is not something an operator can predict from the documentation alone.** A
+repository that opts out has no project copy, so there is nothing to resolve.
+
+Two things follow. First, this is the strongest argument the program has produced for the opt-out,
+and it is about correctness rather than tidiness. Second, it is the first **live** confirmation that
+a personal command's absolute `@` include resolves and loads the canonical body — which CS-04 could
+only take from documentation, and which `OPERATOR-QUEUE.md` Q-005 still asks the operator to confirm
+deliberately, in a clean-room check rather than as a side effect of a working session.
+
+### EV-01 — the opt-out end to end, with the built CLI
+
+Two disposable repositories beside one user tier in a stubbed home (full transcript and the
+`spell_scope` design in `features/codex-support/architecture.md`, "CS-05"):
+
+- Both installed `--profile lite`: **160** spell paths each (40 canonical + 120 shims).
+- One repository set `spell_scope: "user"` and ran `spell update`: `160 tracked files are no longer
+  managed here — reviewing.`, the orphan list, and the reason line naming the user tier. **Nothing
+  deleted**, and the working tree stayed clean.
+- `spell update --prune`: that repository went to **0** spell paths with no empty directories left
+  behind; the other stayed at **160**; governance (3 docs) was untouched in both.
+- `spell doctor` in the opted-in repository: `✓ [pass] Spell scope (ARC-045)`, exit 0. With the store
+  removed: `✗ [FAIL]` naming the store path and `spell init --user`, **exit 1** — the one blocking
+  user-tier check, because an opted-in repository with no store has no spells in any client.
+  `spell status` said `Scope: repo (spells: user tier)` and flagged the missing store.
+
+### Incidental, unrelated to spells: `spell doctor` can hang on Windows
+
+The EV-01 run stalled past five minutes until the cause was found: `checkVSCodeExtension` looks for
+extensions under `process.env["HOME"]` only, and when neither `.vscode/extensions` nor
+`.vscode-insiders/extensions` is there it shells out to `code --version` and then
+`code-insiders --version`. On this machine that spawn does not return — measured directly at
+**>25s before a hard kill**, twice per run. `HOME` is routinely unset on Windows (where the home
+directory is `USERPROFILE`), so an ordinary consumer running `spell doctor` from PowerShell or
+cmd.exe reaches that path every time. Filed in `TODO.md`; not fixed in CS-05, which owns none of
+that code.
