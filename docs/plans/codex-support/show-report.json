@@ -15,12 +15,12 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 8 of 9 epics shipped"
+    "dek": "active — 9 of 9 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "8/9",
+      "value": "9/9",
       "label": "epics shipped",
       "derived": true
     },
@@ -154,9 +154,9 @@
         {
           "id": "CS-07",
           "title": "Docs, PRD close, drift",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
+          "description": "Codex can now run your spells, they can live once on your machine instead of once per project, and the duplicate entries you were seeing in VS Code have a switch that turns them off.",
+          "descriptionState": "authored",
+          "category": "feature",
           "refs": []
         },
         {
