@@ -160,4 +160,8 @@ client through a separate mechanism: one canonical source per spell at `.arcane/
 (ARC-045), from which three thin shims are generated — `.github/prompts/*.prompt.md` for Copilot,
 `.claude/commands/*.md` for Claude Code, and `.agents/skills/*/SKILL.md` for Codex (CS-01) — never
 hand-authored per client. A shim carries no workflow of its own: when a spell must be read in full,
-read the canonical file.
+read the canonical file. Both spells and the agent roster can instead be installed once per machine,
+at `~/.arcane` (ARC-045 decision 3, ARC-047); a repository with `spell_scope: "user"` in `.arcane.json`
+carries neither its own spell files nor its own `.github/agents/*.agent.md`, and every client reads
+the machine-wide copies instead. This table is unaffected either way — standing instructions never
+move tier.

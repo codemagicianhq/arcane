@@ -247,7 +247,7 @@ Unlike spells, agent files are never delivered by `spell init` or `spell update`
 
 ```jsonc
 // .arcane.json
-{ "spell_scope": "user" }   // absent, or "repo", means this repository carries its own spells
+{ "spell_scope": "user" }   // absent, or "repo", means this repository carries its own spells and agents
 ```
 
 ```bash
