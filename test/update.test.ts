@@ -1391,6 +1391,131 @@ describe("spell update — handler", () => {
       }
     });
   });
+
+  // ─── The repository opt-out (ARC-045 decision 4 / CS-05) ───────────────────
+  // Opting out installs nothing spell-shaped and turns whatever is already on
+  // disk into orphans -- reported always, deleted only under --prune, and only
+  // while the recorded hash still holds. No new prune logic: this exercises the
+  // machinery TODO.md T10 already shipped, through the new door.
+
+  describe("spell_scope", () => {
+    const SPELL_PREFIXES = [".arcane/spells/", ".github/prompts/", ".claude/commands/", ".agents/skills/"];
+    const isSpellFile = (f: string) => SPELL_PREFIXES.some((p) => f.startsWith(p));
+
+    async function optIn() {
+      const m = await readManifestFile(tmpDir);
+      await fs.writeFile(join(tmpDir, ".arcane.json"), JSON.stringify({ ...m, spell_scope: "user" }, null, 2));
+    }
+
+    async function spellFilesOnDisk(): Promise<number> {
+      let n = 0;
+      for (const dir of [".arcane/spells", ".github/prompts", ".claude/commands", ".agents/skills"]) {
+        try {
+          n += (await fs.readdir(join(tmpDir, dir))).length;
+        } catch {
+          // absent
+        }
+      }
+      return n;
+    }
+
+    beforeEach(async () => {
+      await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+      vi.mocked(console.log).mockClear?.();
+    });
+
+    it("reports every spell file as unmanaged on the very next same-version update, and deletes none", async () => {
+      const before = await spellFilesOnDisk();
+      expect(before).toBeGreaterThan(0);
+      await optIn();
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = consoleSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      // Not "Already up to date." -- the opt-out has to be visible on the run
+      // right after the field is edited, not at the next release.
+      expect(consoleSpy).not.toHaveBeenCalledWith("Already up to date.");
+      expect(output).toContain("no longer managed here");
+      expect(output).toContain("orphaned file(s)");
+      expect(output).toContain("takes its spells from the user tier");
+      expect(output).toContain("spell update --prune");
+      expect(await spellFilesOnDisk()).toBe(before);
+    }, VERY_HEAVY_TEST_TIMEOUT);
+
+    it("--prune removes the untouched spell files and keeps an edited one, naming it", async () => {
+      const edited = ".github/prompts/spell-status.prompt.md";
+      await fs.appendFile(join(tmpDir, edited), "\nOPERATOR EDIT\n");
+      await optIn();
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = consoleSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain(`Orphaned but edited since install — not pruning: ${edited}`);
+      await expect(fs.readFile(join(tmpDir, edited), "utf8")).resolves.toContain("OPERATOR EDIT");
+      // Everything else went, including the canonical folder.
+      await expect(fs.access(join(tmpDir, ".arcane/spells/spell-status.md"))).rejects.toThrow();
+      await expect(fs.access(join(tmpDir, ".claude/commands/spell-status.md"))).rejects.toThrow();
+      // Governance is untouched by the opt-out.
+      await expect(fs.access(join(tmpDir, ".arcane/governance/git-conventions.md"))).resolves.toBeUndefined();
+      const manifest = await readManifestFile(tmpDir);
+      expect(manifest.components.flatMap((c) => c.files).filter(isSpellFile)).toEqual([edited]);
+    }, VERY_HEAVY_TEST_TIMEOUT);
+
+    it("--dry-run reports the same decisions and deletes nothing", async () => {
+      const before = await spellFilesOnDisk();
+      await optIn();
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUpdate({ prune: true, dryRun: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = consoleSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain("[dry-run] Found");
+      expect(output).toContain("takes its spells from the user tier");
+      expect(await spellFilesOnDisk()).toBe(before);
+    }, VERY_HEAVY_TEST_TIMEOUT);
+
+    it("installs no spell files across a version bump while it is opted in", async () => {
+      await optIn();
+      await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+      expect(await spellFilesOnDisk()).toBe(0);
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, "0.2.0");
+
+      expect(await spellFilesOnDisk()).toBe(0);
+      const manifest = await readManifestFile(tmpDir);
+      expect(manifest.version).toBe("0.2.0");
+      expect(manifest.components.flatMap((c) => c.files).filter(isSpellFile)).toEqual([]);
+      // The components themselves stay listed, so switching back has somewhere to land.
+      expect(manifest.components.some((c) => c.name.startsWith("spells-"))).toBe(true);
+    }, VERY_HEAVY_TEST_TIMEOUT);
+
+    it("switching back to repo reinstalls every spell file on the next update", async () => {
+      const before = await spellFilesOnDisk();
+      await optIn();
+      await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+      expect(await spellFilesOnDisk()).toBe(0);
+
+      const m = await readManifestFile(tmpDir);
+      await fs.writeFile(join(tmpDir, ".arcane.json"), JSON.stringify({ ...m, spell_scope: "repo" }, null, 2));
+      await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(await spellFilesOnDisk()).toBe(before);
+      await expect(fs.access(join(tmpDir, ".arcane/spells/spell-status.md"))).resolves.toBeUndefined();
+    }, VERY_HEAVY_TEST_TIMEOUT);
+
+    it("a repository that has not opted in is untouched by any of this", async () => {
+      const before = await spellFilesOnDisk();
+      const consoleSpy = vi.spyOn(console, "log");
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+      expect(consoleSpy).toHaveBeenCalledWith("Already up to date.");
+      expect(await spellFilesOnDisk()).toBe(before);
+    }, VERY_HEAVY_TEST_TIMEOUT);
+  });
+
 });
 
 // ─── Built binary integration tests ──────────────────────────────────────────

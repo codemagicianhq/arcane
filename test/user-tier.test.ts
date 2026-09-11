@@ -3,15 +3,17 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hashFile } from "../src/modules/copier.js";
-import { getComponent, SPELL_COMPONENT_NAMES } from "../src/modules/registry.js";
-import { canonicalSpellPath } from "../src/modules/spell-compiler.js";
+import { getAllComponents, getComponent, SPELL_COMPONENT_NAMES } from "../src/modules/registry.js";
+import { canonicalSpellPath, isClientShimPath } from "../src/modules/spell-compiler.js";
 import {
   USER_FANOUT_PATHS,
   USER_TIER_COMPONENTS,
   absoluteStoreSpellPath,
   clientOfFanoutPath,
   componentForScope,
+  componentForSpellScope,
   describeFanoutOutcomes,
+  effectiveSpellScope,
   inspectUserTierFanout,
   isUserTierStore,
   misplacedUserManifestMessage,
@@ -476,3 +478,57 @@ describe("inspectUserTierFanout", () => {
     expect(health).toEqual({ total: 0, byClient: { codex: 0, claude: 0 }, missing: [], customized: [] });
   });
 });
+
+// ─── The repository opt-out (ARC-045 decision 4 / CS-05) ─────────────────────
+
+describe("componentForSpellScope", () => {
+  it("is the identity for the repo scope — the default, and every manifest that omits the field", () => {
+    for (const name of ["spells-docs", "git-conventions", "session-continuity"]) {
+      const component = getComponent(name);
+      expect(componentForSpellScope(component, "repo")).toBe(component);
+    }
+  });
+
+  it("empties every spells-* component under the user scope and leaves everything else untouched", () => {
+    for (const name of SPELL_COMPONENT_NAMES) {
+      const component = getComponent(name);
+      const view = componentForSpellScope(component, "user");
+      expect(view.files, name).toEqual([]);
+      // Same component otherwise: name and description survive, so the
+      // manifest entry still records what was (not) installed.
+      expect(view.name).toBe(component.name);
+      expect(view.description).toBe(component.description);
+    }
+    for (const name of ["git-conventions", "session-continuity", "agent-definitions", "venture-template"]) {
+      const component = getComponent(name);
+      expect(componentForSpellScope(component, "user"), name).toBe(component);
+    }
+  });
+
+  it("pins the invariant the design rests on: the components that deliver spells are exactly the spells-* ones", () => {
+    // D2's reason for emptying components rather than filtering by path
+    // prefix. If a future component starts shipping a canonical spell or a
+    // client shim without being named spells-*, the opt-out would silently
+    // leak that file into an opted-out repository -- this fails first.
+    const delivering = getAllComponentNamesCarryingSpellFiles();
+    expect(delivering.sort()).toEqual([...SPELL_COMPONENT_NAMES].sort());
+  });
+
+  it("effectiveSpellScope reads absent as repo, and both explicit values as themselves", () => {
+    expect(effectiveSpellScope({})).toBe("repo");
+    expect(effectiveSpellScope({ spell_scope: "repo" })).toBe("repo");
+    expect(effectiveSpellScope({ spell_scope: "user" })).toBe("user");
+  });
+});
+
+/** Every component whose file list carries a canonical spell or any client shim. */
+function getAllComponentNamesCarryingSpellFiles(): string[] {
+  const names: string[] = [];
+  for (const component of getAllComponents()) {
+    const carries = component.files.some(
+      (f) => spellIdFromCanonicalPath(f) !== undefined || isClientShimPath(f),
+    );
+    if (carries) names.push(component.name);
+  }
+  return names;
+}

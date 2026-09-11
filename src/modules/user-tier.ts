@@ -139,6 +139,43 @@ export function componentForScope(
   return { name: component.name, description: component.description, files, sourceOverrides };
 }
 
+/**
+ * A component as a REPOSITORY installs it under its `spell_scope`
+ * (ARC-045 decision 4 / CS-05). Identity for `"repo"`, the default and the
+ * meaning of every manifest that omits the field. For `"user"` a
+ * spell-delivering component installs nothing -- the repository takes its
+ * spells from the machine-wide store instead -- and every other component is
+ * returned untouched, because governance, instructions, continuity files,
+ * hooks and templates never move tier (ARC-045 decision 5).
+ *
+ * Which components deliver spells is derived, never hand-listed: filtering
+ * by path prefix instead would put the client-surface shapes in a fourth
+ * place beside CLIENT_SHIM_PATHS, CLIENT_SHIM_PATH_PATTERNS and
+ * CANONICAL_SPELLS_DIR, and would silently miss a fifth client the day one
+ * is added. A test pins that the two definitions -- components named
+ * `spells-*`, and components carrying a canonical or shim path -- coincide.
+ *
+ * Orthogonal to componentForScope above: that one answers "what does the
+ * STORE install", this one "what does a REPOSITORY install". Composed only
+ * in the repo scope; the store itself has no spell_scope.
+ */
+export function componentForSpellScope(
+  component: RegistryComponent,
+  spellScope: InstallScope,
+): RegistryComponent {
+  if (spellScope === "repo") return component;
+  if (!SPELL_COMPONENT_NAMES.includes(component.name)) return component;
+  return { ...component, files: [] };
+}
+
+/**
+ * A repository's effective spell scope: the manifest's field, or `"repo"`
+ * when it is absent. One place, so no caller has to remember that absent
+ * means repo.
+ */
+export function effectiveSpellScope(manifest: { spell_scope?: InstallScope }): InstallScope {
+  return manifest.spell_scope ?? "repo";
+}
 /** The spell ids a store manifest's components track, deduplicated and sorted. */
 export function spellIdsInStore(components: InstalledComponent[]): string[] {
   const ids = new Set<string>();

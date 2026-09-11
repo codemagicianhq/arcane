@@ -11,6 +11,7 @@ import { generateVersionDriftDiagram } from "../modules/diagram-generator.js";
 import {
   CLAUDE_PRECEDENCE_NOTE,
   FANOUT_CLIENT_LABELS,
+  effectiveSpellScope,
   VSCODE_USER_TIER_NOTE,
   inspectUserTierFanout,
   misplacedUserManifestMessage,
@@ -129,14 +130,23 @@ export async function runStatus(
       );
     }
   } else {
-    console.log("  Scope: repo");
+    // ARC-045 decision 4 / CS-05: a repository that opted out says so on
+    // this line, because it explains why it carries no spell files of its
+    // own -- and, when the store is gone, why no client can find a spell.
+    const spellScope = effectiveSpellScope(manifest);
+    console.log(spellScope === "user" ? "  Scope: repo (spells: user tier)" : "  Scope: repo");
+    const store = userTierRoot();
     try {
-      const store = userTierRoot();
       const userManifest = await readManifest(store);
       console.log(`  User tier: v${userManifest.version} at ${store} (spell status --user)`);
     } catch {
-      // No user tier on this machine (or an unreadable one -- `spell doctor`
-      // reports that); nothing to add here.
+      if (spellScope === "user") {
+        console.log(
+          `  ! User tier: not installed at ${store} — this repository expects it for every spell. Run \`spell init --user\` (\`spell doctor\` explains).`,
+        );
+      }
+      // Otherwise: no user tier on this machine (or an unreadable one --
+      // `spell doctor` reports that); nothing to add here.
     }
   }
 

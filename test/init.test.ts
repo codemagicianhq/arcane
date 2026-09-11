@@ -68,9 +68,25 @@ const PACKAGE_VERSION = "0.1.0";
 
 describe("spell init — handler", () => {
   let tmpDir: string;
+  let emptyHome: string;
+  const savedHomeEnv: Record<string, string | undefined> = {};
+
+  /**
+   * CS-05: init asks about the user tier only when one exists. The real home
+   * of whoever runs the suite may have one, so every handler test below points
+   * at an empty temp home; the tests that WANT the question stub it themselves.
+   */
+  function stubHomeForInit(dir: string) {
+    for (const key of ["USERPROFILE", "HOME"]) {
+      if (!(key in savedHomeEnv)) savedHomeEnv[key] = process.env[key];
+      process.env[key] = dir;
+    }
+  }
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "init-test-"));
+    emptyHome = await fs.mkdtemp(join(tmpdir(), "init-home-"));
+    stubHomeForInit(emptyHome);
     vi.restoreAllMocks();
     // Re-apply the mocks after restoreAllMocks -- restoreAllMocks clears a
     // plain vi.fn()'s configured resolved value back to undefined (there's
@@ -89,7 +105,13 @@ describe("spell init — handler", () => {
   });
 
   afterEach(async () => {
+    for (const [key, value] of Object.entries(savedHomeEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+      delete savedHomeEnv[key];
+    }
     await removeFixtureDir(tmpDir);
+    await removeFixtureDir(emptyHome);
   });
 
   // ─── Profile validation ────────────────────────────────────────────────────
@@ -472,4 +494,163 @@ describe.skipIf(!BIN)("spell init — built CLI", () => {
     );
     expect(result.status).toBe(0);
   });
+});
+
+// ─── The repository opt-out (ARC-045 decision 4 / CS-05) ─────────────────────
+
+describe("spell init — spell_scope, the repository opt-out", () => {
+  let repo: string;
+  let home: string;
+  const saved: Record<string, string | undefined> = {};
+
+  const SPELL_PREFIXES = [".arcane/spells/", ".github/prompts/", ".claude/commands/", ".agents/skills/"];
+  const QUESTION = "Use it for this repository";
+
+  function stubHome(dir: string) {
+    for (const key of ["USERPROFILE", "HOME"]) {
+      if (!(key in saved)) saved[key] = process.env[key];
+      process.env[key] = dir;
+    }
+  }
+
+  /** A user tier in `home`: the question only reads the store manifest's version. */
+  async function installStore(version = "1.2.0") {
+    const storeRoot = join(home, ".arcane");
+    await fs.mkdir(join(storeRoot, "spells"), { recursive: true });
+    await fs.writeFile(
+      join(storeRoot, ".arcane.json"),
+      JSON.stringify({ version, profile: "full", installedAt: "x", components: [], scope: "user" }, null, 2),
+    );
+    return storeRoot;
+  }
+
+  /** Answers the CS-05 question with `useTier`, and every other confirm with yes. */
+  async function answerSpellScope(useTier: boolean) {
+    const { confirm } = await import("@inquirer/prompts");
+    vi.mocked(confirm).mockImplementation((async (opts: { message: string }) => {
+      if (opts.message.includes(QUESTION)) return useTier;
+      // Decline the agent-team offer: this describe is about spell delivery,
+      // and runAgentsInit would ask its own profile question the select mock
+      // above answers with a spell profile name.
+      if (opts.message.includes("agent team")) return false;
+      return true;
+    }) as never);
+    return vi.mocked(confirm);
+  }
+
+  function askedQuestion(mock: { mock: { calls: unknown[][] } }): { message: string; default?: boolean } | undefined {
+    return mock.mock.calls
+      .map((c) => c[0] as { message: string; default?: boolean })
+      .find((o) => typeof o?.message === "string" && o.message.includes(QUESTION));
+  }
+
+  async function installedSpellFiles(): Promise<string[]> {
+    const manifest = JSON.parse(await fs.readFile(join(repo, ".arcane.json"), "utf-8")) as ArcaneManifest;
+    return manifest.components.flatMap((c) => c.files).filter((f) => SPELL_PREFIXES.some((p) => f.startsWith(p)));
+  }
+
+  beforeEach(async () => {
+    repo = await fs.mkdtemp(join(tmpdir(), "scope-repo-"));
+    home = await fs.mkdtemp(join(tmpdir(), "scope-home-"));
+    stubHome(home);
+    vi.restoreAllMocks();
+    const { select, confirm } = await import("@inquirer/prompts");
+    vi.mocked(select).mockImplementation((async (opts: { message: string }) => {
+      if (opts.message.includes("installation profile")) return "lite";
+      if (opts.message.includes("How will work be tracked")) return "internal";
+      if (opts.message.includes("treat this repository")) return "standard";
+      if (opts.message.includes("allowed to push to a remote")) return "open";
+      return "lite";
+    }) as never);
+    vi.mocked(confirm).mockResolvedValue(true as never);
+    const { inspectGitRepository, correctUnbornMasterDefault, ensureLocalPullRebase } =
+      await import("../src/modules/git.js");
+    vi.mocked(inspectGitRepository).mockResolvedValue({ status: "not-repository" });
+    vi.mocked(correctUnbornMasterDefault).mockResolvedValue({ corrected: false, to: "main" });
+    vi.mocked(ensureLocalPullRebase).mockResolvedValue({ action: "already-set" });
+  });
+
+  afterEach(async () => {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+      delete saved[key];
+    }
+    await removeFixtureDir(repo);
+    await removeFixtureDir(home);
+  });
+
+  it("never asks when this machine has no user tier, and records no spell_scope", async () => {
+    const confirmMock = await answerSpellScope(true);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(askedQuestion(confirmMock)).toBeUndefined();
+    const manifest = JSON.parse(await fs.readFile(join(repo, ".arcane.json"), "utf-8")) as ArcaneManifest;
+    expect(manifest.spell_scope).toBeUndefined();
+    expect((await installedSpellFiles()).length).toBeGreaterThan(0);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("asks when a store exists, naming its version, and installs nothing spell-shaped when the answer is yes", async () => {
+    await installStore("1.2.0");
+    const confirmMock = await answerSpellScope(true);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(askedQuestion(confirmMock)?.message).toContain("v1.2.0");
+
+    const manifest = JSON.parse(await fs.readFile(join(repo, ".arcane.json"), "utf-8")) as ArcaneManifest;
+    expect(manifest.spell_scope).toBe("user");
+    expect(await installedSpellFiles()).toEqual([]);
+    for (const dir of [".arcane/spells", ".github/prompts", ".claude/commands", ".agents/skills"]) {
+      await expect(fs.access(join(repo, dir)), dir).rejects.toThrow();
+    }
+    // Governance still installs: the opt-out moves spell delivery only.
+    await expect(fs.access(join(repo, ".arcane/governance/git-conventions.md"))).resolves.toBeUndefined();
+    expect(manifest.components.some((c) => c.files.some((f) => f.startsWith(".arcane/governance/")))).toBe(true);
+    const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(output).not.toContain("Spells (Copilot, Claude Code, Codex)");
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("defaults to No, and answering no installs the repository copies and records repo", async () => {
+    await installStore("1.2.0");
+    const confirmMock = await answerSpellScope(false);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(askedQuestion(confirmMock)?.default).toBe(false);
+    const manifest = JSON.parse(await fs.readFile(join(repo, ".arcane.json"), "utf-8")) as ArcaneManifest;
+    expect(manifest.spell_scope).toBe("repo");
+    expect((await installedSpellFiles()).length).toBeGreaterThan(0);
+    await expect(fs.access(join(repo, ".arcane/spells"))).resolves.toBeUndefined();
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("a scripted --profile install never asks and never opts out, even with a store present", async () => {
+    await installStore("1.2.0");
+    const confirmMock = await answerSpellScope(true);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runInit({ profile: "lite" }, repo, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(askedQuestion(confirmMock)).toBeUndefined();
+    const manifest = JSON.parse(await fs.readFile(join(repo, ".arcane.json"), "utf-8")) as ArcaneManifest;
+    expect(manifest.spell_scope).toBeUndefined();
+    expect((await installedSpellFiles()).length).toBeGreaterThan(0);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("a dry run with a store present previews the default and asks nothing", async () => {
+    await installStore("1.2.0");
+    const confirmMock = await answerSpellScope(true);
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runInit({ dryRun: true }, repo, ASSETS_DIR, PACKAGE_VERSION);
+
+    expect(askedQuestion(confirmMock)).toBeUndefined();
+    const output = logSpy.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(output).toContain("Would copy: .arcane/spells/spell-status.md");
+    await expect(fs.access(join(repo, ".arcane.json"))).rejects.toThrow();
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });

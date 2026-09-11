@@ -57,6 +57,23 @@ export interface ArcaneManifest {
    * Arcane's and is never claimed.
    */
   fanout?: Record<string, string>;
+  /**
+   * Repository tier only (ARC-045 decision 4 / CS-05): where THIS repository
+   * gets its spells. Absent means `"repo"` -- the repository carries its own
+   * canonical spells and generated client shims, which is what every install
+   * before 1.2.0 does and still the default. `"user"` opts the repository
+   * out: the `spells-*` components install nothing here and every client
+   * reads the machine-wide store instead (`spell init --user`), so one
+   * workspace holding several Arcane repositories shows one set of
+   * `/spell-*` entries rather than one per folder.
+   *
+   * Distinct from `scope` above, and deliberately so: `scope` says what a
+   * manifest IS (a repository install, or the user store itself), while this
+   * says where a repository takes its spells FROM. The store never carries
+   * it -- the store is the thing being pointed at. Governance, continuity
+   * files and repository configuration never move tier (ARC-045 decision 5).
+   */
+  spell_scope?: InstallScope;
   tracking_mode?: TrackingMode;
   external_provider?: ExternalProvider | null;
   /**

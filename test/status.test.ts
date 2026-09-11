@@ -427,6 +427,52 @@ describe("spell status — handler", () => {
       expect(output()).not.toContain("Scope:");
     });
 
+it("names the opt-out on the scope line when the repository takes its spells from the user tier (CS-05)", async () => {
+      const home = await fs.mkdtemp(join(tmpdir(), "status-scope-home-"));
+      try {
+        stubHome(home);
+        await writeManifest(tmpDir, {
+          spell_scope: "user",
+          components: [{ name: "git-conventions", files: ["x.md"], installedVersion: PACKAGE_VERSION }],
+        });
+
+        // No store on this machine: the line has to say so, because it is why
+        // no client can find a spell here.
+        await runStatus(tmpDir, PACKAGE_VERSION);
+        expect(output()).toContain("Scope: repo (spells: user tier)");
+        expect(output()).toContain("User tier: not installed");
+        expect(output()).toContain("spell init --user");
+
+        logSpy.mockClear();
+        const { storeRoot } = await installTier(home, "1.2.0");
+        await runStatus(tmpDir, PACKAGE_VERSION);
+        expect(output()).toContain("Scope: repo (spells: user tier)");
+        expect(output()).toContain(`User tier: v1.2.0 at ${storeRoot}`);
+        expect(output()).not.toContain("not installed");
+      } finally {
+        await removeFixtureDir(home);
+      }
+    });
+
+    it("a repository that has not opted out still prints the plain scope line", async () => {
+      const home = await fs.mkdtemp(join(tmpdir(), "status-scope-home2-"));
+      try {
+        stubHome(home);
+        await installTier(home, "1.2.0");
+        await writeManifest(tmpDir, {
+          spell_scope: "repo",
+          components: [{ name: "git-conventions", files: ["x.md"], installedVersion: PACKAGE_VERSION }],
+        });
+
+        await runStatus(tmpDir, PACKAGE_VERSION);
+
+        expect(output()).toContain("Scope: repo");
+        expect(output()).not.toContain("spells: user tier");
+      } finally {
+        await removeFixtureDir(home);
+      }
+    });
+
     it("--user without a store points at spell init --user", async () => {
       const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => { }) as never);
 

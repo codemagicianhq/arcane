@@ -4,6 +4,7 @@ import {
   readdir,
   readFile,
   rm,
+  rmdir,
   writeFile,
 } from "node:fs/promises";
 import { createHash } from "node:crypto";
@@ -145,6 +146,34 @@ export async function copyFile(
 export async function removeWithin(targetDir: string, relativePath: string): Promise<void> {
   validateTargetPath(targetDir, relativePath);
   await rm(path.resolve(targetDir, relativePath), { force: true });
+}
+
+/**
+ * Removes the directories a just-deleted file leaves behind, walking up from
+ * its parent and stopping at the first non-empty one -- or at `targetDir`,
+ * which is never removed. `rmdir` on purpose: it removes exactly an empty
+ * directory and refuses a non-empty one, so a file that appears between the
+ * emptiness check and the removal is never taken with it.
+ *
+ * Without this, pruning a component's files leaves its skeleton behind: a
+ * repository that opts out of carrying spells (ARC-045 decision 4 / CS-05)
+ * would keep 41 empty `.agents/skills/<id>/` directories and the empty
+ * client folders above them, which git does not track and nothing else
+ * cleans up.
+ */
+export async function removeEmptyAncestors(targetDir: string, relativePath: string): Promise<void> {
+  validateTargetPath(targetDir, relativePath);
+  const base = path.resolve(targetDir);
+  let dir = path.dirname(path.resolve(targetDir, relativePath));
+  while (dir !== base && dir.startsWith(base + path.sep)) {
+    try {
+      if ((await readdir(dir)).length > 0) return;
+      await rmdir(dir);
+    } catch {
+      return; // already gone, unreadable, or no longer empty
+    }
+    dir = path.dirname(dir);
+  }
 }
 
 export interface CopiedFile {
