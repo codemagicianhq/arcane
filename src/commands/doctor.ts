@@ -11,6 +11,7 @@ import {
   resolveSecretsScanExcludePrefixes,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
+import { rosterExists } from "../modules/agent-loader.js";
 import {
   USER_TIER_SPELLS_DIR,
   effectiveSpellScope,
@@ -796,11 +797,30 @@ export async function checkSpellScope(
     };
   }
 
+  // CS-06 / ARC-047 decision 9. An opted-out repository writes no
+  // `.github/agents` files, so its agent modes can only come from the tier.
+  // Failed only where agents are actually expected: a repository with its own
+  // roster expects them, and one that has never run `spell agents init`
+  // expects nothing and is not failed for having nothing.
+  const repoExpectsAgents = await rosterExists(targetDir);
+  if (repoExpectsAgents && !(await rosterExists(storeRoot, "user"))) {
+    return {
+      name,
+      passed: false,
+      message:
+        `this repository has an agent roster and takes its client files from the user tier, but ` +
+        `${storeRoot} has no roster of its own — no agent mode can reach a client here. ` +
+        "Run `spell agents init --user`, or set spell_scope back to \"repo\" and run `spell agents sync`.",
+    };
+  }
+
   return {
     name,
     passed: true,
     blocking: false,
-    message: `user — ${spellCount} spell(s) from ${storeRoot} (v${store.version}), ${probe} present`,
+    message:
+      `user — ${spellCount} spell(s) from ${storeRoot} (v${store.version}), ${probe} present` +
+      `${repoExpectsAgents ? ", agent roster present in the tier" : ""}`,
   };
 }
 export async function runDoctor(targetDir: string, options: DoctorOptions = {}, assetsDir?: string): Promise<void> {
