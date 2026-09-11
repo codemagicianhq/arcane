@@ -151,3 +151,38 @@ describe("checkSpellScope (ARC-045 decision 4 / CS-05)", () => {
     expect(result.passed).toBe(true);
   });
 });
+
+describe("checkSpellScope — the agent half (CS-06 / ARC-047 decision 9)", () => {
+  it("fails an opted-out repository whose own roster has no counterpart in the tier", async () => {
+    await installStore("1.3.0");
+    await writeRepoManifest("1.3.0", "user");
+    await fs.mkdir(join(repo, ".arcane"), { recursive: true });
+    await fs.writeFile(join(repo, ".arcane", "agents.yaml"), "schema_version: 2\n", "utf8");
+
+    const result = await checkSpellScope(repo, home);
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("has an agent roster");
+    expect(result.message).toContain("spell agents init --user");
+  });
+
+  it("passes an opted-out repository that has never initialized agents", async () => {
+    await installStore("1.3.0");
+    await writeRepoManifest("1.3.0", "user");
+
+    const result = await checkSpellScope(repo, home);
+    expect(result.passed).toBe(true);
+    expect(result.message).not.toContain("agent roster present");
+  });
+
+  it("passes once the tier has a roster too, and says so", async () => {
+    await installStore("1.3.0");
+    await writeRepoManifest("1.3.0", "user");
+    await fs.mkdir(join(repo, ".arcane"), { recursive: true });
+    await fs.writeFile(join(repo, ".arcane", "agents.yaml"), "schema_version: 2\n", "utf8");
+    await fs.writeFile(join(userTierRoot(home), "agents.yaml"), "schema_version: 2\n", "utf8");
+
+    const result = await checkSpellScope(repo, home);
+    expect(result.passed).toBe(true);
+    expect(result.message).toContain("agent roster present in the tier");
+  });
+});
