@@ -1100,8 +1100,19 @@ describe("spell update — handler", () => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(orphanFile));
       await expect(fs.access(join(tmpDir, orphanFile))).resolves.toBeUndefined();
 
+      // Changed by CS-05, deliberately: an orphan that is still on disk stays
+      // TRACKED until it is actually removed. The previous assertion encoded
+      // report-once-then-forget, which made `spell update --prune` -- the
+      // remedy this very run prints -- find nothing on the next invocation,
+      // and left a file Arcane wrote untracked for `spell uninstall`.
       const manifest = await readManifestFile(tmpDir);
-      expect(manifest.components[0]!.files).not.toContain(orphanFile);
+      expect(manifest.components[0]!.files).toContain(orphanFile);
+
+      // ...and it is reported again, every run, until it is resolved.
+      consoleSpy.mockClear();
+      await runUpdate({}, tmpDir, ASSETS_DIR, "0.3.0");
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 orphaned file"));
+
     });
 
     it("--prune deletes an orphaned file whose hash was recorded and still matches", async () => {
@@ -1123,6 +1134,10 @@ describe("spell update — handler", () => {
       await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, "0.2.0");
 
       await expect(fs.access(join(tmpDir, orphanFile))).rejects.toThrow();
+      // Gone from disk, so gone from the manifest: a tracked orphan is kept
+      // only while it is still there to prune (CS-05).
+      const manifest = await readManifestFile(tmpDir);
+      expect(manifest.components[0]!.files).not.toContain(orphanFile);
     });
 
     it("--prune reports but does not delete an orphaned file with no recorded hash", async () => {
