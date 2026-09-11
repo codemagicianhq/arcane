@@ -263,6 +263,16 @@ spell doctor          # fails loudly if the user tier it now depends on is missi
 
 This is what removes the duplication: with the repository's own copies gone, one workspace holding ten Arcane projects shows one set of `/spell-*` entries, not ten. It is also what makes the answer predictable — while both tiers own a command name, which copy a client runs is not something you can read off the docs.
 
+**Tired of answering that question in every new repository?** Tell the machine once:
+
+```bash
+spell update --user --default-scope user   # or repo, to go back
+```
+
+That pre-selects the answer `spell init` offers in **new** repositories on this machine. It rewrites nothing that already exists, and the question is still asked, so a repository you want to keep self-contained is one keystroke away. An absent `spell_scope` means `repo` permanently, on every machine ([ARC-048](DECISIONS.md#arc-048--an-absent-spell_scope-means-repo-permanently-new-repositories-may-be-pre-selected)) — a preference decides what you are *offered*, never what an existing repository *means*.
+
+If a repository that opted in ever lands on a machine with no tier, `spell update` there now says so, names the store path, and gives you both ways out.
+
 **Shared, team and cloud repositories should stay `repo`.** The field is committed and inherited by every clone, so opting in tells *everyone* who clones that repository to get their spells from a machine-wide install they may not have. Reverse it by setting the field back and running `spell update`, which reinstalls every spell file.
 
 ---

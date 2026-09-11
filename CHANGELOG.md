@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.5.0] - 2026-09-11
+
+Stop answering the same scope question in every new repository, without changing a single repository you already have ([ARC-048](DECISIONS.md#arc-048--an-absent-spell_scope-means-repo-permanently-new-repositories-may-be-pre-selected)).
+
+### Added
+
+- **`spell update --user --default-scope repo|user`** records which answer `spell init` pre-selects for its spell-scope question in **new** repositories on this machine. The preference lives in the store's own manifest and is read only at `init` time, so no existing repository's manifest is ever rewritten by setting it — and the question is still asked, so a repository you want self-contained is one keystroke away. An absent `spell_scope` still means `repo`, permanently, on every machine.
+- **`spell update` now warns when a repository depends on a user tier that is not installed**, naming the store path and both ways out. `spell doctor` already failed on this, but nothing runs `spell doctor` — no workflow, no hook, and no spell — so the check moved to a command people actually run. Without it, a clone on a bare machine keeps a routing block naming spells that resolve to nothing, and an agent improvises the workflow instead of failing.
+
+### Notes
+
+- Flipping the default outright was considered and rejected. Almost no repository sets the field, so "the default" is not a preference for new installs — it is the live setting of every repository that already exists, on a release chain with no step where a human looks. The reasoning is recorded in full in `docs/research/default-spell-scope.md`.
+
 ## [1.4.0] - 2026-09-11
 
 Your agent personas now work in Claude Code as well as VS Code, from one file each, and a repository that takes its spells from the machine-wide tier no longer loses its roster tables ([ARC-047](DECISIONS.md#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier), accepted with one revision).

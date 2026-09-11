@@ -36,6 +36,7 @@ import {
   spellIdsInStore,
   SPELL_FANOUT_CLIENTS,
   syncUserTierFanout,
+  userTierRoot,
 } from "../modules/user-tier.js";
 import type {
   ArcaneManifest,
@@ -44,6 +45,65 @@ import type {
   RegistryComponent,
   SpellUpdateOptions,
 } from "../types.js";
+
+/**
+ * The `default_spell_scope` change a run should record, or `undefined` when it
+ * asks for nothing new (ARC-048).
+ *
+ * Store-only and preference-only: it decides which answer `spell init`
+ * pre-selects for its scope question in a NEW repository on this machine. It
+ * never touches an existing repository's manifest, and it does not change what
+ * an absent `spell_scope` means -- that stays `"repo"` permanently.
+ */
+/**
+ * Warns, loudly, when a repository depends on a user tier that is not there
+ * (ARC-048's gate). `spell doctor`'s scope check already fails on this, but
+ * nothing runs `spell doctor` -- no workflow, no hook and no spell -- so it
+ * fires when a human types it, which is not when the failure happens.
+ * `spell update` is a command people DO run, and a run that says nothing is
+ * how a silent opt-out stays silent.
+ *
+ * Returns the lines rather than printing them, so a test can read them.
+ *
+ * The home is resolved on its own, NOT from `runUpdate`'s `homeDir`: that one
+ * is `dirname(targetDir)`, which is the home only on a user-tier run. On a
+ * repository run it is the repository's PARENT DIRECTORY, and an early version
+ * of this warning named it -- pointing the operator at a `.arcane` beside
+ * their project that was never going to exist.
+ */
+export async function missingTierWarning(
+  scope: InstallScope,
+  spellScope: InstallScope,
+  homeDir?: string,
+): Promise<string[]> {
+  if (scope !== "repo" || spellScope !== "user") return [];
+  const storeRoot = homeDir === undefined ? userTierRoot() : userTierRoot(homeDir);
+  try {
+    await readManifest(storeRoot);
+    return [];
+  } catch {
+    return [
+      "",
+      `  ! This repository takes its spells from the user tier, and ${storeRoot} is not installed.`,
+      "    No client can reach a spell here: the routing block in CLAUDE.md and AGENTS.md still",
+      "    names spells that resolve to nothing, so an agent improvises the workflow instead of",
+      "    failing. Fix it with one of:",
+      "",
+      "      spell init --user                       # install the tier on this machine",
+      '      # or set "spell_scope": "repo" in .arcane.json and re-run `spell update`',
+      "",
+    ];
+  }
+}
+
+export function defaultScopePatch(
+  options: SpellUpdateOptions,
+  manifest: ArcaneManifest,
+): { default_spell_scope: InstallScope } | undefined {
+  if (options.defaultScope === undefined) return undefined;
+  if (manifest.default_spell_scope === options.defaultScope) return undefined;
+  return { default_spell_scope: options.defaultScope };
+}
 
 /**
  * Runs the `spell update` command.
@@ -297,6 +357,7 @@ export async function runUpdate(
   // findReadoptedSpellComponents. Empty in every other case.
   const readopted = findReadoptedSpellComponents(manifest.components, scope, spellScope);
   const homeDir = dirname(targetDir);
+  for (const line of await missingTierWarning(scope, spellScope)) console.log(line);
 
   if (scope === "repo") {
     console.warn(
@@ -353,8 +414,13 @@ export async function runUpdate(
           fallbackDir: assetsDir,
         });
         for (const line of describeFanoutOutcomes(fanout.outcomes, options.dryRun)) console.log(`  ${line}`);
-        if (!options.dryRun && JSON.stringify(fanout.record) !== JSON.stringify(manifest.fanout ?? {})) {
-          await writeManifest(targetDir, { ...manifest, fanout: fanout.record });
+        const scopePatch = defaultScopePatch(options, manifest);
+        if (
+          !options.dryRun
+          && (JSON.stringify(fanout.record) !== JSON.stringify(manifest.fanout ?? {})
+            || scopePatch !== undefined)
+        ) {
+          await writeManifest(targetDir, { ...manifest, ...scopePatch, fanout: fanout.record });
         }
       }
       return;
@@ -747,6 +813,7 @@ export async function runUpdate(
     components: updatedComponents,
     ...retrofitPatch,
     ...(fanoutRecord !== undefined ? { fanout: fanoutRecord } : {}),
+    ...defaultScopePatch(options, manifest),
   };
   await writeManifest(targetDir, updated);
 

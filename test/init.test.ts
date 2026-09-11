@@ -654,3 +654,100 @@ describe("spell init — spell_scope, the repository opt-out", () => {
     await expect(fs.access(join(repo, ".arcane.json"))).rejects.toThrow();
   }, VERY_HEAVY_TEST_TIMEOUT);
 });
+
+describe("spell init — default_spell_scope, the machine-wide preselect (ARC-048)", () => {
+  let repo: string;
+  let home: string;
+  const saved: Record<string, string | undefined> = {};
+  const QUESTION = "Use it for this repository";
+
+  function stubHome(dir: string) {
+    for (const key of ["USERPROFILE", "HOME"]) {
+      if (!(key in saved)) saved[key] = process.env[key];
+      process.env[key] = dir;
+    }
+  }
+
+  async function installStore(preference?: "repo" | "user") {
+    const storeRoot = join(home, ".arcane");
+    await fs.mkdir(join(storeRoot, "spells"), { recursive: true });
+    await fs.writeFile(
+      join(storeRoot, ".arcane.json"),
+      JSON.stringify(
+        {
+          version: "1.4.0",
+          profile: "full",
+          installedAt: "x",
+          components: [],
+          scope: "user",
+          ...(preference === undefined ? {} : { default_spell_scope: preference }),
+        },
+        null,
+        2,
+      ),
+    );
+  }
+
+  /** Captures the `default:` the scope question was asked with. */
+  async function captureScopeDefault(): Promise<() => boolean | undefined> {
+    const { confirm } = await import("@inquirer/prompts");
+    let seen: boolean | undefined;
+    vi.mocked(confirm).mockImplementation((async (opts: { message: string; default?: boolean }) => {
+      if (opts.message.includes(QUESTION)) {
+        seen = opts.default;
+        return false;
+      }
+      if (opts.message.includes("agent team")) return false;
+      return true;
+    }) as never);
+    return () => seen;
+  }
+
+  beforeEach(async () => {
+    repo = await fs.mkdtemp(join(tmpdir(), "init-pref-repo-"));
+    home = await fs.mkdtemp(join(tmpdir(), "init-pref-home-"));
+    stubHome(home);
+  });
+
+  afterEach(async () => {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+      delete saved[key];
+    }
+    await removeFixtureDir(repo);
+    await removeFixtureDir(home);
+  });
+
+  it("pre-selects No when the machine has stated no preference", async () => {
+    await installStore();
+    const seen = await captureScopeDefault();
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+    expect(seen()).toBe(false);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("pre-selects Yes once the machine has stated one", async () => {
+    await installStore("user");
+    const seen = await captureScopeDefault();
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+    expect(seen()).toBe(true);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("still ASKS — a preference changes the highlighted answer, never the outcome", async () => {
+    await installStore("user");
+    await captureScopeDefault();
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+    // The capture above answers No despite the preference being "user".
+    const manifest = JSON.parse(await fs.readFile(join(repo, ".arcane.json"), "utf8")) as {
+      spell_scope?: string;
+    };
+    expect(manifest.spell_scope).toBe("repo");
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("pre-selects No when the store says repo explicitly", async () => {
+    await installStore("repo");
+    const seen = await captureScopeDefault();
+    await runInit({}, repo, ASSETS_DIR, PACKAGE_VERSION);
+    expect(seen()).toBe(false);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+});

@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import type { ArcaneManifest } from "../src/types.js";
 import { hashContent, hashFile } from "../src/modules/copier.js";
-import { USER_FANOUT_PATHS, storeSpellPath } from "../src/modules/user-tier.js";
+import { USER_FANOUT_PATHS, storeSpellPath, userTierRoot } from "../src/modules/user-tier.js";
 import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
@@ -67,7 +67,7 @@ vi.mock("../src/modules/git.js", () => ({
   ensureLocalPullRebase: ensureLocalPullRebaseMock,
 }));
 
-const { runUpdate, resolveOrphan } = await import("../src/commands/update.js");
+const { runUpdate, resolveOrphan, defaultScopePatch, missingTierWarning } = await import("../src/commands/update.js");
 const { runInit } = await import("../src/commands/init.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
@@ -1662,4 +1662,77 @@ describe.skipIf(!BIN)("spell update — built CLI integration", () => {
     const content = await fs.readFile(join(tmpDir, file), "utf8");
     expect(content).toBe("old content");
   }, VERY_HEAVY_TEST_TIMEOUT);
+});
+
+describe("defaultScopePatch — the store-only preference (ARC-048)", () => {
+  const store = (pref?: "repo" | "user") =>
+    ({
+      version: "1.4.0",
+      profile: "full" as const,
+      installedAt: "x",
+      components: [],
+      scope: "user" as const,
+      ...(pref === undefined ? {} : { default_spell_scope: pref }),
+    });
+
+  it("asks for nothing when the flag was not passed", () => {
+    expect(defaultScopePatch({}, store())).toBeUndefined();
+    expect(defaultScopePatch({}, store("user"))).toBeUndefined();
+  });
+
+  it("records a change", () => {
+    expect(defaultScopePatch({ defaultScope: "user" }, store())).toEqual({ default_spell_scope: "user" });
+    expect(defaultScopePatch({ defaultScope: "repo" }, store("user"))).toEqual({ default_spell_scope: "repo" });
+  });
+
+  it("asks for nothing when the store already says that", () => {
+    expect(defaultScopePatch({ defaultScope: "user" }, store("user"))).toBeUndefined();
+    expect(defaultScopePatch({ defaultScope: "repo" }, store("repo"))).toBeUndefined();
+  });
+});
+
+describe("missingTierWarning — the loud gate (ARC-048)", () => {
+  let home: string;
+
+  beforeEach(async () => {
+    home = await fs.mkdtemp(join(tmpdir(), "missing-tier-"));
+  });
+  afterEach(async () => {
+    await removeFixtureDir(home);
+  });
+
+  it("says nothing for a repository that carries its own spells", async () => {
+    expect(await missingTierWarning("repo", "repo", home)).toEqual([]);
+  });
+
+  it("says nothing on a user-tier run — that run IS the tier", async () => {
+    expect(await missingTierWarning("user", "user", home)).toEqual([]);
+  });
+
+  it("warns when a repository depends on a tier that is not installed", async () => {
+    const lines = (await missingTierWarning("repo", "user", home)).join("\n");
+    expect(lines).toContain("is not installed");
+    expect(lines).toContain("spell init --user");
+    // Names the actual store path, not a guess.
+    expect(lines).toContain(join(home, ".arcane"));
+  });
+
+  it("says nothing once the tier is there", async () => {
+    await fs.mkdir(join(home, ".arcane"), { recursive: true });
+    await fs.writeFile(
+      join(home, ".arcane", ".arcane.json"),
+      JSON.stringify({ version: "1.4.0", profile: "full", installedAt: "x", components: [], scope: "user" }),
+    );
+    expect(await missingTierWarning("repo", "user", home)).toEqual([]);
+  });
+
+  it("names the store under the home, never a directory beside the project", async () => {
+    // Regression: an early version passed `runUpdate`'s homeDir, which is
+    // dirname(targetDir) -- the home only on a user-tier run, and the
+    // repository's PARENT on a repo run. It named a .arcane beside the
+    // project that was never going to exist.
+    const lines = (await missingTierWarning("repo", "user", home)).join("\n");
+    expect(lines).toContain(userTierRoot(home));
+    expect(lines).not.toContain(join(home, "repo"));
+  });
 });
