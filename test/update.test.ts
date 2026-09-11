@@ -1334,7 +1334,7 @@ describe("spell update — handler", () => {
       await runUpdate({ user: true }, storeRoot, ASSETS_DIR, PACKAGE_VERSION);
 
       expect(console.log).toHaveBeenCalledWith("Already up to date.");
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Wrote 1 client file(s): 0 Codex/Copilot skills, 1 Claude Code commands."));
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Wrote 1 client file(s): 1 Claude Code commands."));
       const manifest = await readManifestFile(storeRoot);
       expect(manifest.fanout![claudeFile]).toBe(await hashFile(join(home, claudeFile)));
     });

@@ -579,8 +579,16 @@ export function describeFanoutOutcomes(outcomes: FanoutOutcome[], dryRun = false
 
   if (counts.written > 0) {
     const n = byClient("written");
+    // Only the clients this run actually wrote for: a spell run would
+    // otherwise report "0 Copilot agent modes" and an agent run "0 Codex
+    // skills, 0 Claude Code commands", which is how a correct run came to
+    // read as a broken one.
+    const breakdown = (Object.keys(n) as FanoutClient[])
+      .filter((client) => n[client] > 0)
+      .map((client) => `${n[client]} ${FANOUT_CLIENT_LABELS[client]}`)
+      .join(", ");
     lines.push(
-      `${prefix}${dryRun ? "write" : "Wrote"} ${counts.written} client file(s): ${n.codex} ${FANOUT_CLIENT_LABELS.codex}, ${n.claude} ${FANOUT_CLIENT_LABELS.claude}.`,
+      `${prefix}${dryRun ? "write" : "Wrote"} ${counts.written} client file(s): ${breakdown}.`,
     );
   }
   if (counts.pruned > 0) {
