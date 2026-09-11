@@ -346,7 +346,7 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   **Report:** Your Arcanos can now live once on your machine instead of once per project, and a
   project that takes its spells from there stops carrying its own copies of them. · category: feature
 - [x] **CS-07 — Docs, PRD close, drift.** Route: `direct`. Size: S. Bump: no. Dependencies: CS-05,
-  CS-06, CS-08. Risk: Low. **Shipped 2026-09-11.** AC1 was re-verified against the built `1.3.0`
+  CS-06, CS-08. Risk: Low. **Bump: planned as none, shipped as `1.3.1`** — the drift pass corrected two `src/assets/` governance documents, which the version-bump gate correctly requires a release for. **Shipped 2026-09-11.** AC1 was re-verified against the built `1.3.0`
   rather than taken from CS-01's word: a fresh `git init` repository took 41 canonical spells and 41
   of each client file, with valid frontmatter in all 41 skills and zero invalid. AC2 was already
   evidenced twice by live Codex observation and is marked accordingly. The PRD moves to
