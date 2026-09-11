@@ -9,6 +9,7 @@ import { checkPullRebase } from "../src/commands/doctor.js";
 import { isSecretsPrecommitHookInstalled } from "../src/modules/secrets-scan.js";
 import { isClosedPrWarningHookInstalled } from "../src/modules/push-safety.js";
 import { createFixtureDir, removeFixtureDir, runGit as fixtureGit } from "./helpers/git-fixture.js";
+import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // This file deliberately does NOT mock src/modules/git.js -- these tests
 // need real git behavior (a real unborn repo, real repository-local config)
@@ -371,7 +372,7 @@ describe("runInit — end-to-end git-state wiring (real git)", () => {
 
     vi.doUnmock("@inquirer/prompts");
     vi.resetModules();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("R3: warns and preserves an explicit local pull.rebase=false during a real init, instead of silently overwriting it", async () => {
     // This is the exact scenario EF-32.md's own "Required tests" section
@@ -418,5 +419,5 @@ describe("runInit — end-to-end git-state wiring (real git)", () => {
     logSpy.mockRestore();
     vi.doUnmock("@inquirer/prompts");
     vi.resetModules();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });
