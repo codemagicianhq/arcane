@@ -135,11 +135,17 @@ entry to *this* queue once it runs.
   write). If a client paraphrases instead of running the spell, record it here: the remedy is an
   inlined-body renderer for that client's user-level file — the `render()` mode variance ARC-045
   allowed for — a small follow-up, not a redesign.
-- **Update 2026-09-10:** the executing session installed the tier for real on this machine with the
-  published `1.1.0` CLI (`spell init --user`: 41 spells, 82 client files) at the operator's direction
-  ("continue with q-005"), so steps (1) and (2) can be run as-is. `1.1.1` followed; run
-  `spell update --user` once it is on npm to pick up the quoted-path rendering (no visible change on
-  a home path without spaces).
+- **Update 2026-09-11:** the tier is installed on this machine and current — global CLI and store
+  both at **`1.2.0`** (`spell status --user`: 41 spells, 82 client files) — so steps (1) and (2)
+  can be run as-is, with nothing to install or upgrade first.
+- **Worth knowing before you look (new 2026-09-10, CS-05):** with the tier installed *and* a
+  repository still carrying its own spells, which copy a client runs was observed to differ
+  **per command** inside one session — `/spell-full-cycle` resolved through the user tier while
+  `/spell-open-session` resolved through the project copy
+  (`docs/research/skill-discovery-smoke-tests.md ("which tier's `/spell-*` actually runs")`). So
+  run step (1) from a folder that is **not** an Arcane repository, where only the tier can answer.
+  CS-05 now lets a repository opt out entirely (`spell_scope: "user"`), which is the real fix for
+  the ambiguity — trying that in one of your repositories is a good second half of this check.
 - **Status:** [ ] open
 
 ## Q-006 — Accept, revise, or reject ARC-046 (restore-based delivery: no-go)

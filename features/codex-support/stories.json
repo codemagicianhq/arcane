@@ -19,9 +19,9 @@
         "npm run typecheck and eslint pass"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit fe6b2a9. types.ts gains `spell_scope?: InstallScope` (absent = repo, documented against `scope`); manifest.ts validates it with VALID_INSTALL_SCOPES; user-tier.ts gains componentForSpellScope + effectiveSpellScope. test/manifest.test.ts: absent/repo/user accepted, five bad values rejected (machine, User, empty, trailing space, true), scope and spell_scope independent. test/user-tier.test.ts: repo identity returns the same object, user empties every spells-* component while name/description survive, four non-spell components untouched, effectiveSpellScope maps absent->repo, and the invariant pin -- the components carrying a canonical or client-shim path are exactly SPELL_COMPONENT_NAMES. typecheck + eslint clean."
     },
     {
       "id": "CS05-S2",
@@ -35,9 +35,9 @@
         "The printed summary does not report spells for an opted-in install"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit fe6b2a9. init.ts Step 2b asks before the preview and the copy loop; components resolved through componentForSpellScope; spell_scope recorded. test/init.test.ts (5, each with an explicit timeout budget): no store => never asked and no field; store present and yes => 0 files under .arcane/spells/.github/prompts/.claude/commands/.agents/skills, none of those directories created, governance still installed and tracked, manifest records user, and the summary does not print the Spells line; default is false and answering no records repo and installs the copies; a scripted --profile install never asks and never opts in; a dry run previews the default and asks nothing. The whole handler suite was also made hermetic against a real user tier in the developer's home."
     },
     {
       "id": "CS05-S3",
@@ -51,9 +51,9 @@
         "Switching back to \"repo\" and running spell update reinstalls every spell file"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commits fe6b2a9 and 6159ccb. update.ts resolves components through componentForSpellScope in the repo scope; findUnmanagedTrackedFiles makes the opt-out visible on the very next same-version run; findReadoptedSpellComponents restores on switching back; the orphan summary names the reason. test/update.test.ts spell_scope (6, budgeted): every spell file reported unmanaged with nothing deleted and the tree left clean; --prune keeps an edited shim and names it while removing the rest including the canonical folder; --dry-run changes nothing; no spell files installed across a version bump; switching back restores all 160; a repository that never opted in still prints 'Already up to date.'. Live: 160 -> 0 in the opted-in repository, 160 untouched in the other."
     },
     {
       "id": "CS05-S4",
@@ -68,9 +68,9 @@
         "Existing doctor and status suites pass unchanged"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commit fe6b2a9. doctor.ts checkSpellScope registered in runDoctor's check list; status.ts prints the scope line and the missing-store warning. test/doctor-spell-scope.test.ts (8): no install => pass; not opted in (absent and explicit repo) => identical non-blocking pass; opted in with a compatible store => pass naming the store, '2 spell(s)' and 'spell-status.md present'; no store => passed false with blocking NOT false and 'spell init --user'; unreadable manifest => blocking fail; empty store and store-without-the-probe => blocking fail; major.minor skew => non-blocking warn naming both versions; patch-level difference => pass. test/status.test.ts (2): the opted-out line plus the missing-store warning, and the plain line when not opted in. Live: exit 0 with the store, exit 1 without it."
     },
     {
       "id": "CS05-S5",
@@ -83,9 +83,9 @@
         "PR merged by rebase under the delegation; branch deleted after a content-verified check"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "Commits ec7f637 (docs), 8d1e0e0-range PLAN tick, the 1.2.0 bump and a report-only regeneration. EV-01 recorded in docs/research/skill-discovery-smoke-tests.md ('CS-05') with the real output. Gates: full suite 87 files green at push, build, check:version-bump (1.2.0), self-host-parity 322, spell-catalog, adr-references, stale-claims Class A; citations/followups report only pre-existing items. PR #238 opened with the ship report and `## For the record`, three required checks green on head aca4f1b, rebase-merged 2026-09-11T06:18Z (3e0b979); release v1.2.0 published 06:18:31Z, publish.yml run 34569378898 succeeded, npm serves 1.2.0 and the published bundle carries spell_scope (verified by installing it). Branch deleted after `git cherry` showed every commit landed."
     }
   ]
 }

@@ -306,7 +306,10 @@ Identical invariants to the three prior programs — these are repo-wide, not pr
   live confirmation that a personal command's absolute `@` include loads the canonical body.
   Design: `features/codex-support/architecture.md` ("CS-05"). **Shipped in
   [PR #238](https://github.com/codemagicianhq/arcane/pull/238), self-merged under the standing
-  delegation (rebase); merge and publish evidence recorded at session close:** `spell_scope` on the
+  delegation 2026-09-11 (rebase, `3e0b979`); `release-drift.yml` cut `v1.2.0` (published
+  2026-09-11T06:18Z) and [`publish.yml` succeeded](https://github.com/codemagicianhq/arcane/actions/runs/34569378898)
+  — `npm view arcane-cli version` returns `1.2.0`, and a scratch install of that version carries
+  `spell_scope`:** `spell_scope` on the
   manifest (absent = `repo`, validated); `componentForSpellScope` emptying the `spells-*`
   components with a test pinning that those are exactly the components carrying a canonical or
   shim path; `init` asking only when a store exists and defaulting to **No**; `update` making the
