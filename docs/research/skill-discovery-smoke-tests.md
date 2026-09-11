@@ -563,3 +563,52 @@ Three output defects the probe caught, all fixed before the epic shipped: a `--u
 clients rather than the ones the run wrote for; and the success block said
 `edit .arcane/agents.yaml → spell agents sync` after writing `~/.arcane/agents.yaml`. A correct run
 that reads as a broken one is a defect, not cosmetics.
+
+## 2026-09-11 — AC5 measured: the before/after count in a two-folder workspace
+
+The program's original motivation, finally counted rather than reasoned about. Two disposable
+repositories (`alpha`, `beta`) installed from the built `1.3.1` at the `lite` profile, each given its
+own full Arcanos roster, opened together in one VS Code window with no other folder present. The
+count was taken twice: once with both repositories carrying their own files, once after both opted
+into the user tier. The prediction was written down before the first look.
+
+| Per spell / per agent | Both repo-tier (before) | Both `spell_scope: "user"` (after) |
+|---|---|---|
+| `spell-status` entries | **3** — `/Spell-Status` twice, `/spell-status` once | **1** — `/spell-status`, from `~/.agents/skills` |
+| Merlin (and every other Arcano) | **3** — one per folder, one from `~/.copilot/agents` | **1** — from `~/.copilot/agents` |
+
+Both numbers matched the prediction exactly, which makes the two composition rules from the
+2026-09-11 operator measurement a settled mechanism rather than an inference:
+
+- **Prompt files do not deduplicate across workspace folders.** Two folders produced two Title-case
+  entries; removing the folders' own prompt files removed both.
+- **Skills deduplicate by name across every location, agents do not deduplicate at all.** The
+  lowercase skill entry stayed at one throughout, with two workspace copies and a user copy all
+  claiming the same name. The agent named Merlin appeared three times from the same three locations.
+
+**The finding that matters for anyone reading this later:** the machine-wide tier on its own does not
+reduce either count. It *raises* the agent count, from two to three, because nothing collapses
+agents. What produces "exactly one set" is the repository opt-out. The tier is what makes the opt-out
+survivable; the opt-out is what does the work.
+
+**This also closes CS-06's one unverified premise.** ARC-047's consequences recorded, as an inference
+rather than a measurement, that VS Code resolves `~/.copilot/agents` without opting into Agent Host.
+The operator's VS Code has none of the relevant settings set, and the agent rendered there appeared
+in the picker. The inference is now an observation, and the one-string fallback ARC-047 named is not
+needed.
+
+### How the fixture was built, for anyone reproducing it
+
+```bash
+spell init --profile lite                        # in each repository
+spell agents init --profile full --naming arcanos
+# ... count here ...
+# then, in each: set "spell_scope": "user" in .arcane.json, commit, and
+spell update --prune                             # removes the spell files
+spell agents sync                                # writes no agent files; prints the git rm line
+git rm .github/agents/*.agent.md                 # the leftovers it named
+# ... count again ...
+```
+
+A second `spell agents sync` afterwards left `.github/agents` at zero in both repositories, which is
+the opt-out holding rather than a one-time deletion.

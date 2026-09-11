@@ -164,7 +164,7 @@ than growing a third format that copies content again.
   updates all three client-format files identically; `npm run check:self-host-parity` fails if any
   one of them is hand-edited out of sync. *Met 2026-09-09 (CS-03):* `runShimParity` over the three
   targets; drift and repair covered on a temp tree and on the real assets.
-- [ ] **AC5** — `spell init --user` (or the chosen CLI surface) installs the full spell and agent
+- [x] **AC5** — `spell init --user` (or the chosen CLI surface) installs the full spell and agent
   set to a single per-machine location; two disposable repositories in one VS Code workspace, both
   configured for the user tier, show exactly one set of `/spell-*` entries and one set of the 12
   Arcanos agent modes — verified by direct count in VS Code, recorded in the same research doc.
@@ -180,6 +180,11 @@ than growing a third format that copies content again.
   loader). **The only thing left is the count itself**, which needs a human looking at two pickers:
   `OPERATOR-QUEUE.md` Q-007 for the spells and Q-010 for the agents. This is the single acceptance
   criterion the program cannot close on its own, and it is left open rather than argued closed.
+  **Met 2026-09-11 by direct count** (`docs/research/skill-discovery-smoke-tests.md`, "AC5 measured"):
+  two disposable repositories in one VS Code window went from **3 entries per spell and 3 per Arcano**
+  to **exactly 1 of each** once both opted into the user tier. The before-count was predicted in
+  writing first and matched. The same look closed CS-06's one unverified premise: the agent rendered
+  to `~/.copilot/agents` appeared in the picker on a machine with none of the relevant settings set.
 - [x] **AC6** — A repository with `spell_scope: "user"` (or equivalent field) passes `spell doctor`
   when a compatible user-tier install exists, and fails with an actionable remedy message when it
   does not. *Met 2026-09-10 (CS-05):* `checkSpellScope` — the one blocking user-tier check. Verified

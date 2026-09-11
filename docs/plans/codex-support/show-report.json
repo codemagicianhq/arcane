@@ -45,11 +45,6 @@
   ],
   "needsYou": [
     {
-      "id": "Q-007",
-      "title": "Try the repository opt-out, and count the picker (the other half of AC5)",
-      "reason": "this is AC5's second half and the program's original motivation — \"two repositories in one"
-    },
-    {
       "id": "Q-006",
       "title": "Accept, revise, or reject ARC-046 (restore-based delivery: no-go)",
       "reason": "Accepting an ADR is never within a delegation's grant in this repository. The evidence is",
@@ -64,11 +59,6 @@
       "id": "Q-009",
       "title": "Accept, revise, or reject ARC-047 (agents are roster-rendered, and get a user tier)",
       "reason": "Accepting an ADR is never within a delegation's grant in this repository. This one also"
-    },
-    {
-      "id": "Q-010",
-      "title": "Count the agent modes, once, in a two-folder workspace (the last EV-01)",
-      "reason": "This is the one premise CS-06 could not verify from inside an agent session, and it is"
     }
   ],
   "sections": [
