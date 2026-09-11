@@ -716,3 +716,239 @@ flowchart TD
 - **The blocking doctor check is the one new way to fail a previously-passing `spell doctor`.** It
   can only fire in a repository that opted in, which is an explicit act; and its message names the
   single command that fixes it.
+
+---
+
+## CS-06 — Agents at the user tier
+
+### Inputs
+
+- **Requirements:** [PRD.md](PRD.md) R3's agent half (AC5: one set of the 12 Arcanos agent modes
+  across a multi-folder workspace, not one set per folder) and R4's agent half (AC7: a repository
+  opted into the user tier does not receive repo-local `.github/agents` files). CS-05 closed both
+  acceptance criteria for spells and left `.github/agents` explicitly to this epic.
+- **Decision record:** `DECISIONS.md` ARC-045 decision 6 (the user roster is authoritative for
+  UI-visible agents when a repository takes its spells from the user tier) and decision 5
+  (governance, continuity files and repository configuration never move tier).
+- **Measurement this epic is designed against:** `docs/research/skill-discovery-smoke-tests.md`,
+  "Agents, by contrast, do not collapse" — the operator's two-folder workspace showed each of the 12
+  Arcanos twice, one per folder, while the same workspace collapsed agent *skills* to one entry.
+- **Version:** minor. Self-mergeable under the `codex-support-plan` delegation; the ADR it drafts is
+  not, and goes to the operator queue like every other ADR in this program.
+
+### Empirical-first findings (2026-09-11, before any code was written)
+
+1. **The plan's Copilot design for this epic is wrong twice over, and the correct answer is better
+   than the one it assumed.** PLAN.md's CS-06 line specifies `~/.arcane/.github/agents/*.agent.md`
+   plus, from CS-04's inherited design, a printed `chat.agentFilesLocations` settings snippet. Both
+   premises fail. CS-04 already recorded that setting as vendor-deprecated and chose to print no
+   settings snippet at all; the current vendor documentation gives the reason, which is not that the
+   feature moved but that it was replaced: the setting "is deprecated because Agent Host sessions
+   don't use them", and an Agent Host session reads custom agent files from the **native home
+   directories** `~/.copilot/agents` and `~/.claude/agents` instead. So a file at
+   `~/.arcane/.github/agents/` would be read by nothing, and no setting can rescue it — while a file
+   in a home directory Copilot already scans needs no setting at all. This is the same shape as
+   CS-04's finding for skills, and it resolves the same way: write into the location the client
+   already watches, and never touch `settings.json`.
+2. **Claude Code has a documented user-level agent tier, with the opposite precedence rule to
+   spells.** `~/.claude/agents/<name>.md` is the user scope and `.claude/agents/` the project scope,
+   and the documented priority puts **project above user** — the reverse of the personal-commands
+   rule CS-05 observed for spells, where the personal copy won. A repository that keeps its own
+   agents therefore keeps control of them, and the user tier fills in only where a repository has
+   none. That is the behavior this epic wants, and it comes for free rather than needing an opt-out
+   to enforce it.
+3. **ARC-002 is `Accepted` and describes the opposite of what ships.** It decided to register an
+   `agent-files` component listing 12 fixed `.agent.md` paths and to install them from every profile
+   but `governance-only`. No such component exists; `registry.ts` carries a four-line comment saying
+   it was retired because a fixed-name set "shipped stale names and collided with the generated
+   output". Verified: the retirement is recorded in no ADR, no CHANGELOG entry, and no commit
+   message — this repository's history begins at `0.14.0`, after the change. The operator asked for
+   the reasoning and there was none to give. This epic supersedes ARC-002 on the record.
+4. **The reason the decision was right is structural, not incidental.** A `.agent.md` file's name and
+   contents are chosen per repository: `applyNamingStrategy` resolves a role through the roster's
+   `naming_strategy` (`arcanos`, `generic`, `random`, `custom`), and `syncAgents` slugs the resulting
+   display name into the filename. A registry component declares fixed paths, so it structurally
+   cannot deliver a file whose name the consumer picks. Spells are the opposite case — one canonical
+   body, byte-identical in every install — which is exactly why they ship through the registry and
+   agents cannot. ARC-012's own alternatives section separately rejected rendering agent files on the
+   consumer at install time, because that moves the render logic and the persona YAML into every
+   install and changes the distribution contract.
+5. **Agents are entirely scope-blind today.** Neither `src/modules/agents.ts`,
+   `src/modules/agent-generator.ts` nor `src/modules/agent-loader.ts` references `spell_scope` or
+   `effectiveSpellScope`, and `spell agents` has no `--user` flag on any of its three subcommands.
+   So AC7's agent half is not a regression to guard against; it is behavior that does not exist yet.
+6. **The locations are not a documentation question any more — they are readable in the shipped
+   build.** VS Code `1.137.0` on this machine (`645f29cc3176500b4b5762ba887cf2a7f0ffdf2c`) carries the
+   custom-agent location table literally, in `resources/app/out/vs/workbench/workbench.desktop.main.js`:
+
+   | Path | `source` | `storage` |
+   |---|---|---|
+   | `.github/agents` | `github-workspace` | `local` |
+   | `.claude/agents` | `claude-workspace` | `local` |
+   | `~/.copilot/agents` | `copilot-personal` | `user` |
+   | `~/.claude/agents` | `claude-personal` | `user` |
+
+   Four locations in one table, two of them in the home directory, with no provider switch between
+   them. The parallel skills table in the same file has the identical shape
+   (`.agents/skills`, `.github/skills`, `.claude/skills`, then `~/.agents/skills`, `~/.copilot/skills`,
+   `~/.claude/skills`), which is the table CS-04 designed against. The file-type contribution in the
+   same bundle registers the `chatagent` language for `extensions: [".agent.md", ".chatmode.md"]` and
+   `filenamePatterns: ["**/.github/agents/*.md", "**/.claude/agents/*.md"]` — so inside a `agents`
+   directory under `.claude`, **any `.md` file is an agent file**; the `.agent.md` suffix is what the
+   other locations key on. The loader takes the display name from frontmatter `name` and falls back to
+   the filename with `.agent.md` stripped.
+7. **The two home locations have different readerships, and that is what picks between them.**
+   `~/.copilot/agents` is read by VS Code and by nothing else. `~/.claude/agents` is read by VS Code
+   *and* by Claude Code, which treats it as its own user-scope subagent directory. So the choice is
+   not "which one works" -- both do -- but "how much surface does this epic intend to create", and
+   D3 answers that. What is not a choice: writing to both. The two rows sit in one table with no
+   dedup (finding 8), so a file in each is two picker entries, not one file found twice.
+8. **Agents are not deduplicated by name, and the build says so outright.** The loader in the same
+   bundle builds one picker entry per discovered file — `{type: "agent", id: <uri>, uri: <uri>,
+   name, description}` — and then sorts by `name`, tie-breaking on the URI. There is no keying by
+   name and no collapse step anywhere in that path. So two files that both declare `name: Merlin`
+   are two entries, whether they come from two workspace folders or from one workspace folder and
+   the home directory. This upgrades the operator's 2026-09-11 measurement from an observation to a
+   mechanism, and it settles the epic's shape: **a user tier alone cannot reduce the agent count for
+   a repository that still carries `.github/agents` — it can only add to it.** The opt-out is not an
+   optional convenience here the way it nearly was for skills; it is the whole fix.
+   (Incidental, worth keeping: the loader also honors `userInvocable: false` in an agent file's
+   frontmatter, setting `disableUserInvocation` — a documented way to ship an agent that is
+   delegatable but hidden from the picker. Not used by this epic; recorded because it is the obvious
+   lever if the roster ever grows past what a picker should show.)
+
+9. **The vendor documentation and the shipped build disagree about whether the home locations are
+   live, and the build plus one live observation win.** The current documentation frames
+   home-directory agent discovery as an *Agent Host* behavior and describes Agent Host as opt-in, with
+   Local agent sessions falling back to the deprecated setting. The build says otherwise: the four
+   locations come from one `type -> locations` map (`"agent"` and `"skill"` are two cases of the same
+   switch), and the only consumer merges that default table with the user's `*FilesLocations` setting,
+   keeping every default entry unless the setting explicitly sets that path to `false`. No Agent Host
+   gate appears in that path, and this build carries no `chat.agentHost.enabled` setting at all --
+   only per-harness sub-settings. The decisive cross-check is not a reading, though: the operator's VS
+   Code has **no** `agentHost`, `useAgentSkills` or `*FilesLocations` key set, and it listed the user
+   tier's `spell-status` skill from `~/.agents/skills` in a repository that had no skill of its own.
+   That is the `storage: "user"` row of the sibling table, resolving by default, in the exact
+   configuration this epic ships into. The agent table's user rows are the same machinery. Recorded as
+   a strong inference rather than a measurement: the agent half still needs one operator look, which
+   is this epic's EV-01.
+10. **No dedup, confirmed twice over.** The loader read in finding 8 has no name-keying, and VS Code
+   issue 312256 reports the same behavior from the outside: an agent present in two configured
+   locations appears twice in the picker, and the report asks for deduplication as a *fix*, which is
+   to say it does not exist today. Two independent confirmations of the same mechanism, one from the
+   shipped code and one from the vendor's own tracker.
+
+### Decisions
+
+**D1 — Agent files are roster-rendered, never registry-distributed, and this epic says so on the
+record.** ARC-047 supersedes ARC-002. Nothing about the mechanism changes; what changes is that the
+reason exists somewhere other than a code comment. Finding 4 is the reason: a registry component
+declares fixed paths and an agent file's name is chosen per repository by the roster's naming
+strategy, so the registry structurally cannot deliver one.
+
+**D2 — The user tier stores the roster, exactly as a repository does.** `spell agents init --user`
+writes `~/.arcane/agents.yaml` and `~/.arcane/agents/<role>.yaml`, the same two artifacts
+`runAgentsInit` writes into a repository today, at the store root CS-04 already established. No new
+storage concept, no second schema: `loadAgentRoster` and `loadAllAgentDefinitions` take a `targetDir`
+and the store is just another one.
+
+**D3 — The home fan-out target is `~/.copilot/agents/<slug>.agent.md`, and nothing else.** Finding 6
+gives four discovery locations and two of them are in the home directory. `~/.copilot/agents` is read
+by VS Code alone. `~/.claude/agents` is read by VS Code *and* by Claude Code, which is the reason to
+reject it rather than the reason to pick it: Arcane has never delivered Claude Code subagents at any
+tier, and writing twelve personas there would make them delegatable in every Claude Code session on
+the machine — a new client surface and a behavior change, not the tier move AC5 asks for. That is its
+own decision, and it is not this epic's. Writing to both home locations is the one clearly wrong
+answer: finding 8 shows the two rows sit in one table with no dedup, so a file in each is two picker
+entries, not one file found twice.
+
+**D4 — The user-tier agent file is byte-identical to the repository-tier one.** Same
+`renderCopilotAgent`, same slug, same `.agent.md` suffix, different directory. The tier is a location
+change and nothing else, which keeps `agent-roster-parity`'s guarantee meaningful and makes "which
+copy am I looking at" answerable by path alone.
+
+**D5 — The fan-out is recorded in the store manifest's existing `fanout` map and reconciled by
+`syncUserTierFanout`.** CS-04 built exactly this machinery for spells: a home-relative POSIX path to
+a SHA-256 of what Arcane wrote, ARC-038's rule applied to files outside any target directory — a file
+whose content no longer matches is the operator's and is never overwritten or deleted, and a file
+Arcane never recorded is never claimed. Agents get a new `FanoutClient` and a new path builder; the
+reconcile loop, the hash guard, the prune path and `spell uninstall --user` all come along unchanged.
+
+**D6 — A repository with `spell_scope: "user"` writes no `.github/agents` files, and keeps its roster
+tables.** This is the half that actually reduces the count. Finding 8 is unambiguous: a user tier
+added beside a repository that still carries `.github/agents` makes the picker longer, not shorter.
+The marker-merged roster tables in `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md`
+stay, because they are repository continuity content rather than a client discovery surface, which is
+ARC-045 decision 5's line and where CS-05 already drew it for spells.
+
+**D7 — No new manifest field.** ARC-045 decision 6 already made `spell_scope` govern UI-visible
+agents. A second field would let a repository opt out of spells and not agents, which is a
+configuration nobody has asked for and two more states to test.
+
+**D8 — OpenClaw output is untouched.** It already writes to `~/.openclaw/workspace*` and has been
+home-scoped since before any of this; it is not a picker surface and has no per-folder duplication
+problem to solve.
+
+**D9 — The blocking doctor check extends to agents only where agents are actually expected.** A
+repository that opted out and has its own `.arcane/agents.yaml` expects agent modes from somewhere;
+if the user tier has no roster, it has none, and that is a silent failure of exactly the kind
+`checkSpellScope` exists to convert into a loud one. A repository that opted out and has no roster of
+its own expects nothing and is not failed — the measured case for this is real, one of the operator's
+three repositories has neither a roster nor agent files and has simply never run `spell agents init`.
+
+**D10 — An opted-out repository's existing `.github/agents` files are reported, never deleted.**
+They are not manifest-tracked (no component ships them, ARC-002's is long retired), so there is no
+recorded hash to compare against and `spell update --prune` cannot see them at all. Inventing a hash
+record for them to justify a delete is more surface than the problem deserves. `spell agents sync` in
+an opted-out repository writes none and prints the files it would have written along with the exact
+`git rm` line; the operator runs it. This is the same posture CS-05 took for a file it could not
+prove untouched, and it keeps ARC-038's rule intact at the one point where the hash record does not
+exist.
+
+### Component view
+
+| File | Change |
+|---|---|
+| `src/types.ts` | `AgentInitOptions`/`AgentSyncOptions` gain `scope?: InstallScope`. |
+| `src/modules/user-tier.ts` | `FanoutClient` gains `"copilot-agents"`; a path builder for `.copilot/agents/<slug>.agent.md`; `syncUserTierFanout` gains a `clients` scope so a run reconciles only the paths it owns and leaves the other client's records alone. |
+| `src/modules/agents.ts` | `runAgentsInit`/`runAgentsSync`/`runAgentsList` resolve a target root from `scope` — the store root for `user`, `process.cwd()` for `repo`. |
+| `src/modules/agent-generator.ts` | `syncAgents` gains the user-tier mode: Copilot agent files only, no marker merges, no OpenClaw; and the opted-out repo mode: no `.github/agents` writes, marker merges unchanged, existing files reported. |
+| `src/commands/doctor.ts` | `checkSpellScope` gains the agent row of D9; `checkUserTier` reports the agent count. |
+| `src/index.ts` | `--user` on `agents init`, `agents sync`, `agents list`. |
+
+### Testing strategy
+
+- `test/user-tier.test.ts` — the new client's path builder, and that a scoped reconcile leaves the other client's `fanout` records untouched across a round trip.
+- `test/agents-user-tier.test.ts` (new) — `init --user` writes the roster and definitions under a stubbed home and nothing into the repository; `sync --user` writes one `.agent.md` per rostered agent into `~/.copilot/agents` and no marker merges; a hand-edited fan-out file is neither overwritten nor removed; an idempotent rerun is a no-op.
+- `test/agent-generator.test.ts` — an opted-out repository gets no `.github/agents` writes, still gets its three marker merges, and the existing files are reported rather than deleted.
+- `test/doctor-spell-scope.test.ts` — opted out with a repo roster and no user roster fails; opted out with no roster of its own passes.
+- `test/agent-roster-parity.test.ts` — unchanged and must stay green: D4 means the user-tier file is the same bytes as the repository one.
+
+### Blast radius
+
+Agent code is scope-blind today (finding 5), so every behavior here is new rather than changed, with
+two exceptions to watch: `syncAgents`' Copilot branch gains two conditionals, and
+`syncUserTierFanout` gains a scope parameter that every existing caller must pass. The spell fan-out
+records and the repo-tier agent output are otherwise untouched, and `agent-roster-parity` pins the
+rendered bytes on both sides.
+
+### Commit plan
+
+1. `feat(agents)`: the user-tier store and the `--user` flag on the three subcommands.
+2. `feat(agents)`: the home fan-out and the scoped reconcile.
+3. `feat(agents)`: the opt-out path in `syncAgents`, with the report.
+4. `feat(doctor)`: D9's agent row.
+5. `docs`: ARC-047, `OPERATOR-QUEUE.md` Q-009 and Q-010, README, `portable-bootstrap.md`.
+6. `chore(release)`: the minor bump.
+
+### Risks and rollback
+
+- **The one unverified premise is finding 9's inference** that the agent table's `storage: "user"`
+  rows resolve by default the way the skills table's demonstrably do. If an operator count shows they
+  do not, the fan-out target changes by one string and nothing else: the store, the reconcile, the
+  opt-out and the doctor row are all location-agnostic. That is why EV-01 for this epic is a count,
+  and why it is queued rather than assumed.
+- **Nothing is deleted anywhere.** The fan-out only removes a file whose hash still matches what
+  Arcane recorded writing; the opted-out repository's own agent files are reported for the operator
+  to remove. Rollback is setting `spell_scope` back to `"repo"` and running `spell agents sync`,
+  which rewrites `.github/agents` from the repository's roster.
