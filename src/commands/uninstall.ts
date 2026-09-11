@@ -263,6 +263,11 @@ async function uninstallUserTier(
     }
   }
   await rm(join(storeRoot, ".arcane.json"), { force: true });
+  // The agent roster and its definition files, mirroring the repository
+  // tier's own cleanup: they are written by `spell agents init --user` and
+  // tracked by no component, so nothing else would ever remove them.
+  await rm(join(storeRoot, "agents"), { recursive: true, force: true });
+  await rm(join(storeRoot, "agents.yaml"), { force: true });
   await removeDirectoryIfEmpty(join(storeRoot, USER_TIER_SPELLS_DIR));
   await removeDirectoryIfEmpty(storeRoot);
 
