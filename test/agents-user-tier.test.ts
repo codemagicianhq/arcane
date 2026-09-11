@@ -8,6 +8,7 @@ import { readManifest, writeManifest } from "../src/modules/manifest.js";
 import { runUninstall } from "../src/commands/uninstall.js";
 import {
   USER_AGENT_FANOUT_DIR,
+  describeFanoutOutcomes,
   syncUserTierFanout,
   userAgentFanoutPath,
   userTierRoot,
@@ -244,5 +245,30 @@ describe("uninstall --user leaves nothing of the agent tier behind", () => {
 
     await expect(fs.access(join(storeRoot, "agents.yaml"))).rejects.toThrow();
     await expect(fs.access(agentsDir)).rejects.toThrow();
+  });
+});
+
+describe("the output names the tier the run actually wrote", () => {
+  it("reports only the clients a run wrote for", async () => {
+    const storeRoot = await emptyStore();
+    const { userAgentFiles } = await syncAgents(storeRoot, ASSETS_DIR, ROSTER, { scope: "user" });
+    const { outcomes } = await syncUserTierFanout({
+      homeDir: home,
+      storeRoot,
+      spellIds: [],
+      extraFiles: userAgentFiles,
+      ownedClients: ["copilot-agents"],
+    });
+    const lines = describeFanoutOutcomes(outcomes);
+    expect(lines[0]).toContain("2 Copilot agent modes");
+    // A correct agent run used to read as a broken one by reporting zero of
+    // the two spell clients it was never going to write.
+    expect(lines[0]).not.toContain("0 ");
+  });
+
+  it("sends a --user run to the user tier's roster, not the repository's", async () => {
+    await expect(loadRoster(repo, "user")).rejects.toThrow(/~\/\.arcane\/agents\.yaml/);
+    await expect(loadRoster(repo, "user")).rejects.toThrow(/spell agents init --user/);
+    await expect(loadRoster(repo)).rejects.toThrow(/^No agent roster found at \.arcane/);
   });
 });

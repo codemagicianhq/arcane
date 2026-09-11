@@ -506,3 +506,60 @@ was retired). Verified on disk: consumers **A** and **C** each have 12 agent fil
 `.arcane/agents.yaml`; consumer **B** has **neither**, which is why it showed no agent modes — it has simply
 never run `spell agents init`, not a regression from any upgrade. This is CS-06's subject, and this
 section is the measurement it should be designed against.
+
+## CS-06 (2026-09-11) — the client's own build, and the tier end to end
+
+### What the shipped VS Code build says, read rather than inferred
+
+VS Code `1.137.0` (`645f29cc3176500b4b5762ba887cf2a7f0ffdf2c`) carries its chat discovery tables as
+literals in `resources/app/out/vs/workbench/workbench.desktop.main.js`. Custom agents resolve from
+four locations in one table, produced by the same `type -> locations` switch that produces the skills
+table:
+
+| Path | `source` | `storage` |
+|---|---|---|
+| `.github/agents` | `github-workspace` | `local` |
+| `.claude/agents` | `claude-workspace` | `local` |
+| `~/.copilot/agents` | `copilot-personal` | `user` |
+| `~/.claude/agents` | `claude-personal` | `user` |
+
+Three further facts from the same file. The `chatagent` language contribution registers
+`extensions: [".agent.md", ".chatmode.md"]` and `filenamePatterns: ["**/.github/agents/*.md",
+"**/.claude/agents/*.md"]`, so any `.md` inside an `agents` directory under `.claude` is an agent
+file while the other locations key on the `.agent.md` suffix. The loader builds one picker entry per
+discovered file — `{type: "agent", id: <uri>, uri: <uri>, name, description}` — then sorts by name,
+tie-breaking on URI, with **no dedup step anywhere in that path**. And the only consumer of the
+location table merges it with the user's `*FilesLocations` setting, keeping every default entry
+unless the setting sets that path to `false`; no Agent Host gate appears there, and this build has no
+`chat.agentHost.enabled` setting at all, only per-harness sub-settings.
+
+**Why the no-dedup finding matters more than the locations.** It turns the 2026-09-11 operator
+observation into a mechanism and settles CS-06's shape: a user tier added beside a repository that
+still carries `.github/agents` makes the picker longer, not shorter. The opt-out is the fix.
+
+**Still an inference, on the record:** that the two `storage: "user"` agent rows resolve in a default
+install. The cross-check is strong but indirect — the operator's `settings.json` has no `agentHost`,
+`useAgentSkills` or `*FilesLocations` key, and their VS Code listed the user tier's `spell-status`
+skill from `~/.agents/skills` in a repository carrying no skill of its own, which is the sibling
+table's user row resolving by default. `OPERATOR-QUEUE.md` Q-010 is the agent count that closes it.
+
+### EV-01 — the built CLI, against a stubbed home
+
+Built `1.3.0` (`node dist/index.js`), `HOME`/`USERPROFILE` pointed at an empty scratch directory.
+
+1. `spell agents sync --user` with no store: refused with the store's own path and
+   `spell init --user` as the remedy, and **wrote nothing** — verified by finding no files under the
+   stub home afterwards.
+2. `spell init --user` then `spell agents init --user --profile base --naming arcanos`: roster at
+   `~/.arcane/agents.yaml`, four role definitions at `~/.arcane/agents/*.yaml`, and four rendered
+   files at `~/.copilot/agents/{kellar,lafayette,lince,merlin}.agent.md`.
+3. The store manifest's `fanout` record held **4 agent entries beside 82 spell entries** — the
+   per-client scoping working: an agent sync did not prune the spell clients' records.
+4. No `CLAUDE.md`, `AGENTS.md` or `.github/` was written at the store root.
+
+Three output defects the probe caught, all fixed before the epic shipped: a `--user` run reported the
+*repository's* roster path and command in its not-found error; the written-files summary read
+`4 client file(s): 0 Codex/Copilot skills, 0 Claude Code commands` because it named two hardcoded
+clients rather than the ones the run wrote for; and the success block said
+`edit .arcane/agents.yaml → spell agents sync` after writing `~/.arcane/agents.yaml`. A correct run
+that reads as a broken one is a defect, not cosmetics.

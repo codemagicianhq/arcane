@@ -31,10 +31,16 @@ export class AgentDefinitionNotFoundError extends Error {
 }
 
 export class AgentRosterNotFoundError extends Error {
-  constructor() {
+  /**
+   * Names the tier the caller actually asked for. A `--user` run that reports
+   * the repository's path sends the operator to the wrong file and the wrong
+   * command, which is worse than no message.
+   */
+  constructor(scope: InstallScope = "repo") {
+    const user = scope === "user";
     super(
-      'No agent roster found at .arcane/agents.yaml. ' +
-      'Run "spell agents init" to create one.',
+      `No agent roster found at ${user ? "~/.arcane/agents.yaml" : ".arcane/agents.yaml"}. ` +
+      `Run "spell agents init${user ? " --user" : ""}" to create one.`,
     );
     this.name = "AgentRosterNotFoundError";
   }
@@ -121,7 +127,7 @@ export async function loadRoster(
   try {
     content = await readFile(rosterPath, "utf8");
   } catch {
-    throw new AgentRosterNotFoundError();
+    throw new AgentRosterNotFoundError(scope);
   }
   return validateAgentRoster(parseYaml(content, rosterPath), rosterPath);
 }

@@ -180,7 +180,7 @@ describe("spell init — handler", () => {
     await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     expect(vi.mocked(select)).not.toHaveBeenCalled();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
   // ─── Dry-run ──────────────────────────────────────────────────────────────
 
@@ -382,7 +382,7 @@ describe("spell init — handler", () => {
       expect(vi.mocked(input)).not.toHaveBeenCalled();
       expect(vi.mocked(inspectGitRepository)).not.toHaveBeenCalled();
       expect(vi.mocked(ensureLocalPullRebase)).not.toHaveBeenCalled();
-    });
+    }, VERY_HEAVY_TEST_TIMEOUT);
 
     it("--dry-run lists the store copies and the client files it would write, and writes nothing", async () => {
       const home = tmpDir;

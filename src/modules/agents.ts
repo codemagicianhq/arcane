@@ -333,12 +333,16 @@ export async function runAgentsInit(
 
   printSuccess("Agent roster initialized");
   console.log(`    📋 Profile: ${profileId} · Naming: ${namingStrategy} · Agents: ${rosterEntries.length}`);
-  console.log(`    🔄 Synced: ${synced.length} outputs (Copilot, Claude, Codex, OpenClaw)`);
+  console.log(
+    `    🔄 Synced: ${synced.length} outputs (${scope === "user" ? "Copilot agent modes in ~/.copilot/agents" : "Copilot, Claude, Codex, OpenClaw"})`,
+  );
   if (skipped.length > 0) {
     console.log(`    ⚠️  Skipped: ${skipped.length} (${skipped.join(", ")})`);
   }
   console.log();
-  console.log(`    💡 Customize: edit .arcane/agents.yaml → spell agents sync`);
+  console.log(
+    `    💡 Customize: edit ${label}/agents.yaml → spell agents sync${scope === "user" ? " --user" : ""}`,
+  );
   console.log();
   if (hasUnresolvedRoles) {
     console.error(
