@@ -605,24 +605,28 @@ export async function runUpdate(
       );
       orphanReport.push({ file, status });
 
-      // An orphan the operator EDITED keeps its manifest entry and its
-      // recorded hash. Dropping it would untrack a file that is still on
-      // disk, and re-adopting the component later -- switching spell_scope
-      // back to "repo" (CS-05), or a component returning to the registry --
-      // would then see an untracked file and overwrite the edit without a
-      // word, the exact silent loss ARC-038 decision 1 forbids. An unedited
-      // orphan needs none of this: it is byte-identical to what Arcane wrote,
-      // so a later overwrite loses nothing.
-      if (status === "reported" && recordedHash !== undefined) {
+      // An orphan that is still ON DISK stays in the manifest, with whatever
+      // hash was recorded for it. The manifest records what Arcane put in
+      // this repository, and the file is still there: dropping the entry
+      // would untrack a file Arcane wrote, which `spell uninstall` then
+      // leaks (the hazard the preserveExisting branch above already names),
+      // would overwrite an operator's edit without a word if the component
+      // is ever re-adopted, and -- the reason this surfaced -- would make
+      // the remedy printed one line below a lie: a report-only run that
+      // forgot its own orphans left `spell update --prune` with nothing to
+      // find. Reported every run until it is pruned or removed by hand;
+      // dropped as soon as it is (status "pruned" or "not-found").
+      if (status === "reported") {
         try {
           validateTargetPath(targetDir, file);
-          const orphanPath = join(targetDir, file);
-          if ((await fileExists(orphanPath)) && !(await fileMatchesHash(orphanPath, recordedHash))) {
+          if (await fileExists(join(targetDir, file))) {
             updatedFiles.push(file);
-            fileHashes[file] = recordedHash;
+            if (recordedHash !== undefined) fileHashes[file] = recordedHash;
           }
         } catch {
-          // Escaping path: already refused and reported by resolveOrphan.
+          // Escaping path: refused and reported by resolveOrphan, and
+          // deliberately dropped from the manifest -- it is not a file
+          // Arcane could have written.
         }
       }
     }
