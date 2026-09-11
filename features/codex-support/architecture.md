@@ -1,8 +1,8 @@
 ---
 status: active
-scope: CS-03 — canonical spell move, and CS-04 — user tier install (docs/plans/codex-support/PLAN.md); later epics append their own sections
+scope: CS-03 — canonical spell move, CS-04 — user tier install, and CS-05 — repo opt-out (docs/plans/codex-support/PLAN.md); later epics append their own sections
 created: 2026-09-09
-updated: 2026-09-09 (CS-04 section)
+updated: 2026-09-10 (CS-05 section)
 prd: PRD.md
 adr: ARC-045 (Accepted 2026-09-09)
 ---
@@ -516,3 +516,203 @@ to 1.1.0`; then program bookkeeping; then the trailer-free show-report regenerat
   until the operator runs Q-005 — disclosed in the ship report, as CS-03 disclosed Copilot.
 - A future VS Code that drops `~/.agents/skills` from its defaults would need a Copilot-specific
   fan-out target; `CLIENT_SHIM_PATHS`-style, one renderer line, no redesign.
+
+---
+
+## CS-05 — Repo opt-out: `spell_scope`
+
+### Inputs
+
+- **Requirements:** [PRD.md](PRD.md) R4 (a repository may opt out of carrying repo-local spell files
+  — AC7) and the `spell doctor` half of AC6. R3/AC5's second half — two repositories in one VS Code
+  workspace showing exactly one set of `/spell-*` — becomes reachable here for spells, and is closed
+  only by an operator count in VS Code (`OPERATOR-QUEUE.md` Q-005).
+- **Decision record:** `DECISIONS.md` ARC-045 decision 4 (one owner per client surface per machine,
+  selected by a repository-level `spell_scope` field, `"repo"` default, `"user"` opt-in; a repository
+  opted in stops carrying its own canonical source and every generated shim, and `spell doctor`
+  verifies a compatible user-tier install exists rather than silently leaving spells unreachable) and
+  decision 5 (governance, continuity files and repository configuration never move tier).
+- **Version:** minor (`1.2.0`). Self-mergeable under the `codex-support-plan` delegation.
+
+### Empirical-first findings (2026-09-10, before any code was written)
+
+Run with the built `1.1.1` CLI: a user tier in a stubbed home, a real `lite` consumer repository
+beside it, `spell_scope: "user"` set by hand in that repository's manifest.
+
+1. **Today's CLI tolerates the field and ignores it.** `readManifest` does not reject the unknown
+   key, `spell status` prints `Scope: repo` and names the user tier it found, and `spell update`
+   answers `Already up to date.` with all 40 canonical files and 120 shims still on disk. So the
+   field can be introduced without a migration: an older CLI reading a newer manifest keeps working
+   exactly as it does today, and a newer CLI reading an older manifest sees `undefined` = `"repo"`.
+2. **The opt-out's removal step is the orphan path, already built and already safe.** The consumer's
+   manifest tracked 170 files, **170/170 with a recorded hash**. After appending one line to
+   `.github/prompts/spell-status.prompt.md`, a hash sweep with 1.1.1's own normalization rule split
+   them exactly as the ARC-038 rule requires: **169 hash-matched (safe to prune), 1 edited (must be
+   kept)** — and the one it named was the edited file. `resolveOrphan` already reports every file a
+   component no longer lists, deletes only under `--prune`, and only when `fileMatchesHash` still
+   holds. **Correction to the epic's premise, on the record:** PLAN.md frames CS-05's risk as "the
+   migration/prune logic must never silently drop an operator-edited file", implying new prune logic
+   to get right. There is none to write — the epic's job is to make the spell components contribute
+   no files, and the existing orphan machinery does the rest with its existing guarantees.
+3. **Which tier's `/spell-*` actually runs today is not predictable while both exist.** In the very
+   session that designed this epic, with the user tier installed and this repository also carrying
+   its own shims, `/spell-full-cycle` resolved through the **user tier** (the harness expanded
+   `C:/Users/payini/.arcane/spells/spell-full-cycle.md`, the absolute include only the personal
+   command carries) while `/spell-open-session`, minutes earlier, resolved through the **project**
+   copy (`.arcane/spells/spell-open-session.md`). Both files were written by the same
+   `spell update --user` run. Claude Code documents "personal takes precedence over project"; what
+   was observed is that the two tiers coexisting makes the answer per-command and unpredictable.
+   This is the strongest argument for the opt-out that the program has produced: it is not only about
+   picker clutter across a multi-root workspace — with one owner there is nothing to resolve.
+   (It is also the first live confirmation that a personal command's **absolute** `@` include
+   resolves, which CS-04 could only take from documentation and left to Q-005.)
+4. **Nothing outside `spells-*` delivers a client file.** All 41 canonical files and all 123 shims
+   live in the nine `spells-*` components; no other component carries a `.github/prompts/`,
+   `.claude/commands/`, `.agents/skills/` or `.arcane/spells/` path, and no component declares
+   `directories`. So "stop carrying spells" is exactly "install nothing from `spells-*`".
+
+### Decisions
+
+**D1 — The field is `spell_scope?: InstallScope` on the repository manifest, absent meaning
+`"repo"`.** ARC-045 decision 4 names it, and the name earns its keep beside CS-04's `scope`: `scope`
+says what a manifest *is* (a repository install, or the user store itself), `spell_scope` says where
+a repository's spells *come from*. Validated by the same enum check `scope` gets, so a typo fails
+loudly at read time instead of silently reading as `"repo"`. The user store never carries
+`spell_scope` — it is the thing being pointed at.
+
+**D2 — Opting out empties the spell components; it does not filter paths.**
+`componentForSpellScope(component, spellScope)` in `src/modules/user-tier.ts`: identity for
+`"repo"`; for `"user"`, a component whose name starts with `spells-` becomes `{ …component, files:
+[] }` and every other component is returned untouched. Composed in `init` and `update` **only in the
+repo scope** — the store has no `spell_scope` — as
+`componentForSpellScope(componentForScope(getComponent(name), scope), spellScope)`.
+
+Why empty the component rather than filter by path prefix: a prefix list (`{.github/prompts/,
+.claude/commands/, .agents/skills/, .arcane/spells/}`) would be a fourth place the client-surface
+shapes are written down, beside `CLIENT_SHIM_PATHS`, `CLIENT_SHIM_PATH_PATTERNS` and
+`CANONICAL_SPELLS_DIR`, and it would silently miss a fifth client the day one is added. "Which
+components deliver spells" is already derived, not hand-listed (`SPELL_COMPONENT_NAMES`), and CS-04
+already leans on it for `USER_TIER_COMPONENTS`. Finding 4 confirms the two definitions coincide
+today; a test pins that they must keep coinciding.
+
+**D3 — Removal is the orphan path, unchanged.** A repository that opts in *after* its spells were
+installed keeps them in the manifest but loses them from every component's file list — which is
+`resolveOrphan`'s definition of an orphan, already reported on every update and deleted only under
+`--prune` and only while `fileMatchesHash` holds. CS-05 writes **no new prune logic** (finding 2).
+The summary line gains one sentence naming why they are orphaned, so the operator reads "because
+this repository now takes its spells from the user tier" rather than guessing. Dry-run,
+`--prune`, the edited-file refusal and the pre-ARC-038 no-hash refusal all behave exactly as they
+already do.
+
+**D4 — `init` asks only when a user tier exists, and defaults to No.** A new Step 5f, interactive
+only (the gate every other manifest question already uses: skipped entirely when `--profile` was
+passed), and only when `readManifest(userTierRoot())` succeeds:
+
+> This machine has an Arcane user tier (v1.1.1). Use it for this repository's spells instead of
+> installing copies here? (default: No — install this repository's own copies)
+
+Default **No**, deliberately: a shared, team or cloud repository must not stop carrying its spells
+because the machine that happened to run `spell init` had a tier. The opt-out is a property of the
+repository, committed to `.arcane.json` and inherited by every clone — so it is the kind of choice
+that is safe only when someone says yes on purpose. A scripted install never asks and never opts in.
+
+**D5 — The retrofit is a silent `"repo"`; the field is not added to `MANIFEST_RETROFITS`.** That
+list exists to ask an existing install a question it predates, once, interactively. Asking every
+repository on every machine whether it wants a tier most machines do not have would be noise, and
+the answer is already correct without asking. Absent stays absent; the only ways in are `init`'s
+question and a deliberate hand edit (which is how a team opts an existing repository in, and is why
+D1 validates the value).
+
+**D6 — `spell doctor` gains `checkSpellScope`, the one blocking user-tier check.** It runs only when
+the repository's manifest says `spell_scope: "user"` (otherwise it returns a non-blocking pass with
+"not opted in", so the row never disappears silently):
+
+| Store state | Result | Message |
+|---|---|---|
+| missing | **FAIL, blocking** | this repository takes its spells from the user tier, which is not installed — `spell init --user` |
+| unreadable | **FAIL, blocking** | names the error and the same remedy |
+| present, `major.minor` differs from this repository's manifest version | warn, non-blocking | `spell update --user` |
+| present and compatible | pass | the store path, the spell count, and the named probe below |
+
+"Compatible" is verified, not assumed: the check counts `~/.arcane/spells/spell-*.md` and confirms a
+named spell (`spell-status`) is actually there — the sketch's "probe one spell". This is the only
+blocking check the user tier has, and it is blocking for a precise reason: an opted-in repository
+with no store has **no spells at all**, in any client, which is exactly the "silently unreachable"
+state ARC-045 decision 4 exists to prevent. CS-04's `checkUserTier` stays advisory and unchanged —
+it asks whether the tier is healthy, this one asks whether this repository depends on it.
+
+**D7 — `status` names the dependency in one line.** `Scope: repo` becomes `Scope: repo (spells: user
+tier)` when opted in; the existing `User tier: v… at …` line already follows. When opted in and the
+store is missing, that second line says `User tier: not installed — this repository expects it (spell doctor)`.
+
+**D8 — Dropped from the epic, on the record: the marker-block pointer line.** The approved plan's
+CS-05 sketch said "Marker blocks gain one pointer line." Checked against the tree: the only marker
+sections Arcane writes — in `AGENTS.md`, `CLAUDE.md` and `.github/copilot-instructions.md` — are
+produced by `agent-generator.ts` and contain the **agent roster**, not spell routing
+(`grep mergeIntoFile src/` names that one caller). There is no spell-routing marker block for a
+pointer to live in, and agent delivery at the user tier is CS-06's subject. Dropped rather than
+invented; CS-06 owns whatever those blocks should say once agents have a tier.
+
+**D9 — Docs and release.** README's "Once per machine" subsection gains the repository half (how to
+opt in, and that shared/team/cloud repositories should stay `repo`); `CHANGELOG.md` `## [1.2.0]`;
+ARC-045 gains an implementation note for decision 4 recording D2's component-level shape, D4's
+default-No, and D8's correction; `portable-bootstrap.md`'s "Framework-managed spells" bullet gains
+one clause. Version `1.2.0`.
+
+### Component view
+
+```mermaid
+flowchart TD
+    M[".arcane.json — spell_scope"] -->|"repo (default/absent)"| R["spells-* install 164 files<br/>canonical + 3 shims per spell"]
+    M -->|"user"| E["componentForSpellScope → files: []<br/>spells-* install nothing"]
+    E --> O{"files already on disk<br/>from a previous install?"}
+    O -- yes --> P["resolveOrphan: reported every update;<br/>deleted only with --prune, only while the hash matches"]
+    O -- no --> N["nothing to do"]
+    E -.-> D["doctor checkSpellScope (blocking):<br/>store present? compatible? spell-status probed?"]
+    G["governance, instructions, continuity,<br/>hooks, templates"] -->|unchanged in both| R
+```
+
+### Testing strategy
+
+- **Unit:** `componentForSpellScope` — repo identity (same object), user scope empties every
+  `spells-*` component and touches nothing else, and the pin that the set of components carrying a
+  canonical-or-shim path equals `SPELL_COMPONENT_NAMES` (so a future client or component cannot
+  drift past D2); `manifest.ts` accepts `spell_scope` absent/`repo`/`user` and rejects anything else.
+- **Command integration:** `init` with the field — zero spell files written, governance still
+  written, the manifest records `spell_scope`; the question is asked only when a store exists, only
+  interactively, and its default is No; a scripted `--profile` install never asks and never opts in.
+  `update` on a repository that opts in after the fact — every previously-installed spell file
+  reported as orphaned and **none deleted**; with `--prune`, the hash-matched ones removed and an
+  edited one kept and named; the summary names the reason; dry-run writes nothing. `status` prints
+  `Scope: repo (spells: user tier)`.
+- **`doctor`:** opted in + store present and compatible → pass naming the count and the probe; store
+  missing → **blocking** FAIL with `spell init --user`; store at a different `major.minor` → warn;
+  not opted in → non-blocking pass. Existing doctor suites unchanged.
+- **Repository gates:** full `npm test`, `npm run build`, `check:version-bump` (`1.2.0`),
+  `check:self-host-parity`, `check:spell-catalog`, `check:adr-references`, `check:citations`,
+  `check:stale-claims` Class A, `check:followups`.
+- **Live (EV-01):** a real two-repository check with the built CLI — one repository opted in, one
+  not — confirming the opted-in one installs zero spell files while the other is unaffected, and
+  that `doctor` fails loudly when the store is removed. The VS Code and Claude Code *picker* count
+  across a multi-root workspace stays the operator's (Q-005); finding 3 already shows why it matters.
+
+### Blast radius
+
+| Area | Files | Treatment |
+|---|---:|---|
+| `src/` | 6 | `types.ts` (`spell_scope`), `modules/manifest.ts` (validation), `modules/user-tier.ts` (`componentForSpellScope`), `commands/init.ts` (question + filter), `commands/update.ts` (filter + orphan reason), `commands/status.ts` (one line), `commands/doctor.ts` (`checkSpellScope`) |
+| `test/` | 5 | `user-tier`, `manifest`, `init`, `update`, `status`, plus a new `doctor-spell-scope` |
+| Distributed prose | 1 | `portable-bootstrap.md` (source + parity copy) |
+| Root docs | 5 | README, CHANGELOG, DECISIONS.md (ARC-045 note), PLAN.md, PRD.md |
+
+### Risks and rollback
+
+- **A repository that never opts in is byte-for-byte unaffected**: absent `spell_scope` is `"repo"`,
+  `componentForSpellScope` returns the same object, and no other code path reads the field.
+- **Opting in never deletes anything on its own.** The files become orphans, which are reported; the
+  operator runs `--prune` to remove them, and an edited file survives that too. Rollback is editing
+  the field back to `"repo"` (or deleting it) and running `spell update`, which reinstalls every
+  spell file from the registry — the same restore path CS-03 built.
+- **The blocking doctor check is the one new way to fail a previously-passing `spell doctor`.** It
+  can only fire in a repository that opted in, which is an explicit act; and its message names the
+  single command that fixes it.
