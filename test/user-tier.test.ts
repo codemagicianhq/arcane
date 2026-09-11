@@ -467,7 +467,7 @@ describe("inspectUserTierFanout", () => {
 
     const health = await inspectUserTierFanout(home, record);
     expect(health.total).toBe(4);
-    expect(health.byClient).toEqual({ codex: 2, claude: 2 });
+    expect(health.byClient).toEqual({ codex: 2, claude: 2, "copilot-agents": 0 });
     expect(health.missing).toEqual([missing]);
     expect(health.customized).toEqual([edited]);
     await expect(fs.access(join(home, missing))).rejects.toThrow();
@@ -475,7 +475,12 @@ describe("inspectUserTierFanout", () => {
 
   it("an absent record is an empty, healthy fan-out", async () => {
     const health = await inspectUserTierFanout(home, undefined);
-    expect(health).toEqual({ total: 0, byClient: { codex: 0, claude: 0 }, missing: [], customized: [] });
+    expect(health).toEqual({
+      total: 0,
+      byClient: { codex: 0, claude: 0, "copilot-agents": 0 },
+      missing: [],
+      customized: [],
+    });
   });
 });
 

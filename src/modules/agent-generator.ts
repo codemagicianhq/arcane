@@ -18,7 +18,7 @@
  * at .arcane/generated/openclaw-roster.json for the user to apply manually.
  */
 
-import { writeFile, mkdir } from "node:fs/promises";
+import { writeFile, mkdir, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type {
@@ -29,6 +29,7 @@ import type {
 } from "../types.js";
 import { mergeIntoFile } from "./merger.js";
 import { loadAgentDefinition, projectAgentsDir } from "./agent-loader.js";
+import { userAgentFanoutPath, type FanoutFile } from "./user-tier.js";
 
 // ─── Resolved entry (definition + roster entry joined) ───────────────────────
 
@@ -165,6 +166,19 @@ export interface SyncResult {
    * problem, not a role-resolution failure, and does not set this.
    */
   hasUnresolvedRoles: boolean;
+  /**
+   * User-tier runs only: the agent files rendered for the home fan-out,
+   * unwritten. The caller reconciles them against the store manifest's
+   * `fanout` record so an operator's edit survives (CS-06 / ARC-047).
+   */
+  userAgentFiles: FanoutFile[];
+  /**
+   * Opted-out repositories only: `.github/agents` files still on disk that
+   * this run did not write and will not delete. They are not manifest-tracked
+   * by any component, so there is no recorded hash to prove one untouched --
+   * they are named for the operator to remove, never removed here.
+   */
+  unmanagedAgentFiles: string[];
 }
 
 // ─── Main sync function ───────────────────────────────────────────────────────
@@ -177,6 +191,23 @@ export interface SyncResult {
  * @param roster      Parsed agent roster (from .arcane/agents.yaml)
  * @param options     Sync options (dry-run, client filters)
  */
+/**
+ * The `.agent.md` files already sitting in a repository's agent directory.
+ * Used only to report what an opted-out repository still carries; a missing
+ * or unreadable directory is simply "none".
+ */
+async function existingAgentFiles(agentsDir: string): Promise<string[]> {
+  try {
+    const entries = await readdir(agentsDir);
+    return entries
+      .filter((name) => name.endsWith(".agent.md"))
+      .sort()
+      .map((name) => `.github/agents/${name}`);
+  } catch {
+    return [];
+  }
+}
+
 export async function syncAgents(
   targetDir: string,
   assetsDir: string,
@@ -187,8 +218,17 @@ export async function syncAgents(
   const skipped: string[] = [];
   let hasUnresolvedRoles = false;
 
+  // CS-06 / ARC-047. Two independent axes, deliberately not one flag:
+  //   `scope`      -- is THIS run writing the user tier's own agent files?
+  //   `spellScope` -- does this REPOSITORY take its client files from the
+  //                   user tier, and therefore write no `.github/agents`?
+  const userTier = options.scope === "user";
+  const repoOptedOut = !userTier && options.spellScope === "user";
+  const userAgentFiles: FanoutFile[] = [];
+  const unmanagedAgentFiles: string[] = [];
+
   // ── Load all definitions ──────────────────────────────────────────────────
-  const projectDefs = projectAgentsDir(targetDir);
+  const projectDefs = projectAgentsDir(targetDir, userTier ? "user" : "repo");
   const bundledDefs = join(assetsDir, "agents");
 
   const resolved: ResolvedEntry[] = [];
@@ -215,7 +255,10 @@ export async function syncAgents(
   }
 
   // ── OpenClaw output ──────────────────────────────────────────────────────
-  if (roster.openclaw.enabled && options.openclaw !== false) {
+  // Never at the user tier: OpenClaw workspaces already live under
+  // `~/.openclaw` and are home-scoped by construction, so there is no
+  // per-folder duplication for a tier to solve and nothing to move.
+  if (!userTier && roster.openclaw.enabled && options.openclaw !== false) {
     const openclawRoot = roster.openclaw.workspace_root.replace(
       /^~/,
       homedir(),
@@ -292,8 +335,11 @@ export async function syncAgents(
   if (options.copilot !== false) {
     const agentsDir = join(targetDir, ".github", "agents");
 
-    if (!options.dryRun) {
-      await mkdir(agentsDir, { recursive: true });
+    // An opted-out repository still needs `.github` to exist, because the
+    // copilot-instructions merge below writes into it and used to rely on
+    // this mkdir creating the parent as a side effect.
+    if (!options.dryRun && !userTier) {
+      await mkdir(repoOptedOut ? join(targetDir, ".github") : agentsDir, { recursive: true });
     }
 
     for (const { def, displayName } of resolved) {
@@ -301,28 +347,55 @@ export async function syncAgents(
       // Slugify: lowercase, spaces → hyphens (e.g. "QA Lead" → "qa-lead.agent.md")
       const slug = displayName.toLowerCase().replace(/\s+/g, "-");
       const fileName = `${slug}.agent.md`;
+      const content = renderCopilotAgent(def, displayName);
+
+      // The user tier renders the same bytes to a home-relative path and
+      // hands them back rather than writing them here: the write goes through
+      // the fan-out reconcile, so an operator's edit to one of these files is
+      // recognized and left alone (ARC-038, as applied by CS-04).
+      if (userTier) {
+        const relativePath = userAgentFanoutPath(slug);
+        userAgentFiles.push({ relativePath, client: "copilot-agents", content });
+        synced.push(`~/${relativePath}`);
+        continue;
+      }
+
+      // This repository takes its client files from the user tier, so it
+      // gains no agent file of its own -- writing one would add a second
+      // picker entry beside the tier's, not replace it.
+      if (repoOptedOut) continue;
+
       if (!options.dryRun) {
-        await writeFile(
-          join(agentsDir, fileName),
-          renderCopilotAgent(def, displayName),
-          "utf8",
-        );
+        await writeFile(join(agentsDir, fileName), content, "utf8");
       } else {
         console.log(`  [dry-run] Would write: .github/agents/${fileName}`);
       }
       synced.push(`.github/agents/${fileName}`);
     }
 
-    // Merge spell routing + roster into copilot-instructions.md
-    const copilotSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
-    const copilotMerged = await mergeIntoFile(
-      targetDir,
-      ".github/copilot-instructions.md",
-      copilotSection,
-      { force: true, dryRun: options.dryRun },
-    );
-    if (copilotMerged)
-      synced.push(".github/copilot-instructions.md (agents section)");
+    if (repoOptedOut) {
+      unmanagedAgentFiles.push(...(await existingAgentFiles(agentsDir)));
+    }
+
+    // Merge spell routing + roster into copilot-instructions.md. Repository
+    // continuity content, not a client discovery surface: it stays in an
+    // opted-out repository (ARC-045 decision 5) and is never written at the
+    // user tier, which has no repository to describe.
+    if (!userTier) {
+      const copilotSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
+      const copilotMerged = await mergeIntoFile(
+        targetDir,
+        ".github/copilot-instructions.md",
+        copilotSection,
+        { force: true, dryRun: options.dryRun },
+      );
+      if (copilotMerged)
+        synced.push(".github/copilot-instructions.md (agents section)");
+    }
+  }
+
+  if (userTier) {
+    return { synced, skipped, hasUnresolvedRoles, userAgentFiles, unmanagedAgentFiles };
   }
 
   // ── Claude output ────────────────────────────────────────────────────────
@@ -349,5 +422,5 @@ export async function syncAgents(
     if (codexMerged) synced.push("AGENTS.md (agents section)");
   }
 
-  return { synced, skipped, hasUnresolvedRoles };
+  return { synced, skipped, hasUnresolvedRoles, userAgentFiles, unmanagedAgentFiles };
 }

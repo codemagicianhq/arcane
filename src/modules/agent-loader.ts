@@ -9,7 +9,7 @@
 import { readFile, readdir, access } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "yaml";
-import type { AgentDefinition, AgentRoster } from "../types.js";
+import type { AgentDefinition, AgentRoster, InstallScope } from "../types.js";
 import {
   AgentConfigValidationError,
   validateAgentDefinition,
@@ -99,8 +99,24 @@ export async function loadAllAgentDefinitions(
  * Loads the agent roster from .arcane/agents.yaml in the target directory.
  * Throws AgentRosterNotFoundError if not initialized.
  */
-export async function loadRoster(targetDir: string): Promise<AgentRoster> {
-  const rosterPath = join(targetDir, ".arcane", "agents.yaml");
+/**
+ * The directory holding `agents.yaml` and the per-role definition files.
+ *
+ * A repository keeps them under its framework layer, `<repo>/.arcane`. The
+ * user tier's store IS that layer -- `~/.arcane` already plays the role
+ * `<repo>/.arcane` plays in a repository, which is why its spells live at
+ * `~/.arcane/spells/<id>.md` and not `~/.arcane/.arcane/spells/` (CS-04's
+ * store view, `componentForScope`). Agents follow the same rule.
+ */
+export function agentsBaseDir(targetDir: string, scope: InstallScope = "repo"): string {
+  return scope === "user" ? targetDir : join(targetDir, ".arcane");
+}
+
+export async function loadRoster(
+  targetDir: string,
+  scope: InstallScope = "repo",
+): Promise<AgentRoster> {
+  const rosterPath = join(agentsBaseDir(targetDir, scope), "agents.yaml");
   let content: string;
   try {
     content = await readFile(rosterPath, "utf8");
@@ -113,9 +129,12 @@ export async function loadRoster(targetDir: string): Promise<AgentRoster> {
 /**
  * Returns true if a roster file exists in the target directory.
  */
-export async function rosterExists(targetDir: string): Promise<boolean> {
+export async function rosterExists(
+  targetDir: string,
+  scope: InstallScope = "repo",
+): Promise<boolean> {
   try {
-    await access(join(targetDir, ".arcane", "agents.yaml"));
+    await access(join(agentsBaseDir(targetDir, scope), "agents.yaml"));
     return true;
   } catch {
     return false;
@@ -125,6 +144,9 @@ export async function rosterExists(targetDir: string): Promise<boolean> {
 /**
  * Returns the path to the project's agent definitions directory.
  */
-export function projectAgentsDir(targetDir: string): string {
-  return join(targetDir, ".arcane", "agents");
+export function projectAgentsDir(
+  targetDir: string,
+  scope: InstallScope = "repo",
+): string {
+  return join(agentsBaseDir(targetDir, scope), "agents");
 }
