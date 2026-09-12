@@ -882,26 +882,24 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     console.log("  All checks passed. Your environment is ready.\n");
   } else {
     console.log("  One or more checks failed. Fix the issues above before proceeding.\n");
+    process.exitCode = 1;
+  }
 
-    // --fix: remediate missing session continuity files
-    const hasMissingSession = sessionResults.some((r) => !r.passed);
-    if (options.fix && hasMissingSession && assetsDir) {
-      console.log("  🔧 Fixing missing session continuity files...\n");
-      const created = await fixSessionContinuity(targetDir, assetsDir);
-      if (created.length > 0) {
-        for (const file of created) {
-          console.log(`    ✓ Created: ${file}`);
-        }
-        console.log(`\n  ${created.length} file(s) created. Repo is now close-session-ready.\n`);
-      } else {
-        console.log("    No files needed creation (all present).\n");
+  // --fix: remediate missing session continuity files (runs regardless of allPassed,
+  // since session continuity checks are warnings, not blocking failures)
+  const hasMissingSession = sessionResults.some((r) => !r.passed);
+  if (options.fix && hasMissingSession && assetsDir) {
+    console.log("  🔧 Fixing missing session continuity files...\n");
+    const created = await fixSessionContinuity(targetDir, assetsDir);
+    if (created.length > 0) {
+      for (const file of created) {
+        console.log(`    ✓ Created: ${file}`);
       }
-    } else if (hasMissingSession && !options.fix) {
-      console.log("  💡 Run `spell doctor --fix` to create missing session files.\n");
+      console.log(`\n  ${created.length} file(s) created. Repo is now close-session-ready.\n`);
+    } else {
+      console.log("    No files needed creation (all present).\n");
     }
-
-    if (!allPassed) {
-      process.exitCode = 1;
-    }
+  } else if (hasMissingSession && !options.fix) {
+    console.log("  💡 Run `spell doctor --fix` to create missing session files.\n");
   }
 }
