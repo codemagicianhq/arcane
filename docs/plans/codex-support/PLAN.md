@@ -1,6 +1,7 @@
 ---
 title: Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier
-status: active
+status: complete
+completed: 2026-09-11
 created: 2026-09-09
 activated: 2026-09-09 (CS-00 merged — PR #220)
 baseline: 1293fae (main)
@@ -455,3 +456,12 @@ Two more things this program deliberately leaves for the operator, both already 
 decisions (Q-006 ARC-046, Q-008 the default `spell_scope`, Q-009 ARC-047) and the two picker counts
 that are AC5's remaining half (Q-007 for spells, Q-010 for agents). **The counts are the only reason
 AC5 is not marked met**, and no amount of further work inside this program can close them.
+
+**Update 2026-09-11 — all five closed.** The queue-walkthrough session
+(`journal/2026-09-11-codex-support-queue-walkthrough.md`) walked `OPERATOR-QUEUE.md` Q-006 through
+Q-011 one at a time: ARC-046 and ARC-048 accepted, Q-008's default-scope preselect shipped (`1.5.0`),
+and both picker counts measured (3 entries → 1 after opting in), meeting AC5. 11/11 queue items and
+9/9 acceptance criteria are now done; see Current Priorities item 8 in
+`ai-context/system-prompt-context.md` for the full closing summary. The program has no remaining
+open thread of its own — only the four `TODO.md` items in the table above, which were always routed
+elsewhere by design.
