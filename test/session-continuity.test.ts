@@ -287,4 +287,27 @@ describe("session-continuity — doctor --fix", () => {
     const secondRun = await fixSessionContinuity(tmpDir, ASSETS_DIR);
     expect(secondRun).toHaveLength(0);
   }, HEAVY_TEST_TIMEOUT);
+
+  it("fixSessionContinuity creates journal/.gitkeep when journal/ dir exists but .gitkeep is missing", async () => {
+    // Pre-create just the journal directory without .gitkeep
+    await fs.mkdir(join(tmpDir, "journal"), { recursive: true });
+
+    // Before fix, .gitkeep should not exist
+    try {
+      await fs.access(join(tmpDir, "journal/.gitkeep"));
+      throw new Error("File should not exist");
+    } catch (err) {
+      if (err instanceof Error && "code" in err && err.code !== "ENOENT") throw err; // Expected
+    }
+
+    // Run fix
+    const created = await fixSessionContinuity(tmpDir, ASSETS_DIR);
+
+    // Should have created journal/.gitkeep (plus 3 other files)
+    expect(created).toContain("journal/.gitkeep");
+    expect(created).toHaveLength(4); // TODO.md, DECISIONS.md, ai-context/system-prompt-context.md, journal/.gitkeep
+
+    // Verify file exists
+    await expect(fs.access(join(tmpDir, "journal/.gitkeep"))).resolves.toBeUndefined();
+  }, HEAVY_TEST_TIMEOUT);
 });
