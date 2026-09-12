@@ -1,7 +1,10 @@
+---
 title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
+last_updated: 2026-09-12
+---
 
 # Arcane Framework — Architecture Decision Records (ARC)
 
@@ -14,6 +17,16 @@ Framework-level decisions for the Arcane SDLC methodology: the spell library, CL
 ## Numbering Convention
 
 Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded). Prior framework decisions predate the `ARC-NNN` sequence and are listed in the [Cross-Reference Index](#cross-reference-index---framework-adrs) below under their original `ADR-NNN` numbers.
+
+## Pending ADR Candidates
+
+### Phase contributor provenance separate from commit authorship
+
+**Filed:** 2026-09-12. **Status:** Pending design; not an accepted policy or a numbered ADR.
+
+Suggested title: **Record phase contributors separately from Git commit authorship.** Decide where the canonical phase-contributor record lives and how PR summaries and optional structured commit trailers consume it. The record should explain which runtime and resolved persona handled each phase, what it was responsible for, and what evidence supports the result, without claiming unexecuted work or turning every participant into a commit author. Resolve the trade-off between a PR-only summary and a committed record referenced by trailers, including updates after review or release, backward compatibility, and public-metadata privacy. Keep the existing `Agent`/`Persona`/`Role` meanings intact.
+
+Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation and Phase Attribution](TODO.md#agent-delegation-and-phase-attribution). This candidate complements [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) and the [Agent Attribution Model](.arcane/governance/git-conventions.md#agent-attribution-model); it does not change either one. Assign an ADR number when the design is drafted, not at idea intake.
 
 ## Table of Contents
 
