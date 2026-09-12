@@ -334,9 +334,16 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   channels — that needs its own dedicated investigation per channel if the operator wants it, separate
   from this narrow smoke test.
 - **Preconditions:** none.
-- **Status:** parked 2026-09-01 (operator default during endgame planning) — pending a scan of the
-  other three channels (MCP prompts, Claude Code plugin marketplaces, portable Agent Skills, Microsoft
-  APM) before a real go/no-go can be made with full context. Not blocking anything in this plan.
+- **Status:** [x] done 2026-09-11 — **no-go, decided.** Parked 2026-09-01 pending a scan of the other
+  delivery channels; that scan happened as the Codex Support program, which unparked this question in
+  its CS-08 spike, built a working prototype rather than arguing about it, and put the verdict to the
+  operator as its own Q-006. Accepted there as
+  [ARC-046](../../../DECISIONS.md#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained):
+  the restore mechanism works and is retained, but an edit to a restored file is invisible to git and
+  gone on the next clone, so the customization overlay that would make the model safe does not exist.
+  The duplication that motivated the question was solved instead by the user tier and the repository
+  opt-out, and measured — three entries per spell and per agent down to exactly one. The
+  symlink/junction variant this entry named is rejected outright.
 
 <!-- The loop appends Q-011+ below this line. -->
 

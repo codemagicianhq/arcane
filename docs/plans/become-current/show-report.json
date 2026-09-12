@@ -52,11 +52,6 @@
       "reason": "wiring the website repo to fetch and render this file (e.g. via the raw GitHub URL for"
     },
     {
-      "id": "Q-010",
-      "title": "Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions",
-      "reason": "Go/no-go: package-referenced (not copy-in) distribution, given confirmed enabling assumptions"
-    },
-    {
       "id": "Q-011",
       "title": "Phase 5 DoD closure: the 7 items with no forcing function, consolidated",
       "reason": "PLAN.md's Definition of Done criterion 2 requires `TODO.md` to carry no unchecked item"

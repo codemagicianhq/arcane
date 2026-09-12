@@ -40,6 +40,10 @@ for the distribution-model question CS-08 unparks.
 
 ## Definition of Done
 
+**All seven met as of 2026-09-11**, the last three closed in the session that walked the operator
+through the remaining queue items one at a time. Every entry in `OPERATOR-QUEUE.md` is marked done,
+and so is Become Current's Q-010, parked since 2026-09-01.
+
 1. Every PRD acceptance criterion (AC1–AC9) is met, evidenced, and cross-referenced from the epic
    that shipped it. **Met 2026-09-11** — AC5, the last one open, closed by the operator's count.
 2. `npm run check:self-host-parity`, `check:spell-catalog`, and `check:version-bump` pass on `main`
@@ -55,7 +59,9 @@ for the distribution-model question CS-08 unparks.
 5. [ARC-045](../../../DECISIONS.md) is `Accepted` before CS-03 starts; the canonical-source move
    ships under an explicit, operator-confirmed version number.
 6. `docs/research/restore-based-delivery.md` states an explicit go/no-go on the restore-based
-   distribution model (AC9) — a "go" is scoped as a new program, not folded in here.
+   distribution model (AC9) — a "go" is scoped as a new program, not folded in here. **Met
+   2026-09-11** — ARC-046 accepted as drafted, which also closes Become Current's Q-010, the oldest
+   parked question in the backlog.
 7. `spell-check-drift` reports **GO** with zero Critical/High after the last epic; `TODO.md` has no
    unchecked item this program added without a named epic; `CHANGELOG.md` is current through the
    version this program ships.
