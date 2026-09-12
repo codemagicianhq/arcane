@@ -4,9 +4,10 @@
     "id": "codex-support",
     "slug": "codex-support",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "status": "active",
+    "status": "complete",
     "baseline": "1293fae (main)",
     "started": "2026-09-09",
+    "completed": "2026-09-11",
     "versionSpan": {
       "from": "0.38.3",
       "to": "1.5.0"
@@ -15,7 +16,7 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Codex Support — A Client-Neutral Spell Source and a User-Level Install Tier",
-    "dek": "active — 9 of 9 epics shipped"
+    "dek": "complete — 9 of 9 epics shipped"
   },
   "stats": [
     {
@@ -38,7 +39,7 @@
     },
     {
       "id": "adrs",
-      "value": 1,
+      "value": 4,
       "label": "ADRs accepted",
       "derived": true
     }
@@ -192,7 +193,7 @@
       "docs/plans/codex-support/OPERATOR-QUEUE.md",
       "docs/verification-ledger.md"
     ],
-    "compiledAt": "2026-09-09 (CS-00 merged — PR #220)",
+    "compiledAt": "2026-09-11",
     "templateVersion": "v0-interim"
   }
 }
