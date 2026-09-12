@@ -62,7 +62,15 @@ for itself — *"I can test what you couldn't, give me steps and I test for you.
 
 ### Deferred
 
-Nothing untracked — Q-001 through Q-011 are all marked done, and every finding this program opened
+**One thing this close got wrong, corrected after the fact.** The operator asked what the action plan
+for ARC-046's customization overlay was, and the honest answer was that there wasn't one: the ADR and
+the research doc both name it as the missing piece, and nothing anywhere said to design it. It was
+recorded as a *reason* and not as *work*. Now filed in `IDEAS.md`, along with the operator's own
+sketch for it — a marker inside the managed file pointing at a separate override file — which is
+worth distinguishing from the symlink variant ARC-046 killed, because that was a filesystem pointer
+and this is a content reference, and none of the three objections to the former apply to the latter.
+
+Otherwise nothing untracked — Q-001 through Q-011 are all marked done, and every finding this program opened
 and did not close is a `TODO.md` entry routed by name in `docs/plans/codex-support/PLAN.md`, "What
 this program did not close". The disposable fixtures built for the counts are still on disk under the
 system temp directory (`arcane-count`, `arcane-noroster`, `arcane-migrate`, `arcane-pref`,
