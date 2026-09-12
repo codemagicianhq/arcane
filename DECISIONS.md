@@ -64,7 +64,7 @@ Arcane framework decisions use the `ARC-NNN` prefix (three digits, zero-padded).
 | [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
 | [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
 | [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
-| [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Proposed   |
+| [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Accepted   |
 | [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) | Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier | 2026-09-11 | Accepted   |
 | [ARC-048](#arc-048--an-absent-spell_scope-means-repo-permanently-new-repositories-may-be-pre-selected) | An Absent `spell_scope` Means `repo`, Permanently; New Repositories May Be Pre-Selected | 2026-09-11 | Accepted   |
 
@@ -2793,8 +2793,18 @@ variances recorded against vendor documentation):**
 ## ARC-046 — Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained
 
 **Date:** 2026-09-10
-**Status:** Proposed (2026-09-10, drafted by CS-08 of the Codex Support program; operator decision via
+**Status:** Accepted (2026-09-11, decided by the operator; drafted by CS-08 of the Codex Support
+program; decision recorded at
 [docs/plans/codex-support/OPERATOR-QUEUE.md Q-006](docs/plans/codex-support/OPERATOR-QUEUE.md#q-006--accept-revise-or-reject-arc-046-restore-based-delivery-no-go))
+
+> **Accepted as drafted.** The duplication that raised this question in the first place was solved
+> another way while this ADR sat open, and measured: two repositories in one VS Code workspace went
+> from three entries per spell and per agent to exactly one, once both took their spells from the
+> user tier ([ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier),
+> [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier), and
+> `docs/research/skill-discovery-smoke-tests.md`, "AC5 measured"). The reason to accept is therefore
+> stronger than when this was written: the problem is not merely answerable another way, it has been
+> answered.
 **Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier)
 (the canonical source and the user tier this decision is evaluated against; its rejected-alternatives
 list deliberately left this question open), [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content)

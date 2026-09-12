@@ -218,7 +218,16 @@ entry to *this* queue once it runs.
   If you want the model after all, say so: a "go" opens a new program whose first epic is the
   customization-overlay design — it is not folded into Codex Support.
 - **Rollback:** an accepted ADR can be superseded by a later ADR; nothing is implemented either way.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-11 — **accepted as drafted.** The operator asked what the two load-
+  bearing phrases actually meant before deciding, which is the right question: an edit to a restored
+  file would be invisible to git (the file is gitignored, so no diff, no staged change, no sign
+  anything happened) and gone on the next fresh clone, with no record it existed — the same failure
+  as editing something inside `node_modules`. The "customization overlay" that would make the model
+  safe is the missing place to keep such edits so they survive a restore, and designing it is the
+  hard part, not a detail. "No-go" here means not doing it **and not deleting it**: the working
+  prototype stays in the record, so a future attempt starts from code that already restores 160 files
+  correctly. The symlink variant is killed permanently. This closes the oldest open question in the
+  backlog, parked since Become Current's Q-010.
 
 ## Q-008 — Decide whether `spell_scope` keeps `repo` as its default
 

@@ -43,14 +43,7 @@
       "derived": true
     }
   ],
-  "needsYou": [
-    {
-      "id": "Q-006",
-      "title": "Accept, revise, or reject ARC-046 (restore-based delivery: no-go)",
-      "reason": "Accepting an ADR is never within a delegation's grant in this repository. The evidence is",
-      "href": "https://github.com/codemagicianhq/arcane/pull/237"
-    }
-  ],
+  "needsYou": [],
   "sections": [
     {
       "id": "wave-1",
