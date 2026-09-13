@@ -1115,6 +1115,132 @@ describe("spell update — handler", () => {
 
     });
 
+    // Upgrading across the spell-prompts/claude-commands split used to discard
+    // the legacy entry's file list, so a spell retired since that install was
+    // left on disk belonging to no component: never reported, unreachable by
+    // --prune, and dropped from the manifest in the same run. Observed in a
+    // real consumer going 0.15.8 -> 1.2.0.
+    describe("legacy component migration", () => {
+      const RETIRED = ".github/prompts/spell-bootstrap-business.prompt.md";
+      const RETIRED_COMMAND = ".claude/commands/spell-bootstrap-business.md";
+      // Still shipped today by one of the replacement components.
+      const LIVE = ".github/prompts/spell-open-session.prompt.md";
+
+      async function seedLegacyInstall(extra?: Partial<ArcaneManifest>) {
+        const hash = (content: string) => createHash("sha256").update(content).digest("hex");
+        await writeManifest(tmpDir, {
+          components: [
+            {
+              name: "spell-prompts",
+              files: [RETIRED, LIVE],
+              fileHashes: { [RETIRED]: hash("retired prompt"), [LIVE]: hash("live prompt") },
+              installedVersion: OLD_VERSION,
+            },
+            {
+              name: "claude-commands",
+              files: [RETIRED_COMMAND],
+              fileHashes: { [RETIRED_COMMAND]: hash("retired command") },
+              installedVersion: OLD_VERSION,
+            },
+          ],
+          ...extra,
+        });
+        await seedComponentFile(tmpDir, RETIRED, "retired prompt");
+        await seedComponentFile(tmpDir, RETIRED_COMMAND, "retired command");
+        await seedComponentFile(tmpDir, LIVE, "live prompt");
+      }
+
+      it(
+        "reports a retired spell's files and keeps them tracked",
+        async () => {
+          await seedLegacyInstall();
+          const consoleSpy = vi.spyOn(console, "log");
+
+          await runUpdate({}, tmpDir, ASSETS_DIR, "0.2.0");
+
+          expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(RETIRED));
+          expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(RETIRED_COMMAND));
+          await expect(fs.access(join(tmpDir, RETIRED))).resolves.toBeUndefined();
+
+          // Still on disk, so still tracked -- otherwise the --prune this run
+          // recommends would find nothing on the next invocation.
+          const tracked = (await readManifestFile(tmpDir)).components.flatMap((c) => c.files);
+          expect(tracked).toContain(RETIRED);
+          expect(tracked).toContain(RETIRED_COMMAND);
+        },
+        VERY_HEAVY_TEST_TIMEOUT,
+      );
+
+      it(
+        "--prune removes the retired files and drops them from the manifest",
+        async () => {
+          await seedLegacyInstall();
+
+          await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, "0.2.0");
+
+          await expect(fs.access(join(tmpDir, RETIRED))).rejects.toThrow();
+          await expect(fs.access(join(tmpDir, RETIRED_COMMAND))).rejects.toThrow();
+          const tracked = (await readManifestFile(tmpDir)).components.flatMap((c) => c.files);
+          expect(tracked).not.toContain(RETIRED);
+          expect(tracked).not.toContain(RETIRED_COMMAND);
+        },
+        VERY_HEAVY_TEST_TIMEOUT,
+      );
+
+      it(
+        "--dry-run --prune deletes nothing",
+        async () => {
+          await seedLegacyInstall();
+
+          await runUpdate({ prune: true, dryRun: true }, tmpDir, ASSETS_DIR, "0.2.0");
+
+          await expect(fs.access(join(tmpDir, RETIRED))).resolves.toBeUndefined();
+          await expect(fs.access(join(tmpDir, RETIRED_COMMAND))).resolves.toBeUndefined();
+        },
+        VERY_HEAVY_TEST_TIMEOUT,
+      );
+
+      // The hazard the obvious fix walks into. `updatedFiles` is per-component,
+      // so carrying the legacy files onto one replacement makes every file a
+      // DIFFERENT replacement still ships look orphaned -- hash-matching, and
+      // therefore deleted under --prune. That is worse than the bug.
+      it(
+        "never prunes a legacy file that a live replacement still ships",
+        async () => {
+          await seedLegacyInstall();
+
+          await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, "0.2.0");
+
+          await expect(fs.access(join(tmpDir, LIVE))).resolves.toBeUndefined();
+          const tracked = (await readManifestFile(tmpDir)).components.flatMap((c) => c.files);
+          expect(tracked).toContain(LIVE);
+        },
+        VERY_HEAVY_TEST_TIMEOUT,
+      );
+
+      it(
+        "leaves nothing half-deleted in a repository that takes spells from the user tier",
+        async () => {
+          await seedLegacyInstall({ spell_scope: "user" });
+
+          await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, "0.2.0");
+
+          // Opted out: no spell file is managed here, so every one of them is
+          // an orphan -- pruned if untouched, never silently forgotten.
+          const manifest = await readManifestFile(tmpDir);
+          const tracked = manifest.components.flatMap((c) => c.files);
+          for (const file of [RETIRED, RETIRED_COMMAND, LIVE]) {
+            const onDisk = await fs
+              .access(join(tmpDir, file))
+              .then(() => true)
+              .catch(() => false);
+            expect(onDisk).toBe(tracked.includes(file));
+          }
+        },
+        VERY_HEAVY_TEST_TIMEOUT,
+      );
+    });
+
     it("--prune deletes an orphaned file whose hash was recorded and still matches", async () => {
       const orphanFile = "some/old/file.md";
       const orphanHash = createHash("sha256").update("stale content").digest("hex");
