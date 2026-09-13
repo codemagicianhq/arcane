@@ -1625,6 +1625,41 @@ describe.skipIf(!BIN)("spell update — built CLI integration", () => {
     expect(result.stdout).toContain("Already up to date.");
   });
 
+  // The manifest is the one file `update` always rewrites, so on a CRLF
+  // checkout it was the one file `update` always dirtied -- and the clean-tree
+  // gate then refused the next run.
+  it("leaves a CRLF manifest on CRLF after a same-version restore", async () => {
+    const file = ".arcane/governance/testing-standards.md";
+    const manifest = {
+      version: REAL_PKG_VERSION,
+      profile: "lite",
+      installedAt: "2026-01-01T00:00:00.000Z",
+      components: [{ name: "testing-standards", files: [file], installedVersion: REAL_PKG_VERSION }],
+    };
+    // Tracked but absent on disk: the same-version restore path, which is the
+    // run that actually rewrites the manifest (CS-03).
+    await fs.writeFile(
+      join(tmpDir, ".arcane.json"),
+      JSON.stringify(manifest, null, 2).replaceAll("\n", "\r\n"),
+    );
+    runGit(tmpDir, ["init"]);
+    runGit(tmpDir, ["config", "core.autocrlf", "true"]);
+    runGit(tmpDir, ["config", "user.name", "Arcane Tests"]);
+    runGit(tmpDir, ["config", "user.email", "arcane-tests@example.invalid"]);
+    runGit(tmpDir, ["add", "-A"]);
+    runGit(tmpDir, ["commit", "-m", "test: seed a CRLF manifest"]);
+
+    const result = spawnSync("node", [BIN!, "update"], {
+      cwd: tmpDir,
+      encoding: "utf8",
+      env: { ...process.env, ARCANE_ASSETS_DIR: join(process.cwd(), "src/assets") },
+    });
+
+    expect(result.status).toBe(0);
+    const content = await fs.readFile(join(tmpDir, ".arcane.json"), "utf-8");
+    expect(/(?<!\r)\n/.test(content)).toBe(false);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
   it("--dry-run exits 0 and prints dry-run output", async () => {
     const file = ".arcane/governance/testing-standards.md";
     await fs.mkdir(join(tmpDir, ".arcane", "governance"), { recursive: true });
