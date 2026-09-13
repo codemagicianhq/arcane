@@ -168,24 +168,27 @@ describe("legacy manifest migration", () => {
   });
 
   it("expands a legacy spell-prompts entry into the capability components", () => {
-    const out = migrateLegacyComponents([legacy("spell-prompts")]);
-    expect(out.map((c) => c.name)).toEqual(MONOLITH_REPLACEMENTS);
+    const { components } = migrateLegacyComponents([legacy("spell-prompts")]);
+    expect(components.map((c) => c.name)).toEqual(MONOLITH_REPLACEMENTS);
   });
 
   it("dedupes when a manifest lists BOTH legacy names (the common case)", () => {
     // Every profile that shipped one shipped the other, so real manifests in
     // the wild contain both -- they must converge, not double up.
-    const out = migrateLegacyComponents([legacy("spell-prompts"), legacy("claude-commands")]);
-    expect(out.map((c) => c.name)).toEqual(MONOLITH_REPLACEMENTS);
+    const { components } = migrateLegacyComponents([
+      legacy("spell-prompts"),
+      legacy("claude-commands"),
+    ]);
+    expect(components.map((c) => c.name)).toEqual(MONOLITH_REPLACEMENTS);
   });
 
   it("preserves non-legacy entries and their order", () => {
-    const out = migrateLegacyComponents([
+    const { components } = migrateLegacyComponents([
       { name: "git-conventions", files: ["a"], installedVersion: "0.16.0" },
       legacy("spell-prompts"),
       { name: "testing-standards", files: ["b"], installedVersion: "0.16.0" },
     ]);
-    const names = out.map((c) => c.name);
+    const names = components.map((c) => c.name);
     expect(names[0]).toBe("git-conventions");
     expect(names[names.length - 1]).toBe("testing-standards");
     expect(names).toEqual(expect.arrayContaining(MONOLITH_REPLACEMENTS));
@@ -193,22 +196,88 @@ describe("legacy manifest migration", () => {
 
   it("is idempotent — an already-migrated manifest passes through unchanged", () => {
     const once = migrateLegacyComponents([legacy("spell-prompts")]);
-    const twice = migrateLegacyComponents(once);
-    expect(twice).toEqual(once);
+    const twice = migrateLegacyComponents(once.components);
+    expect(twice.components).toEqual(once.components);
+    // Nothing left to inherit the second time: the legacy entry is gone.
+    expect(twice.inherited.files).toEqual([]);
+    expect(twice.inherited.carrier).toBeNull();
   });
 
   it("leaves a manifest with no legacy entries completely untouched", () => {
     const input: InstalledComponent[] = [
       { name: "git-conventions", files: ["a"], installedVersion: "0.17.0" },
     ];
-    expect(migrateLegacyComponents(input)).toEqual(input);
+    const { components, inherited } = migrateLegacyComponents(input);
+    expect(components).toEqual(input);
+    expect(inherited.files).toEqual([]);
+    expect(inherited.carrier).toBeNull();
   });
 
   it("carries the legacy entry's installedVersion onto its replacements", () => {
-    const out = migrateLegacyComponents([legacy("spell-prompts")]);
-    for (const c of out) {
+    const { components } = migrateLegacyComponents([legacy("spell-prompts")]);
+    for (const c of components) {
       expect(c.installedVersion).toBe("0.16.0");
     }
+  });
+
+  // The files a legacy component wrote are the only record of what Arcane put
+  // at those paths -- the registry knows what a component ships now, not what
+  // it shipped then. Discarding them left a retired spell on disk with nothing
+  // able to see it: no report, no --prune, no manifest entry.
+  describe("inherited files (the retired-spell orphan gap)", () => {
+    const retired = ".github/prompts/spell-bootstrap-business.prompt.md";
+
+    it("returns the legacy entry's files and recorded hashes", () => {
+      const { inherited } = migrateLegacyComponents([
+        {
+          name: "spell-prompts",
+          files: [retired],
+          fileHashes: { [retired]: "deadbeef" },
+          installedVersion: "0.15.8",
+        },
+      ]);
+
+      expect(inherited.files).toEqual([retired]);
+      expect(inherited.fileHashes[retired]).toBe("deadbeef");
+    });
+
+    it("names a real replacement component as the carrier", () => {
+      const { inherited } = migrateLegacyComponents([legacy("spell-prompts")]);
+
+      expect(inherited.carrier).not.toBeNull();
+      expect(MONOLITH_REPLACEMENTS).toContain(inherited.carrier as string);
+    });
+
+    it("unions and dedupes across both legacy names", () => {
+      const shared = ".claude/commands/spell-open-session.md";
+      const { inherited } = migrateLegacyComponents([
+        {
+          name: "spell-prompts",
+          files: [retired, shared],
+          fileHashes: { [shared]: "from-prompts" },
+          installedVersion: "0.15.8",
+        },
+        {
+          name: "claude-commands",
+          files: [shared],
+          fileHashes: { [shared]: "from-commands" },
+          installedVersion: "0.15.8",
+        },
+      ]);
+
+      expect(inherited.files).toEqual([retired, shared]);
+      // First writer wins, so the result does not depend on entry order twice.
+      expect(inherited.fileHashes[shared]).toBe("from-prompts");
+    });
+
+    it("carries nothing for a legacy entry that tracked no files", () => {
+      const { inherited } = migrateLegacyComponents([
+        { name: "spell-prompts", files: [], installedVersion: "0.16.0" },
+      ]);
+
+      expect(inherited.files).toEqual([]);
+      expect(inherited.carrier).not.toBeNull();
+    });
   });
 });
 
@@ -220,7 +289,7 @@ describe("legacy migration is frozen against future spell groups", () => {
     // it, not a silent consequence of the name prefix.
     const migrated = migrateLegacyComponents([
       { name: "spell-prompts", files: [], installedVersion: "0.16.0" },
-    ]).map((c) => c.name);
+    ]).components.map((c) => c.name);
     for (const name of migrated) {
       expect(SPELL_COMPONENT_NAMES).toContain(name);
     }
