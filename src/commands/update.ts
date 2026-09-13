@@ -127,17 +127,40 @@ export function defaultScopePatch(
  * legacy names, so this returns it unchanged. Entry order is preserved, with
  * each legacy entry's replacements expanded in place. Replacements inherit the
  * legacy entry's `installedVersion` and an empty file list -- the caller
- * immediately re-derives both from the registry, which is the source of truth
- * for what a component contains.
+ * re-derives each replacement's files from the registry, which is the source
+ * of truth for what a component contains *now*.
+ *
+ * What the registry cannot supply is the set of paths the legacy component
+ * actually wrote into this repository. A spell retired since that install
+ * belongs to no current component, so once its entry is expanded, nothing
+ * would ever look at it again: not reported, not prunable, and dropped from
+ * the manifest in the same run. Those paths and their recorded hashes are
+ * therefore returned separately as `inherited`, for the caller to feed through
+ * the same orphan resolution every other tracked-but-unclaimed file gets.
+ * Discarding them -- which this function used to do -- is exactly how a
+ * consumer upgrading across the split kept a dead spell on disk forever.
  *
  * Both legacy spell components map to the same replacement set, so a manifest
  * listing both (the common case) is deduped rather than producing doubles.
+ * `carrier` names the replacement that adopts any inherited file still on
+ * disk, so a file Arcane wrote stays tracked instead of being forgotten.
  */
-export function migrateLegacyComponents(
-  components: InstalledComponent[],
-): InstalledComponent[] {
+export interface LegacyMigration {
+  components: InstalledComponent[];
+  inherited: {
+    files: string[];
+    fileHashes: Record<string, string>;
+    /** null when the manifest held no legacy entry at all. */
+    carrier: string | null;
+  };
+}
+
+export function migrateLegacyComponents(components: InstalledComponent[]): LegacyMigration {
   const out: InstalledComponent[] = [];
   const seen = new Set<string>();
+  const inheritedFiles: string[] = [];
+  const inheritedHashes: Record<string, string> = {};
+  let carrier: string | null = null;
 
   for (const entry of components) {
     const replacements = LEGACY_COMPONENT_MIGRATIONS[entry.name];
@@ -147,14 +170,29 @@ export function migrateLegacyComponents(
       out.push(entry);
       continue;
     }
+
+    for (const file of entry.files) {
+      if (!inheritedFiles.includes(file)) inheritedFiles.push(file);
+      const hash = entry.fileHashes?.[file];
+      // First writer wins -- deterministic given entry order, and both legacy
+      // names describe the same physical install anyway.
+      if (hash !== undefined && inheritedHashes[file] === undefined) {
+        inheritedHashes[file] = hash;
+      }
+    }
+
     for (const name of replacements) {
+      carrier ??= name;
       if (seen.has(name)) continue;
       seen.add(name);
       out.push({ name, files: [], installedVersion: entry.installedVersion });
     }
   }
 
-  return out;
+  return {
+    components: out,
+    inherited: { files: inheritedFiles, fileHashes: inheritedHashes, carrier },
+  };
 }
 
 export type OrphanStatus = "pruned" | "reported" | "not-found";
@@ -204,6 +242,39 @@ export async function resolveOrphan(
   await removeEmptyAncestors(targetDir, file);
   console.log(`  Pruned orphaned file: ${file}`);
   return "pruned";
+}
+
+/**
+ * An orphan that is still ON DISK stays in the manifest, with whatever hash
+ * was recorded for it. The manifest records what Arcane put in this
+ * repository, and the file is still there: dropping the entry would untrack a
+ * file Arcane wrote, which `spell uninstall` then leaks (the hazard the
+ * preserveExisting branch names), would overwrite an operator's edit without a
+ * word if the component is ever re-adopted, and would make the remedy `update`
+ * prints a lie -- a report-only run that forgot its own orphans leaves
+ * `spell update --prune` with nothing to find. Reported every run until it is
+ * pruned or removed by hand; dropped as soon as it is ("pruned"/"not-found").
+ */
+async function retainReportedOrphan(
+  targetDir: string,
+  file: string,
+  recordedHash: string | undefined,
+  into: InstalledComponent,
+): Promise<void> {
+  try {
+    validateTargetPath(targetDir, file);
+  } catch {
+    // Escaping path: refused and reported by resolveOrphan, and deliberately
+    // dropped from the manifest -- it is not a file Arcane could have written.
+    return;
+  }
+  if (!(await fileExists(join(targetDir, file)))) return;
+
+  if (!into.files.includes(file)) into.files.push(file);
+  if (recordedHash !== undefined) {
+    into.fileHashes ??= {};
+    into.fileHashes[file] = recordedHash;
+  }
 }
 
 /**
@@ -457,8 +528,33 @@ export async function runUpdate(
   // any current component, reported always and deleted only with --prune
   // (and only when untouched -- see resolveOrphan).
   const orphanReport: Array<{ file: string; status: OrphanStatus }> = [];
+  // Collected during the component loop, resolved in one sweep after it.
+  // The decision cannot be made per component: `updatedFiles` below is
+  // per-component, so a file another component still ships looks orphaned
+  // from here. Only the union of every component's claims answers the actual
+  // question -- "is this file part of any current component?" -- and getting
+  // that wrong means deleting a live file under --prune.
+  const orphanCandidates: Array<{
+    owner: string;
+    file: string;
+    recordedHash: string | undefined;
+  }> = [];
 
-  const componentsToUpdate = migrateLegacyComponents(manifest.components);
+  const { components: componentsToUpdate, inherited } =
+    migrateLegacyComponents(manifest.components);
+
+  // Files a legacy component wrote, whose entry has just been expanded away.
+  // They belong to no component now by construction, so they enter the sweep
+  // as candidates like any other unclaimed file.
+  if (inherited.carrier !== null) {
+    for (const file of inherited.files) {
+      orphanCandidates.push({
+        owner: inherited.carrier,
+        file,
+        recordedHash: inherited.fileHashes[file],
+      });
+    }
+  }
 
   for (const installed of componentsToUpdate) {
     // Look up the current registry definition (source of truth for file paths)
@@ -664,39 +760,11 @@ export async function runUpdate(
     // this update is about to write.
     for (const file of installed.files) {
       if (updatedFiles.includes(file)) continue;
-      const recordedHash = installed.fileHashes?.[file];
-      const status = await resolveOrphan(
-        targetDir,
+      orphanCandidates.push({
+        owner: installed.name,
         file,
-        recordedHash,
-        Boolean(options.prune) && !options.dryRun,
-      );
-      orphanReport.push({ file, status });
-
-      // An orphan that is still ON DISK stays in the manifest, with whatever
-      // hash was recorded for it. The manifest records what Arcane put in
-      // this repository, and the file is still there: dropping the entry
-      // would untrack a file Arcane wrote, which `spell uninstall` then
-      // leaks (the hazard the preserveExisting branch above already names),
-      // would overwrite an operator's edit without a word if the component
-      // is ever re-adopted, and -- the reason this surfaced -- would make
-      // the remedy printed one line below a lie: a report-only run that
-      // forgot its own orphans left `spell update --prune` with nothing to
-      // find. Reported every run until it is pruned or removed by hand;
-      // dropped as soon as it is (status "pruned" or "not-found").
-      if (status === "reported") {
-        try {
-          validateTargetPath(targetDir, file);
-          if (await fileExists(join(targetDir, file))) {
-            updatedFiles.push(file);
-            if (recordedHash !== undefined) fileHashes[file] = recordedHash;
-          }
-        } catch {
-          // Escaping path: refused and reported by resolveOrphan, and
-          // deliberately dropped from the manifest -- it is not a file
-          // Arcane could have written.
-        }
-      }
+        recordedHash: installed.fileHashes?.[file],
+      });
     }
 
     updatedComponents.push({
@@ -705,6 +773,36 @@ export async function runUpdate(
       installedVersion: packageVersion,
       fileHashes,
     });
+  }
+
+  // One sweep, once every component has declared what it claims. A candidate
+  // some other component still ships is not an orphan at all -- the check a
+  // per-component loop structurally cannot make, and getting it wrong means
+  // deleting a live file under --prune.
+  const claimed = new Set(updatedComponents.flatMap((c) => c.files));
+  const resolvedOrphans = new Set<string>();
+
+  for (const { owner, file, recordedHash } of orphanCandidates) {
+    if (claimed.has(file) || resolvedOrphans.has(file)) continue;
+    resolvedOrphans.add(file);
+
+    const status = await resolveOrphan(
+      targetDir,
+      file,
+      recordedHash,
+      Boolean(options.prune) && !options.dryRun,
+    );
+    orphanReport.push({ file, status });
+    if (status !== "reported") continue;
+
+    let into = updatedComponents.find((c) => c.name === owner);
+    if (!into) {
+      // The owner's entry was dropped (gone from the registry, fully pruned),
+      // but this file is still on disk, so it still needs somewhere to live.
+      into = { name: owner, files: [], installedVersion: packageVersion, fileHashes: {} };
+      updatedComponents.push(into);
+    }
+    await retainReportedOrphan(targetDir, file, recordedHash, into);
   }
 
   // TODO.md T10: report orphans -- files tracked before this update but no
