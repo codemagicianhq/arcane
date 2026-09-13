@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.5.1] - 2026-09-13
+
+Three fixes, each found by running Arcane against real consumer repositories rather than by reading the code: a spell retired from the registry can finally be removed, `spell doctor` takes about half the time it used to, and `spell update` stops reporting its own manifest as modified on a Windows checkout.
+
+### Fixed
+
+- **`spell update --prune` could never remove a spell retired since you installed.** Upgrading across the `spell-prompts`/`claude-commands` split discarded the old entry's file list and hashes — the only record of what Arcane had written at those paths — so a spell dropped from the registry since then belonged to no component at all: never reported, unreachable by `--prune`, and dropped from the manifest in the same run. The visible symptom was a client still offering a spell that no longer exists. Those paths now survive the migration and go through the same orphan handling as any other tracked file, which reports them on every run and deletes them only under `--prune`, and only while their recorded hash still holds. Seen for real in a consumer going `0.15.8` → `1.2.0`.
+- **`spell doctor` no longer starts VS Code to decide one word of a warning.** When it could not find the extension directory it shelled out to `code --version` and then `code-insiders --version`, with no timeout, purely to choose which binary name to print in an install hint. Measured at 2568 ms per call on a machine where they answer normally, up to twice a run — the slowest thing in the command. The hint is now read off the extension directories the check already lists, and the whole command drops from ~2.6 s to ~1.45 s. A related cause is fixed with it: the check read `HOME` directly, which is routinely unset on Windows, so on an ordinary Windows run it was looking for extensions in a drive root.
+- **`spell update` no longer dirties a clean checkout by rewriting `.arcane.json` with the wrong line endings.** On a `core.autocrlf=true` checkout it wrote LF into a CRLF working copy, leaving a file git reported as modified with no content change — and the clean-tree gate then refused the *next* `spell update` until the operator staged it. The manifest now keeps whatever line endings and trailing-newline shape the existing file had. A manifest that does not exist yet is written exactly as before.
+
+### Notes
+
+- The `gh` and `az` calls behind `spell doctor`'s platform-policy checks had no timeout either, and unlike the VS Code probe they genuinely reach the network, so they gained one (10 s) rather than being removed.
+- The orphan decision moved from a per-component test to a single pass over every component's claims. That also closes a latent bug nobody had filed: a file that moves between components across versions could previously be deleted by `--prune` while still in use.
+- `spell doctor` was reported as hanging for 25 s or more on Windows. That figure came from an earlier run against a stubbed home directory and did not reproduce while fixing this; the improvement above is what was actually measured.
+
 ## [1.5.0] - 2026-09-11
 
 Stop answering the same scope question in every new repository, without changing a single repository you already have ([ARC-048](DECISIONS.md#arc-048--an-absent-spell_scope-means-repo-permanently-new-repositories-may-be-pre-selected)).
