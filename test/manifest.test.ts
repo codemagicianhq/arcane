@@ -220,6 +220,70 @@ describe("manifest", () => {
       const readBack = await readManifest(tempDir);
       expect(readBack.version).toBe("2.0.0");
     });
+
+    // Line-ending preservation: writing LF over a CRLF working copy leaves a
+    // file git reports as modified with no content change, which the clean-tree
+    // gate in `spell update` then refuses on.
+    const sample: ArcaneManifest = {
+      version: "1.0.0",
+      profile: "full",
+      installedAt: "2026-09-13T00:00:00.000Z",
+      components: [],
+    };
+
+    async function writeRaw(content: string) {
+      await fs.writeFile(join(tempDir, ".arcane.json"), content, "utf-8");
+    }
+
+    async function readRaw() {
+      return fs.readFile(join(tempDir, ".arcane.json"), "utf-8");
+    }
+
+    it("keeps a CRLF manifest on CRLF, with the same parsed content", async () => {
+      await writeRaw(JSON.stringify(sample, null, 2).replaceAll("\n", "\r\n"));
+
+      await writeManifest(tempDir, { ...sample, version: "2.0.0" });
+
+      const content = await readRaw();
+      expect(content).toContain('\r\n  "version"');
+      // No lone LF anywhere — every newline is part of a CRLF pair.
+      expect(/(?<!\r)\n/.test(content)).toBe(false);
+      expect((await readManifest(tempDir)).version).toBe("2.0.0");
+    });
+
+    it("keeps an LF manifest on LF", async () => {
+      await writeRaw(JSON.stringify(sample, null, 2));
+
+      await writeManifest(tempDir, { ...sample, version: "2.0.0" });
+
+      const content = await readRaw();
+      expect(content).not.toContain("\r\n");
+      expect((await readManifest(tempDir)).version).toBe("2.0.0");
+    });
+
+    it("writes LF with no trailing newline when no manifest exists yet", async () => {
+      await writeManifest(tempDir, sample);
+
+      const content = await readRaw();
+      expect(content).not.toContain("\r\n");
+      expect(content.endsWith("}")).toBe(true);
+    });
+
+    it("preserves a trailing newline when the existing file had one", async () => {
+      await writeRaw(JSON.stringify(sample, null, 2) + "\n");
+
+      await writeManifest(tempDir, { ...sample, version: "2.0.0" });
+
+      expect(await readRaw()).toMatch(/}\n$/);
+    });
+
+    it("does not add a trailing newline to a file that had none", async () => {
+      await writeRaw(JSON.stringify(sample, null, 2));
+
+      await writeManifest(tempDir, { ...sample, version: "2.0.0" });
+
+      expect((await readRaw()).endsWith("}")).toBe(true);
+    });
   });
 
   // ─── addComponent ─────────────────────────────────────────────────────────

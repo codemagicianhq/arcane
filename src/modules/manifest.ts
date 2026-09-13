@@ -264,14 +264,43 @@ export async function resolveSecretsScanExcludePrefixes(targetDir: string): Prom
 }
 
 /**
- * Writes the manifest to .arcane.json in targetDir with 2-space indentation.
+ * Writes the manifest to .arcane.json in targetDir with 2-space indentation,
+ * preserving the existing file's line endings and trailing-newline shape.
+ *
+ * On a `core.autocrlf=true` checkout the working copy is CRLF. Writing LF over
+ * it leaves a file git reports as modified with no content change -- and the
+ * clean-tree gate in `spell update` then refuses the next run, so Arcane
+ * dirties a tree it just demanded be clean. Same class of problem as the
+ * line-ending-normalized hashing in copier.ts (1.1.1), solved at the write
+ * rather than at the compare.
+ *
+ * A manifest that does not exist yet keeps today's exact bytes: LF, no
+ * trailing newline. The trailing newline is deliberately NOT added
+ * unconditionally -- that would dirty every existing consumer's manifest
+ * exactly once, reproducing the symptom this fixes.
  */
 export async function writeManifest(
   targetDir: string,
   manifest: ArcaneManifest,
 ): Promise<void> {
   const filePath = manifestPath(targetDir);
-  await writeFile(filePath, JSON.stringify(manifest, null, 2), "utf-8");
+
+  // Advisory read: it only tells us how to format bytes we are about to
+  // overwrite. Unlike readManifest above, a failure here must never fail a
+  // write that would otherwise succeed, so every error degrades to the
+  // new-file defaults rather than rethrowing.
+  let existing = "";
+  try {
+    existing = await readFile(filePath, "utf-8");
+  } catch {
+    existing = "";
+  }
+
+  const eol = existing.includes("\r\n") ? "\r\n" : "\n";
+  const trailingNewline = /\r?\n$/.test(existing) ? eol : "";
+  const body = JSON.stringify(manifest, null, 2).replaceAll("\n", eol);
+
+  await writeFile(filePath, body + trailingNewline, "utf-8");
 }
 
 /**
