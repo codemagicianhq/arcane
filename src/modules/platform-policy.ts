@@ -13,10 +13,8 @@
  * limitation is disclosed here rather than presented as verified.
  */
 
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { execFileWithTimeout, EXTERNAL_CLI_TIMEOUT_MS } from "./exec.js";
 
-const execFileAsync = promisify(execFile);
 
 // ─── Declared ladder (git-conventions.md § Merge Strategy by Repo Risk) ──────
 
@@ -157,17 +155,19 @@ export async function fetchGitHubRulesets(
   repo: string,
 ): Promise<GitHubRuleset[] | null> {
   try {
-    const { stdout: listOut } = await execFileAsync("gh", [
-      "api",
-      `repos/${owner}/${repo}/rulesets`,
-    ]);
+    const { stdout: listOut } = await execFileWithTimeout(
+      "gh",
+      ["api", `repos/${owner}/${repo}/rulesets`],
+      EXTERNAL_CLI_TIMEOUT_MS,
+    );
     const summaries = JSON.parse(listOut) as Array<{ id: number }>;
     const detailed = await Promise.all(
       summaries.map(async (s) => {
-        const { stdout } = await execFileAsync("gh", [
-          "api",
-          `repos/${owner}/${repo}/rulesets/${s.id}`,
-        ]);
+        const { stdout } = await execFileWithTimeout(
+          "gh",
+          ["api", `repos/${owner}/${repo}/rulesets/${s.id}`],
+          EXTERNAL_CLI_TIMEOUT_MS,
+        );
         return JSON.parse(stdout) as GitHubRuleset;
       }),
     );
@@ -225,7 +225,7 @@ export async function fetchAdoMergeTypePolicies(
   try {
     const orgUrl = `https://dev.azure.com/${org}`;
     // az repos policy list needs the repository's GUID, not its name.
-    const { stdout: repoOut } = await execFileAsync("az", [
+    const { stdout: repoOut } = await execFileWithTimeout("az", [
       "repos",
       "show",
       "--repository",
@@ -238,11 +238,11 @@ export async function fetchAdoMergeTypePolicies(
       "id",
       "--output",
       "tsv",
-    ]);
+    ], EXTERNAL_CLI_TIMEOUT_MS);
     const repositoryId = repoOut.trim();
     if (!repositoryId) return null;
 
-    const { stdout } = await execFileAsync("az", [
+    const { stdout } = await execFileWithTimeout("az", [
       "repos",
       "policy",
       "list",
@@ -256,7 +256,7 @@ export async function fetchAdoMergeTypePolicies(
       project,
       "--output",
       "json",
-    ]);
+    ], EXTERNAL_CLI_TIMEOUT_MS);
     return JSON.parse(stdout) as AdoMergeTypePolicy[];
   } catch {
     return null;
