@@ -2469,8 +2469,10 @@ so it was silent to a screen reader either way.
 ## ARC-044 — Client Architecture: Files-First State Contract and a Local Presence Channel
 
 **Date:** 2026-09-06
-**Status:** Proposed (drafted 2026-09-06 from the operator's hub decision of the same date, recorded
-there as ADR-101; awaiting this repository's accept call — implementation is gated on acceptance)
+**Status:** Accepted (2026-09-16, operator accept call — all five decisions accepted as drafted; drafted
+2026-09-06 from the operator's hub decision of the same date, recorded there as ADR-101; the three open
+questions below stay deferred to implementation). Implementation: `spell state --json` in roadmap
+Month 1 (October 2026), the presence channel in Month 2 (November 2026).
 **Related:** [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion)
 (hub role and registry — the files this contract indexes),
 [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest)
