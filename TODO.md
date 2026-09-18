@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-09-16
+last_updated: 2026-09-17
 ---
 
 # TODO
@@ -548,6 +548,13 @@ Eleven framework defects and improvements captured in the framework author's pri
 - [ ] **`spell-commit-work`: autostash excluded files; write the PR body before any halting step** — Also refuse an empty PR description at create time. [#269](https://github.com/codemagicianhq/arcane/issues/269) <!-- status: new -->
 - [ ] **ARC-036 per-surface Mermaid matrix and the chat-pane routing decision** — Fenced Mermaid does not render in Claude Code's chat pane; correct the reasoning bullet and decide widget/artifact vs fenced degradation. [#270](https://github.com/codemagicianhq/arcane/issues/270) <!-- status: new -->
 - [ ] **Show Report in-page dark/light toggle + `spell report --theme dark|light|auto`** — Operators cannot pick a theme when presenting; some viewers force light. [#271](https://github.com/codemagicianhq/arcane/issues/271) <!-- status: new -->
+
+## Upstream intake — 2026-09-17 (from the hub feedback log)
+
+Two workflow improvements from a consumer session's first `spell-feedback` entry against 1.5.1, routed here with the operator's per-item disclosure. **This file is the record** (tracking mode: internal); each item's suffix is its public mirror. They pair: either alone closes most of the gap between what close-session records and what reaches this repo.
+
+- [ ] **`spell-close-session` routes its Lessons Learned instead of leaving them in the journal** — after writing the section, classify each lesson: framework-shaped → `FEEDBACK.md` as an upstream-queued item; product idea → `spell-save-idea`; repo-local → journal only. One batch confirmation; no public write from close-session. [#274](https://github.com/codemagicianhq/arcane/issues/274) <!-- status: new -->
+- [ ] **`spell-todo --sweep` harvests unrouted Lessons Learned from journals** — read `### Lessons Learned` headings since the last sweep across the repos the sweep already visits; list the ones nothing points at (no `FEEDBACK.md` item, idea entry, TODO item or issue link). Report-only; a `--since` flag is an acceptable first version. [#275](https://github.com/codemagicianhq/arcane/issues/275) <!-- status: new -->
 
 ## Parked — Needs Operator
 
