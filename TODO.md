@@ -556,6 +556,17 @@ Two workflow improvements from a consumer session's first `spell-feedback` entry
 - [ ] **`spell-close-session` routes its Lessons Learned instead of leaving them in the journal** — after writing the section, classify each lesson: framework-shaped → `FEEDBACK.md` as an upstream-queued item; product idea → `spell-save-idea`; repo-local → journal only. One batch confirmation; no public write from close-session. [#274](https://github.com/codemagicianhq/arcane/issues/274) <!-- status: new -->
 - [ ] **`spell-todo --sweep` harvests unrouted Lessons Learned from journals** — read `### Lessons Learned` headings since the last sweep across the repos the sweep already visits; list the ones nothing points at (no `FEEDBACK.md` item, idea entry, TODO item or issue link). Report-only; a `--since` flag is an acceptable first version. [#275](https://github.com/codemagicianhq/arcane/issues/275) <!-- status: new -->
 
+## Upstream intake — 2026-09-18 (from a consumer's manifest-retrofit session)
+
+Six issues filed directly to GitHub by an arcane-website manifest-retrofit session, without going through that consumer's usual `spell-feedback`/`spell-save-idea` routing — found untracked in the hub on 2026-09-20 while auditing all previously-filed issues before a sweep. Routed retroactively; recorded in the hub's `FEEDBACK.md` ("Retroactive intake — arcane-website manifest-retrofit session, six untracked issues"). **This file is the record** (tracking mode: internal); each item's suffix is its public mirror.
+
+- [ ] **`spell doctor`/`spell-check-drift`: detect unfilled template placeholders in `status: active` governance docs** — a `{PLACEHOLDER}`-style token left in a doc claiming `status: active` is caught only by manual reading today. [#277](https://github.com/codemagicianhq/arcane/issues/277) <!-- status: new -->
+- [ ] **Manifest retrofit's `tracking_mode` prompt should apply its own documented backward-compat default** — `spell-plan.md` already documents defaulting to `external`/`ado` when ADO context exists; the interactive retrofit asks blind instead. [#278](https://github.com/codemagicianhq/arcane/issues/278) <!-- status: new -->
+- [ ] **`spell update` should print migration notes for dropped/renamed components and spells** — a recent update dropped a component and renamed two spells with no printed explanation. [#279](https://github.com/codemagicianhq/arcane/issues/279) <!-- status: new -->
+- [ ] **`push_policy` manifest field is collected but consumed nowhere** — zero references found across every installed spell and governance doc in a consumer repo. [#280](https://github.com/codemagicianhq/arcane/issues/280) <!-- status: new -->
+- [ ] **`spell init` could scaffold a basic `.gitattributes`** — avoids the LF/CRLF warning noise every `spell update` currently trips on Windows. [#281](https://github.com/codemagicianhq/arcane/issues/281) <!-- status: new -->
+- [ ] **Interactive CLI prompts should be drivable from AI coding harnesses without dropping to a terminal** — give prompts like the manifest retrofit's a flag equivalent, matching `spell agents init`'s `--profile`/`--naming` pattern; likely a spell-instruction fix more than new CLI code. [#282](https://github.com/codemagicianhq/arcane/issues/282) <!-- status: new -->
+
 ## Parked — Needs Operator
 
 Every item below needs a human decision this program cannot make on its own — an external artifact
