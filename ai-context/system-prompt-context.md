@@ -72,3 +72,5 @@
   `dist/index.js` tests whatever was built last: rebuild before trusting a failure. (4) `spell doctor`
   no longer spawns VS Code, so the Windows hang noted in earlier handoffs is gone; the 25 s figure it
   cited was never reproduced and should not be repeated as observed.
+
+> ✓ Consumed: 2026-09-25
