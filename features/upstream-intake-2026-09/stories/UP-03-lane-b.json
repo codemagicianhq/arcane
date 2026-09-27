@@ -1,0 +1,62 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-03 lane B",
+  "branchName": "sessions/2026-09-27-up-03-lane-b",
+  "assignedAgent": "up03-lane-b",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP03-B-01",
+      "title": "Tracker-id suffix on TODO/idea items (#265)",
+      "description": "In tracking_mode external, spell-todo, spell-save-idea and spell-manifest append the provider-format suffix: `[#123]` github, `[AB#123]` ado, the issue key for jira. Define the per-provider syntax ONCE in src/assets/.arcane/governance/development-methodology.md (where spell-bug already looks for commit-link syntax) and reference it from the three spells. Internal mode unchanged.",
+      "acceptanceCriteria": [
+        "syntax defined once; the three spells reference it",
+        "internal mode text unchanged"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up03-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP03-B-02",
+      "title": "`spell-todo --prune`: verified deletion of resolved items (#268)",
+      "description": "New mode in spell-todo: report-first list of checked items; for each, confirm the outcome is recorded durably (PR link, journal, DECISIONS, CHANGELOG) and migrate it if not; ONE batch approval (fingerprinted like spell-commit-work's approval gate) before deleting; never deletes an unchecked item; optional completed-items ledger if records-conventions has a home for it.",
+      "acceptanceCriteria": [
+        "mode documented with report-first, batch approval, outcome migration, unchecked-never-deleted",
+        "new test asserts each"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up03-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP03-B-03",
+      "title": "`--sweep --validate` idea-validation prompts (#263, PRD D-08)",
+      "description": "Opt-in `--validate` for spell-todo --sweep: two or three yes/no prompts per entry (user value, belongs here, duplicate-of), answers written into the entry's status comment only after one batch confirmation. Extend the status-comment grammar backward-compatibly (e.g. `<!-- status: new; value: y; fit: y; dup: none -->`) and update spell-manifest Step 1's parser in the same story so old and new forms both parse (an unparseable status comment today drops the entry into Skipped). Sweep stays hub-local (hub TODO books, hub IDEAS books, hub journal); never consumer clones.",
+      "acceptanceCriteria": [
+        "old grammar still parses; new grammar parses",
+        "writes only after batch confirmation",
+        "sweep scope stated as hub-local"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "up03-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP03-B-04",
+      "title": "Harvest unrouted Lessons Learned (#275, PRD D-08)",
+      "description": "spell-todo --sweep also lists `### Lessons Learned` headings (the close-session template writes one heading per lesson — verify in spell-close-session) from the hub's own journal since the last sweep (or --since) that nothing references (no FEEDBACK.md item, idea entry, TODO item, or issue link). Report-only. Hub-local only.",
+      "acceptanceCriteria": [
+        "report-only",
+        "reads headings, not bold sentences",
+        "hub-local scope stated"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "up03-lane-b",
+      "testEvidence": null
+    }
+  ]
+}

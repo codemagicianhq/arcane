@@ -1,0 +1,63 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-03 lane A",
+  "branchName": "sessions/2026-09-27-up-03-lane-a",
+  "assignedAgent": "up03-lane-a",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP03-A-01",
+      "title": "Retired/renamed registry metadata + update migration notes (#279, PRD D-15)",
+      "description": "Add retired/renamed metadata to src/modules/registry.ts: for each retired or renamed spell/component, its successor (if any) and a one-line reason. Real history (verified): spell-bootstrap-business -> spell-summon-venture (CHANGELOG BREAKING rename), spell-assess -> spell-scope (ARC-007/008), retired static `agent-files` component (see the registry's own 'the static `agent-files` component was retired' comment and ARC-047). `spell update` prints one 'Registry changes since your install' section: for each tracked-but-retired item, its successor and reason. It deletes nothing without --prune (orphan handling unchanged).",
+      "acceptanceCriteria": [
+        "upgrading a fixture manifest that tracked spell-bootstrap-business prints successor spell-summon-venture and the reason",
+        "retired agent-files prints its note",
+        "nothing deleted without --prune; existing orphan tests pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up03-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP03-A-02",
+      "title": "'Newly available, not installed' report (TODO: spell update never surfaces a registry component added after install)",
+      "description": "In the same 'Registry changes' section, list registry components that the repository's profile would include today but its manifest lacks, each with its exact `spell add <name>` line. Surfaced only, never auto-installed (EF-17 reasoning). Respect spell_scope user opt-out (spell components are not reported when the repo opted out).",
+      "acceptanceCriteria": [
+        "fixture: a manifest missing a component its profile includes -> listed with the exact `spell add` line",
+        "nothing installed",
+        "opted-out repo does not list spells-* components"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up03-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP03-A-03",
+      "title": "`.gitattributes` for every profile (#281, PRD D-09)",
+      "description": "Split `.gitattributes` out of `docs-baseline` into its own component (initOnly, skipExisting, same asset source) included in EVERY profile; docs-baseline keeps `.gitignore`. Keep legacy manifests working: a manifest listing docs-baseline with .gitattributes tracked must not orphan or re-copy it (check migrateLegacyComponents/orphan sweep behaviour and add a migration if needed). Existing installs learn about the new component via story 2's report, never auto-install. Run `npm run fix:spell-catalog` if catalog artifacts change.",
+      "acceptanceCriteria": [
+        "`spell init --dry-run` for full, lite, methodology, docs, governance-only each lists .gitattributes",
+        "an existing docs-baseline install upgrading does not lose, orphan or duplicate .gitattributes",
+        "check:spell-catalog passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "up03-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP03-A-04",
+      "title": "Optional `requires` on components + doctor finding (TODO: a spell can be installed without the governance doc it cites) — SHOULD HAVE, drop first if the lane runs long",
+      "description": "Add optional `requires: string[]` to ComponentDefinition; declare spells-build -> [external-verification-standards, web-discoverability-standards], and the spell-eas-store-deploy -> mobile-release-standards and spell-compliance -> compliance-standards pairs the registry descriptions name (verify component names in the registry). `spell doctor` reports an installed component whose requires are not installed (non-blocking), with the `spell add` line; the 'Registry changes' section in update lists them too.",
+      "acceptanceCriteria": [
+        "fixture with spells-build and no standards docs -> doctor finding and update hint",
+        "requires names validated against the registry in a unit test"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "up03-lane-a",
+      "testEvidence": null
+    }
+  ]
+}
