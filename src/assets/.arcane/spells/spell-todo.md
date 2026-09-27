@@ -104,6 +104,8 @@ Expand the idea into one or more concrete TODO items. Each item must:
 - Include a file reference if a canonical home doc already exists (e.g., `— see [[DECISIONS]]`)
 - Be specific enough to act on without further clarification
 
+**Tracker-id suffix (`tracking_mode: external` only):** when `.arcane.json`'s tracking mode is `external` and an item corresponds to a work item that already exists (the operator gave its id, or the idea names it), end the item with that id's suffix in the provider's format — defined once in [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) under "Tracker-ID Suffix on Captured Items" (e.g. `[#123]` GitHub, `[AB#123]` Azure DevOps, the issue key for Jira). Never guess an id or file a work item just to get one. In `tracking_mode: internal`, items are written without a suffix, exactly as before.
+
 If the idea naturally decomposes into multiple sub-items (e.g., "build dashboard" → design, implement, deploy, document), list them individually — do not bundle vague compound items.
 
 If the idea is an `adr-candidate`, also draft a one-sentence ADR title suggestion (e.g., `ADR-NNN: Use GitHub Actions for CI instead of Azure Pipelines`).

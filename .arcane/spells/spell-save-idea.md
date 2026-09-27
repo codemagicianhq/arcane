@@ -77,6 +77,7 @@ Entry format:
 - Get the real local date and time from the system (e.g., run `date`) rather than guessing — a wrong timestamp silently corrupts the append-only log.
 - The `status: new` HTML comment lets later triage mark entries as `promoted` / `dropped` without deleting history.
 - Include `[#tag]` only if a tag was inferred; otherwise omit it.
+- **Tracker-id suffix (`tracking_mode: external` only):** if `.arcane.json`'s tracking mode is `external` and the idea names a work item that already exists, end the idea text with that id's suffix in the provider's format, before the status comment — defined once in [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) under "Tracker-ID Suffix on Captured Items" (e.g. `[#123]` GitHub, `[AB#123]` Azure DevOps, the issue key for Jira). Never guess an id and never file a work item from here — this spell stays instant. In `tracking_mode: internal`, the entry format above is unchanged.
 
 If `IDEAS.md` does not exist yet, create it with this header first, then append:
 

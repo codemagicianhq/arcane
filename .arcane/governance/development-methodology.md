@@ -161,6 +161,26 @@ GitHub Issues has no configurable work-item-type hierarchy the way Azure DevOps 
 - **Jira (`external_provider=jira`)** — TODO: define issue-type mapping, parent-child/epic linkage strategy, and command examples.
 - **Other providers (`external_provider=other`)** — TODO: define required metadata contract and fallback behavior before enabling automation.
 
+### Tracker-ID Suffix on Captured Items
+
+When `tracking_mode=external` and a `TODO.md` item or an `IDEAS.md` entry corresponds to a tracker work item that already exists, the item carries that work item's id as a suffix, in the provider's own reference format. This is the one definition of the suffix; `spell-todo`, `spell-save-idea` and `spell-manifest` point here rather than restating it.
+
+| `external_provider` | Suffix | Example |
+| --- | --- | --- |
+| `github` | `[#<number>]` | `- [ ] Add export button [#123]` |
+| `ado` | `[AB#<id>]` | `- [ ] Add export button [AB#123]` |
+| `jira` | `[<issue key>]` — the key exactly as Jira prints it | `- [ ] Add export button [PROJ-123]` |
+| `other` | no suffix until that provider's metadata contract is defined (see External Provider TODOs) | — |
+
+- **Placement:** at the end of the item's text, after any file reference, and before a trailing `<!-- status: … -->` comment on an idea entry.
+- **Only a real id:** the suffix records an id that exists — one the operator supplied, or one a spell just got back from the tracker. Never guess an id, and never file a work item just to have a suffix.
+- **One suffix per item:** an item that already carries a suffix keeps it; it is not duplicated or rewritten.
+- **`tracking_mode=internal`:** no suffix. Items are written exactly as they are without this section.
+
+The suffix uses the same reference forms as the commit-link syntax `spell-bug` writes (`Fixes AB#{id}` for Azure DevOps, `Fixes #{id}` for GitHub Issues — the GitHub form is also under GitHub Issues Conventions above), so an item and the commit that closes it point at the work item the same way.
+
+**Enforcement: explicitly advisory prose (ARC-023) — no script checks that an externally tracked item carries its suffix or that a suffix matches the provider's format; the three spells apply it at write time and compliance depends on the executing agent.**
+
 ### Fresh Context Per Iteration
 
 Each implementation iteration starts with clean context. The only memory between iterations is:

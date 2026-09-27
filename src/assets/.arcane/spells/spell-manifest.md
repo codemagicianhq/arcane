@@ -114,6 +114,8 @@ book:<other-slug>/IDEAS.md
 
 Any marker whose destination repository is public ends in ` (disclosed)` — whichever route landed it, because Step 5 gated it as a disclosure.
 
+**Tracker-id suffix.** When route (c) files a tracker item, append the new work item's id to the hub entry's text as a suffix — before its status comment — in the format [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) defines once under "Tracker-ID Suffix on Captured Items" for that tracker's provider (`[AB#<id>]` Azure DevOps, `[#<id>]` GitHub, the issue key for Jira). Use only the id the create command returned. The promoted marker still names the repo (`github:<slug>#<id>`), which is what disambiguates a GitHub suffix inside a hub book. An entry that already carries a suffix keeps it unchanged wherever it lands. No tracker item filed means no suffix: entries routed without a tracker (and every internal-mode flow) are written exactly as before.
+
 Dropped entries get `<!-- status: dropped YYYY-MM-DD -->`, optionally with a trailing `(reason)`.
 
 Before any downstream write, grep the target file for the entry's normalized first ~40 characters — if already present, treat this entry as already-landed, mark the hub entry promoted, and skip the write. This is what makes an interrupted or re-run batch safe.
