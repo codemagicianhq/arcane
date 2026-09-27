@@ -931,3 +931,119 @@ function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   return message.split("\n")[0]!.trim();
 }
+
+export interface PushControlMessage {
+  level: "info" | "warning";
+  text: string;
+}
+
+export interface BlockedPushControlsOutcome {
+  hook: HookInstallOutcome;
+  /** Empty when no remote exists, or when the hook refusal stopped the run first. */
+  urls: PushUrlResult[];
+  /** True when `stopOnHookRefusal` returned before touching any push URL. */
+  stoppedAtHook: boolean;
+  messages: PushControlMessage[];
+}
+
+/** True for every hook outcome that leaves the blocking hook in force. */
+export function hookInForce(outcome: HookInstallOutcome): boolean {
+  return outcome.status === "installed" || outcome.status === "already-ours";
+}
+
+/**
+ * Applies `push_policy: "blocked"`'s two controls (ARC-034 decision 2) and
+ * describes the result. Shared by `spell init` and `spell block-push`
+ * (ARC-049 decision 1) so the two install exactly the same thing with the
+ * same refusals. Messages are emitted as they occur, as well as returned, so
+ * a throw part-way leaves the caller with everything already reported.
+ *
+ * `stopOnHookRefusal` returns before any push URL is touched when the hook is
+ * refused: `block-push` refuses outright rather than leave half a block in a
+ * repository whose manifest will not claim it. `init` keeps applying the URL
+ * layer regardless, as it always has.
+ */
+export async function applyBlockedPushControls(
+  cwd: string,
+  options: { stopOnHookRefusal?: boolean; emit?: (message: PushControlMessage) => void } = {},
+): Promise<BlockedPushControlsOutcome> {
+  const messages: PushControlMessage[] = [];
+  const say = (level: PushControlMessage["level"], text: string): void => {
+    const message = { level, text };
+    messages.push(message);
+    options.emit?.(message);
+  };
+
+  const hook = await installPrePushHook(cwd);
+  if (hook.status === "refused-unreadable-config") {
+    // Fail closed: we could not determine whether another hook manager
+    // owns core.hooksPath, and installing on a guess could disable it.
+    say(
+      "warning",
+      "Did not install the pre-push hook: git could not report the current core.hooksPath " +
+        "(unreadable config, or a git too old for `--show-scope`). Installing without knowing " +
+        "whether another hook manager owns that setting could silently disable it. Fix the " +
+        "config and run `spell doctor`.",
+    );
+  } else if (hook.status === "refused-default-hooks") {
+    // Same harm as a foreign core.hooksPath, reached by the route the R7
+    // guard wasn't watching: this repository's hooks live in git's
+    // default directory and have no config key to collide with, so
+    // taking the slot would switch every one of them off silently.
+    say(
+      "warning",
+      `Did not install the pre-push hook: this repository has hooks in git's default ` +
+        `directory (${hook.hooks.join(", ")}). Setting core.hooksPath would silently stop ` +
+        `them running. Move them under \`${ARCANE_HOOKS_DIR}\` yourself and re-run, or add ` +
+        "the push guard to your existing pre-push hook.",
+    );
+  } else if (hook.status === "refused-foreign-hooks-path") {
+    // R7: core.hooksPath is one exclusive slot, at local OR global
+    // scope, so pointing it at Arcane would silently disable whatever
+    // hook manager already owns it.
+    say(
+      "warning",
+      `Did not install the pre-push hook: core.hooksPath is already "${hook.existing}" ` +
+        `(${describeConfigScope(hook.scope)}), so another hook manager owns it. Overwriting ` +
+        "would silently disable those hooks. Chain an Arcane pre-push guard into that " +
+        "directory yourself, or unset core.hooksPath first.",
+    );
+  } else {
+    say("info", "Installed a pre-push hook that blocks pushes from this repository.");
+  }
+
+  if (options.stopOnHookRefusal === true && !hookInForce(hook)) {
+    return { hook, urls: [], stoppedAtHook: true, messages };
+  }
+
+  const urls = await disablePushUrls(cwd);
+  const unprotected = urls.filter((u) => u.status === "failed");
+  if (unprotected.length > 0) {
+    // Never let a partial application read as a full one.
+    say(
+      "warning",
+      `Could not disable the push URL for: ${unprotected
+        .map((u) => `${u.remote} (${u.reason ?? "unknown error"})`)
+        .join("; ")}. Those remotes are still pushable with \`--no-verify\`. ` +
+        "Run `spell doctor` — it lists exactly which remotes are still live.",
+    );
+  }
+  if (urls.length === 0) {
+    // Be precise: nothing is protecting a remote added later, because
+    // this only disables remotes that exist right now. Claiming
+    // otherwise would be exactly the false confidence ARC-034 warns of.
+    say(
+      "warning",
+      "No remote is configured, so only the pre-push hook is active. A remote added later " +
+        "will NOT have its push URL disabled automatically, and a `--no-verify` push to it " +
+        "would succeed. Run `spell doctor` after adding one — it reports this gap.",
+    );
+  } else {
+    const covered = urls.filter((u) => u.status !== "failed").map((u) => u.remote);
+    if (covered.length > 0) {
+      say("info", `Disabled the push URL for: ${covered.join(", ")} (fetch still works).`);
+    }
+  }
+  say("info", "Run `spell unblock-push` from a terminal to undo this.");
+  return { hook, urls, stoppedAtHook: false, messages };
+}
