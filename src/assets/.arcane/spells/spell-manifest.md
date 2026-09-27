@@ -120,7 +120,7 @@ Before any downstream write, grep the target file for the entry's normalized fir
 
 ## Step 7 — Leak Scan
 
-Before writing outbound text to any consumer or public destination, scan it for:
+Before writing outbound text to any consumer or public destination, scan it. Outbound text is the idea text **and the entry's tag** (`[#tag]`): the tag travels with the entry into whatever the destination copies it into (an `IDEAS.md` line, a tracker label or title), so a tag is outbound text like any other. **Enforcement: structured spell gate (ARC-023) — a hit in either field blocks that entry's write until the operator rewrites it or keeps it in the book.** Scan both for:
 
 - Every other venture's slug and aliases from the registry (never the destination's own)
 - Hub path fragments (`{BUSINESS_ROOT}` paths, this repo's own root-relative paths)

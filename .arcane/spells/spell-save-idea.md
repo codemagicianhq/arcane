@@ -58,7 +58,10 @@ When targeting a venture book that doesn't exist yet as a file, create it from t
 - Strip a leading invocation phrase if the user dictated one (e.g., "save this idea —", "note that", "remind me to") — log the idea, not the command to log it.
 - Lightly clean it up: fix obvious typos and capitalization, but **do not** rewrite, expand, or editorialize. The user's phrasing is the record.
 - If the idea is clearly multiple distinct ideas, split them into separate entries (one appended line each).
-- Optionally infer a single short tag (1–2 words, kebab-case) from the content — e.g., `ui`, `infra`, `marketing`, `dx`. If nothing fits cleanly, omit the tag.
+- Optionally infer a single short tag (1–2 words, kebab-case) from the content. Where the tag comes from depends on `.arcane.json`'s optional `idea_tags` field, `{ "mode": "extend" | "replace", "tags": [...] }`:
+  - **`idea_tags` declared:** pick the tag from the declared vocabulary and never invent a tag outside it. `mode: "extend"` — the vocabulary is the declared `tags` plus today's free-form default tags: prefer a declared tag when one fits, otherwise infer one as below. `mode: "replace"` — the declared `tags` are the whole vocabulary; no free-form tag is inferred. If nothing in the vocabulary fits cleanly, omit the tag.
+  - **No `idea_tags`:** infer a free-form tag from the content — e.g., `ui`, `infra`, `marketing`, `dx`. If nothing fits cleanly, omit the tag.
+  - A tag must never carry a venture, client, or person name — tag the idea's subject (`ui`, `billing`), never whose it is. A tag travels with the entry when `spell-manifest` promotes it downstream, so a name in a tag leaks exactly as a name in the text would. **Enforcement: explicitly advisory prose (ARC-023) — the agent's judgment at capture time; in a hub, `spell-manifest`'s leak scan re-checks the tag before it leaves, but only for sibling venture names, hub paths, machine names and the org-token denylist.**
 - **If the idea contains a secret** (token, password, API key, connection string), redact it inline (e.g., `[redacted]`) before writing and warn the user in the confirmation. Never write the raw value to `IDEAS.md`.
 
 ## Step 2 — Append to IDEAS.md
@@ -114,4 +117,5 @@ Do not ask follow-up questions. Do not commit — leave that to `spell-commit-wo
 - Never rewrite the user's idea beyond light cleanup. Preserve their words.
 - No approval gate — write immediately.
 - Never include secrets, tokens, or credentials in an entry.
+- Never put a venture, client, or person name in a tag; when `.arcane.json` declares `idea_tags`, draw the tag from that vocabulary (Step 1).
 - Do not commit the change.
