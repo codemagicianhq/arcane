@@ -42,9 +42,9 @@
         "existing handoff tests still pass"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up04-lane-b",
-      "testEvidence": null
+      "testEvidence": "spell-close-session's handoff template gains `- **Needs you:**` between `Pending Verification` and `Notes` (same items as the closure report's `## ⚠ Needs you` block, \"None\" when empty, never only in Blockers/Notes/Carry Forward); no field renamed. spell-open-session's Handoff Detection gains a bullet: surface the field in the `## ⚠ Needs you` block above `## Picking Up From Last Session`, check items it can, treat a pre-field handoff as None, and do not mark the handoff consumed until every item is surfaced. spell-authoring-standards.md records the handoff rule. The fresh-install scaffold src/assets/ai-context/system-prompt-context.md is outside this lane's allowlist and was not changed (it ships pre-consumed; the absent field reads as None). test/up04-b-handoff.test.ts 12/12 (field order pinned: the 8 existing names plus Needs you); prompt-handoff-durability and prompt-pending-verification pass unchanged; fix/check:self-host-parity pass (343); check:citations identical to base; check:adr-references pass; check:stale-claims exit 0, same 10-line report; 28 test files mentioning open/close-session, the standards or _fragments: 628/628 pass."
     }
   ]
 }
