@@ -3204,7 +3204,9 @@ that would block it short of uninstalling and re-running `init`.
 3. **`spell doctor`'s "declared but not enforced" finding names `spell block-push`** as its remedy.
 4. **`guarded` becomes visible where pushes happen.** Every spell that pushes
    (`spell-commit-work`, `spell-create-pull-request`, `spell-ship`, `spell-sync-pull-request`,
-   `spell-close-session`) reads `push_policy` before pushing:
+   `spell-close-session`, `spell-address-review`) reads `push_policy` before pushing. The list first
+   omitted `spell-address-review`; UP-02's adversarial review found it pushing without the check, and
+   it was added before this ADR merged:
    - under `guarded`, it states the policy and asks the operator before the push;
    - under `blocked`, it does not attempt the push, says why, and names `spell unblock-push`.
 5. **`git-conventions.md` gains the "Push safety" section** `universal-agent-rules.md` already
