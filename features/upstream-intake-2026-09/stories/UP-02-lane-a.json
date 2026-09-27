@@ -102,9 +102,9 @@
         "`npm run check:spell-catalog` still passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "README gains 'Setup questions, answered by flags' (all six flags, both commands, tighten-only push policy) and 'Push safety' (spell block-push, update never installs, loosening only via interactive spell unblock-push); marker blocks untouched. npm run check:spell-catalog passes; check:self-host-parity and check:stale-claims exit 0; spell-catalog/org-token-lint/agent-loader/session-continuity tests green"
     }
   ]
 }

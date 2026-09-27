@@ -220,6 +220,43 @@ spell init --profile full
 spell add agent-policies   # or install any component à la carte
 ```
 
+### Setup questions, answered by flags
+
+`spell init` asks a few questions about the repository and records the answers in `.arcane.json`; `spell update` asks any that an older install predates. Each question has a flag, on both commands, so a script or an agent harness can answer without a terminal:
+
+| Flag | Answers |
+| --- | --- |
+| `--role <hub\|consumer>` | Does this repository manage other ventures as a hub? |
+| `--tracking-mode <internal\|external>` | Is work tracked in this repository, or in an external tracker? |
+| `--external-provider <ado\|github\|jira\|other>` | Which tracker. Only with `--tracking-mode external`, which requires it. |
+| `--content-sensitivity <standard\|sensitive>` | May agents quote this repository's contents? |
+| `--push-policy <open\|guarded\|blocked>` | May this repository push to a remote? See [Push safety](#push-safety). |
+| `--subject-root <path>` | Which directory holds the subject's documents (docs profile). |
+
+```bash
+spell init --profile lite --tracking-mode internal --push-policy guarded
+spell update --role consumer --content-sensitivity standard
+```
+
+A flag answers its question with no prompt, even under `--profile`; a question without a flag is asked on a terminal and skipped without one. A run that skips questions prints the exact `spell update` line that answers them. Values are checked by the same validator as `.arcane.json`, and a bad one exits 1.
+
+A flag only ever answers a question that has no recorded answer yet. To change a recorded answer, edit `.arcane.json` deliberately; the flag is refused and names the current value. The one exception is `--push-policy`, which may also **tighten** a recorded policy (`open` → `guarded` → `blocked`). It can never loosen one.
+
+### Push safety
+
+A repository whose history must never reach a remote records `push_policy: "blocked"`, and gets two controls: a pre-push hook, and a disabled push URL on every remote. `guarded` installs nothing; `spell doctor` reports it, and the spells that push state it and ask first.
+
+```bash
+spell block-push     # enforce "blocked" on an initialized repository
+spell unblock-push   # lift it: interactive terminal only, and you type the repository name
+```
+
+- **`spell block-push`** installs exactly what `spell init` installs for `blocked`, with the same refusals. It never takes over a `core.hooksPath` that another hook manager owns, and it refuses when a push URL is configured outside the repository. It records `blocked` only once both controls are in force, so a refusal changes nothing. Running it again on an enforced repository reports that and changes nothing. It needs no terminal, because it can only tighten.
+- **`spell update` never installs push controls.** When it records `blocked`, from a question or from `--push-policy`, it tells you the policy is not enforced yet and to run `spell block-push` ([ARC-049](DECISIONS.md#arc-049--enforcing-a-recorded-push-policy-after-init)).
+- **Loosening is only possible through `spell unblock-push`, from an interactive terminal.** No flag, script or other command can move a repository from `blocked` or `guarded` toward `open`: `spell update --push-policy open` on a blocked repository exits 1 and points you at `spell unblock-push`.
+
+These controls stop an accidental push, not a determined operator ([ARC-034](DECISIONS.md#arc-034--push-safety-for-sensitive-repositories)).
+
 ### Once per machine
 
 Working across many Arcane repositories at once? Install the spells a single time at the **user tier**, instead of (or as well as) per repository:
