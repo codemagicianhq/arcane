@@ -138,7 +138,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 40,
+      "commits": 41,
       "source": "commit-trailer"
     }
   ],
