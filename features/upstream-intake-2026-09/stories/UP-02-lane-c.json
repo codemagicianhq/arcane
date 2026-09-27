@@ -13,9 +13,9 @@
         "new test asserts destination (b) to a public repo requires disclosure"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-c",
-      "testEvidence": null
+      "testEvidence": "test/up02-c-manifest-disclosure.test.ts: 7/7 pass (red 6/7 before the edit); with prompt-diagram-emission + prompt-tracking-and-business-root 56/56; self-host-parity, citations, adr-references pass"
     },
     {
       "id": "UP02-C-02",
