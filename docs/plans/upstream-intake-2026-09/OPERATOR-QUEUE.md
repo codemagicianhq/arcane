@@ -57,7 +57,21 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Exact commands:** read each ADR; reply per ADR. The session flips `Status:` to `Accepted` in the
   UP-01 PR on your instruction.
 - **Rollback:** supersede with a new ADR later, per `decision-documentation-standard.md`.
-- **Status:** [ ] open — pending UP-01
+- **Operator pre-authorization (2026-09-27, in session, before UP-01 was drafted):** asked "may I
+  treat each ADR as accepted tonight, provided the written ADR matches its default above without
+  material deviation (any deviation halts that part for you)?", the operator answered **"Yes, if
+  faithful"**, after a plain-language explanation of all three. UP-01 therefore drafts them as
+  `Accepted` under that condition:
+  - [ARC-049](../../../DECISIONS.md#arc-049--enforcing-a-recorded-push-policy-after-init) implements
+    D-01;
+  - [ARC-050](../../../DECISIONS.md#arc-050--decision-number-allocation-across-parallel-sessions)
+    implements D-04;
+  - [ARC-051](../../../DECISIONS.md#arc-051--placeholder-taxonomy-for-governance-documents)
+    implements D-05.
+  ARC-049 records two interpretations made while drafting, for the operator to confirm. The
+  transcript-recovery ADR was not drafted, because Q-004 has not run.
+- **Status:** [ ] open. The ADRs are accepted under the pre-authorization above, and the entry stays
+  open for the operator to confirm, or to revise before merging UP-01, then mark done.
 
 ## Q-004 — Probe: does the client drop user messages on resume? (#267)
 
@@ -91,7 +105,11 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Preconditions:** none.
 - **Exact commands:** as above; reply "rendered" or "raw text" per client.
 - **Rollback:** none — observation only.
-- **Status:** [ ] open
+- **Result (2026-09-27, in session):** in the Claude app following a Claude Code cloud session, the
+  operator saw a fenced ` ```mermaid ` block **"as text, with a copy button"**, not rendered. This is
+  recorded as a verified cell in ARC-036's correction matrix. The other clients are still unobserved.
+- **Status:** [ ] open. The one observed client is recorded; the operator marks this done, or adds
+  more clients.
 
 ## Q-006 — Make the Show Report theme change in `arcane-ui` (#271)
 
@@ -108,4 +126,34 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   commit or tag to re-vendor from.
 - **Rollback:** revert in `arcane-ui`; this repository keeps the previous vendored template until
   re-vendored.
+- **Status:** [ ] open
+
+## Q-007 — Review and merge the overnight stacked wave PRs, in order
+
+- **What:** On 2026-09-27 the operator asked for an unattended overnight run and answered four
+  questions before leaving:
+  1. **"Stacked PRs, no merges"**;
+  2. ADRs accepted **"if faithful"** (Q-003);
+  3. the Mermaid probe **"as text, with a copy button"** (Q-005);
+  4. **"Skip both tonight"** for #267 and #271.
+
+  The run therefore leaves one PR per wave, each targeting the previous wave's branch rather than
+  `main`:
+  - UP-01 targets `main`;
+  - UP-02 targets UP-01's branch;
+  - UP-03 targets UP-02's branch;
+  - UP-04 (#266 only) targets UP-03's branch.
+- **Why:** Every merge into `main` publishes to npm (`release-drift.yml` → `publish.yml`), and the
+  operator chose to review before anything publishes (PRD D-16).
+- **Preconditions:** each PR's body reports its local gate results. CI runs only on PRs into `main`
+  (`ci.yml` `pull_request: branches: [main]`), so the stacked PRs have **not** been through CI yet.
+- **Exact commands**, one wave at a time:
+  1. Review and merge UP-01 into `main`.
+  2. Ask the session to run `spell-sync-pull-request` on UP-02. It retargets UP-02 to `main`,
+     rebases, and regenerates this program's Show Report, since the merged history changes its cast.
+  3. Wait for CI to go green, review, and merge UP-02.
+  4. Repeat steps 2–3 for UP-03 and UP-04.
+  Each merge publishes one minor.
+- **Rollback:** do not merge. Every wave stays reviewable and nothing is published until its merge.
+- **Deferred tonight (still open):** #267 waits on Q-004; #271 waits on Q-006.
 - **Status:** [ ] open
