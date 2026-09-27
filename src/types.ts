@@ -160,6 +160,18 @@ export interface ArcaneManifest {
    * false positive elsewhere in the same file.
    */
   secretsScanExcludePrefixes?: string[];
+  /**
+   * The vocabulary `spell-save-idea` draws an idea's `[#tag]` from (PRD D-10,
+   * #261). `"extend"` adds `tags` to the default vocabulary; `"replace"` uses
+   * `tags` alone. Absent means today's free-form inference. Set by hand --
+   * there is no retrofit question for it.
+   */
+  idea_tags?: IdeaTags;
+}
+
+export interface IdeaTags {
+  mode: "extend" | "replace";
+  tags: string[];
 }
 
 export type HubRole = "hub" | "consumer";
