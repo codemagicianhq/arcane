@@ -42,6 +42,7 @@ import {
 } from "../modules/hub.js";
 import {
   applyBlockedPushControls,
+  hookInForce,
   installClosedPrWarningHook,
   describeConfigScope,
   ARCANE_HOOKS_DIR,
@@ -172,6 +173,13 @@ export async function runInit(
   // The user tier is a different install with a different shape -- see
   // runInitUser. `targetDir` is the store root (~/.arcane) in that case.
   if (options.user) {
+    if (hasManifestFlags(options.manifestFlags)) {
+      console.error(
+        "\n  ✗ The manifest-question flags describe a repository; the user tier has none of those fields.\n",
+      );
+      process.exit(1);
+      return;
+    }
     await runInitUser(options, targetDir, assetsDir, packageVersion);
     return;
   }
@@ -584,9 +592,18 @@ export async function runInit(
   if (push_policy === "blocked" || push_policy === "guarded") {
     try {
       if (push_policy === "blocked") {
-        await applyBlockedPushControls(targetDir, {
+        const controls = await applyBlockedPushControls(targetDir, {
           emit: (m) => (m.level === "warning" ? printWarning(m.text) : printInfo(m.text)),
         });
+        // A flag-driven, non-interactive init must not read as success while
+        // the recorded block is only partly in force (ARC-034 decision 5).
+        if (!hookInForce(controls.hook) || controls.urls.some((u) => u.status === "failed")) {
+          printWarning(
+            'push_policy is recorded as "blocked", but the block is not fully in force. Resolve the ' +
+              "cause above, then run `spell block-push`; `spell doctor` shows exactly what is missing.",
+          );
+          process.exitCode = 1;
+        }
       } else {
         printInfo(
           "Marked as push-guarded. No technical control was installed — check the remote is the " +

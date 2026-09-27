@@ -114,7 +114,7 @@ Format: `type(scope): summary`
 
 ## Step 4 — Build the description
 
-Write the body to a **temp file** and pass it to the provider CLI by file reference — never pass multiline content as a shell argument (this avoids shell/PowerShell truncation, quoting, and newline-mangling). Resolve the scratch path with `git rev-parse --git-dir` (handles worktrees and non-default `.git` locations) and write to `<git-dir>/arcane-pr-body.md`. The `.git` directory is never committed, so the body file is safe and ignored. Delete it after a successful create (Step 6).
+Write the body to a **temp file** and pass it to the provider CLI by file reference — never pass multiline content as a shell argument (this avoids shell/PowerShell truncation, quoting, and newline-mangling). Resolve the scratch path with `git rev-parse --git-dir` (handles worktrees and non-default `.git` locations) and write to `<git-dir>/arcane-pr-body.md`, with the first line `<!-- arcane-pr-body: <current-branch> -->` naming the branch it was written for (a leftover body from another branch in the same checkout must never be reused). The `.git` directory is never committed, so the body file is safe and ignored. Delete it after a successful create (Step 6).
 
 Standard template:
 
@@ -181,7 +181,7 @@ so they need no edit.
 
 ## Step 5 — Create the PR
 
-**Refuse to create the PR if the body file is missing or empty.** Before either create command, check that `<git-dir>/arcane-pr-body.md` exists and has content. If it does not — most often because a halted rebase interrupted the flow and it was resumed here — stop and run Step 4 first, then return to this step. Never fall back to an empty or placeholder description.
+**Refuse to create the PR if the body file is missing, empty, or written for another branch.** Before either create command, check that `<git-dir>/arcane-pr-body.md` exists, has content, and its first line names the current branch. If it does not — most often because a halted rebase interrupted the flow and it was resumed here — stop and run Step 4 first, then return to this step. Never fall back to an empty or placeholder description.
 
 - **GitHub:**
   ```bash

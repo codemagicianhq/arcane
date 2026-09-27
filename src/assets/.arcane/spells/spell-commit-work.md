@@ -174,7 +174,7 @@ Workflow:
 
    a1. **MCP fail-fast / fallback.** If an MCP tool used anywhere in this step (e.g. `create_pull_request`) fails abnormally once — a hang, an idle-timeout abort, a transport error, or an empty response where data is clearly expected — treat that server as down for the rest of this session. Do not retry it blindly; fall back to the raw CLI paths below (`gh pr create` / `az repos pr create`) and report the downgrade. Full rule: `.arcane/governance/git-conventions.md` → Known issues.
 
-   a2. **Write the PR body file first.** Before step 9b — the first step here that can halt — write the PR description to a file, so a rebase that stops (a conflict, a hand-off to `spell-sync-pull-request`, a resumed session) cannot lose it. Resolve the path with `git rev-parse --git-dir` (it handles worktrees) and write `<git-dir>/arcane-pr-body.md`, following the quality rules in 9f; this is the same file `spell-create-pull-request` Step 4 writes. The `.git` directory is never committed and a rebase does not touch it, so the file survives a halted rebase. Confirm it is non-empty before continuing. If you delegate the PR to `spell-create-pull-request`, it writes this file itself at its Step 4.
+   a2. **Write the PR body file first.** Before step 9b — the first step here that can halt — write the PR description to a file, so a rebase that stops (a conflict, a hand-off to `spell-sync-pull-request`, a resumed session) cannot lose it. Resolve the path with `git rev-parse --git-dir` (it handles worktrees) and write `<git-dir>/arcane-pr-body.md`, following the quality rules in 9f, with the first line `<!-- arcane-pr-body: <current-branch> -->` naming the branch it was written for; this is the same file `spell-create-pull-request` Step 4 writes. The `.git` directory is never committed and a rebase does not touch it, so the file survives a halted rebase. Confirm it is non-empty before continuing. If you delegate the PR to `spell-create-pull-request`, it writes this file itself at its Step 4.
 
    b. **🛑 Mandatory pre-PR rebase (governance guard, applies to every path below).** Before invoking any PR-creation command — whether via `spell-create-pull-request`, raw `gh pr create`, raw `az repos pr create`, or an MCP `create_pull_request` tool — you MUST:
 
@@ -196,7 +196,7 @@ Workflow:
    - `dev.azure.com` / `visualstudio.com` → Azure DevOps flow
 
    d. **GitHub flow (when remote is GitHub):**
-   - **Refuse to create the PR if the body file is missing or empty.** Check `<git-dir>/arcane-pr-body.md` (step 9a2) exists and has content; if not, stop, rewrite it per 9a2, and only then continue. Never fall back to an empty or placeholder `--body`.
+   - **Refuse to create the PR if the body file is missing, empty, or written for another branch.** Check `<git-dir>/arcane-pr-body.md` (step 9a2) exists, has content, and its first line names the current branch; if not, stop, rewrite it per 9a2, and only then continue. Never fall back to an empty or placeholder `--body`.
    - Create PR with `gh pr create --title "<Conventional Commits title>" --body-file <git-dir>/arcane-pr-body.md`.
    - Use `--body-file` (not inline `--body`) to preserve multi-line markdown reliably.
    - Assign reviewer by default (operator/reviewer identity) if available.
@@ -207,7 +207,7 @@ Workflow:
    - Check if an active PR already exists for the source branch:
      - `az repos pr list --source-branch <branch> --status active --output json`
      - If one exists, reuse it; otherwise create via `az repos pr create`.
-   - **Refuse to create the PR if the body file is missing or empty.** Check `<git-dir>/arcane-pr-body.md` (step 9a2) exists and has content before `az repos pr create`; if not, stop, rewrite it per 9a2, and only then continue.
+   - **Refuse to create the PR if the body file is missing, empty, or written for another branch.** Check `<git-dir>/arcane-pr-body.md` (step 9a2) exists, has content, and its first line names the current branch before `az repos pr create`; if not, stop, rewrite it per 9a2, and only then continue.
    - For multi-line markdown descriptions:
      - Bash: `--description "$(cat <git-dir>/arcane-pr-body.md)"`
      - PowerShell: `--description (Get-Content -Raw <git-dir>\arcane-pr-body.md)`

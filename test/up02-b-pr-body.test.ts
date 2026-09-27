@@ -53,7 +53,8 @@ describe("spell-commit-work step 9: body first, autostash rebase, empty-body ref
         const step9e = section(commitWork, "e. **Azure DevOps flow", "f. **PR description quality rules");
         for (const step of [step9d, step9e]) {
             expect(step).toContain("<git-dir>/arcane-pr-body.md");
-            expect(step).toContain("Refuse to create the PR if the body file is missing or empty");
+            expect(step).toContain("Refuse to create the PR if the body file is missing, empty, or written for another branch");
+            expect(step).toContain("its first line names the current branch");
         }
     });
 });
@@ -68,7 +69,8 @@ describe("spell-create-pull-request: autostash rebase and empty-body refusal", (
 
     it("Step 5 refuses a missing or empty body file and points back at Step 4", () => {
         const step5 = section(createPr, "## Step 5 — Create the PR", "## Step 6 — Report");
-        expect(step5).toContain("Refuse to create the PR if the body file is missing or empty");
+        expect(step5).toContain("Refuse to create the PR if the body file is missing, empty, or written for another branch");
+        expect(step5).toContain("its first line names the current branch");
         expect(step5).toContain("run Step 4 first");
         // The refusal comes before either provider's create command.
         expect(step5.indexOf("missing or empty")).toBeLessThan(step5.indexOf("gh pr create"));
