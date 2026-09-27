@@ -120,6 +120,7 @@ In `ai-context/system-prompt-context.md`, replace the existing `## Next Session 
 - **Branch:** Output of `git branch --show-current`.
 - **Blockers:** Known unresolved blockers or dependencies. Write "None" if clear.
 - **Pending Verification:** One line per non-`succeeded` item from step 1b: `<what> — <state> — <verification action>`. States: `dispatched`, `pending`, `failed`, `unverifiable` (never list a `succeeded` item here — it belongs in `Last completed step` / TODO.md / the journal instead, worded per the gating above). The verification action is required for `dispatched`, `pending`, and `unverifiable` — "N/A" is only valid for `failed`, where the state is already resolved and there is nothing left to check. Write "None" only if step 1b found every dispatched item resolved to `succeeded` or `failed` before this handoff was written.
+- **Needs you:** One line per action only the operator can take that this session leaves open, the same items the closure report's `## ⚠ Needs you` block lists (step 11): `<what to do> — <why the agent cannot do it>`. Write "None" when nothing needs the operator. Never leave such an action only in `Blockers`, `Notes` or `Carry Forward`; it may be repeated there, but it always appears here.
 - **Notes:** Anything time-sensitive, fragile, or contextual that would be lost if not stated explicitly. Never the sole carrier of durable content (session handoff durability) — if it names unfinished work, that work must also be registered per step 4b; name its location here.
 ```
 

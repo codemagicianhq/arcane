@@ -234,7 +234,9 @@ source under `.arcane/spells/_fragments/` and never shipped on its own. A spell 
 `<!-- fragment:needs-you:start -->` / `<!-- fragment:needs-you:end -->` marker pair placed where the
 spell describes its final output or report, and `npm run fix:self-host-parity` expands the fragment
 between the markers. Edit the fragment, never an expanded copy, and never restate its rules by hand
-in a spell body.
+in a spell body. Required actions also survive the end of a session: `spell-close-session` writes
+the open items into the handoff's `Needs you` field, and `spell-open-session` surfaces that field
+first, above the rest of the handoff, and does not mark the handoff consumed until it has.
 
 **Enforcement: executable check (ARC-023) for the wording — in Arcane's own repository,
 `npm run check:self-host-parity` fails CI when a spell's expanded span differs from the fragment, and
