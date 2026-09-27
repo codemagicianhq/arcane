@@ -1,0 +1,21 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-03 lane D",
+  "branchName": "sessions/2026-09-27-up-03-lane-d",
+  "assignedAgent": "up03-lane-d",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP03-D-01",
+      "title": "Harness-drivable setup guidance (#282 spell half, PRD D-02)",
+      "description": "spell-arcane-version and spell-open-session: where they direct the operator to `spell update`, add: when `spell update` reports skipped manifest questions (no interactive terminal), collect each answer through the harness's own question UI and re-run with the flags it printed (`--role`, `--tracking-mode`, `--external-provider`, `--content-sensitivity`, `--push-policy`, `--subject-root`); never pass a flag the operator did not answer; loosening push_policy is never done by flag (only `spell unblock-push`, interactive).",
+      "acceptanceCriteria": [
+        "both spells carry the guidance",
+        "new test asserts the flag names match the CLI's (read src/index.ts)"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up03-lane-d",
+      "testEvidence": null
+    }
+  ]
+}
