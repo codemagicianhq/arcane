@@ -14,10 +14,10 @@ next session reminds you. This is the third code wave of the Upstream Intake 202
 
 ### Added
 
-- **A `## ⚠ Needs you` block at the top of final reports (#266).** Fifteen spells that can end with an
+- **A `## ⚠ Needs you` block at the top of final reports (#266).** Sixteen spells that can end with an
   operator-only action (a merge, a decision record to accept, a guarded push to confirm,
-  `spell unblock-push`, a question the work waits on) now list each one in this block, one line per
-  action: what to do, then why the agent can't do it. The block is left out when nothing needs you,
+  `spell unblock-push`, a question the work waits on, a store-console step) now list each one in
+  this block, one line per action: what to do, then why the agent can't do it. The block is left out when nothing needs you,
   and a required action is never listed only under optional next steps. The rule is one shared
   fragment, `_fragments/needs-you.md`, expanded into each spell, and is recorded in
   `spell-authoring-standards.md`. It is advisory prose: no check reads a spell's actual output.

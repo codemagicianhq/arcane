@@ -36,7 +36,10 @@ describe("close-session handoff template carries a Needs you field (UP04-B-03)",
     it("adds the field, fed by the closure report's Needs you block, with None when empty", () => {
         const template = handoffTemplate();
         expect(template).toContain("- **Needs you:** One line per action only the operator can take");
-        expect(template).toContain("the same items the closure report's `## ⚠ Needs you` block lists");
+        expect(template).toContain("The closure report's `## ⚠ Needs you` block (step 11) lists the same items");
+        // Written before steps 9-10, so it must anticipate the merge and a held push (UP-04 review R1).
+        expect(template).toContain("This block is committed before steps 9–10 run");
+        expect(template).toMatch(/`push_policy`[^\n]*`blocked`, or `guarded` in an autonomous run/);
         expect(template).toContain('Write "None" when nothing needs the operator.');
         expect(template).toContain("Never leave such an action only in `Blockers`, `Notes` or `Carry Forward`");
     });
@@ -119,5 +122,20 @@ describe("root copies and the authoring standard (UP04-B-03)", () => {
             ),
         ].join("\n");
         expect(newText).not.toMatch(/\{[A-Z][A-Z0-9_]*\}/);
+    });
+});
+
+describe("the fresh-install handoff scaffold (UP-04 review R8)", () => {
+    it("lists the Needs you field between Pending Verification and Notes", async () => {
+        const scaffold = await readFile(
+            join(process.cwd(), "src", "assets", "ai-context", "system-prompt-context.md"),
+            "utf8",
+        );
+        const pending = scaffold.indexOf("- **Pending Verification:**");
+        const needsYou = scaffold.indexOf("- **Needs you:** None.");
+        const notes = scaffold.indexOf("- **Notes:**");
+        expect(pending).toBeGreaterThan(-1);
+        expect(needsYou).toBeGreaterThan(pending);
+        expect(notes).toBeGreaterThan(needsYou);
     });
 });
