@@ -39,7 +39,12 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Also answer:** the version numbering (three minors, 1.6.0 → 1.8.0, recommended) and whether
   R-UP03-A3 (`requires`) stays in scope.
 - **Rollback:** any decision can be overridden until the wave implementing it starts.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-27 — operator answered "Accept all defaults" through the session's
+  structured question, recorded here by the session on that instruction. D-16 was re-confirmed in
+  the same exchange ("You merge every wave"). The version numbering (three minors) and R-UP03-A3's
+  inclusion were not asked separately and stand at their recommended defaults under "accept all";
+  either can still be overridden before UP-02 / UP-03 starts. ADR-routed decisions (D-01, D-04,
+  D-05, and D-06 if Q-004 reproduces) still need Q-003 acceptance of their final text.
 
 ## Q-003 — Accept, revise, or reject the UP-01 ADRs
 
