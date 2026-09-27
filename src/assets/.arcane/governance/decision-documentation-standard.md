@@ -36,7 +36,7 @@ Arcane separates framework-level decisions from org-specific ones using two pref
 - If the decision would apply to any organization using Arcane, it is `ARC-NNN`.
 - If the decision is specific to how your organization operates, it is `ADR-NNN`.
 - When uncertain, default to `ADR-NNN` in ops; promote to `ARC-NNN` later if the decision proves framework-generic. **Enforcement: explicitly advisory prose (ARC-023) — whether a decision is framework-generic enough for `ARC-NNN` (this rule and the two prefix-scoping rules above) is a judgment call; no script evaluates a decision's content to confirm the chosen prefix.**
-- Never renumber existing entries in either sequence. **Enforcement: explicitly advisory prose (ARC-023) — `scripts/check-distributed-adr-references.ts` only verifies that a bare `ADR-NNN` citation resolves to a heading declared in `framework-decisions.md` (and separately flags certain `ARC-NNN`/`EF-NNN` link forms as cross-repo hazards); it never checks that numbers are sequential, unique, or never reused.**
+- Never renumber existing entries in either sequence. **Enforcement: explicitly advisory prose (ARC-023) — `scripts/check-distributed-adr-references.ts` only verifies that a bare `ADR-NNN` citation resolves to a heading declared in `framework-decisions.md` (and separately flags certain `ARC-NNN`/`EF-NNN` link forms as cross-repo hazards); it never checks that numbers are sequential, unique, or never reused. Uniqueness alone has an executable check in Arcane's own repository only: `scripts/check-stale-claims.ts` (run in CI as `npm run check:stale-claims`) fails when two decision headings in its `DECISIONS.md` share an ID (ARC-050). That check does not ship to consuming repositories, and it cannot tell a renumbered entry from a new one.**
 
 ## Allocating Decision Numbers
 
@@ -68,7 +68,11 @@ cross-references then point at the wrong decision. ARC-050 sets how a number is 
    does not close it: two sessions can fetch before either pushes. "Never renumber existing entries"
    applies to merged entries. When two branches hold the same number, the branch that has not merged
    yet renumbers its own entry and every reference to it on that branch. **Enforcement: explicitly
-   advisory prose (ARC-023) — nothing detects the collision or performs the renumbering.**
+   advisory prose (ARC-023) for the renumbering — no script performs it or checks which branch did
+   it. Detecting the collision is an executable check in Arcane's own repository only:
+   `scripts/check-stale-claims.ts`, run in CI as `npm run check:stale-claims`, fails when two
+   decision headings share an ID. It matches any `## <PREFIX>-<number>` heading, not only `ARC`, so
+   a consuming repository can adopt it, but it is not installed there.**
 
 ## Problem Statement
 

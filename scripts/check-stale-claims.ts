@@ -9,6 +9,13 @@
  *   `**Status:**` line for that ADR. A mismatch is a stale claim someone will
  *   act on as if it were current.
  *
+ *   Duplicate decision IDs (gate, --check can fail -- ARC-050 decision 4):
+ *   two decision headings in DECISIONS.md that share one ID (`## ARC-050`
+ *   twice). Parallel sessions that each took "the next number" collide
+ *   silently at merge; this catches the race fetching cannot close. The
+ *   heading pattern is generic (`## <PREFIX>-<digits>`), not tied to this
+ *   repository's `ARC` prefix, so the same check reads an `ADR-NNN` log.
+ *
  *   Class B (report only, explicitly advisory -- ARC-023): occurrences of a
  *   "this doesn't exist yet" phrase (not yet built/supported/implemented,
  *   open backlog item, still unbuilt, tracked as future work) in shipped
@@ -117,6 +124,62 @@ async function checkAdrStatusClaims(rootDir: string, livingDocs: string[]): Prom
     return findings;
 }
 
+/**
+ * A decision-record heading: `## ` then an uppercase prefix, a hyphen and a
+ * number (`## ARC-050 — ...`, `## ADR-012: ...`). Generic on purpose (ARC-050
+ * decision 4): the prefix is captured, never assumed.
+ */
+export const DECISION_HEADING = /^##[ \t]+([A-Z][A-Z0-9]*)-(\d+)\b/;
+
+const FENCE = /^[ \t]*(```|~~~)/;
+
+/**
+ * Finds decision IDs declared by more than one heading. One finding per
+ * duplicated ID, placed at its last heading; the reason names every heading
+ * that declares it, with its line. Headings inside fenced code blocks are
+ * examples, not declarations, and are skipped. IDs compare by prefix and
+ * numeric value, so `ARC-050` and `ARC-50` are the same ID.
+ */
+export function findDuplicateDecisionIds(content: string, file = "DECISIONS.md"): StaleClaimFinding[] {
+    const byId = new Map<string, { line: number; heading: string }[]>();
+    let inFence = false;
+    const lines = content.split("\n");
+    for (let lineNo = 0; lineNo < lines.length; lineNo += 1) {
+        const line = lines[lineNo]!.replace(/\r$/, "");
+        if (FENCE.test(line)) {
+            inFence = !inFence;
+            continue;
+        }
+        if (inFence) continue;
+        const match = DECISION_HEADING.exec(line);
+        if (!match) continue;
+        const id = `${match[1]!}-${Number(match[2]!)}`;
+        const seen = byId.get(id) ?? [];
+        seen.push({ line: lineNo + 1, heading: line.trim() });
+        byId.set(id, seen);
+    }
+
+    const findings: StaleClaimFinding[] = [];
+    for (const headings of byId.values()) {
+        if (headings.length < 2) continue;
+        const last = headings[headings.length - 1]!;
+        const declaredBy = headings.map((h) => `line ${h.line} "${h.heading}"`).join(" and ");
+        findings.push({
+            file,
+            line: last.line,
+            excerpt: last.heading.slice(0, 160),
+            reason: `duplicate decision ID: ${headings.length} headings declare it -- ${declaredBy}. The branch that has not merged yet renumbers its own entry (ARC-050).`,
+        });
+    }
+    return findings;
+}
+
+async function checkDuplicateDecisionIds(rootDir: string): Promise<StaleClaimFinding[]> {
+    const decisionsContent = await readOptional(join(rootDir, "DECISIONS.md"));
+    if (decisionsContent === null) return [];
+    return findDuplicateDecisionIds(decisionsContent);
+}
+
 async function checkStalePhrases(rootDir: string, livingDocs: string[]): Promise<StaleClaimFinding[]> {
     const findings: StaleClaimFinding[] = [];
     for (const relPath of livingDocs) {
@@ -143,46 +206,60 @@ async function checkStalePhrases(rootDir: string, livingDocs: string[]): Promise
 
 export async function checkStaleClaims(
     rootDir: string,
-): Promise<{ classA: StaleClaimFinding[]; classB: StaleClaimFinding[] }> {
+): Promise<{ classA: StaleClaimFinding[]; classB: StaleClaimFinding[]; duplicateIds: StaleClaimFinding[] }> {
     const livingDocs = await getLivingDocs(rootDir);
-    const [classA, classB] = await Promise.all([
+    const [classA, classB, duplicateIds] = await Promise.all([
         checkAdrStatusClaims(rootDir, livingDocs),
         checkStalePhrases(rootDir, livingDocs),
+        checkDuplicateDecisionIds(rootDir),
     ]);
-    return { classA, classB };
+    return { classA, classB, duplicateIds };
 }
 
 export type StaleClaimsMode = "check" | "report";
 
-async function main(mode: StaleClaimsMode): Promise<void> {
-    const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-    const { classA, classB } = await checkStaleClaims(rootDir);
+/** Runs every class against `rootDir`, prints the report, and returns the exit code. */
+export async function runStaleClaims(
+    mode: StaleClaimsMode,
+    rootDir: string,
+    log: (line: string) => void = console.log,
+): Promise<number> {
+    const { classA, classB, duplicateIds } = await checkStaleClaims(rootDir);
 
     if (classA.length === 0) {
-        console.log("Class A (ADR status claims): passed, zero mismatches.");
+        log("Class A (ADR status claims): passed, zero mismatches.");
     } else {
-        console.log(`Class A (ADR status claims): ${classA.length} mismatch(es):`);
-        for (const f of classA) console.log(`  ${f.file}:${f.line} — ${f.excerpt} — ${f.reason}`);
+        log(`Class A (ADR status claims): ${classA.length} mismatch(es):`);
+        for (const f of classA) log(`  ${f.file}:${f.line} — ${f.excerpt} — ${f.reason}`);
+    }
+
+    if (duplicateIds.length === 0) {
+        log("Duplicate decision IDs: passed, every decision heading has a unique ID.");
+    } else {
+        log(`Duplicate decision IDs: ${duplicateIds.length} ID(s) declared more than once:`);
+        for (const f of duplicateIds) log(`  ${f.file}:${f.line} — ${f.reason}`);
     }
 
     if (classB.length === 0) {
-        console.log("Class B (stale-phrase report): none found.");
+        log("Class B (stale-phrase report): none found.");
     } else {
-        console.log(`Class B (stale-phrase report, advisory -- verify each, don't assume): ${classB.length} hit(s):`);
-        for (const f of classB) console.log(`  ${f.file}:${f.line} — "${f.excerpt}" — ${f.reason}`);
+        log(`Class B (stale-phrase report, advisory -- verify each, don't assume): ${classB.length} hit(s):`);
+        for (const f of classB) log(`  ${f.file}:${f.line} — "${f.excerpt}" — ${f.reason}`);
     }
 
-    // Only Class A can fail the build -- Class B is explicitly advisory
-    // (ARC-023): a phrase match is a prompt to check, not proof of staleness.
-    if (mode === "check" && classA.length > 0) {
-        process.exitCode = 1;
-    }
+    // Only Class A and duplicate decision IDs can fail the build -- Class B is
+    // explicitly advisory (ARC-023): a phrase match is a prompt to check, not
+    // proof of staleness.
+    return mode === "check" && (classA.length > 0 || duplicateIds.length > 0) ? 1 : 0;
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : "";
 if (invokedPath === fileURLToPath(import.meta.url)) {
     const mode: StaleClaimsMode = process.argv[2] === "--report" ? "report" : "check";
-    main(mode).catch((error: unknown) => {
+    const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+    runStaleClaims(mode, rootDir).then((code) => {
+        if (code !== 0) process.exitCode = code;
+    }).catch((error: unknown) => {
         console.error("check-stale-claims failed:", error);
         process.exitCode = 1;
     });
