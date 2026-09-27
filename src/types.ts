@@ -235,6 +235,21 @@ export interface RegistryComponent {
   sourceOverrides?: Record<string, string>;
 }
 
+/**
+ * A spell or component that no longer exists under its old name (#279).
+ * `spell update` names it, with its successors and reason, whenever a
+ * manifest still tracks it -- so nobody has to guess what replaced it.
+ */
+export interface RegistryRetirement {
+  /** The old spell id (`spell-*`) or registry component name. */
+  name: string;
+  kind: "spell" | "component";
+  /** What replaces it; empty when it was retired outright. */
+  successors: readonly string[];
+  /** One line: why it changed, and where the record is. */
+  reason: string;
+}
+
 export type Profile = "full" | "lite" | "governance-only" | "methodology" | "docs";
 
 export interface ProfileDefinition {

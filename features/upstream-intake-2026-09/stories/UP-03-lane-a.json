@@ -14,9 +14,9 @@
         "nothing deleted without --prune; existing orphan tests pass"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up03-a-registry-changes.test.ts 9/9 (legacy spell-prompts manifest tracking spell-bootstrap-business prints successor spell-summon-venture + reason; agent-files note; file kept without --prune, pruned only with --prune via existing orphan path); test/update.test.ts + test/registry.test.ts 314/314 unchanged"
     },
     {
       "id": "UP03-A-02",

@@ -1,4 +1,4 @@
-import type { Profile, RegistryComponent, ProfileDefinition } from "../types.js";
+import type { Profile, RegistryComponent, ProfileDefinition, RegistryRetirement } from "../types.js";
 import { PROFILE_CONFIGS } from "../config/profiles.js";
 
 export class ComponentNotFoundError extends Error {
@@ -513,6 +513,47 @@ export const LEGACY_COMPONENT_MIGRATIONS: Readonly<Record<string, readonly strin
     "spell-prompts": LEGACY_MONOLITH_REPLACEMENTS,
     "claude-commands": LEGACY_MONOLITH_REPLACEMENTS,
   });
+
+/**
+ * Spells and components renamed or retired since they first shipped (#279,
+ * PRD D-15). Report-only: `spell update` explains an entry a manifest still
+ * tracks, and deletes nothing beyond what its orphan handling already does.
+ * Describes history, so entries are only ever added.
+ */
+export const REGISTRY_RETIREMENTS: readonly RegistryRetirement[] = [
+  {
+    name: "spell-bootstrap-business",
+    kind: "spell",
+    successors: ["spell-summon-venture"],
+    reason:
+      "renamed in 0.16.0 with no alias (ARC-008 precedent) — it became a hub-gated venture creator with per-venture books and a registry entry",
+  },
+  {
+    name: "spell-assess",
+    kind: "spell",
+    successors: ["spell-scope"],
+    reason: "renamed to name its outcome, epic scoping and sequencing (ARC-007); no alias (ARC-008)",
+  },
+  {
+    name: "agent-files",
+    kind: "component",
+    successors: [],
+    reason:
+      "`.github/agents/*.agent.md` files are rendered per roster by `spell agents init` / `spell agents sync` (ARC-047), which a fixed-path component cannot do",
+  },
+  {
+    name: "spell-prompts",
+    kind: "component",
+    successors: LEGACY_MONOLITH_REPLACEMENTS,
+    reason: "split in 0.18.0 into capability-scoped spells-* components; `spell update` migrates the entry itself",
+  },
+  {
+    name: "claude-commands",
+    kind: "component",
+    successors: LEGACY_MONOLITH_REPLACEMENTS,
+    reason: "split in 0.18.0 into capability-scoped spells-* components; `spell update` migrates the entry itself",
+  },
+];
 
 export function getComponent(name: string): RegistryComponent {
   const component = componentIndex.get(name);
