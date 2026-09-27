@@ -12,9 +12,9 @@
         "new test asserts: commit-work writes the body before 9b; both spells use --autostash; both refuse an empty body; git-conventions guard snippet matches"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up02-b-pr-body.test.ts 8/8 pass; 31 related existing test files (697 tests) still pass; check:self-host-parity, check:citations, check:adr-references, check:stale-claims (7 advisory hits, unchanged from baseline) pass; --autostash behaviour verified on git 2.43.0 in a scratch repo"
     },
     {
       "id": "UP02-B-02",

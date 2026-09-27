@@ -51,7 +51,7 @@ Before enabling auto-complete/auto-merge or completing an existing PR, resolve `
 > **🛑 AGENT-MANDATORY PRE-PR CHECKLIST — READ FIRST.** Before *any* PR-creation call (this spell, raw `az repos pr create`, raw `gh pr create`, the `create_pull_request` MCP tool, REST, web hook, or anything else):
 >
 > 1. `git fetch origin`
-> 2. `git rebase origin/<target-branch>` (default `main`) and resolve conflicts locally
+> 2. `git rebase --autostash origin/<target-branch>` (default `main`) and resolve conflicts locally
 > 3. `git push --force-with-lease` if the branch was already on origin
 > 4. *Then* run the PR-creation call
 >
@@ -62,7 +62,7 @@ Before enabling auto-complete/auto-merge or completing an existing PR, resolve `
 3. **Ensure the branch is on origin (upstream):** if `git rev-parse --abbrev-ref --symbolic-full-name @{u}` fails, the branch was never pushed — run `git push -u origin <branch>`. The provider CLIs can only open a PR for a branch that exists on the remote.
 4. **STOP** if the branch has no commits ahead of the target: `git log origin/<target>..HEAD --oneline` is empty → nothing to PR.
 5. Check for an existing **open** PR for this branch (provider-specific, Step 2). If one exists, print its URL and stop — never create duplicates.
-6. **Mandatory rebase on target (governance guard):** `git fetch origin` then `git rebase origin/<target>`. On clean rebase, `git push --force-with-lease` (only if the branch existed remotely before the rebase). On conflicts: **STOP**, list conflicting files, ask the user to resolve **or run `spell-sync-pull-request`** — it draws the same mechanical-vs-ambiguous conflict line this guard doesn't attempt to, with a recoverable ref before it touches anything; never push a branch that will produce a merge conflict on the target (see git-conventions "🛑 Agent-mandatory pre-PR guard"). This step is not optional and is not skippable by calling a different PR-creation tool.
+6. **Mandatory rebase on target (governance guard):** `git fetch origin` then `git rebase --autostash origin/<target>`. `--autostash` carries any uncommitted change through the rebase instead of refusing to start; if re-applying it conflicts, git keeps it in the stash — report that and stop. On clean rebase, `git push --force-with-lease` (only if the branch existed remotely before the rebase). On conflicts: **STOP**, list conflicting files, ask the user to resolve **or run `spell-sync-pull-request`** — it draws the same mechanical-vs-ambiguous conflict line this guard doesn't attempt to, with a recoverable ref before it touches anything; never push a branch that will produce a merge conflict on the target (see git-conventions "🛑 Agent-mandatory pre-PR guard"). This step is not optional and is not skippable by calling a different PR-creation tool.
 7. **Auto-suggest `--docs-only`** (only if not already passed): if every changed file vs target is documentation/session files (`*.md`, `TODO.md`, `DECISIONS.md`, `journal/**`, `IDEAS.md`, `FEEDBACK.md`), print a one-line hint suggesting `--docs-only` and proceed with the standard path.
 
 ## Step 1 — Gather context
@@ -169,6 +169,8 @@ so they need no edit.
 
 ## Step 5 — Create the PR
 
+**Refuse to create the PR if the body file is missing or empty.** Before either create command, check that `<git-dir>/arcane-pr-body.md` exists and has content. If it does not — most often because a halted rebase interrupted the flow and it was resumed here — stop and run Step 4 first, then return to this step. Never fall back to an empty or placeholder description.
+
 - **GitHub:**
   ```bash
   gh pr create --title "<title>" --body-file <temp> --base <target> --head <branch> [--draft] [--reviewer <r1,r2>]
@@ -219,6 +221,7 @@ so they need no edit.
 - Never create duplicate PRs — always check first (Step 2).
 - Never push directly to `main` — the PR is the only path.
 - Always write the description to a file before passing it to the provider CLI.
+- Never create a PR whose body file is missing or empty (Step 5) — rebuild it with Step 4 first.
 - Respect the repo merge strategy in `.arcane/governance/git-conventions.md` — **do not squash** (it breaks per-commit attribution).
 - Print the PR URL clearly so it can be recorded by `spell-ship` / `spell-close-session`.
 - Never include secrets or tokens in the title or description.

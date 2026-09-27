@@ -296,7 +296,7 @@ The agent slug prefix makes branch ownership obvious in `git branch -r` output a
    instead of the `spell-create-pull-request` spell.**
    ```bash
    git fetch origin
-   git rebase origin/main
+   git rebase --autostash origin/main
    # If conflicts arise: resolve → git add → git rebase --continue
    ```
    This ensures the PR diff is clean, the CI runs against current main, and reviewers see no
@@ -548,7 +548,7 @@ All pull requests — whether created by humans or agents — must meet these re
 
 ### 🛑 Agent-mandatory pre-PR guard
 
-> **AGENTS: BEFORE running any PR-creation tool (`az repos pr create`, `gh pr create`, the `create_pull_request` MCP tool, or any equivalent), you MUST run `git fetch origin && git rebase origin/<target-branch>` and resolve any conflicts. This is not optional. Skipping this step is a governance violation. Enforcement: structured spell gate (ARC-023) — `spell-create-pull-request` Step 0's mandatory rebase guard (its Step 0.6) and `spell-commit-work` Step 9b both require this fetch/rebase sequence before any PR-creation call — backed by an executable check: `.github/workflows/ci.yml`'s `rebase-check` job ("PR branch is rebased on target") independently re-verifies `origin/<base>` is an ancestor of HEAD via `git merge-base --is-ancestor` on every PR, and this repo's own live GitHub ruleset ("protect main") lists that exact check in `required_status_checks` with `current_user_can_bypass: "never"` — an unrebased PR cannot merge even if the spell-level guard were skipped.**
+> **AGENTS: BEFORE running any PR-creation tool (`az repos pr create`, `gh pr create`, the `create_pull_request` MCP tool, or any equivalent), you MUST run `git fetch origin && git rebase --autostash origin/<target-branch>` and resolve any conflicts. This is not optional. Skipping this step is a governance violation. Enforcement: structured spell gate (ARC-023) — `spell-create-pull-request` Step 0's mandatory rebase guard (its Step 0.6) and `spell-commit-work` Step 9b both require this fetch/rebase sequence before any PR-creation call — backed by an executable check: `.github/workflows/ci.yml`'s `rebase-check` job ("PR branch is rebased on target") independently re-verifies `origin/<base>` is an ancestor of HEAD via `git merge-base --is-ancestor` on every PR, and this repo's own live GitHub ruleset ("protect main") lists that exact check in `required_status_checks` with `current_user_can_bypass: "never"` — an unrebased PR cannot merge even if the spell-level guard were skipped.**
 
 This rule applies **every single time**, regardless of:
 
@@ -560,10 +560,14 @@ This rule applies **every single time**, regardless of:
 
 ```bash
 git fetch origin
-git rebase origin/<target-branch>     # resolve conflicts locally, never push a conflicted branch
+git rebase --autostash origin/<target-branch>     # resolve conflicts locally, never push a conflicted branch
 git push --force-with-lease            # only if the branch existed remotely before the rebase
 # ...only THEN run the PR-creation tool of your choice
 ```
+
+`--autostash` stashes uncommitted changes before the rebase and re-applies them afterwards, so a dirty working tree does not stop the rebase before it starts. If re-applying them conflicts, git leaves them in the stash and says so; report that before going further.
+
+**Keep the PR body safe across a halted rebase:** never create a PR whose body is empty. A flow that drafts the body before its pre-PR rebase must write the PR body file before the rebase (`<git-dir>/arcane-pr-body.md`, resolved with `git rev-parse --git-dir`; the `.git` directory is never committed and a rebase does not touch it), so a rebase that halts cannot lose it. A flow that builds the body afterwards, from the rebased commit log, must check the file when it reaches the PR-creation step and rebuild it if it is missing or empty — that is the case a halted-then-resumed flow lands in. Enforcement: structured spell gate (ARC-023) — `spell-commit-work` writes the file at Step 9a2, before its Step 9b rebase, and its raw-CLI paths (Steps 9d/9e) refuse a missing or empty file; `spell-create-pull-request` Step 5 refuses a missing or empty file and sends the agent back to its Step 4. No executable check verifies that a created PR's description is non-empty: `spell-create-pull-request`'s post-create read-back is the only re-check, and it is a spell step too.
 
 If a rebase produces conflicts the agent cannot confidently resolve, **STOP** and hand off to the human — do **not** open the PR and hope reviewers will sort it out. Pushing a branch that will produce a merge conflict on the target is a governance violation and wastes reviewer time.
 
