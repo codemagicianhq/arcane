@@ -40,9 +40,9 @@
         "sweep scope stated as hub-local"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up03-b-sweep-validate.test.ts 21/21 pass (incl. a reference parser of manifest Step 1's stated rules run over every concrete status-comment sample: old and new forms parse); parity, citations, adr-references, stale-claims pass; existing tests naming these files pass"
     },
     {
       "id": "UP03-B-04",
