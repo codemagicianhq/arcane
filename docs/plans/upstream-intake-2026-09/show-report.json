@@ -15,18 +15,18 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves",
-    "dek": "active — 0 of 6 epics shipped"
+    "dek": "active — 1 of 6 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "0/6",
+      "value": "1/6",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 0,
+      "value": 1,
       "label": "pull requests",
       "derived": true
     },
@@ -38,7 +38,7 @@
     },
     {
       "id": "adrs",
-      "value": 0,
+      "value": 3,
       "label": "ADRs accepted",
       "derived": true
     }
@@ -68,6 +68,11 @@
       "id": "Q-006",
       "title": "Make the Show Report theme change in `arcane-ui` (#271)",
       "reason": "A local edit here would be silently dropped at the next re-vendor (decided 2026-09-27:"
+    },
+    {
+      "id": "Q-007",
+      "title": "Review and merge the overnight stacked wave PRs, in order",
+      "reason": "Every merge into `main` publishes to npm (`release-drift.yml` → `publish.yml`), and the"
     }
   ],
   "sections": [
@@ -78,10 +83,13 @@
         {
           "id": "UP-00",
           "title": "Plan, PRD, queue and delegation",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Arcane now has one prioritized plan to fix every open issue filed against it, built to run independent fixes side by side instead of one release at a time.",
+          "descriptionState": "authored",
+          "category": "docs",
+          "href": "https://github.com/codemagicianhq/arcane/pull/285",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/285"
+          ]
         },
         {
           "id": "UP-01",
@@ -130,7 +138,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 3,
+      "commits": 5,
       "source": "commit-trailer"
     }
   ],
