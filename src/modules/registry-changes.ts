@@ -38,9 +38,14 @@ export interface MissingRequirement {
  * does not list, in registry order of first mention. A legacy entry counts as
  * the components that replaced it; a name the registry no longer knows
  * requires nothing.
+ *
+ * Only a requirement the repository's own profile includes is reported: a
+ * profile that deliberately leaves the standards out (lite, methodology) must
+ * not warn on a fresh install. An unrecognized or absent profile reports all.
  */
-export function findMissingRequires(installed: InstalledComponent[]): MissingRequirement[] {
+export function findMissingRequires(installed: InstalledComponent[], profile?: Profile): MissingRequirement[] {
   const names = new Set(installed.flatMap((c) => LEGACY_COMPONENT_MIGRATIONS[c.name] ?? [c.name]));
+  const promised = listProfiles().find((p) => p.id === profile)?.components;
   const missing = new Map<string, string[]>();
   for (const name of names) {
     let requires: string[];
@@ -52,6 +57,7 @@ export function findMissingRequires(installed: InstalledComponent[]): MissingReq
     }
     for (const required of requires) {
       if (names.has(required)) continue;
+      if (promised && !promised.includes(required)) continue;
       missing.set(required, [...(missing.get(required) ?? []), name]);
     }
   }

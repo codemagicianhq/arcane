@@ -82,6 +82,15 @@ describe("UP03-A-04 — `requires` on components (TODO: a spell installed withou
     ).toEqual(STANDARDS);
     expect(findMissingRequires([{ name: "agent-files", files: [], installedVersion: OLD_VERSION }])).toEqual([]);
   });
+
+  it("reports only prerequisites the repository's own profile includes, so a fresh lite or methodology install stays clean", () => {
+    expect(findMissingRequires([entry("spells-build")], "lite")).toEqual([]);
+    expect(findMissingRequires([entry("spells-build")], "methodology")).toEqual([]);
+    expect(findMissingRequires([entry("spells-build")], "full")).toEqual(
+      STANDARDS.map((name) => ({ name, requiredBy: ["spells-build"] })),
+    );
+    expect(findMissingRequires([entry("spells-build")], "no-such-profile" as never).map((m) => m.name)).toEqual(STANDARDS);
+  });
 });
 
 describe("UP03-A-04 — reported by doctor and update", () => {
@@ -98,7 +107,7 @@ describe("UP03-A-04 — reported by doctor and update", () => {
   });
 
   it("doctor warns, non-blocking, with each `spell add` line when spells-build has no standards docs", async () => {
-    await writeManifest(tmpDir, { components: [entry("spells-build")] });
+    await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
 
     const result = await checkComponentRequires(tmpDir);
 
@@ -106,6 +115,11 @@ describe("UP03-A-04 — reported by doctor and update", () => {
     for (const name of STANDARDS) {
       expect(result.message).toContain(`spells-build cites ${name}, which is not installed — \`spell add ${name}\``);
     }
+  });
+
+  it("doctor passes for a lite install that leaves the standards out by design", async () => {
+    await writeManifest(tmpDir, { profile: "lite", components: [entry("spells-build")] });
+    expect(await checkComponentRequires(tmpDir)).toMatchObject({ passed: true });
   });
 
   it("doctor passes when the prerequisites are installed, and skips without a manifest or in the user tier", async () => {
@@ -142,7 +156,7 @@ describe("UP03-A-04 — reported by doctor and update", () => {
       const clean = await run();
       expect(clean.output).toMatch(/\[pass\] Component prerequisites/);
 
-      await writeManifest(tmpDir, { components: [entry("spells-build")] });
+      await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
       const warned = await run();
       expect(warned.output).toMatch(/⚠ \[warn\] Component prerequisites/);
       expect(warned.output).toContain("spell add web-discoverability-standards");

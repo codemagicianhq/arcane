@@ -586,7 +586,7 @@ export async function runUpdate(
           migrateLegacyComponents(manifest.components).components,
           spellScope,
         ),
-        missingRequires: findMissingRequires(manifest.components),
+        missingRequires: findMissingRequires(manifest.components, manifest.profile),
       }
       : {}),
   };
