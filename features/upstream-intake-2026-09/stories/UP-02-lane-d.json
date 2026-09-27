@@ -26,9 +26,9 @@
         "scanning src/assets/.arcane/governance yields zero unknown tokens (fresh-install AC)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-d",
-      "testEvidence": null
+      "testEvidence": "test/up02-d-placeholders-module.test.ts 18/18 (fenced/inline/${} ignored; template+draft skipped; list parsed; missing standard or list -> skipped; real src/assets and root .arcane/governance scan -> zero unknown tokens)"
     },
     {
       "id": "UP02-D-03",
