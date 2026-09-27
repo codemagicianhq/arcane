@@ -52,9 +52,9 @@
         "new test asserts the detector line"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-d",
-      "testEvidence": null
+      "testEvidence": "test/up02-d-check-drift.test.ts 3/3 (detector line in canonical + root copy, names doctor row exactly); check:self-host-parity pass; spell-check-drift tests 53/53; check:spell-catalog pass"
     }
   ]
 }
