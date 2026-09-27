@@ -542,6 +542,24 @@ If your tracker links commits to work items by ID (Azure Boards, GitHub Issues, 
 
 ---
 
+## Push safety
+
+A repository that holds sensitive material can record how far it trusts a push, in the `push_policy` field of `.arcane.json`. One accidental push can publish a repository's whole history, and deleting the content afterwards does not undo that. The threat this guards against is an **accidental** push (the wrong remote, habit carried over from another repository, an unsupervised agent). It does not stop a determined operator: every control below can be reversed by someone who decides to reverse it. See ARC-034 and ARC-049 in Arcane's own decision log for the full reasoning. **Enforcement: explicitly advisory prose (ARC-023) — this paragraph describes the model; the rules below carry their own annotations.**
+
+| `push_policy` | Meaning | What is installed |
+| --- | --- | --- |
+| `open` (the default, and what an absent field means) | Pushes proceed as normal. | Nothing. |
+| `guarded` | Every push needs the operator's explicit confirmation. | Nothing. `spell doctor` reports the policy and the push targets, and push-performing spells ask before each push. |
+| `blocked` | No push is attempted. | A `pre-push` hook, and a sentinel push URL on every remote configured when the policy is applied. Fetch URLs are untouched, so the repository can still pull. |
+
+- **Set:** `spell init` asks the question once and records the answer. `spell update` asks it in a repository that has no answer yet, records the answer, and installs nothing mid-update; when it records `blocked` it says the policy is not yet enforced and names `spell block-push`. Both commands also take `--push-policy <open|guarded|blocked>`, which may set an unset policy or tighten one, never loosen it. **Enforcement: executable check (ARC-023) — the CLI validates the value against the three allowed ones and refuses a loosening flag; the question and notice text are the CLI's own output.**
+- **Enforce:** `spell block-push` installs the `blocked` controls, the same ones `spell init` installs, and records `blocked` if the repository was `open` or `guarded`. It only tightens, so it needs no interactive terminal, and it is idempotent. Like `spell init`, it refuses rather than overwrite a `core.hooksPath` another hook manager owns, and it refuses a remote whose push URL is configured outside the repository. **Enforcement: executable check (ARC-023) — the pre-push hook and the sentinel push URL refuse the push at the git level; the hook alone is skipped by `--no-verify`, and the URL alone is skipped by a push to an explicit URL, which is why both are installed.**
+- **Verify:** `spell doctor` reports a `guarded` policy on every run, with the remotes a push would reach, and reports a `blocked` policy whose hook or push URLs are missing as declared but not enforced. **Enforcement: executable check (ARC-023) — `spell doctor`'s push-policy check reads the effective hook and push-URL state; it is a non-blocking finding the operator runs on demand, not a CI gate.**
+- **Lift:** `spell unblock-push` is the only way to loosen a policy. It requires an interactive terminal and the repository name typed back, and records `open` with a timestamp. No flag, spell, or non-interactive path may move a repository from `blocked` or `guarded` toward `open`, and `spell uninstall` refuses while a block stands. **Enforcement: executable check (ARC-023) — the command refuses without an interactive terminal; a pseudo-terminal defeats that check, so it bars scripts rather than a determined actor.**
+- **Read by spells:** every spell that pushes — `spell-commit-work`, `spell-create-pull-request`, `spell-ship`, `spell-sync-pull-request` and `spell-close-session` — reads `push_policy` before each push, through the shared `_fragments/push-policy-check.md` text. Under `guarded` it states the policy and asks the operator before the push; in an autonomous run with no operator to ask, it does not push and reports the pending push. Under `blocked` it does not attempt the push, says why, and names `spell unblock-push`. **Enforcement: structured spell gate (ARC-023) — for `guarded`, the spell's confirmation step is the only control, and an agent that pushes outside these spells is not held by it; for `blocked`, the installed controls above refuse the push as well.**
+
+---
+
 ## PR Standards
 
 All pull requests — whether created by humans or agents — must meet these requirements.
