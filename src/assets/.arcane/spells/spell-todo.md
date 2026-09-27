@@ -89,7 +89,7 @@ If the argument is (or starts with) `--prune`, skip every other step in this spe
 
 **Target book:** this repo's root `TODO.md`. In a hub, `--prune --venture <slug>` targets that venture's own `TODO.md` instead, resolved through the registry's aliases exactly as Step 0 below does. One book per run.
 
-1. **Collect checked items only.** A candidate is a checked item — `- [x]` or `- [X]` — together with its indented continuation lines. **An unchecked item (`- [ ]`) is never a candidate: it is never deleted, moved or edited by this mode.** A checked item with any unchecked sub-item is kept whole and reported as `has open sub-items — kept`.
+1. **Collect checked items only.** A candidate is a checked item — `- [x]` or `- [X]` — together with its indented continuation lines, and only when every item it is nested under is checked too: a checked sub-item under an unchecked parent belongs to that open item and is never a candidate. **An unchecked item (`- [ ]`) is never a candidate: it is never deleted, moved or edited by this mode.** A checked item with any unchecked sub-item is kept whole and reported as `has open sub-items — kept`.
 2. **Check each outcome is recorded durably.** For each candidate, look for the record of what happened, in this order:
    - the item's own reference — a file link, a PR or issue link, an ADR id, a tracker-id suffix — followed and confirmed to exist and to describe the outcome;
    - otherwise, a search of `journal/`, `DECISIONS.md`, `CHANGELOG.md`, and the repo's audit log and playbooks where they exist, for the item's key terms.

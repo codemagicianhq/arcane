@@ -240,21 +240,30 @@ export function migrateLegacyComponents(components: InstalledComponent[]): Legac
  * newly-available report can offer it (or skip it, when the file is already
  * there) instead of `update` claiming a component Arcane never wrote.
  */
-export function moveComponentFiles(components: InstalledComponent[]): InstalledComponent[] {
+export function moveComponentFiles(
+  components: InstalledComponent[],
+  present: (file: string) => boolean = () => true,
+): InstalledComponent[] {
   let out = components;
   for (const move of COMPONENT_FILE_MOVES) {
     const from = out.find((c) => c.name === move.from);
-    const moving = from?.files.filter((f) => move.files.includes(f)) ?? [];
-    if (!from || moving.length === 0) continue;
+    const tracked = from?.files.filter((f) => move.files.includes(f)) ?? [];
+    if (!from || tracked.length === 0) continue;
+    // A moved file already deleted from disk is dropped, not re-homed: an
+    // entry with no files would make `spell add` refuse it forever, while an
+    // absent entry lets the newly-available report offer a working `spell add`.
+    const moving = tracked.filter(present);
+    const dropped = tracked.filter((f) => !present(f));
 
     const movedHashes: Record<string, string> = {};
     const keptHashes: Record<string, string> = {};
     for (const [file, hash] of Object.entries(from.fileHashes ?? {})) {
+      if (dropped.includes(file)) continue;
       (moving.includes(file) ? movedHashes : keptHashes)[file] = hash;
     }
     const newFrom: InstalledComponent = {
       ...from,
-      files: from.files.filter((f) => !moving.includes(f)),
+      files: from.files.filter((f) => !tracked.includes(f)),
       ...(from.fileHashes ? { fileHashes: keptHashes } : {}),
     };
     const existing = out.find((c) => c.name === move.to);
@@ -272,7 +281,7 @@ export function moveComponentFiles(components: InstalledComponent[]): InstalledC
       };
 
     out = out.flatMap((c) => {
-      if (c === from) return existing ? [newFrom] : [newFrom, newTo];
+      if (c === from) return existing || moving.length === 0 ? [newFrom] : [newFrom, newTo];
       if (c === existing) return [newTo];
       return [c];
     });
@@ -492,7 +501,16 @@ export async function runUpdate(
   }
   // PRD D-09: re-home files that moved component before anything below
   // (up-to-date check, orphan sweep) reads the old entry as their owner.
-  manifest = { ...manifest, components: moveComponentFiles(manifest.components) };
+  const movedFilesPresent = new Set<string>();
+  for (const move of COMPONENT_FILE_MOVES) {
+    for (const file of move.files) {
+      if (await fileExists(join(targetDir, file))) movedFilesPresent.add(file);
+    }
+  }
+  manifest = {
+    ...manifest,
+    components: moveComponentFiles(manifest.components, (f) => movedFilesPresent.has(f)),
+  };
 
   // ARC-045 decision 3 / CS-04: the user tier at ~/.arcane is not a
   // repository -- its merge baseline is the recorded hash plus the published

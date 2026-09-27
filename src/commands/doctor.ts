@@ -599,6 +599,10 @@ export async function checkComponentRequires(targetDir: string): Promise<CheckRe
     return { name, passed: true, blocking: false, skipped: true, message: "skipped — the user tier holds spells only" };
   }
 
+  // A hand-edited manifest may lack components; checkArcaneManifest reports that.
+  if (!Array.isArray(manifest.components)) {
+    return { name, passed: true, blocking: false, skipped: true, message: "skipped — .arcane.json lists no components" };
+  }
   const missing = findMissingRequires(manifest.components, manifest.profile);
   if (missing.length === 0) {
     return { name, passed: true, blocking: false, message: "every installed component's prerequisites are installed" };
