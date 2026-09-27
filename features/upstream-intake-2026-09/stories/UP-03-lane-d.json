@@ -13,9 +13,9 @@
         "new test asserts the flag names match the CLI's (read src/index.ts)"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-d",
-      "testEvidence": null
+      "testEvidence": "test/up03-d-harness-setup-flags.test.ts: 11/11 pass (flag names parsed from src/index.ts; mutation --subject-root->--subject-dir caught); 12 related spell/prompt test files 281/281; self-host parity, citations, ADR refs pass"
     }
   ]
 }
