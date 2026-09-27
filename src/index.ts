@@ -10,6 +10,7 @@ import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
+import { runBlockPush } from "./commands/block-push.js";
 import { runReport } from "./commands/report.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
@@ -184,6 +185,13 @@ program
   .option("--user", USER_FLAG_DESCRIPTION)
   .action(async (opts: { yes?: boolean; dryRun?: boolean; user?: boolean }) => {
     await runUninstall({ yes: opts.yes, dryRun: opts.dryRun, user: opts.user }, targetDirFor(opts));
+  });
+
+program
+  .command("block-push")
+  .description("Enforce push_policy: blocked on this repository (pre-push hook + disabled push URLs); only ever tightens")
+  .action(async () => {
+    await runBlockPush(process.cwd());
   });
 
 program

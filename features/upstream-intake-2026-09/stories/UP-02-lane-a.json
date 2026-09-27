@@ -31,9 +31,9 @@
         "output names `spell unblock-push`"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/block-push.test.ts (14: 12 handler + 2 built-CLI, real bare remotes): push/--no-verify/push-to-URL refused and nothing reaches the remote; second run changes nothing (config+manifest snapshot); open/guarded/unset recorded as blocked (CRLF preserved); closed-PR hook replaced; foreign hooksPath, default hooks, outside pushurl -> exit 1 with manifest not claiming blocked; not-initialized -> exit 1; no-TTY CLI run exits 0"
     },
     {
       "id": "UP02-A-03",
