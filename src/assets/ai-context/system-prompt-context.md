@@ -33,6 +33,7 @@
 - **Branch:** main
 - **Blockers:** None.
 - **Pending Verification:** None.
+- **Needs you:** None.
 - **Notes:** —
 
 > ✓ Consumed: YYYY-MM-DD — scaffold placeholder, not a real session; ships pre-consumed so the first

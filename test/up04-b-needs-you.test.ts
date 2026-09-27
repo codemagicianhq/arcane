@@ -154,13 +154,13 @@ const CHOSEN: Record<string, string> = {
     "spell-scope": "### 9. Present and Confirm",
     "spell-adopt-docs": "## Phase 4 — Report",
     "spell-make-discoverable": "## Phase 6 — Report",
+    "spell-eas-store-deploy": "### Reporting the release",
 };
 
 /** Evaluated and left out on purpose (reasons recorded in UP04-B-02's testEvidence). */
 const EXCLUDED = [
     "spell-arcane-version",
     "spell-bump",
-    "spell-eas-store-deploy",
     "spell-implement",
     "spell-product-review",
 ];
@@ -194,6 +194,11 @@ describe.each(Object.keys(CHOSEN))("%s carries the needs-you block (UP04-B-02)",
         const anchor = content.indexOf(CHOSEN[id]!);
         expect(anchor).toBeGreaterThan(-1);
         expect(content.indexOf(START)).toBeGreaterThan(anchor);
+        // Upper bound: the span stays inside the anchor's own section, before
+        // the next level-2 heading (e.g. `## Rules`), not anywhere later.
+        const after = anchor + CHOSEN[id]!.length;
+        const nextHeading = content.slice(after).search(/^## /m);
+        if (nextHeading !== -1) expect(content.indexOf(START)).toBeLessThan(after + nextHeading);
     });
 
     it("never nests the span inside another fragment's span", () => {

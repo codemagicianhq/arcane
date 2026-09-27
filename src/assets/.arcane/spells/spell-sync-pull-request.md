@@ -88,6 +88,7 @@ then classify **each conflicted hunk independently** — a single file can conta
   that one side's content is a strict superset of the other's. **STOP.** Do not guess, do not pick a
   side, do not attempt a "reasonable-looking" merge of the two. Abort the in-progress rebase/merge
   (`git rebase --abort` / `git merge --abort`) so the branch is left exactly as it was, then report:
+  - First, the `## ⚠ Needs you` block described in Step 6, naming the manual resolution as the action.
   - The exact conflicting file(s) and hunk(s).
   - Both sides' conflicting content, verbatim.
   - That the recoverable ref from Step 1 still points at the pre-sync state.
