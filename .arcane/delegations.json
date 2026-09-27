@@ -95,6 +95,31 @@
       ],
       "status": "active",
       "revocation": "Edit or remove this entry and commit, or edit docs/plans/codex-support/PLAN.md's own Authority & Delegation section (both are read together). This entry has no effect until it exists on main -- merging CS-00 is what activates it."
+    },
+    {
+      "id": "upstream-intake-2026-09-plan",
+      "grantedBy": "operator (payini)",
+      "grantedAt": "2026-09-27",
+      "scope": "Sessions executing epics defined in docs/plans/upstream-intake-2026-09/PLAN.md, in this repository (arcane-cli) only",
+      "permittedActions": [
+        "create-session-branches",
+        "create-lane-branches-and-linked-worktrees-named-per-PLAN.md (never the Agent tool automatic worktree isolation)",
+        "commit",
+        "push-wave-branches (lane branches stay local)",
+        "open-pull-requests (Closes/Part of the plan issues)"
+      ],
+      "excludedActions": [
+        "merge-any-pull-request-of-this-program (every wave PR is operator-merged, PRD D-16)",
+        "accept-an-adr (UP-01 drafts stay Proposed until the operator accepts via OPERATOR-QUEUE.md Q-003)",
+        "any-work-scoped-to-the-private-arcane-ui-repository (OPERATOR-QUEUE.md Q-006)",
+        "github-or-ado-platform-settings-mutations (rulesets, required checks, allow_auto_merge, repo settings, secrets, webhooks)",
+        "delete-or-force-reset-any-branch-holding-content-not-on-main (content-verified via git cherry + diff, not ancestry)",
+        "manual-npm-publish-or-workflow-dispatch-of-publish-release-workflows",
+        "mark-anything-in-operator-queue-as-approved-or-done",
+        "anything-in-agent-policies-prohibited-list (MCP/security config, etc.)"
+      ],
+      "status": "active",
+      "revocation": "Edit or remove this entry and commit, or edit docs/plans/upstream-intake-2026-09/PLAN.md own Authority & Delegation section (both are read together). This entry has no effect until it exists on main -- merging UP-00 is what activates it."
     }
   ]
 }
