@@ -2,6 +2,7 @@ import { confirm, select, input } from "@inquirer/prompts";
 import { readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "./copier.js";
+import { detectAdoContext } from "./ado-context.js";
 import {
   isValidSubjectRoot,
   validateManifestFields,
@@ -37,9 +38,65 @@ export interface ManifestRetrofit {
    * tracking_mode retrofit below does -- entries that don't need it (role)
    * simply ignore the parameter.
    */
-  ask(manifest: ArcaneManifest): Promise<Partial<ArcaneManifest>>;
+  ask(manifest: ArcaneManifest, targetDir?: string): Promise<Partial<ArcaneManifest>>;
   /** The flag that answers this question without a prompt (PRD D-02). */
   flag: string;
+}
+
+/**
+ * The tracking-mode and provider questions, shared by init's Step 5b and the
+ * tracking_mode retrofit. With an Azure DevOps remote (PRD D-03), external
+ * and then ado are pre-selected; otherwise nothing is. Each option names its
+ * downstream effect in one line.
+ */
+export async function askTrackingQuestions(
+  targetDir: string | undefined,
+): Promise<{ tracking_mode: TrackingMode; external_provider: ExternalProvider | null }> {
+  const ado = targetDir !== undefined && (await detectAdoContext(targetDir));
+  const tracking_mode = (await select({
+    message: "How will work be tracked in this repo?",
+    choices: [
+      {
+        value: "internal",
+        name: "Track work in this repo (TODO.md / PRDs)",
+        description: "Spells keep TODOs, PRDs and stories in this repository's own files.",
+      },
+      {
+        value: "external",
+        name: "Track work in an external tracker (Azure DevOps / GitHub / Jira / other)",
+        description: "Spells tie PRDs, commits and PRs to items in the tracker you pick next.",
+      },
+    ],
+    ...(ado ? { default: "external" } : {}),
+  })) as TrackingMode;
+  if (tracking_mode !== "external") return { tracking_mode, external_provider: null };
+  const external_provider = (await select({
+    message: "Which external tracker?",
+    choices: [
+      {
+        value: "ado",
+        name: "Azure DevOps",
+        description: "Each PRD needs an ADO work item ID; plans follow your process template's item types.",
+      },
+      {
+        value: "github",
+        name: "GitHub Issues",
+        description: "Uses the gh CLI; an issue number is optional and linked from commits and PRs when known.",
+      },
+      {
+        value: "jira",
+        name: "Jira",
+        description: "No Jira automation yet: spells note linking as a TODO and keep planning in this repo.",
+      },
+      {
+        value: "other",
+        name: "Other",
+        description: "No automation: spells note linking as a TODO and keep planning in this repo.",
+      },
+    ],
+    ...(ado ? { default: "ado" } : {}),
+  })) as ExternalProvider;
+  return { tracking_mode, external_provider };
 }
 
 export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
@@ -61,8 +118,9 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
     flag: "--tracking-mode <internal|external>",
     needsRetrofit: (m) => m.tracking_mode === undefined,
     // Mirrors init.ts's Step 5b branching exactly (EF-14 D5): docs-only
-    // profiles get a silent default, full/lite get asked.
-    ask: async (manifest) => {
+    // profiles get a silent default, full/lite get asked -- through the same
+    // askTrackingQuestions init uses, so the two cannot drift.
+    ask: async (manifest, targetDir) => {
       if (
         manifest.profile === "governance-only" ||
         manifest.profile === "methodology" ||
@@ -70,26 +128,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
       ) {
         return { tracking_mode: "internal" as TrackingMode, external_provider: null };
       }
-      const tracking_mode = (await select({
-        message: "How will work be tracked in this repo?",
-        choices: [
-          { value: "internal", name: "Track work in this repo (TODO.md / PRDs)" },
-          { value: "external", name: "Track work in an external tracker (Azure DevOps / GitHub / Jira / other)" },
-        ],
-      })) as TrackingMode;
-      if (tracking_mode === "external") {
-        const external_provider = (await select({
-          message: "Which external tracker?",
-          choices: [
-            { value: "ado", name: "Azure DevOps" },
-            { value: "github", name: "GitHub Issues" },
-            { value: "jira", name: "Jira" },
-            { value: "other", name: "Other" },
-          ],
-        })) as ExternalProvider;
-        return { tracking_mode, external_provider };
-      }
-      return { tracking_mode, external_provider: null };
+      return askTrackingQuestions(targetDir);
     },
   },
   {
@@ -219,6 +258,7 @@ export function pushPolicyNotice(policy: PushPolicy | undefined): string[] {
  */
 export async function runManifestRetrofits(
   manifest: ArcaneManifest,
+  targetDir?: string,
 ): Promise<Partial<ArcaneManifest>> {
   const applicable = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
   if (applicable.length === 0) return {};
@@ -230,7 +270,7 @@ export async function runManifestRetrofits(
 
   let patch: Partial<ArcaneManifest> = {};
   for (const retrofit of applicable) {
-    const answer = await retrofit.ask({ ...manifest, ...patch });
+    const answer = await retrofit.ask({ ...manifest, ...patch }, targetDir);
     patch = { ...patch, ...answer };
   }
   return patch;

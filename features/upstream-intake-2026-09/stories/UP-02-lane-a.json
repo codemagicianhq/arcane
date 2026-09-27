@@ -75,9 +75,9 @@
         "unit tests for detectAdoContext incl. ssh and visualstudio.com forms"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up02-a-ado-context.test.ts (27): isAdoRemoteUrl for https, user@https, scp ssh, ssh://, *.visualstudio.com, vs-ssh, uppercase, and 10 negatives incl. look-alike hosts; detectAdoContext on real repos (ADO origin, ADO second remote, GitHub, none, non-repo); init and update-retrofit both pre-select external/ado with a dev.azure.com remote and nothing with github.com; every option has a one-line description. init/hub-retrofit/update/lifecycle green"
     },
     {
       "id": "UP02-A-06",
