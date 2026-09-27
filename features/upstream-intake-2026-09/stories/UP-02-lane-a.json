@@ -45,9 +45,9 @@
         "open -> no notice"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up02-a-update-push-policy.test.ts (4, real git + bare remote): retrofit blocked -> notice names spell block-push, local git config byte-identical, no .arcane/hooks, real push still succeeds; guarded -> explanatory notice; open -> none; already-recorded -> none. hub-retrofit (24) + update (83) green"
     },
     {
       "id": "UP02-A-04",

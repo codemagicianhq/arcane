@@ -22,7 +22,12 @@ import {
   SPELL_COMPONENT_NAMES,
   LEGACY_COMPONENT_MIGRATIONS,
 } from "../modules/registry.js";
-import { MANIFEST_RETROFITS, runManifestRetrofits, offerRegistryScaffold } from "../modules/hub.js";
+import {
+  MANIFEST_RETROFITS,
+  runManifestRetrofits,
+  offerRegistryScaffold,
+  pushPolicyNotice,
+} from "../modules/hub.js";
 import { merge3 } from "../modules/merge3.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
@@ -918,6 +923,10 @@ export async function runUpdate(
   console.log(
     `\n\u2713 Updated ${fileCount} files.`,
   );
+
+  if (updated.push_policy !== manifest.push_policy) {
+    for (const line of pushPolicyNotice(updated.push_policy)) console.log(line);
+  }
 
   // ARC-038 decision 1: the update completes regardless of conflicts -- a
   // conflicted file blocking every other file's update would be a worse
