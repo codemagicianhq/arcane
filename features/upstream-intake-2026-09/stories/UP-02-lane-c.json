@@ -26,9 +26,9 @@
         "new test asserts save-idea reads idea_tags with both modes and carries the no-private-names rule"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-c",
-      "testEvidence": null
+      "testEvidence": "test/up02-c-idea-tags.test.ts: 6/6 pass (red 5/6 before the edit); all up02-c + prompt-diagram-emission + prompt-tracking-and-business-root 62/62; self-host-parity, citations, adr-references pass"
     }
   ]
 }
