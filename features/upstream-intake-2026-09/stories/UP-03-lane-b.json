@@ -54,9 +54,9 @@
         "hub-local scope stated"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up03-b-sweep-lessons.test.ts 13/13 pass (asserts close-session's 'one heading per lesson' template line it relies on); parity, citations, adr-references, stale-claims pass; existing tests naming these files pass"
     }
   ]
 }
