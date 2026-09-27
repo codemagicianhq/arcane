@@ -39,9 +39,9 @@
         "`npm run check:citations` and `check:adr-references` pass"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up02-b-push-safety-section.test.ts 5/5 pass; universal-agent-rules.md now cites `git-conventions.md#push-safety`, which check:citations validates (negative probe with a bogus anchor was flagged, then reverted); check:citations, check:adr-references, check:self-host-parity, check:stale-claims (7 advisory hits, baseline) pass; 34 related existing test files still pass"
     }
   ]
 }

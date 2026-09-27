@@ -99,7 +99,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
     - This is a governance default, not an access control. It constrains what
       agents *write down*; it does not restrict what they may read, and it is
       not a substitute for repository permissions or the push-safety controls in
-      `git-conventions.md`.
+      `git-conventions.md#push-safety` (the "Push safety" section).
     - Absent or `"standard"` means normal behaviour — this rule adds nothing.
 
 ---
