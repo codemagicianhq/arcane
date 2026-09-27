@@ -13,9 +13,9 @@
         "internal mode text unchanged"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up03-b-tracker-suffix.test.ts 15/15 pass; parity, citations, adr-references, stale-claims pass; 7 existing test files naming these files pass; full suite: only the known report-cli failure"
     },
     {
       "id": "UP03-B-02",
