@@ -1,0 +1,50 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-04 lane B (needs you)",
+  "branchName": "sessions/2026-09-27-up-04-lane-b",
+  "assignedAgent": "up04-lane-b",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP04-B-01",
+      "title": "The `needs-you` fragment and its authoring rule (#266, PRD D-13)",
+      "description": "New ARC-039 fragment src/assets/.arcane/spells/_fragments/needs-you.md defining ONE unmistakable block for required operator actions in spell output: a fixed heading (e.g. `## ⚠ Needs you`), placed before optional next steps, one line per action naming exactly what to do and why it cannot be done by the agent, and the rule that an action required for correctness is never listed only among optional suggestions; when nothing is required the block is omitted (not an empty block). Add the convention to src/assets/.arcane/governance/spell-authoring-standards.md with an ARC-023 enforcement annotation. Do NOT use `{UPPER_SNAKE}` tokens outside code (the placeholder check counts them).",
+      "acceptanceCriteria": [
+        "fragment exists and is parity-checked",
+        "spell-authoring-standards documents the convention with an enforcement annotation",
+        "test asserts the fragment's heading, placement and omit-when-empty rules"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up04-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP04-B-02",
+      "title": "Expand the fragment into every spell that ends with required operator actions",
+      "description": "Survey all canonical spells under src/assets/.arcane/spells/ and select those whose output can contain an action only the operator can take (approve or merge a PR, accept an ADR, answer a question, run an interactive command such as `spell unblock-push`, an external/platform step). At minimum evaluate: spell-open-session, spell-close-session, spell-commit-work, spell-create-pull-request, spell-sync-pull-request, spell-address-review, spell-ship, spell-full-cycle, spell-arcane-version, spell-bump, spell-review, spell-review-batch, spell-architect, spell-plan. Add the fragment marker pair where that spell describes its output/report, then `npm run fix:self-host-parity`. Record the chosen set and the reason for each exclusion in the story's testEvidence. Never edit inside another fragment's span; don't change frontmatter.",
+      "acceptanceCriteria": [
+        "every chosen spell carries exactly one fragment span, fully expanded",
+        "root copies match",
+        "test asserts the chosen set"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up04-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP04-B-03",
+      "title": "Required actions survive the session handoff",
+      "description": "spell-close-session's `## Next Session Handoff` template gains a `Needs you` field (required operator actions, or `None`), carried into the handoff; spell-open-session's Handoff Detection surfaces that field FIRST, before `Picking Up From Last Session` content, and does not mark the handoff consumed without surfacing it. Keep the existing handoff field names and the Pending Verification behaviour unchanged (tests assert them).",
+      "acceptanceCriteria": [
+        "handoff template has the field",
+        "open-session surfaces it first",
+        "existing handoff tests still pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "up04-lane-b",
+      "testEvidence": null
+    }
+  ]
+}
