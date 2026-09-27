@@ -39,6 +39,29 @@ ventures/ordovica/TODO.md  3 open, oldest 2026-08-10
 hub IDEAS.md               5 new, oldest 2026-08-02
 ```
 
+### Unrouted lessons (part of every `--sweep`)
+
+The sweep also lists lessons from this repository's own journal that nothing has picked up yet. This pass is report-only, like the rest of the sweep: no writes, no moves, no filing, and no network calls.
+
+- **Where:** the hub's own `journal/` only — or, in a consumer repo, that repo's own `journal/` — within the hub-local scope above. Never a consumer clone's journal.
+- **Window:** journal entries dated on or after `--since YYYY-MM-DD`. Without `--since`, the last 30 days. The sweep is report-only, so it keeps no marker of when it last ran: to cover "since the last sweep", pass that sweep's date as `--since`. The output header states the window used.
+- **What counts as a lesson:** each heading directly under a `### Lessons Learned` section — one level deeper, e.g. `#### <lesson>` — because `spell-close-session` writes one heading per lesson. The pass reads headings only. **Bold sentences and bullet items are not read as lessons.** A `### Lessons Learned` section with no per-lesson headings (the older bullet style) is reported as one line — `<path>: Lessons Learned has no per-lesson headings — not harvested` — so it is never silently skipped.
+- **Routed or unrouted:** a lesson is routed when something references it:
+  - a `FEEDBACK.md` item;
+  - an idea-book entry or a TODO item within the sweep's scope — a reference is the lesson's heading text, or a link to its journal file with the lesson's heading anchor;
+  - an issue link in the lesson's own body (`#123`, `AB#123`, a Jira key, or an issue URL).
+
+  Everything else is unrouted. A lesson that `spell-close-session`'s Lessons Learned routing step (#274) already sent to `FEEDBACK.md` or an idea book is referenced there, so it drops out here.
+
+```
+Lessons since 2026-08-28 (hub journal) — 2 unrouted
+  journal/2026-09-11-cache-rollout.md
+    - The stated risk was work that did not exist
+    - Building the state first beat reading the plan
+  journal/2026-09-02-release-prep.md: Lessons Learned has no per-lesson headings — not harvested
+Promote with spell-feedback (framework), spell-save-idea (product idea), or spell-todo (task).
+```
+
 ### Idea validation (`--sweep --validate`, opt-in)
 
 Without `--validate`, the sweep never edits anything. With it, the sweep also asks two or three quick yes/no questions per idea entry, so that `spell-manifest` can later see which ideas are worth promoting. Capture itself (`spell-save-idea`) stays unchanged.
