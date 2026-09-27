@@ -1,6 +1,13 @@
 import { join } from "node:path";
 import { fileExists } from "./copier.js";
-import { REGISTRY_RETIREMENTS, SPELL_COMPONENT_NAMES, getComponent, listProfiles } from "./registry.js";
+import {
+  ComponentNotFoundError,
+  LEGACY_COMPONENT_MIGRATIONS,
+  REGISTRY_RETIREMENTS,
+  SPELL_COMPONENT_NAMES,
+  getComponent,
+  listProfiles,
+} from "./registry.js";
 import type { InstallScope, InstalledComponent, Profile, RegistryRetirement } from "../types.js";
 
 /**
@@ -17,6 +24,38 @@ export interface RegistryChanges {
   newlyAvailable?: NewlyAvailableComponent[];
   /** The profile `newlyAvailable` was computed against. */
   profile?: Profile;
+  /** Components an installed component `requires` that are not installed. */
+  missingRequires?: MissingRequirement[];
+}
+
+export interface MissingRequirement {
+  name: string;
+  requiredBy: string[];
+}
+
+/**
+ * Components named in an installed component's `requires` that the manifest
+ * does not list, in registry order of first mention. A legacy entry counts as
+ * the components that replaced it; a name the registry no longer knows
+ * requires nothing.
+ */
+export function findMissingRequires(installed: InstalledComponent[]): MissingRequirement[] {
+  const names = new Set(installed.flatMap((c) => LEGACY_COMPONENT_MIGRATIONS[c.name] ?? [c.name]));
+  const missing = new Map<string, string[]>();
+  for (const name of names) {
+    let requires: string[];
+    try {
+      requires = getComponent(name).requires ?? [];
+    } catch (err) {
+      if (err instanceof ComponentNotFoundError) continue;
+      throw err;
+    }
+    for (const required of requires) {
+      if (names.has(required)) continue;
+      missing.set(required, [...(missing.get(required) ?? []), name]);
+    }
+  }
+  return [...missing].map(([name, requiredBy]) => ({ name, requiredBy }));
 }
 
 export interface NewlyAvailableComponent {
@@ -92,8 +131,12 @@ export async function findNewlyAvailable(
 }
 
 export function formatRegistryChanges(changes: RegistryChanges): string[] {
-  const newlyAvailable = changes.newlyAvailable ?? [];
-  if (changes.retired.length === 0 && newlyAvailable.length === 0) return [];
+  const missingRequires = changes.missingRequires ?? [];
+  // A component listed as a missing prerequisite is not repeated below.
+  const newlyAvailable = (changes.newlyAvailable ?? []).filter(
+    (c) => !missingRequires.some((m) => m.name === c.name),
+  );
+  if (changes.retired.length === 0 && newlyAvailable.length === 0 && missingRequires.length === 0) return [];
 
   const lines = ["", "Registry changes since your install:"];
   if (changes.retired.length > 0) {
@@ -117,6 +160,13 @@ export function formatRegistryChanges(changes: RegistryChanges): string[] {
           `      (already here and yours: ${component.alreadyPresent.join(", ")} — \`spell add\` stops at an existing file rather than overwrite it)`,
         );
       }
+    }
+  }
+  if (missingRequires.length > 0) {
+    lines.push("  Missing prerequisites — installed components cite these, and they are not installed:");
+    for (const { name, requiredBy } of missingRequires) {
+      lines.push(`    ${name} (required by ${requiredBy.join(", ")})`);
+      lines.push(`      spell add ${name}`);
     }
   }
   return lines;

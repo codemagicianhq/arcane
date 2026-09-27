@@ -55,9 +55,9 @@
         "requires names validated against the registry in a unit test"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up03-a-requires.test.ts 7/7 (every requires name validated against the registry; manifest with spells-build and no standards docs -> non-blocking doctor [warn] with each `spell add` line, exit code unchanged, and an update 'Missing prerequisites' list, each once, nothing installed); full suite 1780 passed, 1 failed = known test/report-cli.test.ts show-report regeneration"
     }
   ]
 }
