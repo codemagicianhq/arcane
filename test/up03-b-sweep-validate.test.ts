@@ -127,7 +127,8 @@ describe("UP03-B-03: spell-manifest Step 1 parses old and new grammar", () => {
 
   it("still sends a truly unparseable comment to Skipped", () => {
     expect(step1).toContain("Malformed entries (missing timestamp, unparseable status comment) are listed under a `Skipped` heading");
-    expect(step1).toContain("only when it does not open with `status:` or is not closed with `-->`");
+    expect(step1).toContain("when it does not open with `status:`, is not closed with `-->`, or its first field is not exactly `new`, `promoted …` or `dropped …`");
+    expect(step1).toContain("never silently left out of both lists");
   });
 
   it("spell-todo points at the manifest grammar rather than defining another", () => {
