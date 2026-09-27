@@ -89,9 +89,9 @@
         "unknown-field preservation unchanged"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up02-a-idea-tags.test.ts (14): extend/replace/empty-tags values round-trip readManifest->writeManifest->readManifest; absent is fine; bad/missing mode, non-array, non-string, blank, missing tags, array, null -> ManifestInvalidFieldError with field idea_tags; unknown top-level and nested fields survive a round trip byte-for-byte as JSON. manifest.test.ts green (66, 1 pre-existing root skip)"
     },
     {
       "id": "UP02-A-07",

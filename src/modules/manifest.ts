@@ -4,6 +4,7 @@ import type {
   ArcaneManifest,
   ContentSensitivity,
   ExternalProvider,
+  IdeaTags,
   InstallScope,
   InstalledComponent,
   Profile,
@@ -149,6 +150,20 @@ function validateSecretsScanExcludePrefixes(value: unknown, filePath: string): v
   }
 }
 
+/**
+ * True when an `idea_tags` value is safe to store (PRD D-10): a known mode and
+ * an array of non-blank strings. Tags are interpolated into IDEAS.md entries,
+ * so anything else is rejected rather than guessed at.
+ */
+export function isValidIdeaTags(value: unknown): value is IdeaTags {
+  return (
+    isRecord(value) &&
+    (value["mode"] === "extend" || value["mode"] === "replace") &&
+    Array.isArray(value["tags"]) &&
+    value["tags"].every((tag) => typeof tag === "string" && tag.trim() !== "")
+  );
+}
+
 function manifestPath(targetDir: string): string {
   return path.join(targetDir, MANIFEST_FILE);
 }
@@ -212,6 +227,9 @@ export function validateManifestFields(manifest: Partial<ArcaneManifest>, filePa
   }
   if (manifest.fanout !== undefined && !isValidFanoutRecord(manifest.fanout)) {
     throw new ManifestInvalidFieldError(filePath, "fanout", manifest.fanout);
+  }
+  if (manifest.idea_tags !== undefined && !isValidIdeaTags(manifest.idea_tags)) {
+    throw new ManifestInvalidFieldError(filePath, "idea_tags", manifest.idea_tags);
   }
 }
 
