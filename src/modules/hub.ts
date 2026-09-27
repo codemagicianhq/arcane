@@ -2,12 +2,18 @@ import { confirm, select, input } from "@inquirer/prompts";
 import { readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileExists } from "./copier.js";
-import { isValidSubjectRoot } from "./manifest.js";
+import {
+  isValidSubjectRoot,
+  validateManifestFields,
+  ManifestInvalidFieldError,
+  MANIFEST_ENUM_VALUES,
+} from "./manifest.js";
 import type {
   ArcaneManifest,
   ContentSensitivity,
   ExternalProvider,
   HubRole,
+  ManifestFlags,
   PushPolicy,
   TrackingMode,
 } from "../types.js";
@@ -32,11 +38,14 @@ export interface ManifestRetrofit {
    * simply ignore the parameter.
    */
   ask(manifest: ArcaneManifest): Promise<Partial<ArcaneManifest>>;
+  /** The flag that answers this question without a prompt (PRD D-02). */
+  flag: string;
 }
 
 export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
   {
     field: "role",
+    flag: "--role <hub|consumer>",
     needsRetrofit: (m) => m.role === undefined,
     ask: async () => {
       const isHub = await confirm({
@@ -49,6 +58,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
   },
   {
     field: "tracking_mode",
+    flag: "--tracking-mode <internal|external>",
     needsRetrofit: (m) => m.tracking_mode === undefined,
     // Mirrors init.ts's Step 5b branching exactly (EF-14 D5): docs-only
     // profiles get a silent default, full/lite get asked.
@@ -84,6 +94,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
   },
   {
     field: "content_sensitivity",
+    flag: "--content-sensitivity <standard|sensitive>",
     needsRetrofit: (m) => m.content_sensitivity === undefined,
     // EF-12. Asked for every profile -- a code repo can hold sensitive records
     // too -- and defaults to "standard", so an operator who just presses enter
@@ -108,6 +119,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
   },
   {
     field: "subject_root",
+    flag: "--subject-root <path>",
     // EF-07. Only the docs profile is asked: other profiles describe code or a
     // venture portfolio, where "what is this repo about" is already answered.
     // A docs install that legitimately holds several subjects answers
@@ -147,6 +159,7 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
   },
   {
     field: "push_policy",
+    flag: "--push-policy <open|guarded|blocked>",
     needsRetrofit: (m) => m.push_policy === undefined,
     // EF-09. Defaults to "open", so an operator who just presses enter keeps
     // today's behaviour exactly. NOTE: this only records the choice -- unlike
@@ -221,6 +234,134 @@ export async function runManifestRetrofits(
     patch = { ...patch, ...answer };
   }
   return patch;
+}
+
+/**
+ * The command line that answers every still-pending question by flags, for a
+ * run that could not ask them (PRD D-02). Undefined when nothing is pending.
+ */
+export function manifestFlagLine(manifest: ArcaneManifest): string[] | undefined {
+  const pending = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
+  if (pending.length === 0) return undefined;
+  const lines = [`spell update ${pending.map((r) => r.flag).join(" ")}`];
+  if (pending.some((r) => r.field === "tracking_mode")) {
+    lines.push("(--tracking-mode external also needs --external-provider <ado|github|jira|other>)");
+  }
+  return lines;
+}
+
+/** An operator-facing refusal of a manifest flag; the CLI prints it and exits 1. */
+export class ManifestFlagError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ManifestFlagError";
+  }
+}
+
+const FLAG_NAMES: Record<string, string> = {
+  role: "--role",
+  tracking_mode: "--tracking-mode",
+  external_provider: "--external-provider",
+  content_sensitivity: "--content-sensitivity",
+  subject_root: "--subject-root",
+  push_policy: "--push-policy",
+};
+
+const PUSH_POLICY_STRICTNESS: Record<PushPolicy, number> = { open: 0, guarded: 1, blocked: 2 };
+
+export function hasManifestFlags(flags: ManifestFlags | undefined): flags is ManifestFlags {
+  return flags !== undefined && Object.values(flags).some((v) => v !== undefined);
+}
+
+/**
+ * Validates the manifest-question flags and returns the patch they make to
+ * `current` (an empty object for a fresh init). Throws ManifestFlagError.
+ *
+ * A flag may answer an unset question or TIGHTEN push_policy. It never
+ * changes a recorded answer, and it never loosens push_policy: ARC-034
+ * decision 6 keeps that interactive-only, in `spell unblock-push`.
+ */
+export function resolveManifestFlags(
+  flags: ManifestFlags | undefined,
+  current: Partial<ArcaneManifest>,
+  manifestPath: string,
+): Partial<ArcaneManifest> {
+  if (!hasManifestFlags(flags)) return {};
+
+  const requested: Partial<Record<keyof ArcaneManifest, unknown>> = {};
+  if (flags.role !== undefined) requested.role = flags.role;
+  if (flags.trackingMode !== undefined) requested.tracking_mode = flags.trackingMode;
+  if (flags.externalProvider !== undefined) requested.external_provider = flags.externalProvider;
+  if (flags.contentSensitivity !== undefined) requested.content_sensitivity = flags.contentSensitivity;
+  if (flags.subjectRoot !== undefined) requested.subject_root = flags.subjectRoot;
+  if (flags.pushPolicy !== undefined) requested.push_policy = flags.pushPolicy;
+
+  const invalid = (error: ManifestInvalidFieldError): ManifestFlagError => {
+    const allowed = error.field === "role" ? ["hub", "consumer"] : MANIFEST_ENUM_VALUES[error.field];
+    const hint = allowed ? ` Valid values: ${allowed.join(", ")}.` : "";
+    return new ManifestFlagError(`Invalid ${FLAG_NAMES[error.field] ?? error.field}: ${error.message}${hint}`);
+  };
+  // role has no manifest validator of its own; same error class, same wording.
+  if (requested.role !== undefined && requested.role !== "hub" && requested.role !== "consumer") {
+    throw invalid(new ManifestInvalidFieldError(manifestPath, "role", requested.role));
+  }
+  try {
+    validateManifestFields(requested as Partial<ArcaneManifest>, manifestPath);
+  } catch (error) {
+    if (error instanceof ManifestInvalidFieldError) throw invalid(error);
+    throw error;
+  }
+
+  if (requested.external_provider !== undefined && requested.tracking_mode !== "external") {
+    throw new ManifestFlagError("--external-provider applies only together with --tracking-mode external.");
+  }
+  if (requested.tracking_mode === "external" && requested.external_provider === undefined) {
+    throw new ManifestFlagError(
+      "--tracking-mode external needs --external-provider <ado|github|jira|other> as well.",
+    );
+  }
+  if (requested.tracking_mode === "internal") requested.external_provider = null;
+
+  const patch: Partial<Record<keyof ArcaneManifest, unknown>> = {};
+  for (const field of Object.keys(FLAG_NAMES) as (keyof ArcaneManifest)[]) {
+    if (!(field in requested)) continue;
+    const value = requested[field];
+    const recorded = current[field];
+    if (recorded === undefined) {
+      patch[field] = value;
+      continue;
+    }
+    if (field === "push_policy") {
+      const from = PUSH_POLICY_STRICTNESS[recorded as PushPolicy];
+      const to = PUSH_POLICY_STRICTNESS[value as PushPolicy];
+      if (to < from) {
+        throw new ManifestFlagError(
+          `--push-policy ${String(value)} would loosen this repository's recorded push_policy ` +
+            `"${String(recorded)}". No flag can loosen it: run \`spell unblock-push\` from an ` +
+            "interactive terminal.",
+        );
+      }
+      if (to > from) patch[field] = value;
+      continue;
+    }
+    if (recorded === value) continue;
+    // external_provider is implied by --tracking-mode internal; name the flag the operator typed.
+    const flag =
+      field === "external_provider" && flags.externalProvider === undefined ? "--tracking-mode" : FLAG_NAMES[field];
+    throw new ManifestFlagError(
+      `${flag} conflicts with the recorded ${field}: ${JSON.stringify(recorded)}. A flag only answers ` +
+        "a question that has no recorded answer; change .arcane.json deliberately if the recorded " +
+        "value is wrong.",
+    );
+  }
+  return patch as Partial<ArcaneManifest>;
+}
+
+/** One line per field a flag recorded, for the run's output. */
+export function describeFlagPatch(patch: Partial<ArcaneManifest>): string[] {
+  return Object.entries(patch)
+    .filter(([field]) => field in FLAG_NAMES)
+    .map(([field, value]) => `${field}: ${JSON.stringify(value)}`);
 }
 
 /**

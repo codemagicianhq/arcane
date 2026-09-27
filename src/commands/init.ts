@@ -34,6 +34,12 @@ import {
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
 import {
+  hasManifestFlags,
+  manifestFlagLine,
+  resolveManifestFlags,
+  ManifestFlagError,
+} from "../modules/hub.js";
+import {
   applyBlockedPushControls,
   installClosedPrWarningHook,
   describeConfigScope,
@@ -176,11 +182,26 @@ export async function runInit(
     );
   }
 
+  // PRD D-02: validated before anything is written. A fresh install has no
+  // recorded answers, so a valid flag always applies.
+  let flags: Partial<ArcaneManifest> = {};
+  try {
+    flags = resolveManifestFlags(options.manifestFlags, {}, join(targetDir, ".arcane.json"));
+  } catch (err) {
+    if (!(err instanceof ManifestFlagError)) throw err;
+    console.error(`\n  ✗ ${err.message}\n`);
+    process.exit(1);
+    return; // guard: process.exit is mocked in tests
+  }
+
   // Check if already initialized
   try {
     await readManifest(targetDir);
     console.log(chalk.hex("#a855f7")(`\n  ✦ Arcane v${packageVersion}\n`));
     console.log('Already initialized. Run "spell update" to update existing files.');
+    if (hasManifestFlags(options.manifestFlags)) {
+      console.log("Pass the same manifest-question flags to `spell update` to record them here.");
+    }
     return;
   } catch (err) {
     if (!(err instanceof ManifestNotFoundError)) throw err;
@@ -419,8 +440,8 @@ export async function runInit(
   // very init run just created via a governance-only profile). Written
   // explicitly either way so a future `spell update` retrofit wizard can
   // tell "asked and declined" apart from "predates this feature".
-  let role: HubRole | undefined;
-  if (!options.profile) {
+  let role: HubRole | undefined = flags.role;
+  if (role === undefined && !options.profile) {
     console.log();
     const isHub = await confirm({
       message: "Will this repo manage other ventures as a hub? (idea books, spell-manifest promotion, venture registry)",
@@ -437,7 +458,10 @@ export async function runInit(
   // this unset, resolved later by spell update's retrofit wizard.
   let tracking_mode: TrackingMode | undefined;
   let external_provider: ExternalProvider | null | undefined;
-  if (profile === "governance-only" || profile === "methodology" || profile === "docs") {
+  if (flags.tracking_mode !== undefined) {
+    tracking_mode = flags.tracking_mode;
+    external_provider = flags.external_provider ?? null;
+  } else if (profile === "governance-only" || profile === "methodology" || profile === "docs") {
     tracking_mode = "internal";
     external_provider = null;
   } else if (!options.profile) {
@@ -470,8 +494,8 @@ export async function runInit(
   // business_root or by the code itself; a docs/records repo is the case where
   // the repository IS one subject and nothing currently expresses that.
   // Interactive only, like every other manifest question.
-  let subject_root: string | null | undefined;
-  if (profile === "docs" && !options.profile) {
+  let subject_root: string | null | undefined = flags.subject_root;
+  if (subject_root === undefined && profile === "docs" && !options.profile) {
     console.log();
     const shape = await select({
       message: "What does this repository hold?",
@@ -510,8 +534,8 @@ export async function runInit(
   // sensitive records too. Declared once for the whole repository -- per-file
   // detection is unreliable for general documents, which is why the docs-mode
   // PRD rejects scanning as a primary mechanism.
-  let content_sensitivity: ContentSensitivity | undefined;
-  if (!options.profile) {
+  let content_sensitivity: ContentSensitivity | undefined = flags.content_sensitivity;
+  if (content_sensitivity === undefined && !options.profile) {
     console.log();
     content_sensitivity = (await select({
       message: "How should agents treat this repository's contents?",
@@ -529,8 +553,8 @@ export async function runInit(
   // ── Step 5e: Push policy (EF-09) ────────────────────────────────────────
   // Default "open" — strictly additive, so every existing repository and every
   // scripted install behaves exactly as before. Asked interactively only.
-  let push_policy: PushPolicy | undefined;
-  if (!options.profile) {
+  let push_policy: PushPolicy | undefined = flags.push_policy;
+  if (push_policy === undefined && !options.profile) {
     console.log();
     push_policy = (await select({
       message: "Should this repository be allowed to push to a remote?",
@@ -562,6 +586,14 @@ export async function runInit(
   await writeManifest(targetDir, manifest);
 
   printSuccess(`Initialized with profile "${profile}" — ${fileCount} files installed`);
+
+  // A scripted install leaves unflagged questions unset (PRD D-02): say which,
+  // and the exact line that answers them.
+  const flagLine = options.profile ? manifestFlagLine(manifest) : undefined;
+  if (flagLine) {
+    printInfo("Some setup questions were left unanswered. Answer them without a prompt with:");
+    for (const line of flagLine) printInfo(`  ${line}`);
+  }
 
   // ── Push-safety controls (EF-09 R2/R3/R4/R7) ────────────────────────────
   // Wrapped: a failure here must not surface as a raw stack trace after
@@ -723,6 +755,11 @@ async function runInitUser(
   if (options.profile) {
     throw new Error(
       '"--profile" does not apply to "--user": the user tier always installs every spell and nothing else.',
+    );
+  }
+  if (hasManifestFlags(options.manifestFlags)) {
+    throw new Error(
+      'The manifest-question flags do not apply to "--user": they describe a repository, and the user tier is not one.',
     );
   }
 

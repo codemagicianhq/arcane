@@ -233,12 +233,28 @@ export interface ProfileDefinition {
   components: string[];
 }
 
+/**
+ * Raw answers to the manifest questions, as passed on the command line
+ * (`--role`, `--tracking-mode`, ...; PRD D-02). Unvalidated strings: hub.ts's
+ * resolveManifestFlags validates them with the manifest's own validators.
+ */
+export interface ManifestFlags {
+  role?: string;
+  trackingMode?: string;
+  externalProvider?: string;
+  contentSensitivity?: string;
+  pushPolicy?: string;
+  subjectRoot?: string;
+}
+
 export interface SpellInitOptions {
   profile?: Profile;
   force?: boolean;
   dryRun?: boolean;
   /** Install the per-user tier at `~/.arcane` instead of a repository (CS-04). */
   user?: boolean;
+  /** Preset answers to the manifest questions (PRD D-02). */
+  manifestFlags?: ManifestFlags;
 }
 
 export interface SpellAddOptions {
@@ -258,6 +274,8 @@ export interface SpellUpdateOptions {
    * the preference lives in the store, not in any repository.
    */
   defaultScope?: InstallScope;
+  /** Preset answers to the retrofit questions (PRD D-02). */
+  manifestFlags?: ManifestFlags;
 }
 
 export interface VersionCheckResult {

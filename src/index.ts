@@ -15,7 +15,15 @@ import { runReport } from "./commands/report.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import { userTierRoot } from "./modules/user-tier.js";
-import type { Profile, AgentInitOptions, AgentProfileId, InstallScope, NamingStrategy, AgentSyncOptions } from "./types.js";
+import type {
+  Profile,
+  AgentInitOptions,
+  AgentProfileId,
+  InstallScope,
+  ManifestFlags,
+  NamingStrategy,
+  AgentSyncOptions,
+} from "./types.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json") as { version: string };
@@ -51,6 +59,36 @@ function targetDirFor(opts: { user?: boolean }): string {
   return opts.user ? userTierRoot() : process.cwd();
 }
 
+/**
+ * PRD D-02: one flag per manifest question, on both `init` and `update`, so a
+ * harness can finish setup without a terminal. A flag answers an unset
+ * question or tightens push_policy; it never loosens push_policy, which stays
+ * `spell unblock-push`'s job (ARC-034 decision 6).
+ */
+function withManifestFlags(command: Command): Command {
+  return command
+    .option("--role <role>", "Answer the hub question: hub | consumer")
+    .option("--tracking-mode <mode>", "Answer the tracking question: internal | external (external needs --external-provider)")
+    .option("--external-provider <provider>", "With --tracking-mode external: ado | github | jira | other")
+    .option("--content-sensitivity <level>", "Answer the content question: standard | sensitive")
+    .option(
+      "--push-policy <policy>",
+      "Answer the push question: open | guarded | blocked. Can tighten a recorded policy, never loosen it (use `spell unblock-push`)",
+    )
+    .option("--subject-root <path>", "Answer the subject question with a directory (docs profile)");
+}
+
+function manifestFlagsFrom(opts: ManifestFlags): ManifestFlags {
+  return {
+    role: opts.role,
+    trackingMode: opts.trackingMode,
+    externalProvider: opts.externalProvider,
+    contentSensitivity: opts.contentSensitivity,
+    pushPolicy: opts.pushPolicy,
+    subjectRoot: opts.subjectRoot,
+  };
+}
+
 program
   .name("spell")
   .description("Arcane framework CLI — scaffold and manage governance files")
@@ -81,21 +119,24 @@ program
     program.outputHelp();
   });
 
-program
-  .command("init")
-  .description("Scaffold Arcane framework files into the current repository")
-  .option("--profile <profile>", "Profile: full | lite | methodology | docs | governance-only")
-  .option("--force", "Overwrite existing files without error")
-  .option("--dry-run", "Preview what would be installed without making changes")
-  .option("--user", USER_FLAG_DESCRIPTION)
+withManifestFlags(
+  program
+    .command("init")
+    .description("Scaffold Arcane framework files into the current repository")
+    .option("--profile <profile>", "Profile: full | lite | methodology | docs | governance-only")
+    .option("--force", "Overwrite existing files without error")
+    .option("--dry-run", "Preview what would be installed without making changes")
+    .option("--user", USER_FLAG_DESCRIPTION),
+)
   .action(
-    async (opts: { profile?: string; force?: boolean; dryRun?: boolean; user?: boolean }) => {
+    async (opts: { profile?: string; force?: boolean; dryRun?: boolean; user?: boolean } & ManifestFlags) => {
       await runInit(
         {
           profile: opts.profile as Profile | undefined,
           force: opts.force,
           dryRun: opts.dryRun,
           user: opts.user,
+          manifestFlags: manifestFlagsFrom(opts),
         },
         targetDirFor(opts),
         ASSETS_DIR,
@@ -124,20 +165,22 @@ program
     },
   );
 
-program
-  .command("update")
-  .description("Update installed components to the current package version")
-  .option("--dry-run", "Preview what would be updated without making changes")
-  .option(
-    "--prune",
-    "Also delete orphaned managed files (tracked before this update, no longer part of any current component). Hash-checked: an edited file is reported, never silently deleted",
-  )
-  .option("--user", USER_FLAG_DESCRIPTION)
-  .option(
-    "--default-scope <scope>",
-    "With --user: remember repo | user as the answer `spell init` pre-selects for NEW repositories on this machine. Never rewrites an existing repository, and the question is still asked",
-  )
-  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean; defaultScope?: string }) => {
+withManifestFlags(
+  program
+    .command("update")
+    .description("Update installed components to the current package version")
+    .option("--dry-run", "Preview what would be updated without making changes")
+    .option(
+      "--prune",
+      "Also delete orphaned managed files (tracked before this update, no longer part of any current component). Hash-checked: an edited file is reported, never silently deleted",
+    )
+    .option("--user", USER_FLAG_DESCRIPTION)
+    .option(
+      "--default-scope <scope>",
+      "With --user: remember repo | user as the answer `spell init` pre-selects for NEW repositories on this machine. Never rewrites an existing repository, and the question is still asked",
+    ),
+)
+  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean; defaultScope?: string } & ManifestFlags) => {
     if (opts.defaultScope !== undefined) {
       if (!opts.user) {
         console.error(
@@ -159,6 +202,7 @@ program
         dryRun: opts.dryRun,
         prune: opts.prune,
         user: opts.user,
+        manifestFlags: manifestFlagsFrom(opts),
         ...(opts.defaultScope === undefined
           ? {}
           : { defaultScope: opts.defaultScope as InstallScope }),

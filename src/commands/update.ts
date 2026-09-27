@@ -27,6 +27,11 @@ import {
   runManifestRetrofits,
   offerRegistryScaffold,
   pushPolicyNotice,
+  describeFlagPatch,
+  hasManifestFlags,
+  manifestFlagLine,
+  resolveManifestFlags,
+  ManifestFlagError,
 } from "../modules/hub.js";
 import { merge3 } from "../modules/merge3.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
@@ -98,6 +103,23 @@ export async function missingTierWarning(
       '      # or set "spell_scope": "repo" in .arcane.json and re-run `spell update`',
       "",
     ];
+  }
+}
+
+/**
+ * Names what the flags recorded, then the ARC-049 notice if push_policy
+ * changed by any route in this run. Update still installs nothing.
+ */
+function reportFlagPatch(
+  flagPatch: Partial<ArcaneManifest>,
+  before: ArcaneManifest,
+  after: ArcaneManifest,
+  dryRun: boolean | undefined,
+): void {
+  console.log(`\n${dryRun ? "[dry-run] Would record" : "Recorded"} from flags:`);
+  for (const line of describeFlagPatch(flagPatch)) console.log(`    ${line}`);
+  if (!dryRun && after.push_policy !== before.push_policy) {
+    for (const line of pushPolicyNotice(after.push_policy)) console.log(line);
   }
 }
 
@@ -424,6 +446,28 @@ export async function runUpdate(
     return;
   }
   const scope: InstallScope = resolvedScope.scope;
+
+  // PRD D-02: validated and conflict-checked before anything is written, so a
+  // refused flag (including any attempt to loosen push_policy) changes nothing.
+  let flagPatch: Partial<ArcaneManifest> = {};
+  if (hasManifestFlags(options.manifestFlags)) {
+    if (scope !== "repo") {
+      console.error(
+        "\n  ✗ The manifest-question flags describe a repository; the user tier has none of those fields.\n",
+      );
+      process.exit(1);
+      return;
+    }
+    try {
+      flagPatch = resolveManifestFlags(options.manifestFlags, manifest, join(targetDir, ".arcane.json"));
+    } catch (err) {
+      if (!(err instanceof ManifestFlagError)) throw err;
+      console.error(`\n  ✗ ${err.message}\n`);
+      process.exit(1);
+      return;
+    }
+  }
+  const answered: ArcaneManifest = { ...manifest, ...flagPatch };
   // ARC-045 decision 4 / CS-05: where THIS repository takes its spells
   // from. Absent means "repo", so every manifest written before 1.2.0
   // behaves exactly as it did. Meaningless for the store itself, which is
@@ -476,6 +520,12 @@ export async function runUpdate(
     const unmanaged = findUnmanagedTrackedFiles(manifest.components, scope, spellScope);
     if (missing.length === 0 && unmanaged.length === 0) {
       console.log("Already up to date.");
+      // Flags still record their answers on a current install: a harness
+      // finishing setup is not upgrading anything.
+      if (scope === "repo" && Object.keys(flagPatch).length > 0) {
+        if (!options.dryRun) await writeManifest(targetDir, answered);
+        reportFlagPatch(flagPatch, manifest, answered, options.dryRun);
+      }
       // The user tier's client files can go missing (or a renderer can
       // change) with the store itself intact -- reconcile them on every
       // same-version run too. A no-op when nothing changed.
@@ -516,6 +566,10 @@ export async function runUpdate(
 
   if (manifest.components.length === 0) {
     console.log("No components installed. Nothing to update.");
+    if (scope === "repo" && Object.keys(flagPatch).length > 0) {
+      if (!options.dryRun) await writeManifest(targetDir, answered);
+      reportFlagPatch(flagPatch, manifest, answered, options.dryRun);
+    }
     return;
   }
 
@@ -871,8 +925,9 @@ export async function runUpdate(
     console.log(
       `\n[dry-run] Would update ${fileCount} files.`,
     );
+    if (Object.keys(flagPatch).length > 0) reportFlagPatch(flagPatch, manifest, answered, true);
     const applicableRetrofits =
-      scope === "repo" ? MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest)) : [];
+      scope === "repo" ? MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(answered)) : [];
     if (applicableRetrofits.length > 0) {
       console.log(
         `[dry-run] Would ask ${applicableRetrofits.length} manifest retrofit question${applicableRetrofits.length === 1 ? "" : "s"}: ${applicableRetrofits.map((r) => r.field).join(", ")}.`,
@@ -895,16 +950,19 @@ export async function runUpdate(
   // Skipped entirely for the user tier: every retrofit field describes a
   // repository (hub role, tracking mode, subject root, sensitivity, push
   // policy), none of which the store has.
+  // Flags (PRD D-02) are applied first, so a flagged question is answered
+  // without a prompt, with or without a terminal.
   const interactive = Boolean(process.stdin.isTTY) && scope === "repo";
-  const retrofitPatch = interactive ? await runManifestRetrofits(manifest) : {};
+  const retrofitPatch = interactive ? await runManifestRetrofits(answered) : {};
   if (!interactive && scope === "repo") {
-    const pending = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(manifest));
+    const pending = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(answered));
     if (pending.length > 0) {
       console.log(
         `  ! Skipped ${pending.length} manifest question${pending.length === 1 ? "" : "s"} (${pending
           .map((r) => r.field)
-          .join(", ")}) — no interactive terminal. Run \`spell update\` from a terminal to answer.`,
+          .join(", ")}) — no interactive terminal. Run \`spell update\` from a terminal, or answer by flags:`,
       );
+      for (const line of manifestFlagLine(answered) ?? []) console.log(`      ${line}`);
     }
   }
 
@@ -914,6 +972,7 @@ export async function runUpdate(
     ...manifest,
     version: packageVersion,
     components: updatedComponents,
+    ...flagPatch,
     ...retrofitPatch,
     ...(fanoutRecord !== undefined ? { fanout: fanoutRecord } : {}),
     ...defaultScopePatch(options, manifest),
@@ -924,7 +983,9 @@ export async function runUpdate(
     `\n\u2713 Updated ${fileCount} files.`,
   );
 
-  if (updated.push_policy !== manifest.push_policy) {
+  if (Object.keys(flagPatch).length > 0) {
+    reportFlagPatch(flagPatch, manifest, updated, false);
+  } else if (updated.push_policy !== manifest.push_policy) {
     for (const line of pushPolicyNotice(updated.push_policy)) console.log(line);
   }
 

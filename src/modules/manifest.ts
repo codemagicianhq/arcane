@@ -33,11 +33,13 @@ export class ManifestCorruptError extends Error {
  * unsupported values rather than silently treating them as a provider").
  */
 export class ManifestInvalidFieldError extends Error {
+  readonly field: string;
   constructor(manifestPath: string, field: string, value: unknown) {
     super(
       `Manifest at "${manifestPath}" has an unsupported value for "${field}": ${JSON.stringify(value)}.`,
     );
     this.name = "ManifestInvalidFieldError";
+    this.field = field;
   }
 }
 
@@ -47,6 +49,14 @@ const VALID_TRACKING_MODES: TrackingMode[] = ["internal", "external"];
 const VALID_EXTERNAL_PROVIDERS: ExternalProvider[] = ["ado", "github", "jira", "other"];
 const VALID_CONTENT_SENSITIVITY: ContentSensitivity[] = ["standard", "sensitive"];
 const VALID_PUSH_POLICIES: PushPolicy[] = ["open", "guarded", "blocked"];
+
+/** The enum fields' accepted values, for messages that list them (PRD D-02 flags). */
+export const MANIFEST_ENUM_VALUES: Readonly<Record<string, readonly string[]>> = {
+  tracking_mode: VALID_TRACKING_MODES,
+  external_provider: VALID_EXTERNAL_PROVIDERS,
+  content_sensitivity: VALID_CONTENT_SENSITIVITY,
+  push_policy: VALID_PUSH_POLICIES,
+};
 const VALID_INSTALL_SCOPES: InstallScope[] = ["repo", "user"];
 
 /**
@@ -147,7 +157,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validateTrackingFields(manifest: ArcaneManifest, filePath: string): void {
+/**
+ * The field validation readManifest applies, exported so values arriving by
+ * another route (the init/update flags, PRD D-02) are held to exactly the
+ * same contract. Throws ManifestInvalidFieldError.
+ */
+export function validateManifestFields(manifest: Partial<ArcaneManifest>, filePath: string): void {
   if (
     manifest.tracking_mode !== undefined &&
     !VALID_TRACKING_MODES.includes(manifest.tracking_mode)
@@ -227,7 +242,7 @@ export async function readManifest(targetDir: string): Promise<ArcaneManifest> {
     throw new ManifestCorruptError(filePath);
   }
 
-  validateTrackingFields(manifest, filePath);
+  validateManifestFields(manifest, filePath);
   return manifest;
 }
 
