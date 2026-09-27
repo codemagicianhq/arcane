@@ -26,9 +26,9 @@
         "real DECISIONS.md passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-c",
-      "testEvidence": null
+      "testEvidence": "test/check-stale-claims.test.ts 17/17 (9 new; negative fixture exits 1 naming both headings); CLI on a scratch copy with an injected duplicate exits 1; npm run check:stale-claims on the real repo exits 0"
     },
     {
       "id": "UP03-C-03",

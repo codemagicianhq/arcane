@@ -139,6 +139,14 @@ describe("decision-documentation-standard.md states the ARC-050 allocation rule"
         }
     });
 
+    it("annotates the duplicate-ID detection as an executable check scoped to Arcane's own repository", () => {
+        const s = section();
+        expect(s).toContain("Detecting the collision is an executable check in Arcane's own repository only");
+        expect(s).toContain("`scripts/check-stale-claims.ts`, run in CI as `npm run check:stale-claims`");
+        // The never-renumber rule's annotation no longer claims uniqueness is unchecked everywhere.
+        expect(standard).toContain("Uniqueness alone has an executable check in Arcane's own repository only");
+    });
+
     it("root copy matches the canonical source", () => {
         expect(rootStandard).toBe(standard);
     });
