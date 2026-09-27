@@ -2,7 +2,7 @@
 title: Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves
 status: active
 created: 2026-09-27
-baseline: 2b01daf (main)
+baseline: 58351fa (main)
 owner: operator (payini)
 executor: Arcane loop, one wave per session — parallel lanes inside a wave; inert until UP-00 merges
 ---
