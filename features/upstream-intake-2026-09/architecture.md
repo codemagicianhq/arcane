@@ -101,3 +101,23 @@ added to registry → minor". It is applied by the orchestrator at integration.
 - Lane B references lane C's lesson-routing step by name only, and lane C references
   `spell-save-idea` by name only (lane B owns that file).
 - Lane D quotes the CLI flag names shipped in UP-02, reading them from `src/index.ts`.
+
+## UP-04 — Wave 3: the needs-you sweep (lane B only tonight)
+
+**Wave branch:** `sessions/2026-09-27-up-04-needs-you`, stacked on UP-03's branch.
+**Lane A (#271, Show Report theme) is deferred.** It waits on OPERATOR-QUEUE Q-006, the change in
+`arcane-ui`, and becomes UP-04b when that lands (PLAN.md, "Overnight run amendment").
+**Decision built on:** PRD D-13, one ARC-039 fragment landed last as a single sweep.
+**Version:** one minor, 1.7.0 → 1.8.0. A new distributable fragment and new spell text fall under
+`spell-bump`'s "When in doubt: new distributable content = minor". Applied by the orchestrator.
+
+**Rules:** identical to UP-02's "Rules every lane follows", with UP-04 names
+(`test/up04-b-*.test.ts`).
+
+| Lane | Allowlist | Stories |
+|---|---|---|
+| B: needs you | new `src/assets/.arcane/spells/_fragments/needs-you.md`; the canonical spells that get the fragment (chosen by story UP04-B-02); `src/assets/.arcane/governance/spell-authoring-standards.md`; their root copies; new `test/up04-b-*.test.ts` | `stories/UP-04-lane-b.json` |
+
+**Single-lane wave: no collision set to check.** The one rule that still bites is fragment spans:
+the lane must not edit inside the `push-policy-check` or `tracking-mode-declaration` spans, because
+`fix:self-host-parity` owns them.
