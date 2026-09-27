@@ -34,6 +34,7 @@ import {
   evaluateAdoMergePolicy,
 } from "../modules/platform-policy.js";
 import { scanGovernancePlaceholders, PLACEHOLDER_STANDARD_FILE } from "../modules/placeholders.js";
+import { findMissingRequires } from "../modules/registry-changes.js";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -580,6 +581,38 @@ interface McpConfigFile {
  * default idle limit (as long as 30 minutes) instead of a predictable one.
  * A missing .mcp.json is a silent pass -- MCP is optional.
  */
+/**
+ * TODO.md "a spell can be installed without the governance doc it cites".
+ * Warns -- never fails -- when an installed component's `requires` names a
+ * component the manifest does not list; installs nothing (EF-17).
+ */
+export async function checkComponentRequires(targetDir: string): Promise<CheckResult> {
+  const name = "Component prerequisites";
+  let manifest;
+  try {
+    manifest = await readManifest(targetDir);
+  } catch {
+    // checkArcaneManifest reports a missing or unreadable manifest.
+    return { name, passed: true, blocking: false, skipped: true, message: "skipped — no readable .arcane.json" };
+  }
+  if (manifest.scope === "user") {
+    return { name, passed: true, blocking: false, skipped: true, message: "skipped — the user tier holds spells only" };
+  }
+
+  const missing = findMissingRequires(manifest.components);
+  if (missing.length === 0) {
+    return { name, passed: true, blocking: false, message: "every installed component's prerequisites are installed" };
+  }
+  return {
+    name,
+    passed: false,
+    blocking: false,
+    message: missing
+      .map(({ name: required, requiredBy }) => `${requiredBy.join(", ")} cites ${required}, which is not installed — \`spell add ${required}\``)
+      .join("; "),
+  };
+}
+
 export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
   const name = "MCP config (per-server timeout, I12)";
   const filePath = join(targetDir, ".mcp.json");
@@ -914,6 +947,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkUserTier(resolveHomeDir(), options.packageVersion),
     checkSpellScope(targetDir),
     checkGovernancePlaceholders(targetDir),
+    checkComponentRequires(targetDir),
   ]);
 
   // Add session continuity checks

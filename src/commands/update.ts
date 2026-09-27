@@ -36,6 +36,7 @@ import {
 } from "../modules/hub.js";
 import { merge3 } from "../modules/merge3.js";
 import {
+  findMissingRequires,
   findNewlyAvailable,
   findTrackedRetirements,
   formatRegistryChanges,
@@ -585,6 +586,7 @@ export async function runUpdate(
           migrateLegacyComponents(manifest.components).components,
           spellScope,
         ),
+        missingRequires: findMissingRequires(manifest.components),
       }
       : {}),
   };

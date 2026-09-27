@@ -376,6 +376,14 @@ const COMPONENTS: RegistryComponent[] = [
       ".claude/commands/spell-compliance.md",
       ".agents/skills/spell-compliance/SKILL.md",
     ],
+    // spell-make-discoverable cites the first two for every EV-/WD- rationale;
+    // spell-eas-store-deploy and spell-compliance consume the last two.
+    requires: [
+      "external-verification-standards",
+      "web-discoverability-standards",
+      "mobile-release-standards",
+      "compliance-standards",
+    ],
   },
   {
     name: "spells-docs",

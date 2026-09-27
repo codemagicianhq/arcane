@@ -233,6 +233,13 @@ export interface RegistryComponent {
    * the manifest records what actually landed in the repository.
    */
   sourceOverrides?: Record<string, string>;
+  /**
+   * Other components this one's content cites and works best with -- e.g. a
+   * spell that defers its rationale to a governance doc. Never installed
+   * automatically: `spell doctor` and `spell update` report a missing one,
+   * with its `spell add` line.
+   */
+  requires?: string[];
 }
 
 /**
