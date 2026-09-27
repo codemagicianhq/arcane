@@ -38,6 +38,38 @@ Arcane separates framework-level decisions from org-specific ones using two pref
 - When uncertain, default to `ADR-NNN` in ops; promote to `ARC-NNN` later if the decision proves framework-generic. **Enforcement: explicitly advisory prose (ARC-023) — whether a decision is framework-generic enough for `ARC-NNN` (this rule and the two prefix-scoping rules above) is a judgment call; no script evaluates a decision's content to confirm the chosen prefix.**
 - Never renumber existing entries in either sequence. **Enforcement: explicitly advisory prose (ARC-023) — `scripts/check-distributed-adr-references.ts` only verifies that a bare `ADR-NNN` citation resolves to a heading declared in `framework-decisions.md` (and separately flags certain `ARC-NNN`/`EF-NNN` link forms as cross-repo hazards); it never checks that numbers are sequential, unique, or never reused.**
 
+## Allocating Decision Numbers
+
+Decision numbers are a shared sequence (ARC-028 R4). Two sessions on separate branches that each take
+"the next number" both take the same one. The collision surfaces at merge, or never, and
+cross-references then point at the wrong decision. ARC-050 sets how a number is allocated:
+
+1. **Fetch, then take the maximum.** Before allocating a decision number, fetch the trunk when a
+   usable remote exists. "Usable" is the classification `spell-open-session`'s Mutation Guard uses: a
+   supported provider with authenticated provider tooling, where a remote URL alone is not enough.
+   Then allocate `max(highest number on the local branch, highest number on the remote trunk) + 1`.
+2. **A local-only repository allocates from the local maximum and says so**, so the number is
+   visibly unchecked against any other branch.
+
+   **Enforcement (rules 1 and 2): structured spell gate (ARC-023) — `spell-close-session` step 3
+   requires the observed trunk maximum, or its stated local-only line, before it writes a new entry.
+   A decision written outside that spell, by hand or by another workflow, follows these rules as
+   explicitly advisory prose: nothing else fetches or compares for it.**
+3. **No reservation markers.** Never commit a placeholder or "reserved" entry to claim a number. A
+   marker is itself an edit to the same shared sequence, so it collides the same way. **Enforcement:
+   explicitly advisory prose (ARC-023) — no script recognizes a placeholder entry as a reservation.**
+4. **Several decisions at once are allocated once.** A program that drafts several decisions
+   allocates all of them at the start of the wave that needs them, from the fetched trunk. Its
+   parallel lanes use those numbers and never allocate their own. A single session that records
+   several decisions allocates them consecutively from one fetched maximum. **Enforcement:
+   explicitly advisory prose (ARC-023) — no spell gate or script tracks which numbers a program
+   pre-allocated.**
+5. **When a collision still happens, the unmerged branch renumbers.** Fetching narrows the race but
+   does not close it: two sessions can fetch before either pushes. "Never renumber existing entries"
+   applies to merged entries. When two branches hold the same number, the branch that has not merged
+   yet renumbers its own entry and every reference to it on that branch. **Enforcement: explicitly
+   advisory prose (ARC-023) — nothing detects the collision or performs the renumbering.**
+
 ## Problem Statement
 
 **Scannability vs. Detail Tension:**
