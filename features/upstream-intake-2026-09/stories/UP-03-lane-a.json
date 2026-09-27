@@ -42,9 +42,9 @@
         "check:spell-catalog passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up03-a-gitattributes.test.ts 13/13 (built CLI `spell init --profile X --dry-run` lists .gitattributes for full/lite/methodology/docs/governance-only; pre-split docs-baseline manifest upgrade keeps .gitattributes byte-identical, no orphan, recorded once under line-ending-baseline; same-version still 'Already up to date.' with manifest untouched; old lite install offered `spell add line-ending-baseline`, never given it); check:spell-catalog passes; 38 related files 765/765"
     },
     {
       "id": "UP03-A-04",
