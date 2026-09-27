@@ -28,9 +28,9 @@
         "opted-out repo does not list spells-* components"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up03-a-newly-available.test.ts 6/6 (governance-only manifest missing compliance-standards -> listed with exact `spell add compliance-standards`, file not created, manifest unchanged; also on same-version and --dry-run; spell_scope user lists no spells-*; all-present skipExisting omitted); update/lifecycle/hub-retrofit/up02-a flags+push-policy suites 159/159"
     },
     {
       "id": "UP03-A-03",

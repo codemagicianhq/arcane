@@ -34,7 +34,12 @@ import {
   ManifestFlagError,
 } from "../modules/hub.js";
 import { merge3 } from "../modules/merge3.js";
-import { findTrackedRetirements, formatRegistryChanges } from "../modules/registry-changes.js";
+import {
+  findNewlyAvailable,
+  findTrackedRetirements,
+  formatRegistryChanges,
+  type RegistryChanges,
+} from "../modules/registry-changes.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
 import {
@@ -512,6 +517,27 @@ export async function runUpdate(
     }
   }
 
+  // PRD D-15, computed before anything is written. Retirements read the
+  // manifest as it was, before migration renames a legacy entry away. The
+  // newly-available list is repository-only: `spell add` has no --user.
+  const registryChanges: RegistryChanges = {
+    retired: findTrackedRetirements(manifest.components),
+    ...(scope === "repo"
+      ? {
+        profile: manifest.profile,
+        newlyAvailable: await findNewlyAvailable(
+          targetDir,
+          manifest.profile,
+          migrateLegacyComponents(manifest.components).components,
+          spellScope,
+        ),
+      }
+      : {}),
+  };
+  const printRegistryChanges = (): void => {
+    for (const line of formatRegistryChanges(registryChanges)) console.log(line);
+  };
+
   // Already up to date -- unless a tracked file has gone missing, in which
   // case a same-version run restores exactly that and nothing else (the
   // ARC-045 / CS-03 remedy path; see findMissingTrackedFiles).
@@ -521,6 +547,9 @@ export async function runUpdate(
     const unmanaged = findUnmanagedTrackedFiles(manifest.components, scope, spellScope);
     if (missing.length === 0 && unmanaged.length === 0) {
       console.log("Already up to date.");
+      // Still surfaced here: a component the operator has not added yet is
+      // news on every run, not only on the run that changed the version.
+      printRegistryChanges();
       // Flags still record their answers on a current install: a harness
       // finishing setup is not upgrading anything.
       if (scope === "repo" && Object.keys(flagPatch).length > 0) {
@@ -888,11 +917,7 @@ export async function runUpdate(
     }
   }
 
-  // PRD D-15: read from the manifest as it was, before migration renamed
-  // any legacy entry away.
-  for (const line of formatRegistryChanges({ retired: findTrackedRetirements(manifest.components) })) {
-    console.log(line);
-  }
+  printRegistryChanges();
 
   // ARC-045 / CS-03: one summary for every customized client shim, in both
   // dry-run and real runs, with the remedy spelled out once.
