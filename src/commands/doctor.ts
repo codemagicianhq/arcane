@@ -599,7 +599,7 @@ export async function checkComponentRequires(targetDir: string): Promise<CheckRe
     return { name, passed: true, blocking: false, skipped: true, message: "skipped — the user tier holds spells only" };
   }
 
-  const missing = findMissingRequires(manifest.components);
+  const missing = findMissingRequires(manifest.components, manifest.profile);
   if (missing.length === 0) {
     return { name, passed: true, blocking: false, message: "every installed component's prerequisites are installed" };
   }

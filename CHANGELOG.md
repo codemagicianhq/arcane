@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.7.0] - 2026-09-27
+
+`spell update` now explains what changed in the registry since you installed. Every profile gets a
+line-ending baseline. The idea and session spells close the gaps between capturing a thought and
+acting on it. This is the second code wave of the Upstream Intake 2026-09 program
+([ARC-050](DECISIONS.md#arc-050--decision-number-allocation-across-parallel-sessions)).
+
+### Added
+
+- **`spell update` prints a "Registry changes since your install" section.** It is report-only;
+  nothing is installed or deleted without `--prune`, as before. The section covers:
+  - **Retired and renamed items (#279).** A spell or component your manifest still tracks is named
+    with its successor and a one-line reason, for example `spell-bootstrap-business` →
+    `spell-summon-venture`.
+  - **Components new since you installed.** Each one your profile includes but your manifest lacks
+    is listed with its exact `spell add` line.
+  - **Missing prerequisites.** A component that cites a standards document your own profile
+    includes, where that document isn't installed, is named with the line to add it.
+- **Every profile now installs `.gitattributes` (#281)** through a new `line-ending-baseline`
+  component, split out of `docs-baseline`.
+  - Existing installs are migrated in place: a tracked `.gitattributes` is neither orphaned nor
+    copied twice.
+  - Repositories installed before it existed see it in the section above. It is never
+    auto-installed.
+- **Components can declare `requires`.** `spell doctor` warns, without failing, when one your
+  profile promises is missing. A `lite` or `methodology` install, which leaves those standards out by
+  design, stays clean.
+- **Idea lifecycle:**
+  - **Tracker-id suffix (#265).** In external tracking mode, captured items get `[#123]`,
+    `[AB#123]` or `[PROJ-123]`, defined once in `development-methodology.md`.
+  - **`spell-todo --prune` (#268)** removes resolved items. It reports first, checks each outcome is
+    recorded, migrates any outcome that isn't, and takes one approval for the whole batch.
+  - **`spell-todo --sweep --validate` (#263)** asks value, fit and duplicate questions, and writes
+    nothing until you confirm the batch.
+  - **The sweep lists unrouted lessons (#275)** from the repository's own journal.
+- **`spell-close-session` routes Lessons Learned (#274).** Framework lessons go to `FEEDBACK.md`
+  queued for upstream, product ideas go through `spell-save-idea`, and repo-local ones stay in the
+  journal. One batch confirmation covers all of it, nothing is written publicly, and `--no-route`
+  skips the step.
+
+### Changed
+
+- **Decision numbers are allocated safely across parallel sessions (#264, ARC-050).**
+  - `spell-close-session` fetches the trunk and takes the highest number there or locally, plus one.
+  - A local-only repository says its number was not checked against other branches.
+  - `check:stale-claims` now fails on two decision headings with the same number.
+- **`spell-open-session` and `spell-arcane-version` tell an agent working in an AI harness to answer
+  setup questions by flag (#282).** It asks the operator through the harness, then re-runs with the
+  flags the CLI printed. It never answers on the operator's behalf, and never loosens a push policy.
+
 ## [1.6.0] - 2026-09-27
 
 Push protection that can actually be switched on, setup that can finish without a terminal, and two
