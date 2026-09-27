@@ -19,6 +19,7 @@ const PUSHING_SPELLS: Record<string, string> = {
     "spell-ship": "Push the synced branch (e.g. `git push`)",
     "spell-sync-pull-request": "```bash\ngit push --force-with-lease\n```",
     "spell-close-session": "Commit approval is not merge approval.",
+    "spell-address-review": "3. `git push` all commits.",
 };
 
 let fragment: string;

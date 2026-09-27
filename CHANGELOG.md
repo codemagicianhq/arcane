@@ -45,12 +45,17 @@ privacy gaps closed. This is the first code wave of the Upstream Intake 2026-09 
   is not yet enforced and names `spell block-push`; recording `guarded` explains what guarded does.
   The update itself still installs nothing (ARC-049).
 - **Every spell that pushes reads `push_policy` first** (#280): `spell-commit-work`,
-  `spell-create-pull-request`, `spell-ship`, `spell-sync-pull-request` and `spell-close-session`.
+  `spell-create-pull-request`, `spell-ship`, `spell-sync-pull-request`, `spell-close-session` and
+  `spell-address-review`.
   - Under `guarded` the spell asks before pushing; in an unattended run it does not push, and
     reports the pending push instead.
   - Under `blocked` it does not try, and says why.
   - `git-conventions.md` gains the "Push safety" section that `universal-agent-rules.md` already
     pointed at.
+- **`spell init` now exits non-zero when it records `blocked` but cannot fully put the block in
+  force** (for example, when another hook manager owns `core.hooksPath`). It names
+  `spell block-push` as the fix, so a scripted or harness-driven setup cannot mistake a partial block
+  for success.
 - **The tracking question pre-selects Azure DevOps when a remote is on `dev.azure.com` or
   `*.visualstudio.com`** (#278), as the spells already documented. Each option now says what it
   changes.

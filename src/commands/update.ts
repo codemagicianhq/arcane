@@ -1006,6 +1006,13 @@ export async function runUpdate(
   // If this update just turned the repo into a hub, offer to scaffold the
   // venture registry from whatever already exists under business_root.
   if (scope === "repo" && manifest.role !== "hub" && updated.role === "hub") {
-    await offerRegistryScaffold(targetDir, updated.business_root ?? "ventures");
+    // `--role hub` reaches this without a terminal; the scaffold offer is a prompt.
+    if (process.stdin.isTTY) {
+      await offerRegistryScaffold(targetDir, updated.business_root ?? "ventures");
+    } else {
+      console.log(
+        `  This repository is now a hub. Run \`spell update\` from a terminal to scaffold ${updated.business_root ?? "ventures"}/registry.json from existing venture folders.`,
+      );
+    }
   }
 }
