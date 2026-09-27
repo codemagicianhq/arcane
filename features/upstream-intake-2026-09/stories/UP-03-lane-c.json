@@ -13,9 +13,9 @@
         "standard doc states the rule with an ARC-023 annotation"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-c",
-      "testEvidence": null
+      "testEvidence": "test/up03-c-decision-allocation.test.ts 15/15; 16 files mentioning lane files 479/479; parity, citations, adr-references, stale-claims pass"
     },
     {
       "id": "UP03-C-02",

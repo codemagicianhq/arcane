@@ -53,13 +53,21 @@ Workflow:
    - Journal entries must include:
      - `### Prompt Context` — original prompt text or a faithful paraphrase of the multi-turn request when the session began from a substantive user ask. Include follow-up scope inputs if they materially changed the direction of the work.
      - `### What Got Done` — numbered list of concrete outcomes with file/ADR references. Only list an outcome here if step 1b classified it `succeeded` (or it never involved async work at all, e.g. a local file edit). A `pending`/`dispatched`/`unverifiable` item belongs in Open Items Carried Forward, not here — do not let this section imply completion step 1b couldn't confirm.
-     - `### Decisions Made` — table of ADR number, decision, and rationale. If no decisions were made, omit this section.
+     - `### Decisions Made` — table of ADR number, decision, and rationale. If no decisions were made, omit this section. Take every number in this table from step 3's allocation rule (ARC-050). If step 3 has not allocated yet, run that allocation now and use the same numbers in both places. Never write a number from memory or from this branch's `DECISIONS.md` alone.
      - `### Lessons Learned` — one heading per lesson with enough context to prevent the mistake again. Use narrative, not bullet fragments.
      - `### Open Items Carried Forward` — items that remain undone from this session, including every `pending`/`dispatched`/`failed`/`unverifiable` item from step 1b.
 
 3. **Update [DECISIONS.md](../../DECISIONS.md).**
    - Add ADRs for any decisions made during the session (naming choices, tool preferences, workflow standards, security policies, etc.).
    - Use the next sequential ADR number.
+   - **Allocate that number against the trunk, not only this branch (ARC-050; ARC-028 R4 names decision numbers a shared sequence).** Another session on another branch may already have taken "the next number". Do this immediately before writing the first new entry:
+     - **Classify the remote first.** Use the classification from step 9's remote-capability check, which is the same one `spell-open-session`'s Mutation Guard uses. A usable remote is a supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`) with authenticated provider tooling; a remote URL alone is not enough. Resolve `<remote>` and `<trunk>` from observed state as step 10 does. Never assume `origin` or `main`.
+     - **Usable remote: fetch, then take the maximum.** Run `git fetch <remote> <trunk>`. Read the highest decision ID (the number in the log's `## <PREFIX>-NNN` headings) from this branch's `DECISIONS.md`, and from the trunk's copy with `git show <remote>/<trunk>:DECISIONS.md`. A trunk with no `DECISIONS.md` has no maximum. Allocate `max(highest ID on this branch, highest ID on <remote>/<trunk>) + 1`. In the Decision Updates output, name both maxima and the number allocated.
+     - **Local-only: allocate from the local maximum and say so.** When there is no usable remote, allocate `highest ID in the local DECISIONS.md + 1`. Say so in the Decision Updates output: `Allocated <PREFIX>-NNN from the local maximum only; not checked against any other branch.` Treat a usable remote whose fetch fails the same way, and name the failed fetch in that line.
+     - **Several decisions in one session:** allocate them consecutively from the one maximum you just computed, in a single pass.
+     - **No reservation markers.** Never commit a placeholder or "reserved" entry to claim a number before the real entry exists. A marker is itself an edit to the same shared sequence, so it collides the same way.
+     - **If a collision still surfaces later** (two sessions fetched before either pushed), the branch that has not merged yet renumbers its own entry and every reference to it on that branch. Merged entries are never renumbered (`decision-documentation-standard.md`).
+     - Enforcement: structured spell gate (ARC-023) — this step requires the observed trunk maximum, or the stated local-only line, before a new entry is written. The renumbering rule above is explicitly advisory prose: nothing in this spell detects a collision after the fact.
    - Follow the existing format: Date, Status, Context, Decision, Reasoning, Rejected alternatives.
 
 4. **Update [TODO.md](../../TODO.md).**
@@ -227,6 +235,7 @@ Output format:
 ## Decision Updates
 
 - ADRs added or note that none were needed.
+- For each ADR added, how its number was allocated (step 3): `max(<this branch's highest>, <remote>/<trunk>'s highest) + 1`, or the local-only line.
 
 ## TODO Updates
 
