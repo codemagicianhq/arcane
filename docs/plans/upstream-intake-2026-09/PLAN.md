@@ -312,12 +312,15 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
 
 ## Coverage Map
 
-- [ ] **UP-00 — Plan, PRD, queue and delegation.** Route: `direct`. Size: S. Bump: no.
+- [x] **UP-00 — Plan, PRD, queue and delegation.** Route: `direct`. Size: S. Bump: no.
   Dependencies: none. Risk: Low.
-  - Produces this plan, `KICKOFF.md`, `OPERATOR-QUEUE.md`, the PRD, the
-    `upstream-intake-2026-09-plan` delegation record, the routing notes in `TODO.md`, and this
-    program's first Show Report pair.
-  - **Operator merges** (Q-001).
+  - Produced this plan, `KICKOFF.md`, `OPERATOR-QUEUE.md`, the PRD (decision defaults accepted in
+    Q-002), the `upstream-intake-2026-09-plan` delegation record, the routing notes in `TODO.md`,
+    and this program's first Show Report pair.
+  - [PR #285](https://github.com/codemagicianhq/arcane/pull/285), operator-merged 2026-09-27; the
+    delegation is active from that merge.
+  - **Report:** Arcane now has one prioritized plan to fix every open issue filed against it, built to
+    run independent fixes side by side instead of one release at a time. · category: docs
 - [ ] **UP-01 — Decisions: ADR drafts, probes, and the ARC-036 correction.** Route: `adr`. Size: M
   (5 stories). Bump: no. Dependencies: UP-00, Q-002. Risk: Low.
   - Drafts three ADRs, all `Proposed`: push policy after init, decision-number allocation, and
@@ -417,6 +420,25 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
     - an ADR the wave needs is not `Accepted`;
     - everything remaining is operator-blocked.
 
+### Overnight run amendment (2026-09-27)
+
+The operator asked for an unattended overnight run. Two loop rules are changed for that run only;
+both are recorded here rather than silently skipped.
+
+- **Stacked PRs instead of "one wave PR open at a time".** Each wave's PR targets the previous
+  wave's branch rather than `main`, and nothing merges.
+  - The rule exists to stop two open PRs colliding on the `package.json` version. Stacked branches
+    keep that guarantee, because each one contains the previous wave's bump.
+  - CI runs only on PRs into `main`, so every gate runs locally before each push. CI runs as each
+    PR is retargeted to `main` in the morning (Q-007).
+- **Waves run back-to-back in one session instead of "one wave per session".**
+  `spell-close-session` and `spell-open-session` still run between waves, so every wave keeps its own
+  durable handoff record.
+- **#267 and #271 are deferred for the night** (Q-004 and Q-006 are unanswered), so UP-03 lane D
+  ships #282's spell half only and UP-04 ships lane B only.
+- **Q-005 is answered** ("as text, with a copy button"), and **Q-003 is pre-authorized for faithful
+  ADRs**.
+
 ## Danger Gates & Operator Queue
 
 [OPERATOR-QUEUE.md](OPERATOR-QUEUE.md) is the single mutable surface between the loop and the
@@ -428,6 +450,7 @@ operator. It is seeded with:
 - **Q-004:** transcript-fork probe.
 - **Q-005:** Mermaid chat-pane probe.
 - **Q-006:** the `arcane-ui` theme change.
+- **Q-007:** review and merge the overnight stacked wave PRs, in order.
 
 ## What this program will teach (filled at UP-05)
 
