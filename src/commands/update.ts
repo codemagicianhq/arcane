@@ -953,7 +953,7 @@ export async function runUpdate(
   // Flags (PRD D-02) are applied first, so a flagged question is answered
   // without a prompt, with or without a terminal.
   const interactive = Boolean(process.stdin.isTTY) && scope === "repo";
-  const retrofitPatch = interactive ? await runManifestRetrofits(answered) : {};
+  const retrofitPatch = interactive ? await runManifestRetrofits(answered, targetDir) : {};
   if (!interactive && scope === "repo") {
     const pending = MANIFEST_RETROFITS.filter((r) => r.needsRetrofit(answered));
     if (pending.length > 0) {

@@ -34,6 +34,7 @@ import {
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
 import {
+  askTrackingQuestions,
   hasManifestFlags,
   manifestFlagLine,
   resolveManifestFlags,
@@ -466,26 +467,7 @@ export async function runInit(
     external_provider = null;
   } else if (!options.profile) {
     console.log();
-    tracking_mode = (await select({
-      message: "How will work be tracked in this repo?",
-      choices: [
-        { value: "internal", name: "Track work in this repo (TODO.md / PRDs)" },
-        { value: "external", name: "Track work in an external tracker (Azure DevOps / GitHub / Jira / other)" },
-      ],
-    })) as TrackingMode;
-    if (tracking_mode === "external") {
-      external_provider = (await select({
-        message: "Which external tracker?",
-        choices: [
-          { value: "ado", name: "Azure DevOps" },
-          { value: "github", name: "GitHub Issues" },
-          { value: "jira", name: "Jira" },
-          { value: "other", name: "Other" },
-        ],
-      })) as ExternalProvider;
-    } else {
-      external_provider = null;
-    }
+    ({ tracking_mode, external_provider } = await askTrackingQuestions(targetDir));
   }
 
   // ── Step 5c: Subject shape (EF-07) ──────────────────────────────────────
