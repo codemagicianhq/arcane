@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.6.0] - 2026-09-27
+
+Push protection that can actually be switched on, setup that can finish without a terminal, and two
+privacy gaps closed. This is the first code wave of the Upstream Intake 2026-09 program
+([ARC-049](DECISIONS.md#arc-049--enforcing-a-recorded-push-policy-after-init),
+[ARC-051](DECISIONS.md#arc-051--placeholder-taxonomy-for-governance-documents)).
+
+### Added
+
+- **`spell block-push`.** It enforces `push_policy: "blocked"` by installing exactly the controls
+  `spell init` installs: a pre-push hook and a disabled push URL on every remote. It needs no
+  terminal, because it can only tighten; it changes nothing on a second run; and it refuses rather
+  than overwrite another hook manager's `core.hooksPath`. It fixes the gap behind #280. A
+  repository whose operator answered "block pushes" during `spell update` was recorded as blocked
+  but was not blocked, nothing said so, and no command could fix it short of reinstalling. Undo it
+  with `spell unblock-push`, from a terminal, as before.
+- **Flags for every setup question** on `spell init` and `spell update`: `--role`,
+  `--tracking-mode`, `--external-provider`, `--content-sensitivity`, `--push-policy` and
+  `--subject-root` (#282). AI coding harnesses have no interactive terminal, and they can now finish
+  setup by passing the answers.
+  - A flag may set an unanswered question, or tighten `--push-policy`.
+  - It never loosens a push policy, and it never silently overwrites an answer already given.
+  - Without a terminal, the skip message now prints the exact flags to re-run with.
+- **`spell doctor` warns about unfilled placeholders** in active governance documents, without
+  failing (#277, ARC-051).
+  - Tokens meant to be resolved at runtime are listed once, in `spell-authoring-standards.md`.
+  - The two documents meant to be filled in by hand are now `status: template`.
+  - A fresh install produces no warnings.
+- **An optional `idea_tags` field in `.arcane.json`** (#261). It declares the vocabulary
+  `spell-save-idea` infers tags from; `extend` adds to today's inference, `replace` restricts to the
+  list.
+
+### Changed
+
+- **`spell update` now says what a recorded push policy means.** Recording `blocked` prints that it
+  is not yet enforced and names `spell block-push`; recording `guarded` explains what guarded does.
+  The update itself still installs nothing (ARC-049).
+- **Every spell that pushes reads `push_policy` first** (#280): `spell-commit-work`,
+  `spell-create-pull-request`, `spell-ship`, `spell-sync-pull-request` and `spell-close-session`.
+  - Under `guarded` the spell asks before pushing; in an unattended run it does not push, and
+    reports the pending push instead.
+  - Under `blocked` it does not try, and says why.
+  - `git-conventions.md` gains the "Push safety" section that `universal-agent-rules.md` already
+    pointed at.
+- **The tracking question pre-selects Azure DevOps when a remote is on `dev.azure.com` or
+  `*.visualstudio.com`** (#278), as the spells already documented. Each option now says what it
+  changes.
+
+### Fixed
+
+- **`spell-manifest` asked for disclosure consent on only some public destinations** (#262). A PRD
+  scaffold written into a public repository skipped the per-entry consent every other public
+  destination required. The gate now keys on whether the destination repository is public,
+  whatever the route. Tags are also named explicitly as scanned text (#261).
+- **A halted pre-PR rebase could produce a PR with an empty description** (#269).
+  - `spell-commit-work` now writes the PR body before rebasing.
+  - Both PR paths rebase with `--autostash`.
+  - Both refuse to create a PR whose body is missing or empty.
+
 ## [1.5.1] - 2026-09-13
 
 Three fixes, each found by running Arcane against real consumer repositories rather than by reading the code: a spell retired from the registry can finally be removed, `spell doctor` takes about half the time it used to, and `spell update` stops reporting its own manifest as modified on a Windows checkout.
