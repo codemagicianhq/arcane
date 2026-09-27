@@ -149,6 +149,18 @@ Rules:
    - Timeout, cancellation, fallback, or delegated response is not approval. Print the visible authorization downgrade and halt without committing.
 
    c. **Push and open a PR through `spell-commit-work` step 9, including its separate merge gate:**
+   - Run the push-policy check before the push. `spell-commit-work` step 9a runs the same check; run it once per push, not twice. It also governs step 10's remote branch deletions. If it stops the push, end the session with the commits local and report them in the PR Readiness section as not pushed.
+
+     <!-- fragment:push-policy-check:start -->
+     **Push-policy check (ARC-049) — before any push.** Read `push_policy` from the repository's `.arcane.json` at the repository root (a self-hosted source repository with no root manifest keeps it in `src/assets/.arcane.json` when that file declares `selfHosted: true`). An absent file or an absent field means `open`. The check covers every push this spell makes: a branch push, a `--force-with-lease` push, and a remote branch deletion (`git push <remote> --delete <branch>`).
+     - **`open` or absent:** proceed with the push.
+     - **`guarded`:** before the push, state the policy ("This repository's push policy is `guarded`: every push needs your explicit confirmation."), name the remote, the branch and the kind of push, and ask the operator for explicit confirmation. Push only on an explicit operator confirmation of that push. A timeout, a cancellation, a delegated or host-generated response, or assent given to something else is not confirmation. **In an autonomous run with no operator to ask, do not push:** report the push as pending operator confirmation, naming the branch and the commits it would carry. This fails closed.
+     - **`blocked`:** do not attempt the push. Say why: the repository's push policy is recorded as `blocked`, so pushes are refused on purpose. Name `spell unblock-push` as the only way to lift it, run by the operator from an interactive terminal. Never run it yourself, and never work around the block (`--no-verify`, another remote or URL, editing git config or `.arcane.json`).
+     - **Any other value, or a `.arcane.json` that cannot be parsed:** do not push. Report what was found and suggest `spell doctor`.
+     - When a push does not happen, skip every step that depends on it (opening or updating a PR, remote branch cleanup) and report the commits as committed locally and not pushed.
+     - Enforcement: structured spell gate (ARC-023) — for `guarded`, this check is the only thing that holds a push for confirmation. A `blocked` push is also refused by the pre-push hook and the sentinel push URL that `spell init` or `spell block-push` install, and `spell doctor` reports a `blocked` policy whose controls are missing.
+     <!-- fragment:push-policy-check:end -->
+
    - Commit approval is not merge approval.
    - Never invoke merge, auto-complete, or `--status completed` below loader-validated Magus authority.
    - Missing/invalid authority visibly downgrades to PR creation only and requires human completion.

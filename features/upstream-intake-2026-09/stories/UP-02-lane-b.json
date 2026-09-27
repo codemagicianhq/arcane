@@ -25,9 +25,9 @@
         "new test asserts each of the five spells contains the fragment and names both behaviours"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up02-b-push-policy.test.ts 30/30 pass (fragment content + per-spell: marker pair, fully expanded, both behaviours, check precedes the push, root copy matches); check:self-host-parity passes with the fragment expanded in all 5 spells (327 items); check:citations, check:adr-references, check:stale-claims (7 advisory hits, baseline) and npm run build pass; 33 related existing test files still pass"
     },
     {
       "id": "UP02-B-03",
