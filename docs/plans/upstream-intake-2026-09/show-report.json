@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 2,
+  "program": {
+    "id": "upstream-intake-2026-09",
+    "slug": "upstream-intake-2026-09",
+    "title": "Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves",
+    "status": "active",
+    "baseline": "2b01daf (main)",
+    "started": "2026-09-27",
+    "versionSpan": {
+      "from": "1.5.1",
+      "to": "1.5.1"
+    }
+  },
+  "masthead": {
+    "eyebrow": "Show Report",
+    "title": "Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves",
+    "dek": "active — 0 of 6 epics shipped"
+  },
+  "stats": [
+    {
+      "id": "epics",
+      "value": "0/6",
+      "label": "epics shipped",
+      "derived": true
+    },
+    {
+      "id": "prs",
+      "value": 0,
+      "label": "pull requests",
+      "derived": true
+    },
+    {
+      "id": "version-span",
+      "value": "1.5.1 → 1.5.1",
+      "label": "version span",
+      "derived": true
+    },
+    {
+      "id": "adrs",
+      "value": 0,
+      "label": "ADRs accepted",
+      "derived": true
+    }
+  ],
+  "needsYou": [
+    {
+      "id": "Q-001",
+      "title": "Merge UP-00",
+      "reason": "The merge *is* the grant. Nothing in this plan authorizes autonomous work until it lands,"
+    },
+    {
+      "id": "Q-003",
+      "title": "Accept, revise, or reject the UP-01 ADRs",
+      "reason": "Accepting an ADR is never within any delegation in this repository. UP-02 cannot start"
+    },
+    {
+      "id": "Q-004",
+      "title": "Probe: does the client drop user messages on resume? (#267)",
+      "reason": "#267's premise is client behaviour no source file can confirm. If it does not reproduce,"
+    },
+    {
+      "id": "Q-005",
+      "title": "Probe: does fenced Mermaid render in Claude Code's chat pane? (#270)",
+      "reason": "ARC-036 claims rendering surfaces that nobody has verified; #270 says Claude Code shows"
+    },
+    {
+      "id": "Q-006",
+      "title": "Make the Show Report theme change in `arcane-ui` (#271)",
+      "reason": "A local edit here would be silently dropped at the next re-vendor (decided 2026-09-27:"
+    }
+  ],
+  "sections": [
+    {
+      "id": "wave-1",
+      "title": "Epics",
+      "rows": [
+        {
+          "id": "UP-00",
+          "title": "Plan, PRD, queue and delegation",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "UP-01",
+          "title": "Decisions: ADR drafts, probes, and the ARC-036 correction",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "UP-02",
+          "title": "Wave 1: safety and setup",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "UP-03",
+          "title": "Wave 2: registry deltas, idea lifecycle, and session spells",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "UP-04",
+          "title": "Wave 3: Show Report theme and the needs-you sweep",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        },
+        {
+          "id": "UP-05",
+          "title": "Close",
+          "description": null,
+          "descriptionState": "unwritten",
+          "category": "process",
+          "refs": []
+        }
+      ]
+    }
+  ],
+  "parked": [],
+  "cast": [
+    {
+      "name": "claude",
+      "commits": 2,
+      "source": "commit-trailer"
+    }
+  ],
+  "provenance": {
+    "sources": [
+      "docs/plans/upstream-intake-2026-09/PLAN.md",
+      "docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md",
+      "docs/verification-ledger.md"
+    ],
+    "compiledAt": "2026-09-27",
+    "templateVersion": "v0-interim"
+  }
+}
