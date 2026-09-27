@@ -135,6 +135,36 @@ describe("spell init — push_policy blocked (interactive answer)", () => {
     expect(fixtureGit(work, ["config", "--get", "core.hooksPath"])).toBe(".husky/_");
   }, VERY_HEAVY_TEST_TIMEOUT);
 
+  it("--push-policy blocked (scripted, no prompts) installs exactly what the interactive answer installs", async () => {
+    const interactive = await repoWithRemote();
+    answer("blocked");
+    await runInit({}, interactive.work, ASSETS_DIR, "0.1.0");
+
+    const scripted = await repoWithRemote();
+    selectMock.mockReset();
+    confirmMock.mockReset();
+    await runInit({ profile: "lite", manifestFlags: { pushPolicy: "blocked" } }, scripted.work, ASSETS_DIR, "0.1.0");
+    expect(selectMock).not.toHaveBeenCalled();
+    expect(confirmMock).not.toHaveBeenCalled();
+
+    const pushControls = (repo: { work: string; bare: string }): string =>
+      spawnSync("git", ["config", "--local", "--list"], { cwd: repo.work, encoding: "utf-8" })
+        .stdout.split("\n")
+        .filter((line) => /^core\.hookspath=|^remote\./i.test(line))
+        .map((line) => line.replaceAll(repo.work, "<work>").replaceAll(repo.bare, "<bare>"))
+        .sort()
+        .join("\n");
+    expect(pushControls(scripted)).toBe(pushControls(interactive));
+    expect(pushControls(scripted)).toContain("arcane-push-blocked");
+    const hook = (work: string) => fs.readFile(join(work, ".arcane", "hooks", "pre-push"), "utf-8");
+    expect(await hook(scripted.work)).toBe(await hook(interactive.work));
+    const manifest = JSON.parse(await fs.readFile(join(scripted.work, ".arcane.json"), "utf-8")) as ArcaneManifest;
+    expect(manifest.push_policy).toBe("blocked");
+    expect(pushes(scripted.work)).toBe(false);
+    expect(pushes(scripted.work, ["--no-verify", "origin", "main"])).toBe(false);
+    expect(spawnSync("git", ["rev-parse", "--verify", "main"], { cwd: scripted.bare }).status).not.toBe(0);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
   it("open installs the closed-PR warning hook instead, and pushes still work", async () => {
     const { work } = await repoWithRemote();
     answer("open");

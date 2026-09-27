@@ -61,9 +61,9 @@
         "`init --push-policy blocked` installs the controls exactly as the interactive answer does"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up02-a-flags.test.ts (21, real git; 3 spawn the built CLI with no TTY): init --profile lite --tracking-mode internal --push-policy guarded records both, no prompt; update --push-policy open on blocked -> exit 1 naming spell unblock-push, manifest byte-identical; invalid value -> exit 1 with ManifestInvalidFieldError text; non-TTY update prints exact flag line; conflicts, same-value no-op, tighten+ARC-049 notice with no install, up-to-date and dry-run paths. up02-a-init-push-policy: --push-policy blocked config+hook identical to interactive answer, real push refused. init/hub-retrofit/update/lifecycle/manifest suites green"
     },
     {
       "id": "UP02-A-05",
