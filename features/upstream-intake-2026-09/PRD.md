@@ -6,8 +6,9 @@ tracking:
   external_provider: null
   adoWorkItemId: null
   githubIssueId: null
-status: draft
+status: accepted
 created: 2026-09-27
+accepted: 2026-09-27 (all decision defaults, OPERATOR-QUEUE.md Q-002)
 program: docs/plans/upstream-intake-2026-09/PLAN.md
 ---
 
@@ -336,7 +337,6 @@ Every requirement names the issue(s) it closes. Wave and lane assignment is in
 
 ## Open Questions
 
-- Q-002 is the single review point for D-01…D-16; nothing below D-12/D-14 (already decided) starts
-  until it is answered.
-- Whether the three code waves ship as three minors (recommended) or the operator prefers another
-  numbering — recorded in Q-002.
+- **Answered 2026-09-27:** Q-002 — all decision defaults accepted, including three minors for the
+  three code waves and R-UP03-A3 staying in scope. ADR-routed decisions still need Q-003.
+- Open: Q-003 (ADR acceptance), Q-004 and Q-005 (probes), Q-006 (arcane-ui change).
