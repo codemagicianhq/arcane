@@ -34,6 +34,7 @@ import {
   ManifestFlagError,
 } from "../modules/hub.js";
 import { merge3 } from "../modules/merge3.js";
+import { findTrackedRetirements, formatRegistryChanges } from "../modules/registry-changes.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
 import {
@@ -885,6 +886,12 @@ export async function runUpdate(
     if (!options.prune) {
       console.log("  Run `spell update --prune` to remove the ones that are safe to delete.");
     }
+  }
+
+  // PRD D-15: read from the manifest as it was, before migration renamed
+  // any legacy entry away.
+  for (const line of formatRegistryChanges({ retired: findTrackedRetirements(manifest.components) })) {
+    console.log(line);
   }
 
   // ARC-045 / CS-03: one summary for every customized client shim, in both
