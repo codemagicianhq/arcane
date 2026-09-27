@@ -213,6 +213,36 @@ Arcane's own repository, a test (`test/up02-d-runtime-placeholders.test.ts`) fai
 `status: active` governance document uses a token that is not in this list. Whether an agent actually
 resolves a listed token from the named source is explicitly advisory prose: no check exercises it.**
 
+## Required operator actions: the `Needs you` block
+
+Some runs end with an action only the operator can take: approving or merging a pull request,
+accepting a decision record, answering a question the work is waiting on, confirming a `guarded`
+push, running an interactive command such as `spell unblock-push`, or a step on an external platform
+the agent cannot reach. Listed among optional next steps, such an action gets skimmed past. A spell
+whose output can carry one reports it in one fixed block instead:
+
+- **One fixed heading,** `## ⚠ Needs you`, at the very top of the final report, before every other
+  section and before any optional next step.
+- **One line per action:** exactly what to do, then why the agent cannot do it itself.
+- **Never only among optional steps:** an action required for correctness may be repeated under next
+  steps or suggestions, but it always appears in the block.
+- **Omitted when empty:** when nothing needs the operator, the block is left out entirely, never
+  printed as an empty heading or a "None" line.
+
+The block's wording lives in one shared prose fragment (ARC-039), `needs-you`, kept in Arcane's
+source under `.arcane/spells/_fragments/` and never shipped on its own. A spell carries it as a
+`<!-- fragment:needs-you:start -->` / `<!-- fragment:needs-you:end -->` marker pair placed where the
+spell describes its final output or report, and `npm run fix:self-host-parity` expands the fragment
+between the markers. Edit the fragment, never an expanded copy, and never restate its rules by hand
+in a spell body.
+
+**Enforcement: executable check (ARC-023) for the wording — in Arcane's own repository,
+`npm run check:self-host-parity` fails CI when a spell's expanded span differs from the fragment, and
+a test (`test/up04-b-needs-you.test.ts`) fails when the fragment loses its heading, placement or
+omit-when-empty rule, or when a spell in the chosen set loses its span. Which spells carry the span
+is decided by an author's judgment, and whether an agent actually emits the block is explicitly
+advisory prose: no check reads a spell's output.**
+
 ## How to audit a spell
 
 For each dimension, score Bronze/Silver/Gold with one line of evidence. Record the overall (weakest)
