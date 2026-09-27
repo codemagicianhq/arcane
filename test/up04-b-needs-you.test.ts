@@ -133,3 +133,98 @@ describe("spell-authoring-standards documents the convention (UP04-B-01)", () =>
         expect(section()).not.toMatch(/\{[A-Z][A-Z0-9_]*\}/);
     });
 });
+
+// UP04-B-02: the fragment is expanded into every spell whose output can carry
+// an action only the operator can take. Each entry names the output/report
+// text the span must follow (it sits where the spell describes its final
+// report) -- see the story's testEvidence for why each spell is in or out.
+const CHOSEN: Record<string, string> = {
+    "spell-open-session": "Then produce output in this exact structure:",
+    "spell-close-session": "Output format:\n",
+    "spell-commit-work": "Output format after execution:",
+    "spell-create-pull-request": "## Step 6 — Report",
+    "spell-sync-pull-request": "## Step 6 — Report",
+    "spell-address-review": "4. Print a summary table of actions taken",
+    "spell-ship": "6. **Generate ship report**:",
+    "spell-full-cycle": "3. Generate the ship report",
+    "spell-review": "8. **Present findings**",
+    "spell-review-batch": "## Step 4 — Output",
+    "spell-architect": "8. **Present for review**",
+    "spell-plan": "7. **Present for review**",
+    "spell-scope": "### 9. Present and Confirm",
+    "spell-adopt-docs": "## Phase 4 — Report",
+    "spell-make-discoverable": "## Phase 6 — Report",
+};
+
+/** Evaluated and left out on purpose (reasons recorded in UP04-B-02's testEvidence). */
+const EXCLUDED = [
+    "spell-arcane-version",
+    "spell-bump",
+    "spell-eas-store-deploy",
+    "spell-implement",
+    "spell-product-review",
+];
+
+const START = `<!-- fragment:${FRAGMENT}:start -->`;
+const END = `<!-- fragment:${FRAGMENT}:end -->`;
+const ROOT_SPELLS = join(process.cwd(), ".arcane", "spells");
+const OTHER_FRAGMENTS = ["push-policy-check", "tracking-mode-declaration"];
+
+describe.each(Object.keys(CHOSEN))("%s carries the needs-you block (UP04-B-02)", (id) => {
+    let content: string;
+    let root: string;
+
+    beforeAll(async () => {
+        content = await readFile(join(SPELLS, `${id}.md`), "utf8");
+        root = await readFile(join(ROOT_SPELLS, `${id}.md`), "utf8");
+    });
+
+    it("has exactly one marker pair", () => {
+        expect(referencesFragment(content, FRAGMENT)).toBe(true);
+        expect(content.split(START)).toHaveLength(2);
+        expect(content.split(END)).toHaveLength(2);
+    });
+
+    it("is fully expanded (re-expanding changes nothing)", () => {
+        expect(expandFragment(content, FRAGMENT, fragment)).toBe(content);
+        expect(content).toContain("## ⚠ Needs you");
+    });
+
+    it("places the span where the spell describes its final output", () => {
+        const anchor = content.indexOf(CHOSEN[id]!);
+        expect(anchor).toBeGreaterThan(-1);
+        expect(content.indexOf(START)).toBeGreaterThan(anchor);
+    });
+
+    it("never nests the span inside another fragment's span", () => {
+        const start = content.indexOf(START);
+        const end = content.indexOf(END);
+        for (const other of OTHER_FRAGMENTS) {
+            const oStart = content.indexOf(`<!-- fragment:${other}:start -->`);
+            const oEnd = content.indexOf(`<!-- fragment:${other}:end -->`);
+            if (oStart === -1) continue;
+            const inside = start > oStart && start < oEnd;
+            const contains = oStart > start && oStart < end;
+            expect(inside || contains).toBe(false);
+        }
+    });
+
+    it("root copy matches the canonical source", () => {
+        expect(root).toBe(content);
+    });
+});
+
+describe("the chosen set is deliberate (UP04-B-02)", () => {
+    it("every canonical spell carrying the span is in the chosen set, and no excluded spell carries it", async () => {
+        const { readdir } = await import("node:fs/promises");
+        const ids = (await readdir(SPELLS)).filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3));
+        const carrying: string[] = [];
+        for (const id of ids) {
+            const content = await readFile(join(SPELLS, `${id}.md`), "utf8");
+            if (referencesFragment(content, FRAGMENT)) carrying.push(id);
+        }
+        expect(carrying.sort()).toEqual(Object.keys(CHOSEN).sort());
+        for (const id of EXCLUDED) expect(ids).toContain(id);
+        for (const id of EXCLUDED) expect(carrying).not.toContain(id);
+    });
+});
