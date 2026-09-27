@@ -70,6 +70,32 @@ If the npm registry is unreachable, report:
 ℹ Could not reach npm registry — update check skipped.
 ```
 
+### Setup questions from an AI harness (no interactive terminal, PRD D-02 / #282)
+
+This spell itself stays read-only. If the operator then asks you to run `spell update`, note that a
+harness shell is not an interactive terminal. The CLI then skips every unanswered manifest question
+and prints ``! Skipped N manifest question(s) (<fields>) — no interactive terminal. Run `spell update` from a terminal, or answer by flags:``,
+followed by the exact line to re-run, such as
+`spell update --tracking-mode <internal|external> --push-policy <open|guarded|blocked>`.
+`spell init --profile <profile>` prints the same kind of `spell update` line when it leaves
+questions unanswered. Do not send the operator off to find a terminal. Instead:
+
+1. Ask the operator each skipped question through the harness's own question UI (a plain chat
+   question if the harness has none): one question per flag the CLI printed, offering exactly the
+   values that flag lists. The flags are `--role`, `--tracking-mode`, `--external-provider`,
+   `--content-sensitivity`, `--push-policy` and `--subject-root`. `--tracking-mode external` also
+   needs `--external-provider <ado|github|jira|other>`, so ask that too when the answer is
+   `external`.
+2. Re-run `spell update` with the flags the CLI printed, filled with the operator's answers, for
+   example `spell update --tracking-mode internal --push-policy guarded`.
+3. Never pass a flag the operator did not answer. No guessed, default or "recommended" value stands
+   in for an answer. An unanswered question stays unset: the next interactive run asks it, and the
+   next harness run reports it skipped again.
+4. Never loosen `push_policy` by flag. `--push-policy` only answers an unset question or tightens a
+   recorded policy, and the CLI refuses a loosening. Moving a repository from `blocked` or `guarded`
+   toward `open` is only ever `spell unblock-push`, which the operator runs from an interactive
+   terminal (ARC-034 decision 6, ARC-049 decision 6). Tell them so; do not try to run it for them.
+
 ## Step 3 — Component Detail (optional)
 
 Only include this section when the user passed "components" as the prompt argument.
