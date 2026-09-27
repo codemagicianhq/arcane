@@ -26,9 +26,9 @@
         "new test asserts each"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-b",
-      "testEvidence": null
+      "testEvidence": "test/up03-b-todo-prune.test.ts 17/17 pass; parity, citations, adr-references, stale-claims pass; existing tests naming spell-todo pass (prompt-tracking {BUSINESS_ROOT} count still 6); no completed-items ledger: records-conventions.md has no home for one"
     },
     {
       "id": "UP03-B-03",
