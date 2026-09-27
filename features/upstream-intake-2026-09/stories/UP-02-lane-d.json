@@ -39,9 +39,9 @@
         "doctor test: declared-but-not-enforced remedy names `spell block-push`"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-d",
-      "testEvidence": null
+      "testEvidence": "test/doctor-placeholders.test.ts 7/7 (unknown token -> [warn], exit code equal to clean run; listed token + template doc silent; missing standard -> [skip]; declared-but-not-enforced names spell block-push); fresh full install + dist doctor -> placeholder check pass"
     },
     {
       "id": "UP02-D-04",

@@ -33,6 +33,7 @@ import {
   evaluateGitHubMergePolicy,
   evaluateAdoMergePolicy,
 } from "../modules/platform-policy.js";
+import { scanGovernancePlaceholders, PLACEHOLDER_STANDARD_FILE } from "../modules/placeholders.js";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -43,6 +44,12 @@ interface CheckResult {
   message: string;
   /** If false, this is a warning, not a blocker. Defaults to true (blocking). */
   blocking?: boolean;
+  /**
+   * The check could not run here (e.g. what it reads is not installed). Shown
+   * as "skip" with its message; never affects the exit code. Set only with
+   * `passed: true`.
+   */
+  skipped?: boolean;
 }
 
 // ─── Runtime validation helpers ───────────────────────────────────────────────
@@ -505,7 +512,56 @@ export async function checkPushPolicy(targetDir: string): Promise<CheckResult> {
     name,
     passed: false,
     blocking: false,
-    message: `declared "blocked" but not enforced — ${missing.join("; ")}. The manifest claims a protection this repository does not have.`,
+    // ARC-049 decision 3: name the command that closes the gap.
+    message: `declared "blocked" but not enforced — ${missing.join("; ")}. The manifest claims a protection this repository does not have. Run \`spell block-push\` to install the controls.`,
+  };
+}
+
+/**
+ * ARC-051 decision 4 (#277). Warns -- never fails -- on a `{UPPER_SNAKE}`
+ * token in a `status: active` installed governance document that is neither
+ * in spell-authoring-standards.md's runtime-placeholders list nor in a
+ * `status: template` document. Every unknown token is named with its file.
+ * Skipped when the standard (or its list) is not installed, since without
+ * the list every token would read as unknown.
+ */
+export async function checkGovernancePlaceholders(targetDir: string): Promise<CheckResult> {
+  const name = "Governance placeholders (ARC-051)";
+  let scan;
+  try {
+    scan = await scanGovernancePlaceholders(join(targetDir, ".arcane", "governance"));
+  } catch (err) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message: `could not scan .arcane/governance (${err instanceof Error ? err.message : String(err)})`,
+    };
+  }
+
+  if (scan.status === "skipped") {
+    return { name, passed: true, blocking: false, skipped: true, message: `skipped — ${scan.reason}` };
+  }
+
+  if (scan.findings.length === 0) {
+    return {
+      name,
+      passed: true,
+      blocking: false,
+      message: `${scan.activeDocs.length} active doc(s) scanned, no unknown placeholders`,
+    };
+  }
+
+  const listed = scan.findings.map(({ file, tokens }) => `.arcane/governance/${file}: ${tokens.join(", ")}`);
+  return {
+    name,
+    passed: false,
+    blocking: false,
+    message:
+      `unknown placeholder(s) in status: active doc(s) — ${listed.join("; ")}. ` +
+      `Fill each one in; or, if an agent resolves it at use time, add it to the runtime-placeholders list in ` +
+      `.arcane/governance/${PLACEHOLDER_STANDARD_FILE}; or, if the document is meant to be filled in by hand, ` +
+      "mark it `status: template`.",
   };
 }
 
@@ -857,6 +913,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkMcpConfig(targetDir),
     checkUserTier(resolveHomeDir(), options.packageVersion),
     checkSpellScope(targetDir),
+    checkGovernancePlaceholders(targetDir),
   ]);
 
   // Add session continuity checks
@@ -866,14 +923,17 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
   let allPassed = true;
 
   for (const result of results) {
-    const icon = result.passed ? "✓" : result.blocking === false ? "⚠" : "✗";
-    const label = result.passed
-      ? "pass"
-      : result.blocking === false
-        ? "warn"
-        : "FAIL";
+    const skipped = result.passed && result.skipped === true;
+    const icon = skipped ? "–" : result.passed ? "✓" : result.blocking === false ? "⚠" : "✗";
+    const label = skipped
+      ? "skip"
+      : result.passed
+        ? "pass"
+        : result.blocking === false
+          ? "warn"
+          : "FAIL";
     console.log(`  ${icon} [${label}] ${result.name}`);
-    if (!result.passed) {
+    if (!result.passed || skipped) {
       console.log(`         ${result.message}`);
     }
     if (!result.passed && result.blocking !== false) {

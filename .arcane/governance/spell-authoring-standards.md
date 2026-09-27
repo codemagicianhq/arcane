@@ -206,10 +206,12 @@ where it resolves from. The list is read by machine, so keep it between the two 
 - `{THE_REAL_VALUE}` — a secret's real value in an uncommitted `.env` example: the operator's secret store; never a committed file.
 <!-- runtime-placeholders:end -->
 
-**Enforcement: executable check (ARC-023) — a test (`test/up02-d-runtime-placeholders.test.ts`) fails
-when a shipped `status: active` governance document uses a token that is not in this list. Whether an
-agent actually resolves a listed token from the named source is explicitly advisory prose: no check
-exercises it.**
+**Enforcement: executable check (ARC-023) — in an installed repository, `spell doctor` warns (never
+fails; the exit code is unchanged) on each token in a `status: active` `.arcane/governance/` document
+that is not in this list, naming the file; it skips the check when this list is not installed. In
+Arcane's own repository, a test (`test/up02-d-runtime-placeholders.test.ts`) fails when a shipped
+`status: active` governance document uses a token that is not in this list. Whether an agent actually
+resolves a listed token from the named source is explicitly advisory prose: no check exercises it.**
 
 ## How to audit a spell
 
