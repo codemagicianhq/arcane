@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.8.0] - 2026-09-27
+
+A spell that ends with something only you can do now says so at the top of its final report, and the
+next session reminds you. This is the third code wave of the Upstream Intake 2026-09 program.
+
+### Added
+
+- **A `## ⚠ Needs you` block at the top of final reports (#266).** Fifteen spells that can end with an
+  operator-only action (a merge, a decision record to accept, a guarded push to confirm,
+  `spell unblock-push`, a question the work waits on) now list each one in this block, one line per
+  action: what to do, then why the agent can't do it. The block is left out when nothing needs you,
+  and a required action is never listed only under optional next steps. The rule is one shared
+  fragment, `_fragments/needs-you.md`, expanded into each spell, and is recorded in
+  `spell-authoring-standards.md`. It is advisory prose: no check reads a spell's actual output.
+- **The session handoff carries it forward.** `spell-close-session`'s handoff gains a `Needs you`
+  field. `spell-open-session` shows those items first, above "Picking Up From Last Session", and
+  keeps the handoff unconsumed until every item has been shown. A handoff written before the field
+  existed is read as having none.
+
 ## [1.7.0] - 2026-09-27
 
 `spell update` now explains what changed in the registry since you installed. Every profile gets a
