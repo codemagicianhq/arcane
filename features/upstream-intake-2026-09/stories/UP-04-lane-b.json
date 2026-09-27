@@ -14,9 +14,9 @@
         "test asserts the fragment's heading, placement and omit-when-empty rules"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up04-lane-b",
-      "testEvidence": null
+      "testEvidence": "New fragment src/assets/.arcane/spells/_fragments/needs-you.md (heading `## ⚠ Needs you`, top of the final report before optional steps, one line per action, never only among optional steps, omitted when empty, early-stop reports, ARC-023 advisory annotation). New section 'Required operator actions: the `Needs you` block' in spell-authoring-standards.md with an ARC-023 enforcement annotation. test/up04-b-needs-you.test.ts 14/14 pass; mutation check (deleting the placement and omit rules) failed 2 tests as intended, then restored. fix/check:self-host-parity pass (328 items; fragment is picked up from _fragments/ automatically, no spell references it until UP04-B-02); check:citations output identical to base; check:adr-references pass; check:stale-claims exit 0; related tests (spell-compiler, user-tier, up02-b-*, up02-d-*, doctor-placeholders, cicd-fail-safe-path-filters) 189/189 pass."
     },
     {
       "id": "UP04-B-02",
