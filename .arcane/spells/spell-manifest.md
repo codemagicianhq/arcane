@@ -30,6 +30,18 @@ Parse `status: new` entries from the hub root `IDEAS.md` and every `{BUSINESS_RO
 
 Tolerate operator YAML frontmatter above a book's header — entries always live below the `---` divider. Malformed entries (missing timestamp, unparseable status comment) are listed under a `Skipped` heading with `file:line`, never silently dropped.
 
+**Status-comment grammar.** A status comment is `<!-- status: <state>[; <key>: <value>]... -->`. The first field is the status itself, unchanged from before: `new`, `promoted → <dest> YYYY-MM-DD`, or `dropped YYYY-MM-DD` with an optional `(reason)`. Zero or more `; <key>: <value>` fields may follow it. `spell-todo --sweep --validate` writes three of them: `value` and `fit` (each `y`, `n` or `?`) and `dup` (`none`, or a short reference). Both forms parse:
+
+```
+<!-- status: new -->
+<!-- status: new; value: y; fit: y; dup: none -->
+```
+
+- **Splitting:** split the comment body on `; ` only where the next segment starts with a lowercase `key: `. A `; ` anywhere else — inside a drop reason, say — stays part of the field it is in.
+- **Deciding `new`:** only the first field does. An entry is collected when that field is exactly `status: new`, with or without fields after it.
+- **Unknown fields:** an unknown key, or a known key with an unexpected value, is ignored and shown as-is. It never moves the entry to `Skipped`.
+- **Unparseable:** a comment is unparseable, and the entry goes to `Skipped`, only when it does not open with `status:` or is not closed with `-->`.
+
 ## Step 2 — List
 
 Print one numbered list, grouped by book, oldest entry first within each group. Numbering is session-scoped — it does not persist across runs.
@@ -44,6 +56,8 @@ ventures/ordovica/IDEAS.md
 ventures/ordovica/TODO.md
   3. [ ] Confirm cart snapshot order (open item, no status comment — todo-book entries are listed as-is)
 ```
+
+An entry whose status comment carries validation fields (Step 1's grammar) shows them after its text — for example `(value: y, fit: n, dup: none)` — so that the operator can leave out `fit: n` entries, or ones marked as duplicates, when selecting in Step 3. An entry without them is listed exactly as before.
 
 ## Step 3 — Select
 
@@ -117,6 +131,8 @@ Any marker whose destination repository is public ends in ` (disclosed)` — whi
 **Tracker-id suffix.** When route (c) files a tracker item, append the new work item's id to the hub entry's text as a suffix — before its status comment — in the format [governance/development-methodology.md](../../.arcane/governance/development-methodology.md) defines once under "Tracker-ID Suffix on Captured Items" for that tracker's provider (`[AB#<id>]` Azure DevOps, `[#<id>]` GitHub, the issue key for Jira). Use only the id the create command returned. The promoted marker still names the repo (`github:<slug>#<id>`), which is what disambiguates a GitHub suffix inside a hub book. An entry that already carries a suffix keeps it unchanged wherever it lands. No tracker item filed means no suffix: entries routed without a tracker (and every internal-mode flow) are written exactly as before.
 
 Dropped entries get `<!-- status: dropped YYYY-MM-DD -->`, optionally with a trailing `(reason)`.
+
+Validation fields already in an entry's comment (Step 1's grammar) are kept after the new first field when it is marked, e.g. `<!-- status: dropped 2026-09-27; value: n; fit: y; dup: none -->`. An entry without them gets exactly the marker above.
 
 Before any downstream write, grep the target file for the entry's normalized first ~40 characters — if already present, treat this entry as already-landed, mark the hub entry promoted, and skip the write. This is what makes an interrupted or re-run batch safe.
 

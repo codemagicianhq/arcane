@@ -17,14 +17,17 @@ agent: agent
 
 ---
 
-Resolve `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field (default `ventures/` if unset) before either mode below.
+Resolve `{BUSINESS_ROOT}` from `.arcane.json`'s `business_root` field (default `ventures/` if unset) before any mode below.
 
 ## Sweep Mode (`--sweep`)
 
 If the argument is (or starts with) `--sweep`, skip every other step in this spell entirely and run this instead:
 
-- **In a hub repo:** report `status: new` counts and oldest-entry age for the hub root `TODO.md` plus every `{BUSINESS_ROOT}/<slug>/TODO.md` that exists. Group by book, point at `spell-manifest` for entries ready to promote. Report-only — no edits.
+- **In a hub repo:** report `status: new` counts and oldest-entry age for the hub root `TODO.md` plus every `{BUSINESS_ROOT}/<slug>/TODO.md` that exists. Group by book, point at `spell-manifest` for entries ready to promote. Report-only — no edits (the one exception is the opt-in `--validate` below).
 - **In a consumer repo:** report the same, for the repo-root `TODO.md` only (no venture books exist there).
+- **Idea books too:** report the same `status: new` counts for the idea books that sit beside those TODO books — the hub root `IDEAS.md` and each venture's own `IDEAS.md` in a hub, the repo-root `IDEAS.md` in a consumer repo. Still report-only.
+
+**Sweep scope is hub-local (PRD D-08).** The sweep reads only books and journals inside this repository: in a hub, the hub's TODO books, the hub's IDEAS books, and the hub's own `journal/`. **It never reads a consumer repo's clone — not even a registered clone on this machine.** In a consumer repo it reads only that repo's own root books and `journal/`. Reaching into other repositories would widen what this spell touches, a privacy and scope change nobody asked for.
 
 Output format:
 
@@ -33,7 +36,29 @@ Todo sweep — N books, M open items
 
 hub TODO.md               12 open, oldest 2026-07-14
 ventures/ordovica/TODO.md  3 open, oldest 2026-08-10
+hub IDEAS.md               5 new, oldest 2026-08-02
 ```
+
+### Idea validation (`--sweep --validate`, opt-in)
+
+Without `--validate`, the sweep never edits anything. With it, the sweep also asks two or three quick yes/no questions per idea entry, so that `spell-manifest` can later see which ideas are worth promoting. Capture itself (`spell-save-idea`) stays unchanged.
+
+1. **Candidates:** idea-book entries, within the hub-local scope above, whose status comment is `status: new` and does not yet carry a `value:` field. TODO-book items have no status comment and are not validated.
+2. **Ask, per entry** — show the entry's text and book, then ask:
+   - `value` — Is this valuable to the people who use what this repo builds? (`y` / `n` / `?`)
+   - `fit` — Does it belong here, rather than in another venture, another repo, or a consumer's own product? (`y` / `n` / `?`)
+   - `dup` — Does it duplicate an existing idea entry, TODO item or tracker issue? (`none`, or a short reference such as `#123` or `IDEAS.md 2026-08-02 14:10`; never containing `;` or `--`)
+
+   `skip` leaves the entry unanswered; `stop` ends the questions and goes on to the confirmation with what has been answered so far. **Nothing is written while the questions are being asked** — the answers are held until step 3.
+3. **One batch confirmation.** Print every change as `file:line`, the old comment, and the new one. Then ask once: `Write N status comments? (write / cancel)`. Only the operator's own literal `write` writes. A timeout, a cancellation, a host-generated fallback or ordinary conversational assent is not confirmation, and nothing is written. If a book changed since it was read, re-read it and confirm again. **Enforcement: structured spell gate (ARC-023) — answers are written only after the operator's single batch `write`; the check is agent-administered, not tool-verified.**
+4. **Write only the status comment.** The entry text, timestamp and tag stay untouched, and the books stay append-only. The answers are added as fields after the status. The grammar is `spell-manifest`'s Step 1 "Status-comment grammar", which reads both forms:
+
+   ```
+   <!-- status: new -->                                  before
+   <!-- status: new; value: y; fit: y; dup: none -->     after
+   ```
+
+   Update `last_updated` in the frontmatter of every touched book. Do not commit; hand off to `spell-commit-work`.
 
 ## Prune Mode (`--prune`)
 
