@@ -152,7 +152,8 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
     // today's behaviour exactly. NOTE: this only records the choice -- unlike
     // init, the retrofit does not install the hook or disable the push URL,
     // because an update should not silently start blocking pushes in a repo
-    // someone is mid-workflow in. doctor reports the gap instead.
+    // someone is mid-workflow in (ARC-034 decision 7). ARC-049 decision 2:
+    // update prints pushPolicyNotice() instead, naming `spell block-push`.
     ask: async () => {
       const push_policy = (await select({
         message: "Should this repository be allowed to push to a remote?",
@@ -167,6 +168,34 @@ export const MANIFEST_RETROFITS: ManifestRetrofit[] = [
     },
   },
 ];
+
+/**
+ * What `spell update` prints after it records a push_policy (ARC-049
+ * decision 2). Update never installs controls (ARC-034 decision 7), so a
+ * recorded "blocked" is not yet in force and must say so.
+ */
+export function pushPolicyNotice(policy: PushPolicy | undefined): string[] {
+  if (policy === "blocked") {
+    return [
+      "",
+      '  ! Required action: push_policy is now recorded as "blocked", but it is NOT enforced yet.',
+      "    `spell update` never installs push controls. Pushes from this repository still work",
+      "    until you run:",
+      "",
+      "      spell block-push",
+      "",
+    ];
+  }
+  if (policy === "guarded") {
+    return [
+      "",
+      '  push_policy is now recorded as "guarded". Nothing is installed for it: `spell doctor`',
+      "  reports it, and push-performing spells state the policy and ask before pushing.",
+      "",
+    ];
+  }
+  return [];
+}
 
 /**
  * Runs every retrofit question the installed manifest predates, in order.
