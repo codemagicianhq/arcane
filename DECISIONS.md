@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-09-12
+last_updated: 2026-09-27
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -75,11 +75,14 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-041](#arc-041--a-local-out-of-repo-supply-channel-for-the-org-token-privacy-denylist) | A Local, Out-of-Repo Supply Channel for the Org-Token Privacy Denylist | 2026-09-02 | Accepted   |
 | [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) | Show Report: Compiled-Template Distribution Model and Program Decisions | 2026-09-03 | Accepted   |
 | [ARC-043](#arc-043--show-report-rows-carry-no-emoji-category-selects-the-mark) | Show Report Rows Carry No Emoji: Category Selects the Mark | 2026-09-03 | Accepted   |
-| [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Proposed   |
+| [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) | Client Architecture: Files-First State Contract and a Local Presence Channel | 2026-09-06 | Accepted   |
 | [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) | One Spell Source, Thin Client Shims, and a User-Level Install Tier | 2026-09-09 | Accepted   |
 | [ARC-046](#arc-046--restore-based-spell-delivery-no-go-for-now-mechanism-retained) | Restore-Based Spell Delivery: No-Go for Now, Mechanism Retained | 2026-09-10 | Accepted   |
 | [ARC-047](#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) | Agents Are Roster-Rendered, Not Registry-Distributed, and Get a User Tier | 2026-09-11 | Accepted   |
 | [ARC-048](#arc-048--an-absent-spell_scope-means-repo-permanently-new-repositories-may-be-pre-selected) | An Absent `spell_scope` Means `repo`, Permanently; New Repositories May Be Pre-Selected | 2026-09-11 | Accepted   |
+| [ARC-049](#arc-049--enforcing-a-recorded-push-policy-after-init) | Enforcing a Recorded Push Policy After Init | 2026-09-27 | Accepted   |
+| [ARC-050](#arc-050--decision-number-allocation-across-parallel-sessions) | Decision-Number Allocation Across Parallel Sessions | 2026-09-27 | Accepted   |
+| [ARC-051](#arc-051--placeholder-taxonomy-for-governance-documents) | Placeholder Taxonomy for Governance Documents | 2026-09-27 | Accepted   |
 
 ---
 
@@ -1483,6 +1486,7 @@ One structural obstacle blocked all of it: every spell shipped inside a single `
 **Related:** [ARC-032](#arc-032--persisted-tracking-configuration-tracking_mode-and-external_provider-in-the-manifest), [ARC-033](#arc-033--docs-mode-subject-root-content-sensitivity-and-capability-scoped-spell-components) (the persist-once manifest contract this reuses; `content_sensitivity` is the adjacent, distinct concern)
 **Intake:** [EF-09](docs/intake/batch-001/EF-09.md)
 **Design:** [features/push-safety/PRD.md](features/push-safety/PRD.md), accepted by the operator 2026-08-23
+**Amended by:** [ARC-049](#arc-049--enforcing-a-recorded-push-policy-after-init) (decisions 4 and 7 — a recorded policy gains an enforcement command and a visible notice; `guarded` becomes visible where pushes happen)
 
 **Context:**
 
@@ -1616,7 +1620,7 @@ Binding the check continuously (a required status check re-evaluated on every pu
 **Reasoning:**
 
 - The values are already computed — a string template adds no model judgment and no new failure mode.
-- Markdown-native: renders in VS Code chat, GitHub, and Obsidian; degrades to readable fenced source in terminals; ADO wikis take the `:::mermaid` fence, keyed to `external_provider` (ARC-032).
+- Markdown-native: ~~renders in VS Code chat, GitHub, and Obsidian~~ **(overstated — corrected 2026-09-27, see the rendering matrix below)**; degrades to readable fenced source in terminals; ADO wikis take the `:::mermaid` fence, keyed to `external_provider` (ARC-032).
 - One referenced convention beats per-spell prescriptions (spell-authoring-standards D8); the guard preserves `spell-explain-concept`'s "don't use diagrams for simple definitions" restraint.
 - Differentiator: no other AI dev framework auto-visualizes its own governance, version, or session state.
 
@@ -1626,6 +1630,28 @@ Binding the check continuously (a required status check re-evaluated on every pu
 
 - Model-authored diagrams per spell — non-deterministic, drift-prone, and restates rule 8 across 36 files instead of referencing one convention.
 - Rendered images/SVG or a rendering service — breaks the markdown-native, no-lock-in pillar.
+
+**Correction (2026-09-27, [#270](https://github.com/codemagicianhq/arcane/issues/270); Upstream Intake 2026-09 UP-01):**
+the reasoning bullet above claimed rendering on surfaces nobody had observed. Where a fenced
+` ```mermaid ` block actually renders, stated only as strongly as the evidence allows:
+
+| Surface | What a fenced block shows | Evidence |
+|---|---|---|
+| Claude app, following a Claude Code cloud session | Raw text, with a copy button | **Verified** 2026-09-27 — observed by the operator ([OPERATOR-QUEUE.md Q-005](docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md#q-005--probe-does-fenced-mermaid-render-in-claude-codes-chat-pane-270)) |
+| Claude Code chat pane (IDE extension / CLI) | Raw text | Reported by #270; not observed here |
+| VS Code Copilot Chat | Rendered | Claimed by the original bullet; **unverified** |
+| GitHub markdown (files, PRs, issues) | Rendered | Documented by GitHub ("Creating diagrams"); not observed in this correction |
+| Obsidian | Rendered | Claimed by the original bullet; **unverified** |
+| Terminal | Readable fenced source | By construction — the block is plain text |
+| Azure DevOps wiki | Rendered via `:::mermaid` | Claimed by the original bullet; **unverified** |
+
+**The decision itself is unchanged.** Fenced Mermaid remains the only emission; no spell routes a
+diagram to a client-specific widget or artifact, because that would bind every diagram-emitting spell
+to one client's tools (PRD decision D-07,
+[features/upstream-intake-2026-09/PRD.md](features/upstream-intake-2026-09/PRD.md#decisions-recommended-defaults--operator-accepts-or-overrides-in-prd-review)).
+Where a surface shows raw text, the "degrades to readable fenced source" property is what the reader
+gets — which is why every generated diagram must stay readable as source. Cells marked unverified
+become verified only by a recorded observation, never by restating this table.
 
 ---
 
@@ -3133,5 +3159,188 @@ Three findings decide the first half, two of them verified in this repository ra
   it is a program whose first epic is the home-less-environment story, not a patch.
 - Rejected: inferring the preference from machine state (a store exists, therefore prefer it).
   Presence of a store says nothing about whether the *next* repository should depend on it.
+
+---
+
+## ARC-049 — Enforcing a Recorded Push Policy After Init
+
+**Date:** 2026-09-27
+**Status:** Accepted (2026-09-27, under the operator's pre-authorization in session: accepted as drafted provided it implements PRD decision D-01 without material deviation — [docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md Q-003](docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md#q-003--accept-revise-or-reject-the-up-01-adrs). The operator can still revise it before merging UP-01.)
+**Amends:** [ARC-034](#arc-034--push-safety-for-sensitive-repositories) decisions 4 and 7
+**Intake:** [#280](https://github.com/codemagicianhq/arcane/issues/280)
+**Design:** [features/upstream-intake-2026-09/PRD.md](features/upstream-intake-2026-09/PRD.md) decision D-01
+
+**Context:**
+
+#280 reported that `push_policy` is "collected but consumed nowhere". That is half right, verified
+against source on 2026-09-27. The CLI does read it: `init.ts` installs controls, `doctor.ts`'s
+`checkPushPolicy` verifies them, and `unblock-push.ts` and `uninstall.ts` honour them. No spell and
+no governance document reads it. `universal-agent-rules.md` cites "the push-safety controls in
+`git-conventions.md`", a section that does not exist.
+
+The part the issue did not report is worse. ARC-034 decision 7 has the `spell update` retrofit record
+the operator's answer without installing anything; `src/modules/hub.ts` says so ("unlike init, the
+retrofit does not install the hook"). Decision 7 relied on `spell doctor` to report the gap, and
+`update.ts` itself records that "nothing runs `spell doctor`". Nothing else closes the gap either:
+**no command other than `init` installs the controls**, and `spell init` on an initialized repository
+stops at "Already initialized". A repository whose operator answered "block pushes" during
+`spell update` is therefore recorded as `blocked`, is not blocked, is never told, and has no command
+that would block it short of uninstalling and re-running `init`.
+
+**Decision:**
+
+1. **`spell block-push` enforces `blocked`.** It installs exactly the controls `spell init` installs
+   for `push_policy: "blocked"`: the pre-push hook and the sentinel push URL on every remote
+   (ARC-034 decision 2). It applies the same refusals, so it refuses rather than clobbers a
+   `core.hooksPath` owned by another hook manager (decision 3), and it refuses when a push URL is
+   configured outside the repository. It is idempotent: on a repository already enforcing `blocked`
+   it reports that and changes nothing. It needs no interactive terminal, because it can only
+   tighten. It prints the way back out (`spell unblock-push`, from a terminal).
+2. **The retrofit still installs nothing mid-update (decision 7 stands), but it says so.** When
+   `spell update`'s retrofit records `blocked`, it prints a required-action notice: the policy is
+   recorded but not enforced, run `spell block-push`. When it records `guarded`, the notice says what
+   `guarded` does (reported by `spell doctor`, honoured by push-performing spells) and that there is
+   nothing to install.
+3. **`spell doctor`'s "declared but not enforced" finding names `spell block-push`** as its remedy.
+4. **`guarded` becomes visible where pushes happen.** Every spell that pushes
+   (`spell-commit-work`, `spell-create-pull-request`, `spell-ship`, `spell-sync-pull-request`,
+   `spell-close-session`) reads `push_policy` before pushing:
+   - under `guarded`, it states the policy and asks the operator before the push;
+   - under `blocked`, it does not attempt the push, says why, and names `spell unblock-push`.
+5. **`git-conventions.md` gains the "Push safety" section** `universal-agent-rules.md` already
+   points at: the three policies, the commands that set and enforce them, and which spells read them.
+6. **Unchanged: loosening stays interactive-only** (decision 6). No flag, no spell and no
+   non-interactive path may move a repository from `blocked` or `guarded` toward `open`.
+
+**Interpretations made while drafting, flagged for the operator (not treated as deviations):**
+
+- D-01 said `spell block-push` "installs exactly what `init` installs for `blocked`/`guarded`". For
+  `guarded`, `init` installs nothing, so the command's only meaningful target is `blocked`. Run on a
+  repository recorded as `open` or `guarded`, it records `blocked` and installs the controls. That is
+  a tightening done by explicit command, which D-02 already permits.
+- "Asks before pushing" under `guarded` has no operator to ask in an autonomous run. There the spell
+  does not push; it reports the pending push as needing the operator. This fails closed, the same way
+  the commit-authority rules already downgrade.
+
+**Consequences:**
+
+- A recorded `blocked` becomes enforceable in one command, and the operator learns at the moment of
+  answering that it is not yet in force.
+- Autonomous loops in a `guarded` repository will stop at every push. That is the point of
+  `guarded`, and it is why the notice explains it.
+
+**Rejected alternatives:**
+
+- **Install controls during the retrofit.** This reverses decision 7 and mutates git configuration in
+  the middle of an update the operator started for another reason.
+- **A notice alone.** It would point at a remedy that does not exist.
+
+**Naming impact:** `block-push` cleared with `spell-scry` on 2026-09-27. Verdict: **pass**.
+- Inward: the only hits are this program's own planning documents.
+- Outward: there is no existing `block-push` command.
+- Adjacent terms, not collisions:
+  - GitHub's secret-scanning "push protection", which also blocks pushes;
+  - GitHub's per-repository "push policy" setting, which limits branch and tag updates per push.
+- Sources: GitHub Docs, "Push protection" and "Managing the push policy for your repository";
+  git-scm, `git-push`.
+
+---
+
+## ARC-050 — Decision-Number Allocation Across Parallel Sessions
+
+**Date:** 2026-09-27
+**Status:** Accepted (2026-09-27, under the operator's pre-authorization in session: accepted as drafted provided it implements PRD decision D-04 without material deviation — [docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md Q-003](docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md#q-003--accept-revise-or-reject-the-up-01-adrs). The operator can still revise it before merging UP-01.)
+**Related:** [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work) (R4: shared sequences serialize "until re-derivation tooling … exists" — this is that tooling for decision numbers)
+**Intake:** [#264](https://github.com/codemagicianhq/arcane/issues/264)
+**Design:** [features/upstream-intake-2026-09/PRD.md](features/upstream-intake-2026-09/PRD.md) decision D-04
+
+**Context:**
+
+Decision records are numbered sequentially by whoever writes next.
+- `spell-close-session` step 3 says "Use the next sequential ADR number".
+- `decision-documentation-standard.md` says "Never renumber existing entries".
+- Nothing allocates, so two sessions on separate branches both take the next free number.
+- The collision surfaces at merge, or never, and cross-references point at the wrong decision.
+
+ARC-028 R4 already names this class ("shared sequences") and names re-derivation as the missing
+tooling. `spell-full-cycle` already ships the pattern for database migrations: it re-derives the
+sequence number from a fresh pull immediately before writing the file.
+
+**Decision:**
+
+1. **Fetch, then take the maximum.** Before allocating a decision ID, any spell that allocates one
+   fetches the trunk, when a usable remote exists (the same classification `spell-open-session`'s
+   Mutation Guard uses). It then allocates `max(highest ID on the local branch, highest ID on the
+   remote trunk) + 1`.
+2. **Local-only repositories allocate from the local maximum and say so** in the spell's output, so
+   the number is visibly unchecked against any other branch.
+3. **No reservation markers.** A committed "reserved" marker is itself an edit to the same shared
+   sequence, so it collides the same way.
+4. **A duplicate-ID check runs in an existing CI-run gate** in this repository and fails when two
+   decision headings share a number. It includes a negative fixture. The check matches the heading
+   pattern, not this repository's `ARC` prefix, so it stays reusable.
+5. **A program that drafts several decisions allocates them once**, at the start of the wave that
+   needs them, from the fetched trunk.
+
+**Consequences:**
+
+- Collisions between sessions that fetched in time disappear, and the rare remaining race (two
+  fetches before either push) is caught by CI instead of by a reader months later.
+- `decision-documentation-standard.md`'s "Never renumber existing entries" is unchanged and applies
+  to merged entries: when CI catches a collision, the branch that has not merged yet renumbers its
+  own entry.
+
+**Rejected alternatives:**
+
+- **Reservation marker** (see decision 3).
+- **A central allocator service:** new infrastructure for a markdown file.
+
+---
+
+## ARC-051 — Placeholder Taxonomy for Governance Documents
+
+**Date:** 2026-09-27
+**Status:** Accepted (2026-09-27, under the operator's pre-authorization in session: accepted as drafted provided it implements PRD decision D-05 without material deviation — [docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md Q-003](docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md#q-003--accept-revise-or-reject-the-up-01-adrs). The operator can still revise it before merging UP-01.)
+**Intake:** [#277](https://github.com/codemagicianhq/arcane/issues/277)
+**Design:** [features/upstream-intake-2026-09/PRD.md](features/upstream-intake-2026-09/PRD.md) decision D-05
+
+**Context:**
+
+#277 asked for a check that flags `{PLACEHOLDER}` tokens left in governance documents marked
+`status: active`. A scan of `src/assets/.arcane/governance/` on 2026-09-27 found about 40 such
+tokens in 12 active documents. They are mostly **intended**:
+- `spell-authoring-standards.md` makes `{UPPER_SNAKE}` the convention for org-specific values that
+  an agent resolves at use time from `.arcane.json` or PRD frontmatter;
+- nothing substitutes them at install.
+
+A few documents are different: they describe themselves as templates the operator fills in by hand
+(`agent-approved-paths.md`: "This is a **template**. Fill in your own …"; `naming-conventions.md`).
+A check that flags every token would fail every consumer on its first run. A check that flags none
+leaves the gap the issue describes.
+
+**Decision:**
+
+1. **Two kinds of placeholder.**
+   - *Runtime-resolved* tokens are resolved by an agent when the document is used. They are legal in
+     `status: active` documents.
+   - *Fill-in* slots must be replaced by the operator.
+2. **The runtime-resolved tokens are enumerated once**, in `spell-authoring-standards.md`. Any token
+   not in that list is "unknown".
+3. **Documents meant to be filled in by hand carry `status: template`,** and the check skips them.
+4. **`spell doctor` warns and never fails.** It names each unknown token in a `status: active`
+   document, with its file, as a non-blocking finding; the exit code is unchanged.
+5. **A fresh install of the version that ships this produces zero warnings.** The enumerated list
+   and the re-statused templates must cover everything Arcane itself distributes.
+
+**Consequences:**
+
+- A typo'd or forgotten token in an active document becomes visible, and the documented runtime
+  convention stays legal.
+- Re-statusing the template documents changes frontmatter only, not content.
+
+**Rejected alternatives:**
+
+- **Flag every token:** it fails every consumer on day one.
+- **Leave it undetected:** the reported gap stands.
 
 ---
