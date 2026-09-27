@@ -74,10 +74,14 @@ describe("UP03-A-02 — newly available, not installed (TODO: update never surfa
     vi.restoreAllMocks();
   });
 
+  // Both omitted components postdate a real governance-only install:
+  // compliance-standards was added later, and line-ending-baseline is #281's.
+  const PREDATES = ["compliance-standards", "line-ending-baseline"];
+
   it("lists a component the profile includes but the manifest lacks, with its exact `spell add` line, and installs nothing", async () => {
     await writeManifest(tmpDir, {
       profile: "governance-only",
-      components: installedProfile("governance-only", ["compliance-standards"]),
+      components: installedProfile("governance-only", PREDATES),
     });
     const spy = vi.spyOn(console, "log");
 
@@ -87,20 +91,23 @@ describe("UP03-A-02 — newly available, not installed (TODO: update never surfa
     expect(out).toContain('Newly available for your "governance-only" profile, not installed — nothing was added:');
     expect(out).toContain(`    compliance-standards — ${getComponent("compliance-standards").description}`);
     expect(spy).toHaveBeenCalledWith("      spell add compliance-standards");
-    // Exactly one component is missing, so exactly one `spell add` line.
-    expect(out.match(/spell add /g)).toHaveLength(1);
+    expect(spy).toHaveBeenCalledWith("      spell add line-ending-baseline");
+    // Exactly the missing components, one `spell add` line each.
+    expect(out.match(/spell add /g)).toHaveLength(2);
     expect(await exists(join(tmpDir, ".arcane/governance/compliance-standards.md"))).toBe(false);
+    expect(await exists(join(tmpDir, ".gitattributes"))).toBe(false);
     const after = await readManifestFile(tmpDir);
     expect(after.components.map((c) => c.name)).not.toContain("compliance-standards");
+    expect(after.components.map((c) => c.name)).not.toContain("line-ending-baseline");
   });
 
   it("is surfaced on a same-version run too, and by --dry-run", async () => {
     await writeManifest(tmpDir, {
       version: NEW_VERSION,
       profile: "governance-only",
-      components: installedProfile("governance-only", ["compliance-standards"], NEW_VERSION),
+      components: installedProfile("governance-only", PREDATES, NEW_VERSION),
     });
-    for (const c of installedProfile("governance-only", ["compliance-standards"])) {
+    for (const c of installedProfile("governance-only", PREDATES)) {
       for (const f of c.files) {
         await fs.mkdir(join(tmpDir, f, ".."), { recursive: true });
         await fs.copyFile(join(ASSETS_DIR, f), join(tmpDir, f));

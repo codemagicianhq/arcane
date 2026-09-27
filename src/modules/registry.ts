@@ -128,11 +128,22 @@ const COMPONENTS: RegistryComponent[] = [
   // non-dotfile path and mapped via sourceOverrides; see RegistryComponent.
   {
     name: "docs-baseline",
-    description: "Line-ending and binary-format baseline for document repositories (.gitattributes/.gitignore)",
-    files: [".gitattributes", ".gitignore"],
+    description: "Ignore baseline for document repositories (.gitignore)",
+    files: [".gitignore"],
+    sourceOverrides: {
+      ".gitignore": "docs-baseline/gitignore",
+    },
+    skipExisting: true,
+    initOnly: true,
+  },
+  // Split out of docs-baseline so every profile ships it (#281, PRD D-09);
+  // same asset source. See COMPONENT_FILE_MOVES for manifests written before.
+  {
+    name: "line-ending-baseline",
+    description: "Line-ending and binary-format baseline (.gitattributes): text normalizes to LF, binary formats are never rewritten",
+    files: [".gitattributes"],
     sourceOverrides: {
       ".gitattributes": "docs-baseline/gitattributes",
-      ".gitignore": "docs-baseline/gitignore",
     },
     skipExisting: true,
     initOnly: true,
@@ -553,6 +564,17 @@ export const REGISTRY_RETIREMENTS: readonly RegistryRetirement[] = [
     successors: LEGACY_MONOLITH_REPLACEMENTS,
     reason: "split in 0.18.0 into capability-scoped spells-* components; `spell update` migrates the entry itself",
   },
+];
+
+/**
+ * Files that moved from one live component to another. A manifest written
+ * before the move still lists them under `from`, where the registry no longer
+ * ships them -- so `spell update` would call them orphans. `update` re-homes
+ * them under `to` before doing anything else, keeping their recorded hashes,
+ * so a file is neither orphaned nor copied a second time.
+ */
+export const COMPONENT_FILE_MOVES: readonly { from: string; to: string; files: readonly string[] }[] = [
+  { from: "docs-baseline", to: "line-ending-baseline", files: [".gitattributes"] },
 ];
 
 export function getComponent(name: string): RegistryComponent {

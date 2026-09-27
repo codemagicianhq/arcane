@@ -117,10 +117,11 @@ describe("registry", () => {
 
       // agent-output-instructions ships alongside the real governance docs
       // deliberately (Copilot enforcement rules are process/PR governance in
-      // spirit, just not a .arcane/governance/ file) -- the only intentional
-      // addition beyond the derived set above.
+      // spirit, just not a .arcane/governance/ file) -- and line-ending-baseline
+      // ships in every profile (#281, PRD D-09). The only intentional
+      // additions beyond the derived set above.
       const extras = names.filter((name) => !realGovernanceComponentNames.includes(name));
-      expect(extras).toEqual(["agent-output-instructions"]);
+      expect(extras).toEqual(["agent-output-instructions", "line-ending-baseline"]);
     });
   });
 

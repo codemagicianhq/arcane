@@ -21,6 +21,7 @@ import {
   ComponentNotFoundError,
   SPELL_COMPONENT_NAMES,
   LEGACY_COMPONENT_MIGRATIONS,
+  COMPONENT_FILE_MOVES,
 } from "../modules/registry.js";
 import {
   MANIFEST_RETROFITS,
@@ -228,6 +229,56 @@ export function migrateLegacyComponents(components: InstalledComponent[]): Legac
   };
 }
 
+/**
+ * Re-homes tracked files that moved between two live components
+ * (COMPONENT_FILE_MOVES), keeping each file's recorded hash. Idempotent.
+ *
+ * The destination entry is created only when the source actually tracked a
+ * moved file. One that never did -- the operator's own file, preserved and
+ * never recorded -- leaves the destination uninstalled, so the
+ * newly-available report can offer it (or skip it, when the file is already
+ * there) instead of `update` claiming a component Arcane never wrote.
+ */
+export function moveComponentFiles(components: InstalledComponent[]): InstalledComponent[] {
+  let out = components;
+  for (const move of COMPONENT_FILE_MOVES) {
+    const from = out.find((c) => c.name === move.from);
+    const moving = from?.files.filter((f) => move.files.includes(f)) ?? [];
+    if (!from || moving.length === 0) continue;
+
+    const movedHashes: Record<string, string> = {};
+    const keptHashes: Record<string, string> = {};
+    for (const [file, hash] of Object.entries(from.fileHashes ?? {})) {
+      (moving.includes(file) ? movedHashes : keptHashes)[file] = hash;
+    }
+    const newFrom: InstalledComponent = {
+      ...from,
+      files: from.files.filter((f) => !moving.includes(f)),
+      ...(from.fileHashes ? { fileHashes: keptHashes } : {}),
+    };
+    const existing = out.find((c) => c.name === move.to);
+    const newTo: InstalledComponent = existing
+      ? {
+        ...existing,
+        files: [...existing.files, ...moving.filter((f) => !existing.files.includes(f))],
+        fileHashes: { ...movedHashes, ...existing.fileHashes },
+      }
+      : {
+        name: move.to,
+        files: moving,
+        installedVersion: from.installedVersion,
+        ...(from.fileHashes ? { fileHashes: movedHashes } : {}),
+      };
+
+    out = out.flatMap((c) => {
+      if (c === from) return existing ? [newFrom] : [newFrom, newTo];
+      if (c === existing) return [newTo];
+      return [c];
+    });
+  }
+  return out;
+}
+
 export type OrphanStatus = "pruned" | "reported" | "not-found";
 
 /**
@@ -425,7 +476,7 @@ export async function runUpdate(
   packageVersion: string,
 ): Promise<void> {
   // Read existing manifest
-  let manifest;
+  let manifest: ArcaneManifest;
   try {
     manifest = await readManifest(targetDir);
   } catch (err) {
@@ -438,6 +489,9 @@ export async function runUpdate(
     }
     throw err;
   }
+  // PRD D-09: re-home files that moved component before anything below
+  // (up-to-date check, orphan sweep) reads the old entry as their owner.
+  manifest = { ...manifest, components: moveComponentFiles(manifest.components) };
 
   // ARC-045 decision 3 / CS-04: the user tier at ~/.arcane is not a
   // repository -- its merge baseline is the recorded hash plus the published

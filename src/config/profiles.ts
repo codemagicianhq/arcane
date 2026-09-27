@@ -50,6 +50,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "testing-standards",
       "framework-decisions",
       "session-continuity",
+      "line-ending-baseline",
     ],
   },
   {
@@ -74,6 +75,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "agent-work-queue-model",
       "development-methodology",
       "spell-authoring-standards",
+      "line-ending-baseline",
     ],
   },
   {
@@ -98,6 +100,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "spells-meta",
       "spells-docs",
       "docs-baseline",
+      "line-ending-baseline",
       "records-conventions",
       "agent-output-instructions",
       "git-conventions",
@@ -145,6 +148,7 @@ export const PROFILE_CONFIGS: ProfileConfig[] = [
       "mobile-release-standards",
       "records-conventions",
       "compliance-standards",
+      "line-ending-baseline",
     ],
   },
 ];
