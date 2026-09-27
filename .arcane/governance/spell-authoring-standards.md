@@ -173,6 +173,44 @@ Arcane spells ship to other repositories and, eventually, open source. Keep them
 > never candidates for that scan regardless of this clause, and no check specifically verifies the
 > carve-out itself.**
 
+### Runtime placeholders (ARC-051)
+
+A `{UPPER_SNAKE}` token in a shipped governance document is one of two kinds
+([ARC-051](https://github.com/codemagicianhq/arcane/blob/main/DECISIONS.md#arc-051--placeholder-taxonomy-for-governance-documents)):
+
+- **Runtime-resolved:** an agent resolves it when it uses the document, from the source named in the
+  list below; if that source is unset, it asks (the resolution rule above). These tokens are legal in a
+  `status: active` document, and the list below is the only place they are enumerated.
+- **Fill-in:** a slot the operator replaces by hand. A document built around such slots carries
+  `status: template` (for example `agent-approved-paths.md` and `naming-conventions.md`), and the
+  placeholder check skips it.
+
+A token that is neither is **unknown**: a typo, or a slot nobody filled. To make a new token legal,
+add it to the list in the same form: one item per token, a code span holding the token first, then
+where it resolves from. The list is read by machine, so keep it between the two markers.
+
+<!-- runtime-placeholders:start -->
+- `{ADO_ORG}` — the Azure DevOps organization: `tracking.ado.org` in the PRD frontmatter or `.arcane.json` ([[development-methodology]]).
+- `{ADO_PROJECT}` — the Azure DevOps project: `tracking.ado.project`, from the same places.
+- `{AGENT_EMAIL}` — the acting agent's commit email: the agent roster ([[agent-policies]]); ask if unset.
+- `{AGENT_NAME}` — the acting agent's name: the agent roster ([[agent-policies]]); ask if unset.
+- `{BUSINESS_NAME}` — the business or venture the work is for: the project's own context (its README or PRD frontmatter); ask if unset.
+- `{HOST}` — the hostname of the machine being configured: the machine itself.
+- `{LLC_NAME}` — the operator's legal entity: the project's own context; ask if unset.
+- `{OPERATOR_DOMAIN}` — the domain the operator uses for agent and tool Git identities: ask if unset.
+- `{OPERATOR_EMAIL}` — the operator's email: `git config user.email`.
+- `{OPERATOR_NAME}` — the operator's name: `git config user.name`.
+- `{OPERATOR_USERNAME}` — the operator's account on the host: the machine itself.
+- `{ORG}` — the organization or owner that hosts the repositories: the repository's remote URL.
+- `{PUBLIC_VISIBILITY_PREDICATE}` — the application's own public-visibility rule: the codebase (WD-07 in [[web-discoverability-standards]]).
+- `{THE_REAL_VALUE}` — a secret's real value in an uncommitted `.env` example: the operator's secret store; never a committed file.
+<!-- runtime-placeholders:end -->
+
+**Enforcement: executable check (ARC-023) — a test (`test/up02-d-runtime-placeholders.test.ts`) fails
+when a shipped `status: active` governance document uses a token that is not in this list. Whether an
+agent actually resolves a listed token from the named source is explicitly advisory prose: no check
+exercises it.**
+
 ## How to audit a spell
 
 For each dimension, score Bronze/Silver/Gold with one line of evidence. Record the overall (weakest)

@@ -2,7 +2,7 @@
 title: Naming Conventions
 audience: both
 last_updated: YYYY-MM-DD
-status: active
+status: template
 distributable: true
 tags: [naming, convention, machines, agents, identity]
 ---

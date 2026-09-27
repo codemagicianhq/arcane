@@ -2,7 +2,7 @@
 title: Agent Approved Paths Registry
 audience: both
 last_updated: YYYY-MM-DD
-status: active
+status: template
 distributable: true
 tags: [agent, security, filesystem, autonomy]
 ---
