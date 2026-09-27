@@ -93,9 +93,10 @@ describe("manifest", () => {
       await expect(readManifest(tempDir)).rejects.toThrow(ManifestCorruptError);
     });
 
-    // chmod is a no-op on Windows for the process owner, so skip this test there
-    const itOnPosix = process.platform === "win32" ? it.skip : it;
-    itOnPosix("rethrows non-ENOENT errors (e.g. permission denied)", async () => {
+    // chmod cannot deny the process owner on Windows, and root bypasses permission bits on POSIX
+    const permissionsEnforced = process.platform !== "win32" && process.getuid?.() !== 0;
+    const itWhenPermissionsEnforced = permissionsEnforced ? it : it.skip;
+    itWhenPermissionsEnforced("rethrows non-ENOENT errors (e.g. permission denied)", async () => {
       const manifestFile = join(tempDir, ".arcane.json");
       await fs.writeFile(manifestFile, "{}");
       await fs.chmod(manifestFile, 0o000);
