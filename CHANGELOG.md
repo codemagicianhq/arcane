@@ -49,6 +49,10 @@ acting on it. This is the second code wave of the Upstream Intake 2026-09 progra
 
 ### Changed
 
+- **`spell init` now says when it writes `.gitattributes`.** It includes the file in the commit
+  hint. In a repository that already has commits, it warns that files committed with CRLF can show as
+  modified once Git renormalizes them. `full` has always written this file; `lite`, `methodology` and
+  `governance-only` now do too.
 - **Decision numbers are allocated safely across parallel sessions (#264, ARC-050).**
   - `spell-close-session` fetches the trunk and takes the highest number there or locally, plus one.
   - A local-only repository says its number was not checked against other branches.

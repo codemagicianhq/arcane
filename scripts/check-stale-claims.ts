@@ -131,7 +131,7 @@ async function checkAdrStatusClaims(rootDir: string, livingDocs: string[]): Prom
  */
 export const DECISION_HEADING = /^##[ \t]+([A-Z][A-Z0-9]*)-(\d+)\b/;
 
-const FENCE = /^[ \t]*(```|~~~)/;
+const FENCE = /^[ \t]*(`{3,}|~{3,})/;
 
 /**
  * Finds decision IDs declared by more than one heading. One finding per
@@ -142,15 +142,18 @@ const FENCE = /^[ \t]*(```|~~~)/;
  */
 export function findDuplicateDecisionIds(content: string, file = "DECISIONS.md"): StaleClaimFinding[] {
     const byId = new Map<string, { line: number; heading: string }[]>();
-    let inFence = false;
+    // CommonMark: a fence closes only on the same character, at least as long.
+    let openFence: string | undefined;
     const lines = content.split("\n");
     for (let lineNo = 0; lineNo < lines.length; lineNo += 1) {
         const line = lines[lineNo]!.replace(/\r$/, "");
-        if (FENCE.test(line)) {
-            inFence = !inFence;
+        const fence = FENCE.exec(line)?.[1];
+        if (fence) {
+            if (openFence === undefined) openFence = fence;
+            else if (fence[0] === openFence[0] && fence.length >= openFence.length) openFence = undefined;
             continue;
         }
-        if (inFence) continue;
+        if (openFence !== undefined) continue;
         const match = DECISION_HEADING.exec(line);
         if (!match) continue;
         const id = `${match[1]!}-${Number(match[2]!)}`;

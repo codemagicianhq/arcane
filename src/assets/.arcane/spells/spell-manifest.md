@@ -40,7 +40,7 @@ Tolerate operator YAML frontmatter above a book's header — entries always live
 - **Splitting:** split the comment body on `; ` only where the next segment starts with a lowercase `key: `. A `; ` anywhere else — inside a drop reason, say — stays part of the field it is in.
 - **Deciding `new`:** only the first field does. An entry is collected when that field is exactly `status: new`, with or without fields after it.
 - **Unknown fields:** an unknown key, or a known key with an unexpected value, is ignored and shown as-is. It never moves the entry to `Skipped`.
-- **Unparseable:** a comment is unparseable, and the entry goes to `Skipped`, only when it does not open with `status:` or is not closed with `-->`.
+- **Unparseable:** a comment is unparseable, and the entry goes to `Skipped`, when it does not open with `status:`, is not closed with `-->`, or its first field is not exactly `new`, `promoted …` or `dropped …` (a typo such as `status: nwe` or `status: New` is reported, never silently left out of both lists).
 
 ## Step 2 — List
 

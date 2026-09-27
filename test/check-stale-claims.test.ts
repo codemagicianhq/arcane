@@ -219,6 +219,26 @@ describe("checkStaleClaims duplicate decision IDs (ARC-050 decision 4)", () => {
         expect(findDuplicateDecisionIds(content)).toHaveLength(0);
     });
 
+    it("closes a fence only on the same marker, so a mismatched fence line cannot hide a real duplicate", () => {
+        const content = [
+            "## ARC-050 — First",
+            "",
+            "````markdown",
+            "```",
+            "## ARC-050 — still inside the four-backtick fence",
+            "~~~",
+            "````",
+            "",
+            "## ARC-050 — A real duplicate after the fence closes",
+            "",
+        ].join("\n");
+        const findings = findDuplicateDecisionIds(content);
+        expect(findings).toHaveLength(1);
+        const text = JSON.stringify(findings[0]);
+        expect(text).toContain("A real duplicate after the fence closes");
+        expect(text).not.toContain("still inside");
+    });
+
     it("reports nothing when there is no DECISIONS.md", async () => {
         dir = await createFixtureDir("stale-claims-dup-ids-missing");
         const { duplicateIds } = await checkStaleClaims(dir);

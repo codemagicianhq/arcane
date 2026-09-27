@@ -226,8 +226,10 @@ export async function runInit(
   // safe (an unborn repo has no commits to conflict with) or where the
   // operator already explicitly confirmed continuing (uncommitted changes).
   let repoNotFound = false;
+  let repoHasCommits = false;
   if (!options.dryRun) {
     const gitState = await inspectGitRepository(targetDir);
+    repoHasCommits = gitState.status !== "not-repository" && gitState.status !== "no-commits";
 
     if (gitState.status === "not-repository") {
       repoNotFound = true;
@@ -724,9 +726,17 @@ export async function runInit(
       'Initialize Git for this project: `git init -b main` (avoids defaulting to "master" on systems where that\'s the system default)',
     );
   }
+  const wroteGitattributes = installedComponents.some((c) => c.files.includes(".gitattributes"));
+  if (wroteGitattributes && repoHasCommits) {
+    printWarning(
+      "Installed .gitattributes, which normalizes text to LF. In a repository with history, files " +
+        "committed with CRLF can show as modified once Git renormalizes them (for example after " +
+        "`git add --renormalize .`). Review and commit that as its own change.",
+    );
+  }
   printNextStep(
     step++,
-    "Commit the new files: git add .arcane .github .claude AGENTS.md CLAUDE.md .arcane.json",
+    `Commit the new files: git add .arcane .github .claude AGENTS.md CLAUDE.md .arcane.json${wroteGitattributes ? " .gitattributes" : ""}`,
   );
   console.log();
 }
