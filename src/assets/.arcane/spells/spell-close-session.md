@@ -57,6 +57,24 @@ Workflow:
      - `### Lessons Learned` — one heading per lesson with enough context to prevent the mistake again. Use narrative, not bullet fragments.
      - `### Open Items Carried Forward` — items that remain undone from this session, including every `pending`/`dispatched`/`failed`/`unverifiable` item from step 1b.
 
+2b. **Lesson routing: send each lesson where it can be acted on.** A lesson left only in the journal never reaches the people who could fix its cause. Skip this step when step 2 wrote no `### Lessons Learned`, or when the invocation includes `--no-route`. With `--no-route`, the lessons stay in the journal only; say `Lesson routing skipped (--no-route)` in the closure report.
+   - **Classify each lesson** written in step 2 into exactly one class:
+     - **Framework-shaped:** the fix belongs in Arcane itself, meaning a spell prompt, template, governance doc, playbook, or CLI behavior this repository installed rather than authored. This is `spell-feedback` Step 3's definition. Destination: `FEEDBACK.md`, queued for upstream.
+     - **Product idea:** the lesson suggests something to build in this repository's own product. Destination: `spell-save-idea`.
+     - **Repo-local:** anything about this repository's own content, configuration, or way of working. Destination: the journal only. It is already there, so nothing more is written.
+   - **Show one batch proposal and ask once.** List every lesson with its class and destination, then ask a single question: `Route these lessons? (yes / edit / skip)`. `edit` lets the operator change a class or drop a lesson, then shows the proposal again. Route nothing before an explicit `yes`. A timeout, a cancellation, a delegated or host-generated response, or assent given to something else is not approval. Neither is an autonomous run with no operator to ask. In each of those cases route nothing, keep the lessons in the journal, and list the proposal in the closure report as not routed. `skip` is a complete, valid answer.
+   - **Framework-shaped, after `yes`:** append **one** block to `FEEDBACK.md` at the repository root, in `spell-feedback`'s Step 5 block format. Create the file with a `# Feedback Log` header first if it is missing. Fill the block this way:
+     - Heading: `## Feedback — <the spell or doc the lessons concern, or "Arcane workflow" when they span several> (<YYYY-MM-DD>)`.
+     - `**Session:**` names this session and adds `(routed by spell-close-session from Lessons Learned)`.
+     - `**Rating:**` and `**Would use again:**` are `N/A`, because nobody rated anything.
+     - Friction Points: one line per lesson saying what happened.
+     - Improvement Items: one imperative item per lesson, each line ending with `<!-- upstream: queued -->`.
+     - Raw Notes: cite the journal file and each lesson's heading.
+   - **Product idea, after `yes`:** hand each one to `spell-save-idea` as a one-sentence idea, citing the journal file. That spell appends it to the idea book.
+   - **No public write from this step.** Close-session never files an issue and never runs `gh issue create`. It also never runs `spell-feedback`'s Step 6 filing flow. Queuing is the whole outcome here. The `yes` above approves local appends only. Filing upstream still needs `spell-feedback`'s own literal `disclose` confirmation on each item, given in a later `spell-feedback` or `spell-feedback --flush` run, which re-offers every queued item through its genericize-and-`disclose` flow.
+   - **Append-only.** Add new entries to `FEEDBACK.md` and the idea book. Never edit, reorder, or remove an existing entry in either.
+   - Enforcement: structured spell gate (ARC-023) — nothing is routed without the one explicit batch `yes`, and it fails closed. The no-public-write and append-only rules are explicitly advisory prose: no hook stops this step from running `gh` or rewriting a book, so they hold by the step's own instructions. Classifying a lesson is a judgment call, and the operator checks it at the batch proposal.
+
 3. **Update [DECISIONS.md](../../DECISIONS.md).**
    - Add ADRs for any decisions made during the session (naming choices, tool preferences, workflow standards, security policies, etc.).
    - Use the next sequential ADR number.
@@ -231,6 +249,11 @@ Output format:
 ## Journal Updates
 
 - Exact file updates made.
+
+## Lesson Routing
+
+- Each lesson from step 2b with its class and where it went: `FEEDBACK.md` (queued for upstream), `spell-save-idea`, or journal only.
+- Or one of: `Lesson routing skipped (--no-route)`, `No lessons recorded`, or `Not routed (no explicit yes)` followed by the proposal.
 
 ## Decision Updates
 

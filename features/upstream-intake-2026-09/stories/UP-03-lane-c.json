@@ -39,9 +39,9 @@
         "spell-feedback documents the entry point"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up03-lane-c",
-      "testEvidence": null
+      "testEvidence": "test/up03-c-lesson-routing.test.ts 17/17; 24 related files 575/575; parity, citations, adr-references, stale-claims, lint pass"
     }
   ]
 }

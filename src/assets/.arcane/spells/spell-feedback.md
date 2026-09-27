@@ -127,6 +127,15 @@ For each framework-shaped item:
 
 Maintainer side is unchanged: GitHub issues are arcane's normal public intake; triage into arcane's own `IDEAS.md`/`DECISIONS.md` happens in arcane sessions like any other issue. This spell never writes to a hub's venture books and never reads `ventures/registry.json` — framework feedback and venture ideas are different channels on purpose (venture ideas → hub books → `spell-manifest`; framework lessons → here → arcane's GitHub).
 
+## Entry Point — Lessons Routed by `spell-close-session`
+
+`FEEDBACK.md` has a second writer. `spell-close-session`'s lesson-routing step (step 2b) classifies each of the session's Lessons Learned. After one batch confirmation, it appends the framework-shaped ones as a single block in Step 5's format:
+- `**Session:**` carries `(routed by spell-close-session from Lessons Learned)`.
+- `**Rating:**` and `**Would use again:**` are `N/A`.
+- Each improvement item ends with `<!-- upstream: queued -->`.
+
+That step never files anything publicly. Its entries reach `{ARCANE_UPSTREAM_REPO}` only through this spell: `spell-feedback --flush` picks them up with every other queued item and runs Step 6 on each one (genericize, the literal `disclose` confirmation, then file or re-queue). A routed entry gets no shortcut, because close-session's batch confirmation approved a local append, not a public issue. An `N/A` rating is not a low rating, so it never triggers the `⚠️ LOW RATING` flag. **Enforcement: structured spell gate (ARC-023) — Step 6's literal `disclose` confirmation gates filing a routed item exactly as it gates any other; nothing in this spell distinguishes a routed item that could skip it.**
+
 ## Rules
 
 - Never overwrite existing feedback — always append.
