@@ -84,7 +84,9 @@ This confirmation covers ordinary destinations only — it never authorizes a di
 
 ## Step 5 — Disclosure Gate
 
-Any destination whose repo has `visibility: "public"` — (a) or (d) landing in a public repo, or (c) filing a tracker item in a public tracker (a GitHub issue on a public repo is exactly as much a disclosure as its `IDEAS.md`) — is a disclosure, never covered by `all`, `go`, or any other batch confirmation. Per entry, print the **exact text** that will become public and ask for the literal word `disclose`. Anything else skips that one entry (it stays `status: new`) without aborting the rest of the batch.
+The gate is **keyed on the destination repository's visibility, never on the destination letter**. An entry is a disclosure when the repository its text would land in — that repo's tree, its tracker, or anything else it publishes — has `visibility: "public"` in the registry, whatever route puts it there. There is deliberately no list of covered destinations: an enumerated list is how a route slips through. A PRD scaffold (b) writes the idea text into the public repo's tree, so it is a disclosure; so is a tracker item filed on a public repo (a GitHub issue on a public repo is exactly as much a disclosure as its `IDEAS.md`), and so is any destination added to Step 4 later. If the destination repository's visibility is missing from the registry, treat it as public.
+
+A disclosure is never covered by `all`, `go`, or any other batch confirmation. Per entry, print the **exact text** that will become public and ask for the literal word `disclose`. Anything else skips that one entry (it stays `status: new`) without aborting the rest of the batch. **Enforcement: structured spell gate (ARC-023) — a public-destination entry is written only after the operator's own literal `disclose` for that entry; a timeout, cancellation, or host-generated fallback is not consent and skips the entry.**
 
 On a repo's first-ever disclosure (its `IDEAS.md` has no existing entries with a `promoted → public:` marker), offer to add this boundary statement to that file's header in the same staged change:
 
@@ -109,6 +111,8 @@ public:<slug>/IDEAS.md (disclosed)
 hub:TODO.md
 book:<other-slug>/IDEAS.md
 ```
+
+Any marker whose destination repository is public ends in ` (disclosed)` — whichever route landed it, because Step 5 gated it as a disclosure.
 
 Dropped entries get `<!-- status: dropped YYYY-MM-DD -->`, optionally with a trailing `(reason)`.
 
@@ -141,7 +145,7 @@ Run spell-commit-work in each repo. N entries remain new.
 ## Rules
 
 - Never run outside a hub repo. Never infer hub status.
-- Never let `all` or the plan-confirm authorize a disclosure — that confirmation is always separate, always per-entry, always the literal word `disclose`.
+- A disclosure is any entry whose destination repository is public, whatever the destination (Step 5). Never let `all` or the plan-confirm authorize a disclosure — that confirmation is always separate, always per-entry, always the literal word `disclose`.
 - Never write a sibling venture's slug, a hub path, or a machine name into a consumer or public artifact — the leak scan is mandatory, not advisory.
 - Never commit. Stage and report; hand off to `spell-commit-work`.
 - Never guess a venture from partial input — resolve through the registry's aliases or ask.
