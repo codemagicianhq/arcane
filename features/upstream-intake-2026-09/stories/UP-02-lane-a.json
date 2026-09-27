@@ -14,9 +14,9 @@
         "no user-visible message text changes for init"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-a",
-      "testEvidence": null
+      "testEvidence": "test/up02-a-push-controls.test.ts (8, real bare remotes: installed, idempotent, foreign hooksPath, default hooks, unreadable config, outside pushurl, no remote) + test/up02-a-init-push-policy.test.ts (3, also green against pre-refactor code); push-safety/init/init-git-state/secrets-scan suites green (139 tests)"
     },
     {
       "id": "UP02-A-02",

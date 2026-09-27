@@ -34,9 +34,8 @@ import {
 } from "../modules/banner.js";
 import { runAgentsInit } from "../modules/agents.js";
 import {
-  installPrePushHook,
+  applyBlockedPushControls,
   installClosedPrWarningHook,
-  disablePushUrls,
   describeConfigScope,
   ARCANE_HOOKS_DIR,
 } from "../modules/push-safety.js";
@@ -571,68 +570,9 @@ export async function runInit(
   if (push_policy === "blocked" || push_policy === "guarded") {
     try {
       if (push_policy === "blocked") {
-        const hook = await installPrePushHook(targetDir);
-        if (hook.status === "refused-unreadable-config") {
-          // Fail closed: we could not determine whether another hook manager
-          // owns core.hooksPath, and installing on a guess could disable it.
-          printWarning(
-            "Did not install the pre-push hook: git could not report the current core.hooksPath " +
-              "(unreadable config, or a git too old for `--show-scope`). Installing without knowing " +
-              "whether another hook manager owns that setting could silently disable it. Fix the " +
-              "config and run `spell doctor`.",
-          );
-        } else if (hook.status === "refused-default-hooks") {
-          // Same harm as a foreign core.hooksPath, reached by the route the R7
-          // guard wasn't watching: this repository's hooks live in git's
-          // default directory and have no config key to collide with, so
-          // taking the slot would switch every one of them off silently.
-          printWarning(
-            `Did not install the pre-push hook: this repository has hooks in git's default ` +
-              `directory (${hook.hooks.join(", ")}). Setting core.hooksPath would silently stop ` +
-              `them running. Move them under \`${ARCANE_HOOKS_DIR}\` yourself and re-run, or add ` +
-              "the push guard to your existing pre-push hook.",
-          );
-        } else if (hook.status === "refused-foreign-hooks-path") {
-          // R7: core.hooksPath is one exclusive slot, at local OR global
-          // scope, so pointing it at Arcane would silently disable whatever
-          // hook manager already owns it.
-          printWarning(
-            `Did not install the pre-push hook: core.hooksPath is already "${hook.existing}" ` +
-              `(${describeConfigScope(hook.scope)}), so another hook manager owns it. Overwriting ` +
-              "would silently disable those hooks. Chain an Arcane pre-push guard into that " +
-              "directory yourself, or unset core.hooksPath first.",
-          );
-        } else {
-          printInfo("Installed a pre-push hook that blocks pushes from this repository.");
-        }
-
-        const urls = await disablePushUrls(targetDir);
-        const unprotected = urls.filter((u) => u.status === "failed");
-        if (unprotected.length > 0) {
-          // Never let a partial application read as a full one.
-          printWarning(
-            `Could not disable the push URL for: ${unprotected
-              .map((u) => `${u.remote} (${u.reason ?? "unknown error"})`)
-              .join("; ")}. Those remotes are still pushable with \`--no-verify\`. ` +
-              "Run `spell doctor` — it lists exactly which remotes are still live.",
-          );
-        }
-        if (urls.length === 0) {
-          // Be precise: nothing is protecting a remote added later, because
-          // this only disables remotes that exist right now. Claiming
-          // otherwise would be exactly the false confidence ARC-034 warns of.
-          printWarning(
-            "No remote is configured, so only the pre-push hook is active. A remote added later " +
-              "will NOT have its push URL disabled automatically, and a `--no-verify` push to it " +
-              "would succeed. Run `spell doctor` after adding one — it reports this gap.",
-          );
-        } else {
-          const covered = urls.filter((u) => u.status !== "failed").map((u) => u.remote);
-          if (covered.length > 0) {
-            printInfo(`Disabled the push URL for: ${covered.join(", ")} (fetch still works).`);
-          }
-        }
-        printInfo("Run `spell unblock-push` from a terminal to undo this.");
+        await applyBlockedPushControls(targetDir, {
+          emit: (m) => (m.level === "warning" ? printWarning(m.text) : printInfo(m.text)),
+        });
       } else {
         printInfo(
           "Marked as push-guarded. No technical control was installed — check the remote is the " +
