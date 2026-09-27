@@ -1,0 +1,110 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-02 lane A",
+  "branchName": "sessions/2026-09-27-up-02-lane-a",
+  "assignedAgent": "up02-lane-a",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP02-A-01",
+      "title": "Extract init's blocked push-control install into a shared helper",
+      "description": "Move the `push_policy === \"blocked\"` install block in src/commands/init.ts (installPrePushHook + disablePushUrls + all refusal/warning messages) into an exported helper in src/modules/push-safety.ts (e.g. applyBlockedPushControls(targetDir)) returning a structured outcome; init calls it with identical user-visible behaviour. Pure refactor: no behaviour change.",
+      "acceptanceCriteria": [
+        "init's existing push-safety tests pass unchanged",
+        "helper is exported and unit-tested for each refusal outcome",
+        "no user-visible message text changes for init"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-A-02",
+      "title": "Add `spell block-push` (ARC-049 decision 1)",
+      "description": "New src/commands/block-push.ts registered in src/index.ts. Enforces push_policy blocked: installs exactly what init installs for blocked via the shared helper, with the same refusals (foreign core.hooksPath, default-dir hooks, unreadable config, push URL configured outside the repo). If the manifest records open or guarded, it records blocked (writeManifest, preserving line endings) — explicit tightening. Replaces Arcane's OWN closed-PR warning pre-push hook (installed by init for non-blocked repos) rather than refusing it as foreign. Idempotent: on an already-enforced repo it reports and changes nothing. No TTY requirement. Prints the undo path (`spell unblock-push`, terminal only). Refuses outside an initialized repo.",
+      "acceptanceCriteria": [
+        "real bare-remote test: after `spell block-push` a real `git push` is refused (same style as test/push-safety.test.ts)",
+        "second run reports already enforced and changes nothing",
+        "repo whose pre-push slot holds Arcane's closed-PR warning hook ends up with the blocking hook",
+        "foreign core.hooksPath -> refusal, manifest not changed to claim enforcement it lacks",
+        "open/guarded manifest is recorded as blocked; never loosens anything",
+        "output names `spell unblock-push`"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-A-03",
+      "title": "Retrofit required-action notice (ARC-049 decision 2)",
+      "description": "When `spell update`'s manifest retrofit records push_policy blocked, print a required-action notice: recorded but NOT enforced, run `spell block-push`. When it records guarded, print what guarded does (reported by `spell doctor`, honoured by push-performing spells) and that nothing is installed. Update the hub.ts push_policy retrofit comment to point at ARC-049. Decision 7 stands: update never installs controls.",
+      "acceptanceCriteria": [
+        "update test: retrofit answer blocked -> output contains the notice naming `spell block-push`, and no hook/push-URL change happens",
+        "guarded -> explanatory notice",
+        "open -> no notice"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-A-04",
+      "title": "Flags for every manifest question (PRD D-02, #282 CLI half)",
+      "description": "Add `--role <hub|consumer>`, `--tracking-mode <internal|external>`, `--external-provider <ado|github|jira|other>`, `--content-sensitivity <standard|sensitive>`, `--push-policy <open|guarded|blocked>`, `--subject-root <path>` to BOTH `spell init` and `spell update` (confirm the set against MANIFEST_RETROFITS; one flag per retrofit field). Validate with the same validators the manifest uses. Retrofits accept preset answers: a preset answers its question with no prompt and works without a TTY; questions without a preset keep today's behaviour (asked on TTY, skipped without). The non-TTY skip message lists the exact flag line to re-run with. init: flags answer questions even with --profile (today --profile skips all questions). A flag may set an UNSET field or TIGHTEN push_policy (open < guarded < blocked); an attempt to loosen push_policy is refused (exit 1) naming `spell unblock-push`; a flag for an already-set field with a different value is refused (exit 1) naming the current value; same value is a no-op. Tightening push_policy through update records it and prints the ARC-049 notice (update still never installs). --external-provider without --tracking-mode external is an error.",
+      "acceptanceCriteria": [
+        "non-TTY `spell init --profile lite --tracking-mode internal --push-policy guarded` records both and asks nothing",
+        "`spell update --push-policy open` on a blocked repo exits 1 naming `spell unblock-push`",
+        "invalid value exits 1 with the validator's message",
+        "non-TTY update without flags prints the exact flag line",
+        "`init --push-policy blocked` installs the controls exactly as the interactive answer does"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-A-05",
+      "title": "Documented ADO default for the tracking question (PRD D-03, #278)",
+      "description": "New src/modules/ado-context.ts: detectAdoContext(targetDir) is true when any configured remote URL host is dev.azure.com or *.visualstudio.com (use the repo's runGit helper, not raw child_process). In the hub.ts tracking_mode retrofit AND init Step 5b (one shared helper; the two stay mirrored), pre-select external then ado when detected; otherwise no ADO pre-selection. Every option of the tracking and provider questions shows one line of downstream effect (inquirer choice `description`).",
+      "acceptanceCriteria": [
+        "https://dev.azure.com/org/proj/_git/repo remote -> external/ado pre-selected in both paths",
+        "github.com remote -> no ADO pre-selection",
+        "unit tests for detectAdoContext incl. ssh and visualstudio.com forms"
+      ],
+      "priority": 5,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-A-06",
+      "title": "`idea_tags` manifest field (PRD D-10, #261 field half)",
+      "description": "Add optional `idea_tags?: { mode: \"extend\" | \"replace\"; tags: string[] }` to ArcaneManifest (src/types.ts) with validation in src/modules/manifest.ts on the same contract as existing validated fields: a bad mode or non-string-array tags throws ManifestInvalidFieldError; absent is fine. No retrofit question.",
+      "acceptanceCriteria": [
+        "valid values round-trip through readManifest/writeManifest",
+        "bad mode -> ManifestInvalidFieldError",
+        "unknown-field preservation unchanged"
+      ],
+      "priority": 6,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-A-07",
+      "title": "README: document block-push and the new flags",
+      "description": "README.md CLI section documents `spell block-push` and the manifest-question flags on init/update, including that loosening push_policy is only possible via interactive `spell unblock-push`. Do not touch the generated catalogue marker blocks.",
+      "acceptanceCriteria": [
+        "README mentions `spell block-push` and each new flag",
+        "`npm run check:spell-catalog` still passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "assignedTo": "up02-lane-a",
+      "testEvidence": null
+    }
+  ]
+}

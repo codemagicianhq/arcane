@@ -1,0 +1,47 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-02 lane B",
+  "branchName": "sessions/2026-09-27-up-02-lane-b",
+  "assignedAgent": "up02-lane-b",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP02-B-01",
+      "title": "PR body survives a halted rebase (PRD D-11, #269)",
+      "description": "spell-commit-work: write the PR body file BEFORE step 9b; step 9b rebases with `git rebase --autostash origin/<target>`; the raw-CLI PR path (9d/9e) refuses to create a PR whose body is empty. spell-create-pull-request: Step 0.6 uses `--autostash`; Step 5 refuses to create a PR whose body file is missing or empty and says to run Step 4 first (covers a resumed flow). git-conventions.md 'Agent-mandatory pre-PR guard' snippet uses --autostash. Keep ARC-023 enforcement annotations accurate.",
+      "acceptanceCriteria": [
+        "new test asserts: commit-work writes the body before 9b; both spells use --autostash; both refuse an empty body; git-conventions guard snippet matches"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up02-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-B-02",
+      "title": "Push-policy check shared by every pushing spell (ARC-049 decision 4, #280)",
+      "description": "New ARC-039 fragment src/assets/.arcane/spells/_fragments/push-policy-check.md: read `push_policy` from the repo's .arcane.json before any push. guarded -> state the policy and ask the operator for explicit confirmation before pushing; in an autonomous run with no operator, do not push and report the pending push (fails closed). blocked -> do not attempt the push, say why, name `spell unblock-push` (interactive terminal). open/absent -> proceed. Expand it (fragment markers, then `npm run fix:self-host-parity`) at the push step of spell-commit-work (9a), spell-create-pull-request (Step 0 push/force-with-lease), spell-ship, spell-sync-pull-request, spell-close-session. Do not change frontmatter.",
+      "acceptanceCriteria": [
+        "`npm run check:self-host-parity` passes with the new fragment expanded in all five spells",
+        "new test asserts each of the five spells contains the fragment and names both behaviours"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up02-lane-b",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-B-03",
+      "title": "`Push safety` section in git-conventions.md (ARC-049 decision 5)",
+      "description": "Add a 'Push safety' section to src/assets/.arcane/governance/git-conventions.md: the three push_policy values, how they are set (init question/flags), enforced (`spell block-push`), verified (`spell doctor`), lifted (`spell unblock-push`, interactive only), and which spells read the policy. Carry an ARC-023 enforcement annotation. Make universal-agent-rules.md's existing 'push-safety controls in git-conventions.md' reference resolve to it (adjust wording/anchor there only if needed).",
+      "acceptanceCriteria": [
+        "section exists with an enforcement annotation",
+        "universal-agent-rules.md reference resolves to the heading",
+        "`npm run check:citations` and `check:adr-references` pass"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "up02-lane-b",
+      "testEvidence": null
+    }
+  ]
+}

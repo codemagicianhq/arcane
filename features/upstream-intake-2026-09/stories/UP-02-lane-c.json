@@ -1,0 +1,34 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-02 lane C",
+  "branchName": "sessions/2026-09-27-up-02-lane-c",
+  "assignedAgent": "up02-lane-c",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP02-C-01",
+      "title": "Disclosure gate keyed on destination visibility (#262)",
+      "description": "spell-manifest Step 5: ANY destination whose repo has visibility public is a disclosure requiring the per-entry `disclose` consent — including destination (b), the PRD scaffold — with no enumerated destination list. Update the matching Rules bullet. Keep Step 7 leak scan and Step 8 stage-never-commit unchanged.",
+      "acceptanceCriteria": [
+        "Step 5 no longer enumerates (a)/(c)/(d)",
+        "new test asserts destination (b) to a public repo requires disclosure"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up02-lane-c",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-C-02",
+      "title": "Tags are a declared, scanned field (#261 spell half, PRD D-10)",
+      "description": "spell-manifest Step 7 explicitly names an entry's tag as scanned outbound text (sibling slugs/aliases, hub paths, machine names, org-token denylist). spell-save-idea: when .arcane.json declares `idea_tags` ({mode: extend|replace, tags}), infer the tag from the declared vocabulary (extend = defaults plus list; replace = list only); otherwise today's free-form inference; state that a tag must never carry a venture, client or person name.",
+      "acceptanceCriteria": [
+        "new test asserts Step 7 names tags",
+        "new test asserts save-idea reads idea_tags with both modes and carries the no-private-names rule"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up02-lane-c",
+      "testEvidence": null
+    }
+  ]
+}
