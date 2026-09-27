@@ -1,0 +1,60 @@
+{
+  "feature": "Upstream Intake 2026-09 — UP-02 lane D",
+  "branchName": "sessions/2026-09-27-up-02-lane-d",
+  "assignedAgent": "up02-lane-d",
+  "trackingMode": "internal",
+  "userStories": [
+    {
+      "id": "UP02-D-01",
+      "title": "Enumerate runtime placeholders and re-status fill-in templates (ARC-051 decisions 1-3, 5)",
+      "description": "In src/assets/.arcane/governance/spell-authoring-standards.md add a delimited, machine-readable list of runtime-resolved `{UPPER_SNAKE}` tokens (e.g. between `<!-- runtime-placeholders:start -->` / `:end -->`), built by scanning every shipped governance doc. Governance docs that are fill-in templates (agent-approved-paths.md, naming-conventions.md, and any other doc whose tokens are hand-fill slots) change frontmatter to `status: template` — frontmatter only. First grep src/ and test/ for anything that reads governance frontmatter `status` and keep it working.",
+      "acceptanceCriteria": [
+        "every token in shipped status: active governance docs is either in the list or its doc is status: template",
+        "tests reading governance status still pass"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "up02-lane-d",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-D-02",
+      "title": "Placeholder scanner module (ARC-051)",
+      "description": "New src/modules/placeholders.ts: parse a markdown doc's frontmatter status; find `{UPPER_SNAKE}` tokens outside fenced code blocks and inline code; read the runtime-token list from the installed spell-authoring-standards.md; return unknown tokens per doc. If spell-authoring-standards.md is not installed, report the check as skipped (not failed).",
+      "acceptanceCriteria": [
+        "unit tests: fenced/inline tokens ignored; template docs skipped; list parsed; missing standards doc -> skipped",
+        "scanning src/assets/.arcane/governance yields zero unknown tokens (fresh-install AC)"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "up02-lane-d",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-D-03",
+      "title": "`spell doctor` placeholder warning + block-push remedy (ARC-051 decision 4, ARC-049 decision 3)",
+      "description": "Register a doctor check that scans the installed .arcane/governance/*.md and reports each unknown token (file + token) as a non-blocking warning — exit code unchanged. In checkPushPolicy's 'declared but not enforced' finding, name `spell block-push` as the remedy (the command is added by lane A; reference by name only).",
+      "acceptanceCriteria": [
+        "doctor test: unknown token in active doc -> warn, exit unchanged; template doc -> silent",
+        "doctor test: declared-but-not-enforced remedy names `spell block-push`"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "up02-lane-d",
+      "testEvidence": null
+    },
+    {
+      "id": "UP02-D-04",
+      "title": "spell-check-drift points at the placeholder check",
+      "description": "Add one detector line to src/assets/.arcane/spells/spell-check-drift.md: unfilled placeholders are checked by `spell doctor` (ARC-051); the drift pass reports doctor's findings rather than re-implementing them. No frontmatter change.",
+      "acceptanceCriteria": [
+        "check:self-host-parity passes",
+        "new test asserts the detector line"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "up02-lane-d",
+      "testEvidence": null
+    }
+  ]
+}
