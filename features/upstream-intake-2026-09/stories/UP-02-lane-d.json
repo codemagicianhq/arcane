@@ -13,9 +13,9 @@
         "tests reading governance status still pass"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "up02-lane-d",
-      "testEvidence": null
+      "testEvidence": "test/up02-d-runtime-placeholders.test.ts 6/6 (list covers every raw token in active+draft governance docs; templates re-statused); registry+doctor tests 283/283; parity/citations/adr-references pass"
     },
     {
       "id": "UP02-D-02",
