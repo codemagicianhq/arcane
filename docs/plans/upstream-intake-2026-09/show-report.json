@@ -4,9 +4,10 @@
     "id": "upstream-intake-2026-09",
     "slug": "upstream-intake-2026-09",
     "title": "Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves",
-    "status": "active",
+    "status": "complete",
     "baseline": "58351fa (main)",
     "started": "2026-09-27",
+    "completed": "2026-09-28",
     "versionSpan": {
       "from": "1.5.1",
       "to": "1.9.0"
@@ -15,18 +16,18 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves",
-    "dek": "active — 5 of 7 epics shipped"
+    "dek": "complete — 7 of 7 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "5/7",
+      "value": "7/7",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 5,
+      "value": 9,
       "label": "pull requests",
       "derived": true
     },
@@ -143,18 +144,26 @@
         {
           "id": "UP-06",
           "title": "Show Report theme (UP-04's lane A, split out)",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "`spell report` can now force the in-page theme toggle to a fixed state when presenting, instead of always following the viewer's system setting.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/302",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/300",
+            "https://github.com/codemagicianhq/arcane/pull/302"
+          ]
         },
         {
           "id": "UP-05",
           "title": "Close",
-          "description": null,
-          "descriptionState": "unwritten",
+          "description": "Every open issue Arcane's own users had filed against it is closed, and the plan that proved parallel waves could work here closes with its own honest scorecard: what passed clean, what didn't (a pre-existing test flake), and what was disclosed rather than hidden (a night of stacked PRs).",
+          "descriptionState": "authored",
           "category": "process",
-          "refs": []
+          "href": "https://github.com/codemagicianhq/arcane/pull/303",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/301",
+            "https://github.com/codemagicianhq/arcane/pull/303"
+          ]
         }
       ]
     }
@@ -178,7 +187,7 @@
       "docs/plans/upstream-intake-2026-09/OPERATOR-QUEUE.md",
       "docs/verification-ledger.md"
     ],
-    "compiledAt": "2026-09-27",
+    "compiledAt": "2026-09-28",
     "templateVersion": "v0-interim"
   }
 }
