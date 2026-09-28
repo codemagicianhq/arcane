@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.9.0] - 2026-09-28
+
+`spell report` can now force the Show Report's in-page theme toggle to a fixed state when generating
+a copy for presenting, instead of always leaving it to the viewer's `prefers-color-scheme`. Closes
+[#271](https://github.com/codemagicianhq/arcane/issues/271), the last open issue of the Upstream
+Intake 2026-09 program (UP-06).
+
+### Added
+
+- **`spell report --theme <auto|light|dark>`.** Sets the initial state of the toggle arcane-ui shipped
+  in `1.8.1`'s vendored template (`arcane-report-theme-<mode>`, three radios sharing one name) by
+  moving its `checked` attribute onto the requested radio. `auto` (the default) is a deliberate
+  no-op: the vendored template already ships with `auto` checked and nothing else, so omitting the
+  flag reproduces today's `prefers-color-scheme` behaviour byte-for-byte -- every existing committed
+  `show-report.html` stays valid without regenerating. Pair with `--out` for a one-off themed copy so
+  a presentation render doesn't overwrite the tracked golden. An older vendored template with no
+  toggle degrades to a warning per program, not a crash.
+
+## [1.8.1] - 2026-09-28
+
+- **Re-vendored the Show Report template from `arcane-ui` `v2.2.1`** ([#300](https://github.com/codemagicianhq/arcane/pull/300), opened automatically by `arcane-ui`'s SR-07 pipeline stage after `check:report-template` passed there). Carries the in-page dark/light theme toggle (Q-006, closing the vendoring half of #271 -- the CLI half is `1.9.0`, above) and regenerated `docs/plans/*/show-report.html` for every active/complete program in this repository.
+
 ## [1.8.0] - 2026-09-27
 
 A spell that ends with something only you can do now says so at the top of its final report, and the

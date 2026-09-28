@@ -126,3 +126,37 @@ describe("spell report (SR-03): offline generation in a consumer-shaped reposito
     expect(vi.mocked(console.error).mock.calls.some((c) => String(c[0]).includes("report template not found"))).toBe(true);
   });
 });
+
+describe("spell report --theme (SR-UP06, closes arcane#271)", () => {
+  it(
+    "--theme dark checks the dark radio; omitting --theme leaves the auto default unchanged",
+    async () => {
+      dir = await createConsumerFixture();
+      await runReport(dir, { theme: "dark" }, ASSETS_DIR);
+      expect(process.exitCode).toBeUndefined();
+      const darkHtml = await fs.readFile(join(dir, "docs/plans/lessons-hardening/show-report.html"), "utf8");
+      expect(darkHtml).toMatch(/id="arcane-report-theme-dark"[^>]*\bchecked\b/);
+
+      await removeFixtureDir(dir);
+      dir = await createConsumerFixture();
+      await runReport(dir, {}, ASSETS_DIR);
+      const autoHtml = await fs.readFile(join(dir, "docs/plans/lessons-hardening/show-report.html"), "utf8");
+      // Unmodified from the vendored template's own shipped default: "auto" pre-checked, nothing else.
+      expect(autoHtml).toMatch(/id="arcane-report-theme-auto"[^>]*\bchecked\b/);
+      for (const id of ["light", "dark"]) {
+        expect(autoHtml).not.toMatch(new RegExp(`id="arcane-report-theme-${id}"[^>]*\\bchecked\\b`));
+      }
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+
+  it("exits 1 naming the bad value for an unrecognized --theme", async () => {
+    dir = await createConsumerFixture();
+    await runReport(dir, { theme: "purple" }, ASSETS_DIR);
+    expect(process.exitCode).toBe(1);
+    expect(
+      vi.mocked(console.error).mock.calls.some((c) => String(c[0]).includes("--theme must be one of")),
+    ).toBe(true);
+    await expect(fs.access(join(dir, "docs/plans/lessons-hardening/show-report.html"))).rejects.toThrow();
+  });
+});

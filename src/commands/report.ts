@@ -8,6 +8,7 @@ import {
   type SkippedPlan,
 } from "../modules/show-report/generate.js";
 import { isShallowRepository } from "../modules/show-report/sources.js";
+import { REPORT_THEMES, type ReportTheme } from "../modules/show-report/theme.js";
 
 export interface ReportCliOptions {
   /** Report on one PLAN.md instead of auto-discovering docs/plans/*\/PLAN.md. */
@@ -16,6 +17,8 @@ export interface ReportCliOptions {
   out?: string;
   /** Accepted for forward compatibility; external snapshotting is not implemented yet. */
   refresh?: boolean;
+  /** Force the toggle's initial state: auto | light | dark (default auto). */
+  theme?: string;
 }
 
 /**
@@ -46,6 +49,15 @@ export async function runReport(
     console.log(
       "--refresh: external-data snapshotting (gh PR titles/merge dates) is not implemented yet; regenerating from local sources.",
     );
+  }
+
+  const theme = (options.theme ?? "auto") as ReportTheme;
+  if (!REPORT_THEMES.includes(theme)) {
+    console.error(
+      `✖ arcane: --theme must be one of ${REPORT_THEMES.join(" | ")}, got "${options.theme}".`,
+    );
+    process.exitCode = 1;
+    return;
   }
 
   // Degrade visibly, not silently: the page still renders in a shallow clone,
@@ -84,11 +96,18 @@ export async function runReport(
     mode: "write",
     programs,
     outDir: options.out,
+    theme,
   });
 
   for (const u of result.unwritten) {
     console.warn(
       `⚠ arcane: ${u.slug} has ${u.ids.length} epic(s) with no \`**Report:**\` line in PLAN.md -- they render as "unwritten": ${u.ids.join(", ")}.`,
+    );
+  }
+
+  for (const slug of result.themeSkipped) {
+    console.warn(
+      `⚠ arcane: ${slug} -- --theme ${theme} requested, but this template has no theme toggle to set (older vendored template?); left unchanged.`,
     );
   }
 

@@ -12,6 +12,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { buildShowReportModel } from "./model.js";
 import { renderShowReport } from "./render.js";
+import { applyReportTheme, type ReportTheme } from "./theme.js";
 import { parseEpics, parseFrontmatter } from "./plan-parser.js";
 import type { ShowReport } from "./types.js";
 
@@ -144,12 +145,15 @@ async function readOptionalFile(path: string): Promise<string | null> {
 export interface GeneratedReport {
   json: string;
   html: string;
+  /** False when a non-"auto" `theme` was requested but the template has no toggle to set. */
+  themeApplied: boolean;
 }
 
 export async function generateReport(
   rootDir: string,
   program: ReportProgram,
   templateHtml: string,
+  theme: ReportTheme = "auto",
 ): Promise<GeneratedReport> {
   const planContent = await readFile(join(rootDir, program.planRelPath), "utf8");
   const frontmatter = parseFrontmatter(planContent);
@@ -162,9 +166,11 @@ export async function generateReport(
     compiledAt: deterministicCompiledAt(frontmatter),
     templateVersion: TEMPLATE_VERSION,
   });
+  const themed = applyReportTheme(renderShowReport(model, templateHtml), theme);
   return {
     json: `${JSON.stringify(model, null, 2)}\n`,
-    html: renderShowReport(model, templateHtml),
+    html: themed.html,
+    themeApplied: themed.applied,
   };
 }
 
@@ -178,6 +184,8 @@ export interface ReportGenerationOptions {
   programs: ReportProgram[];
   /** Override the output directory (default: next to each program's PLAN.md). Absolute, or relative to `rootDir`. */
   outDir?: string;
+  /** Force the toggle's initial state (SR-UP06). Default "auto" -- byte-for-byte unchanged from today, so every existing golden stays valid without this. */
+  theme?: ReportTheme;
 }
 
 export interface UnwrittenRow {
@@ -197,6 +205,8 @@ export interface ReportGenerationResult {
    * and a report is more honest showing a visible gap than blocking on one.
    */
   unwritten: UnwrittenRow[];
+  /** Program slugs where a non-"auto" `theme` was requested but had no toggle to apply to (SR-UP06). */
+  themeSkipped: string[];
 }
 
 /**
@@ -207,12 +217,15 @@ export interface ReportGenerationResult {
  */
 export async function runReportGeneration(options: ReportGenerationOptions): Promise<ReportGenerationResult> {
   const templateHtml = await readFile(options.templatePath, "utf8");
+  const theme = options.theme ?? "auto";
   const drifted: string[] = [];
   const repaired: string[] = [];
   const unwritten: UnwrittenRow[] = [];
+  const themeSkipped: string[] = [];
 
   for (const program of options.programs) {
-    const generated = await generateReport(options.rootDir, program, templateHtml);
+    const generated = await generateReport(options.rootDir, program, templateHtml, theme);
+    if (!generated.themeApplied) themeSkipped.push(program.slug);
     const missing = (JSON.parse(generated.json) as ShowReport).sections
       .flatMap((section) => section.rows)
       .filter((row) => row.descriptionState === "unwritten")
@@ -241,5 +254,5 @@ export async function runReportGeneration(options: ReportGenerationOptions): Pro
     }
   }
 
-  return { drifted, repaired, unwritten };
+  return { drifted, repaired, unwritten, themeSkipped };
 }
