@@ -88,7 +88,28 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   this entry or the session.
 - **Rollback:** none — observation only. Do not paste transcript content, only which numbered probe
   messages were present.
-- **Status:** [ ] open
+- **Result (2026-09-28, in session, Claude Code desktop app on Windows):** ran the probe live —
+  "probe one" through "probe three" sent normally, then a genuinely mid-stream `/model` switch
+  (`claude-sonnet-5` → `claude-opus-5-5`, confirmed by the operator: "i changed the model while the
+  text was still rendering"), then "probe three-b" and a second mid-stream switch back to
+  `claude-sonnet-5`, then "probe four-b". **All five probe messages were quotable in-session and
+  confirmed present in the persisted transcript.** `~/.claude/projects/<project>/` showed three
+  `.jsonl` files for this session (`68d91d32…`, `48fdaf3e…`, `a060694f…`, checked by content, not
+  just listed): the oldest has none of the probe messages and ends on a clean session-summary/cost
+  record; the next two each *open with the identical early-session history* (same
+  `file-history-snapshot` entries, same title) before continuing — i.e. each new file is a full
+  copy-forward of the whole conversation, not a partial resume from the fork point, and the newest
+  (`a060694f…`) contains all five probes end to end. **Neither explicit `/model` switch caused a new
+  file** — both, including the mid-stream one, and the interrupt, landed inside the already-open
+  `a060694f…`. The two rotations that did happen occurred earlier and don't line up with any
+  explicit action visible in the conversation; most likely automatic checkpointing given the
+  session's size (2.7–2.9MB, hours long) — this cause is inferred, not confirmed with a compaction
+  marker in the file. **#267 did not reproduce in this test:** a `/model` switch, including
+  genuinely mid-stream, dropped nothing observed here.
+- **Status:** [ ] open. The result above is recorded; the operator decides whether this is sufficient
+  to close #267 as not reproducible, or to run the probe again under different conditions (a raw
+  CLI session rather than the desktop app, or a longer/fresher session where the unexplained
+  rotations might not occur) before marking this done.
 
 ## Q-005 — Probe: does fenced Mermaid render in Claude Code's chat pane? (#270)
 
