@@ -162,13 +162,13 @@
   "parked": [],
   "cast": [
     {
-      "name": "arcane-ui-pipeline",
-      "commits": 1,
+      "name": "claude",
+      "commits": 51,
       "source": "commit-trailer"
     },
     {
-      "name": "claude",
-      "commits": 50,
+      "name": "arcane-ui-pipeline",
+      "commits": 1,
       "source": "commit-trailer"
     }
   ],
