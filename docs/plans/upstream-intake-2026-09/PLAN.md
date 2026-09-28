@@ -385,6 +385,10 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
     Report reads epic IDs as letters, a dash, and digits only (`plan-parser.ts`), so an ID like
     "UP-04b" would be silently dropped from the report. Lane A's allowlist in the wave map is
     unchanged.
+  - **Run it from a local session.** `arcane-ui` is a private Azure DevOps repository, not a GitHub
+    one, so the cloud session of 2026-09-28 could not reach it (`add_repo` refused it). The session
+    that does Q-006 needs the operator's own ADO access; this repository's side then re-vendors the
+    built template.
   - Closes #271.
   - **Operator merges.**
 - [ ] **UP-05 — Close.** Route: `direct`. Size: S. Bump: no. Dependencies: UP-04, UP-06, and
