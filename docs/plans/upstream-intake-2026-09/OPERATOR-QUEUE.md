@@ -157,3 +157,25 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Rollback:** do not merge. Every wave stays reviewable and nothing is published until its merge.
 - **Deferred tonight (still open):** #267 waits on Q-004; #271 waits on Q-006.
 - **Status:** [ ] open
+
+## Q-008 — Unrelated PRs into `main` must regenerate this program's Show Report until UP-05
+
+- **What:** While this plan has no `completed:` date in its frontmatter, its Show Report counts every
+  commit on `main` since the baseline, excluding only report-regeneration commits
+  (`src/modules/show-report/model.ts`: "An in-progress program has no bound — 'as of now'").
+  So any PR into `main`, even an unrelated one, changes the committed report. The golden test
+  `test/report-cli.test.ts` then fails unless that PR regenerates it. It also counts that PR's commits
+  as program work. First seen on 2026-09-28, when #290 (one `IDEAS.md` entry) had to regenerate the
+  report to pass.
+- **Why:** This is the designed behaviour for an active program, not a bug. But the program now has two
+  open issues (#267, #271) that wait on you, so it may stay active for a while. Decide how long every
+  other PR carries this cost.
+- **Preconditions:** none.
+- **Options:**
+  1. Keep it active and accept the cost: each PR into `main` ends with a report-only regeneration
+     commit (`npx tsx scripts/report.ts --fix --program upstream-intake-2026-09`).
+  2. Close the program soon. UP-05 writes `completed:`, which fixes the report's end point. But
+     UP-05 as planned requires all 19 issues closed, so closing now also means approving a scope
+     change: #267 and #271 (UP-06) move to a follow-up plan.
+- **Rollback:** none needed; this is a scheduling decision.
+- **Status:** [ ] open
