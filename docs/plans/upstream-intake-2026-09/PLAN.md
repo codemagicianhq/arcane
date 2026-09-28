@@ -321,7 +321,7 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
     delegation is active from that merge.
   - **Report:** Arcane now has one prioritized plan to fix every open issue filed against it, built to
     run independent fixes side by side instead of one release at a time. · category: docs
-- [ ] **UP-01 — Decisions: ADR drafts, probes, and the ARC-036 correction.** Route: `adr`. Size: M
+- [x] **UP-01 — Decisions: ADR drafts, probes, and the ARC-036 correction.** Route: `adr`. Size: M
   (5 stories). Bump: no. Dependencies: UP-00, Q-002. Risk: Low.
   - Drafts three ADRs, all `Proposed`: push policy after init, decision-number allocation, and
     placeholder taxonomy. Drafts the conditional fourth (transcript recovery) only if Q-004
@@ -332,7 +332,12 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
     conditional ADR or filling matrix cells.
   - **Operator merges;** acceptance goes through Q-003.
   - Closes #270.
-- [ ] **UP-02 — Wave 1: safety and setup.** Route: `chain`, with lanes. Size: L (16 stories, 4
+  - [PR #286](https://github.com/codemagicianhq/arcane/pull/286), operator-merged 2026-09-28. It
+    carries ARC-049, ARC-050 and ARC-051, accepted under the Q-003 pre-authorization ("Yes, if
+    faithful"). The conditional transcript-recovery ADR was not drafted: Q-004 has not run.
+  - **Report:** The decisions behind fixing push protection, safe decision numbering and placeholder
+    checks are written down, and a wrong claim about where diagrams render is corrected. · category: decision
+- [x] **UP-02 — Wave 1: safety and setup.** Route: `chain`, with lanes. Size: L (16 stories, 4
   lanes). Bump: minor (1.5.1 → 1.6.0 if nothing ships between). Dependencies: UP-01 with the push
   policy and placeholder ADRs `Accepted`. Risk: Medium (it touches push-safety code).
   - **Empirical-first:** reproduce the retrofit gap in a scratch repo before building:
@@ -342,7 +347,12 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
   - Ships #282's CLI half without closing it. The PR says `Part of #282`, not `Closes`, because the
     spell half lands in UP-03.
   - **Operator merges.**
-- [ ] **UP-03 — Wave 2: registry deltas, idea lifecycle, and session spells.** Route: `chain`, with
+  - [PR #287](https://github.com/codemagicianhq/arcane/pull/287), operator-merged 2026-09-28 as
+    1.6.0, after `spell-sync-pull-request` retargeted it from UP-01's branch onto `main`.
+  - **Report:** Arcane can now actually turn on the push block a sensitive repository asked for.
+    Setup can be finished from an AI coding harness. Private ideas can't slip into a public repository
+    without consent. · category: fix
+- [x] **UP-03 — Wave 2: registry deltas, idea lifecycle, and session spells.** Route: `chain`, with
   lanes. Size: L (16–17 stories, 4 lanes). Bump: minor. Dependencies: UP-02, and the
   decision-number ADR `Accepted`. Risk: Medium (`update.ts` output and the manifest parser grammar).
   - **Empirical-first:** upgrade a fixture manifest that tracks `spell-bootstrap-business` and record
@@ -350,13 +360,35 @@ listable via `spell doctor`, and revocable by editing or removing that entry.
   - Closes #279, #281, #282 (spell half), #264, #274, #265, #268, #263, #275, and #267 (implemented,
     or closed per Q-004).
   - **Operator merges.**
-- [ ] **UP-04 — Wave 3: Show Report theme and the needs-you sweep.** Route: `chain`, with lanes.
+  - [PR #288](https://github.com/codemagicianhq/arcane/pull/288), operator-merged 2026-09-28 as
+    1.7.0. It closed every issue above except #267, which was deferred and stays open pending Q-004
+    (PLAN.md, "Overnight run amendment").
+  - The operator kept `.gitattributes` in every profile (PRD D-09) when the review raised it,
+    2026-09-28.
+  - **Report:** `spell update` now tells you what changed since you installed. Every profile gets a
+    line-ending baseline. Ideas and lessons have a path from capture to action, and parallel sessions
+    can no longer collide on decision numbers. · category: feature
+- [x] **UP-04 — Wave 3: Show Report theme and the needs-you sweep.** Route: `chain`, with lanes.
   Size: M (8 stories, 2 lanes). Bump: minor. Dependencies: UP-03, and Q-006 for lane A. Risk: Low.
   - If Q-006 is not done when UP-04 starts, lane B ships alone and lane A becomes UP-04b, a single-lane
     wave with its own bump.
   - Closes #271, #266.
   - **Operator merges.**
-- [ ] **UP-05 — Close.** Route: `direct`. Size: S. Bump: no. Dependencies: UP-04. Risk: Low.
+  - [PR #289](https://github.com/codemagicianhq/arcane/pull/289), operator-merged 2026-09-28 as
+    1.8.0. Lane B shipped alone and closed #266. Lane A (#271) was not started, because Q-006 is not
+    done; it becomes UP-06 below.
+  - **Report:** When a spell finishes with something only you can do, it now says so at the top of its
+    report, and the next session reminds you until it has been shown. · category: spell
+- [ ] **UP-06 — Show Report theme (UP-04's lane A, split out).** Route: `chain`, single lane. Size:
+  S (4 stories). Bump: minor. Dependencies: Q-006 (the change in `arcane-ui`). Risk: Low.
+  - This is the wave the UP-04 rule above calls "UP-04b". It is recorded as UP-06 because the Show
+    Report reads epic IDs as letters, a dash, and digits only (`plan-parser.ts`), so an ID like
+    "UP-04b" would be silently dropped from the report. Lane A's allowlist in the wave map is
+    unchanged.
+  - Closes #271.
+  - **Operator merges.**
+- [ ] **UP-05 — Close.** Route: `direct`. Size: S. Bump: no. Dependencies: UP-04, UP-06, and
+  #267's outcome under Q-004. Risk: Low.
   - Definition-of-Done audit with evidence.
   - Verifies all 19 issues are closed on GitHub.
   - Final drift check and Show Report regeneration.

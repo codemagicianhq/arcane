@@ -106,7 +106,8 @@ added to registry → minor". It is applied by the orchestrator at integration.
 
 **Wave branch:** `sessions/2026-09-27-up-04-needs-you`, stacked on UP-03's branch.
 **Lane A (#271, Show Report theme) is deferred.** It waits on OPERATOR-QUEUE Q-006, the change in
-`arcane-ui`, and becomes UP-04b when that lands (PLAN.md, "Overnight run amendment").
+`arcane-ui`, and becomes UP-04b (recorded in PLAN.md as UP-06) when that lands (PLAN.md, "Overnight
+run amendment").
 **Decision built on:** PRD D-13, one ARC-039 fragment landed last as a single sweep.
 **Version:** one minor, 1.7.0 → 1.8.0. A new distributable fragment and new spell text fall under
 `spell-bump`'s "When in doubt: new distributable content = minor". Applied by the orchestrator.
