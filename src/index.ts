@@ -289,7 +289,11 @@ program
     "--refresh",
     "Accepted for forward compatibility; external-data snapshotting is not implemented yet, so this regenerates from local sources",
   )
-  .action(async (opts: { plan?: string; out?: string; refresh?: boolean }) => {
+  .option(
+    "--theme <mode>",
+    "Force the in-page toggle's initial state: auto | light | dark (default auto, byte-for-byte unchanged). Pair with --out for a one-off themed copy so it doesn't overwrite the tracked show-report.html",
+  )
+  .action(async (opts: { plan?: string; out?: string; refresh?: boolean; theme?: string }) => {
     await runReport(process.cwd(), opts, ASSETS_DIR);
   });
 

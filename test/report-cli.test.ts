@@ -11,6 +11,7 @@ import {
   runReportCheck,
 } from "../scripts/report.js";
 import { isShallowRepository } from "../src/modules/show-report/sources.js";
+import { runReportGeneration } from "../src/modules/show-report/generate.js";
 
 const ROOT_DIR = process.cwd();
 
@@ -194,6 +195,69 @@ describe("show-report CLI: runReportCheck --check/--fix", () => {
     async () => {
       dir = await createProgramFixture();
       await expect(runReportCheck("check", dir, "nope")).rejects.toThrow(/No program "nope".*tabular/);
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+});
+
+describe("show-report CLI: --theme (SR-UP06, closes arcane#271)", () => {
+  it(
+    "defaulting to auto writes the same bytes as an explicit auto, and as a run before --theme existed",
+    async () => {
+      dir = await createProgramFixture();
+      const { programs } = await discoverPrograms(dir);
+      const templatePath = join(dir, TEMPLATE_RELPATH);
+
+      const withoutOption = await runReportGeneration({ rootDir: dir, templatePath, mode: "write", programs });
+      const withoutHtml = await fs.readFile(join(dir, "docs/plans/alpha/show-report.html"), "utf8");
+      expect(withoutOption.themeSkipped).toEqual([]);
+
+      const explicitAuto = await runReportGeneration({
+        rootDir: dir,
+        templatePath,
+        mode: "write",
+        programs,
+        theme: "auto",
+      });
+      expect(explicitAuto.repaired).toEqual([]); // byte-identical -- nothing to rewrite
+      expect(await fs.readFile(join(dir, "docs/plans/alpha/show-report.html"), "utf8")).toBe(withoutHtml);
+    },
+    HEAVY_TEST_TIMEOUT,
+  );
+
+  it(
+    "--theme dark checks the dark radio in the written html; --theme light checks the light radio",
+    async () => {
+      dir = await createProgramFixture();
+      const { programs } = await discoverPrograms(dir);
+      const templatePath = join(dir, TEMPLATE_RELPATH);
+
+      const dark = await runReportGeneration({
+        rootDir: dir,
+        templatePath,
+        mode: "write",
+        programs,
+        theme: "dark",
+      });
+      expect(dark.themeSkipped).toEqual([]);
+      const darkHtml = await fs.readFile(join(dir, "docs/plans/alpha/show-report.html"), "utf8");
+      expect(darkHtml).toMatch(/id="arcane-report-theme-dark"[^>]*\bchecked\b/);
+      expect(darkHtml).not.toMatch(/id="arcane-report-theme-light"[^>]*\bchecked\b/);
+      // The vendored template ships "auto" pre-checked -- confirm --theme dark moved it off, not just added a second checked radio.
+      expect(darkHtml).not.toMatch(/id="arcane-report-theme-auto"[^>]*\bchecked\b/);
+
+      const light = await runReportGeneration({
+        rootDir: dir,
+        templatePath,
+        mode: "write",
+        programs,
+        theme: "light",
+      });
+      // Theme only affects the rendered HTML, never the JSON model, so only the .html path repairs.
+      expect(light.repaired).toEqual(["docs/plans/alpha/show-report.html"]);
+      const lightHtml = await fs.readFile(join(dir, "docs/plans/alpha/show-report.html"), "utf8");
+      expect(lightHtml).toMatch(/id="arcane-report-theme-light"[^>]*\bchecked\b/);
+      expect(lightHtml).not.toMatch(/id="arcane-report-theme-dark"[^>]*\bchecked\b/);
     },
     HEAVY_TEST_TIMEOUT,
   );
