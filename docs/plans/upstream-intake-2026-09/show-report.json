@@ -15,18 +15,18 @@
   "masthead": {
     "eyebrow": "Show Report",
     "title": "Upstream Intake 2026-09 — Every Open Issue, Fixed in Parallel Waves",
-    "dek": "active — 1 of 6 epics shipped"
+    "dek": "active — 5 of 7 epics shipped"
   },
   "stats": [
     {
       "id": "epics",
-      "value": "1/6",
+      "value": "5/7",
       "label": "epics shipped",
       "derived": true
     },
     {
       "id": "prs",
-      "value": 1,
+      "value": 5,
       "label": "pull requests",
       "derived": true
     },
@@ -73,6 +73,11 @@
       "id": "Q-007",
       "title": "Review and merge the overnight stacked wave PRs, in order",
       "reason": "Every merge into `main` publishes to npm (`release-drift.yml` → `publish.yml`), and the"
+    },
+    {
+      "id": "Q-008",
+      "title": "Unrelated PRs into `main` must regenerate this program's Show Report until UP-05",
+      "reason": "This is the designed behaviour for an active program, not a bug. But the program now has two"
     }
   ],
   "sections": [
@@ -94,30 +99,50 @@
         {
           "id": "UP-01",
           "title": "Decisions: ADR drafts, probes, and the ARC-036 correction",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "The decisions behind fixing push protection, safe decision numbering and placeholder checks are written down, and a wrong claim about where diagrams render is corrected.",
+          "descriptionState": "authored",
+          "category": "decision",
+          "href": "https://github.com/codemagicianhq/arcane/pull/286",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/286"
+          ]
         },
         {
           "id": "UP-02",
           "title": "Wave 1: safety and setup",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "Arcane can now actually turn on the push block a sensitive repository asked for. Setup can be finished from an AI coding harness. Private ideas can't slip into a public repository without consent.",
+          "descriptionState": "authored",
+          "category": "fix",
+          "href": "https://github.com/codemagicianhq/arcane/pull/287",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/287"
+          ]
         },
         {
           "id": "UP-03",
           "title": "Wave 2: registry deltas, idea lifecycle, and session spells",
-          "description": null,
-          "descriptionState": "unwritten",
-          "category": "process",
-          "refs": []
+          "description": "`spell update` now tells you what changed since you installed. Every profile gets a line-ending baseline. Ideas and lessons have a path from capture to action, and parallel sessions can no longer collide on decision numbers.",
+          "descriptionState": "authored",
+          "category": "feature",
+          "href": "https://github.com/codemagicianhq/arcane/pull/288",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/288"
+          ]
         },
         {
           "id": "UP-04",
           "title": "Wave 3: Show Report theme and the needs-you sweep",
+          "description": "When a spell finishes with something only you can do, it now says so at the top of its report, and the next session reminds you until it has been shown.",
+          "descriptionState": "authored",
+          "category": "spell",
+          "href": "https://github.com/codemagicianhq/arcane/pull/289",
+          "refs": [
+            "https://github.com/codemagicianhq/arcane/pull/289"
+          ]
+        },
+        {
+          "id": "UP-06",
+          "title": "Show Report theme (UP-04's lane A, split out)",
           "description": null,
           "descriptionState": "unwritten",
           "category": "process",
@@ -138,7 +163,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 48,
+      "commits": 49,
       "source": "commit-trailer"
     }
   ],
