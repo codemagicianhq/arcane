@@ -163,7 +163,7 @@
   "cast": [
     {
       "name": "claude",
-      "commits": 52,
+      "commits": 53,
       "source": "commit-trailer"
     },
     {
