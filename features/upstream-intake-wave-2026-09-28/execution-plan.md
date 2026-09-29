@@ -91,7 +91,7 @@ flowchart LR
 **Recommendation:** option 1. A cited-but-missing governance document leaves a spell broken, while
 a newly available component is a preference, which the flag in R-293b already covers.
 **Blocking:** Epic 2. The number is allocated from the fetched trunk when the ADR is drafted
-(ARC-049 is the latest today).
+(ARC-051 is the latest today, on this branch and on trunk, so ARC-052 is the first free number).
 
 ## Security Flags
 
