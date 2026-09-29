@@ -31,3 +31,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-09-29-up02-a-windows-path-masking.md`, lesson "\"Fails deterministically\" is a claim with a date on it".
+
+---
+
+## Feedback — git-conventions worktree removal (2026-09-29)
+
+**Session:** Epic 1 "Safety fixes" of the 2026-09-28 upstream intake, and the ARC-052 draft (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- `git worktree remove --force` on a scratch worktree whose `node_modules` was a junction to the primary checkout's `node_modules` followed the junction and emptied the real directory (194 entries to 0). `npm ci` restored it and no tracked file was touched, but nothing in the governance docs that tell an agent to remove a worktree (`git-conventions.md` Post-Merge Cleanup, `spell-close-session` step 10) mentions links inside a worktree.
+
+### Improvement Items
+- [ ] Add a warning to the worktree-removal instructions in `git-conventions.md` (and the pointer in `spell-close-session` step 10): before `git worktree remove --force`, list the worktree for junctions or symlinks (for example `Get-ChildItem -Force <path> | Where-Object LinkType` on Windows) and unlink them first, because `--force` can delete through them. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-09-29-upstream-intake-closeout-and-scope.md`, lesson "Deleting a worktree can delete the real `node_modules`". The claim that the governance docs do not mention junctions was checked with a search of `.arcane/governance`, `src/assets/.arcane/governance` and `src/assets/.arcane/spells` (no match); the `--force` behaviour is as observed once on Windows, not re-tested.
