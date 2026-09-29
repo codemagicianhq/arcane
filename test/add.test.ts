@@ -61,7 +61,7 @@ describe("spell add — handler", () => {
     const consoleSpy = vi.spyOn(console, "error");
     const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
-    await runAdd("testing-standards", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await runAdd(["testing-standards"], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining("spell init"),
@@ -76,7 +76,7 @@ describe("spell add — handler", () => {
     const consoleSpy = vi.spyOn(console, "error");
     const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
-    await runAdd("nonexistent-component", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await runAdd(["nonexistent-component"], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     const errorMsg = consoleSpy.mock.calls[0]?.[0] as string;
     expect(errorMsg).toContain('"nonexistent-component"');
@@ -104,7 +104,7 @@ describe("spell add — handler", () => {
     // Small sleep to ensure mtime would differ if file were written
     await new Promise((r) => setTimeout(r, 10));
 
-    await runAdd("testing-standards", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await runAdd(["testing-standards"], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     const mtimeAfter = (await fs.stat(join(tmpDir, ".arcane.json"))).mtimeMs;
     expect(mtimeAfter).toBe(mtimeBefore); // file not touched
@@ -123,7 +123,7 @@ describe("spell add — handler", () => {
 
     const consoleSpy = vi.spyOn(console, "log");
 
-    await runAdd("testing-standards", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await runAdd(["testing-standards"], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     // File should exist in target dir
     const destPath = join(tmpDir, ".arcane/governance/testing-standards.md");
@@ -153,7 +153,7 @@ describe("spell add — handler", () => {
     const consoleSpy = vi.spyOn(console, "log");
 
     await runAdd(
-      "testing-standards",
+      ["testing-standards"],
       { dryRun: true },
       tmpDir,
       ASSETS_DIR,
@@ -187,16 +187,14 @@ describe("spell add — handler", () => {
     await fs.mkdir(join(tmpDir, ".arcane", "governance"), { recursive: true });
     await fs.writeFile(destPath, "old content");
 
-    // Without force should throw
-    await expect(
-      runAdd("testing-standards", { force: false }, tmpDir, ASSETS_DIR, PACKAGE_VERSION),
-    ).rejects.toThrow();
-
-    // Reset manifest (add threw before updating it)
-    await writeManifest(tmpDir);
+    // Without force: refuses, does not throw (R-294b)
+    vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+    await runAdd(["testing-standards"], { force: false }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    expect(await fs.readFile(destPath, "utf8")).toBe("old content");
+    vi.restoreAllMocks();
 
     // With force should succeed
-    await runAdd("testing-standards", { force: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await runAdd(["testing-standards"], { force: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
     const content = await fs.readFile(destPath, "utf8");
     expect(content).not.toBe("old content");
   });
@@ -209,7 +207,7 @@ describe("spell add — handler", () => {
     const consoleSpy = vi.spyOn(console, "log");
 
     // Use "spells-build" which has many files (9 spells x 2 client formats)
-    await runAdd("spells-build", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    await runAdd(["spells-build"], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     const manifest = await readManifestFile(tmpDir);
     const installed = manifest.components.find((c) => c.name === "spells-build");

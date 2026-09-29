@@ -42,6 +42,14 @@ import {
   formatRegistryChanges,
   type RegistryChanges,
 } from "../modules/registry-changes.js";
+import {
+  describeInstallPlan,
+  executeUpdateInstalls,
+  offerableNewComponents,
+  planUpdateInstalls,
+  selectNewComponents,
+  type UpdateInstallPlan,
+} from "../modules/update-installs.js";
 import { fetchPublishedFile } from "../modules/npm-registry.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
 import {
@@ -116,7 +124,7 @@ export async function missingTierWarning(
 
 /**
  * Names what the flags recorded, then the ARC-049 notice if push_policy
- * changed by any route in this run. Update still installs nothing.
+ * changed by any route in this run. Update installs no push controls.
  */
 function reportFlagPatch(
   flagPatch: Partial<ArcaneManifest>,
@@ -526,6 +534,15 @@ export async function runUpdate(
   }
   const scope: InstallScope = resolvedScope.scope;
 
+  // ARC-052 / D-07: newly available components are a repository question.
+  if (options.addNew && scope !== "repo") {
+    console.error(
+      "\n  ✗ --add-new offers the components a repository's profile gained; the user tier has no profile. Run it without --user, inside a repository.\n",
+    );
+    process.exit(1);
+    return;
+  }
+
   // PRD D-02: validated and conflict-checked before anything is written, so a
   // refused flag (including any attempt to loosen push_policy) changes nothing.
   let flagPatch: Partial<ArcaneManifest> = {};
@@ -608,8 +625,42 @@ export async function runUpdate(
       }
       : {}),
   };
+  // ARC-052: beyond refreshing what is installed, `update` installs the
+  // `requires` prerequisites of installed components, and the newly available
+  // components the operator opted into (R-293b). The plan is made once, from
+  // the disk, before anything is written: the dry run prints it and the real
+  // run executes it. What is installed leaves the lists printed below.
+  let installPlan: UpdateInstallPlan = { items: [], leftAlone: [] };
+  if (scope === "repo" && manifest.components.length > 0) {
+    const missingRequires = registryChanges.missingRequires ?? [];
+    const selectedNew = await selectNewComponents(
+      offerableNewComponents(registryChanges.newlyAvailable ?? [], missingRequires),
+      { addNew: Boolean(options.addNew), interactive: Boolean(process.stdin.isTTY), dryRun: Boolean(options.dryRun) },
+    );
+    installPlan = await planUpdateInstalls({ targetDir, assetsDir, spellScope, missingRequires, selectedNew });
+    const installing = new Set(installPlan.items.map((i) => i.plan.component.name));
+    registryChanges.installedByUpdate = installing.size > 0;
+    registryChanges.addNewUsed = Boolean(options.addNew);
+    registryChanges.newlyAvailable = (registryChanges.newlyAvailable ?? []).filter((c) => !installing.has(c.name));
+    registryChanges.missingRequires = missingRequires
+      .filter((m) => !installing.has(m.name))
+      .map((m) => ({ ...m, leftAloneReason: installPlan.leftAlone.find((l) => l.name === m.name)?.reason }));
+  }
   const printRegistryChanges = (): void => {
     for (const line of formatRegistryChanges(registryChanges)) console.log(line);
+  };
+  const applyInstalls = async (): Promise<InstalledComponent[]> => {
+    const declined = installPlan.leftAlone.filter((l) => l.kind === "new");
+    if (installPlan.items.length === 0 && declined.length === 0) return [];
+    console.log(options.dryRun ? "\n[dry-run] Components this update would install (ARC-052):" : "\nComponents installed by this update (ARC-052):");
+    for (const l of declined) console.log(`  ! Not installed: ${l.name} — ${l.reason}`);
+    if (options.dryRun) {
+      for (const line of describeInstallPlan(installPlan)) console.log(line);
+      return [];
+    }
+    const { installed, lines } = await executeUpdateInstalls(installPlan, targetDir, packageVersion);
+    for (const line of lines) console.log(line);
+    return installed;
   };
 
   // Already up to date -- unless a tracked file has gone missing, in which
@@ -620,15 +671,18 @@ export async function runUpdate(
     const missing = await findMissingTrackedFiles(targetDir, manifest.components, scope, spellScope, readopted);
     const unmanaged = findUnmanagedTrackedFiles(manifest.components, scope, spellScope);
     if (missing.length === 0 && unmanaged.length === 0) {
-      console.log("Already up to date.");
+      console.log(installPlan.items.length === 0 ? "Already up to date." : "Installed components are at the current version.");
+      const newlyInstalled = await applyInstalls();
       // Still surfaced here: a component the operator has not added yet is
       // news on every run, not only on the run that changed the version.
       printRegistryChanges();
       // Flags still record their answers on a current install: a harness
       // finishing setup is not upgrading anything.
-      if (scope === "repo" && Object.keys(flagPatch).length > 0) {
-        if (!options.dryRun) await writeManifest(targetDir, answered);
-        reportFlagPatch(flagPatch, manifest, answered, options.dryRun);
+      if (scope === "repo" && (Object.keys(flagPatch).length > 0 || newlyInstalled.length > 0)) {
+        if (!options.dryRun) {
+          await writeManifest(targetDir, { ...answered, components: [...answered.components, ...newlyInstalled] });
+        }
+        if (Object.keys(flagPatch).length > 0) reportFlagPatch(flagPatch, manifest, answered, options.dryRun);
       }
       // The user tier's client files can go missing (or a renderer can
       // change) with the store itself intact -- reconcile them on every
@@ -775,7 +829,10 @@ export async function runUpdate(
 
       // initOnly: update never creates these. Their appearance alone changes
       // how Git treats the whole repository, so adding one mid-life is the
-      // operator's call, not a side effect of a version upgrade (EF-17).
+      // operator's call, not a side effect of a version upgrade (EF-17). That
+      // holds even for a `requires` prerequisite: update installs nothing on
+      // its own except the prerequisites of installed components, and never an
+      // initOnly one (ARC-052).
       if (component.initOnly && !targetExists) {
         console.log(
           `  ! Missing: ${file} — not added automatically, because doing so would change how Git treats existing files. Run "spell add ${component.name}" if you want it.`,
@@ -937,6 +994,8 @@ export async function runUpdate(
       fileHashes,
     });
   }
+
+  updatedComponents.push(...(await applyInstalls()));
 
   // One sweep, once every component has declared what it claims. A candidate
   // some other component still ships is not an orphan at all -- the check a

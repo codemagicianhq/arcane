@@ -3,9 +3,9 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ArcaneManifest, InstalledComponent } from "../src/types.js";
-import { getAllComponents, getComponent } from "../src/modules/registry.js";
+import { getAllComponents, getComponent, listProfiles } from "../src/modules/registry.js";
 import { findMissingRequires } from "../src/modules/registry-changes.js";
-import { checkComponentRequires, runDoctor } from "../src/commands/doctor.js";
+import { checkComponentRequires, checkNewlyAvailableComponents, runDoctor } from "../src/commands/doctor.js";
 import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { removeFixtureDir } from "./helpers/git-fixture.js";
 
@@ -113,7 +113,7 @@ describe("UP03-A-04 — reported by doctor and update", () => {
 
     expect(result).toMatchObject({ passed: false, blocking: false });
     for (const name of STANDARDS) {
-      expect(result.message).toContain(`spells-build cites ${name}, which is not installed — \`spell add ${name}\``);
+      expect(result.message).toContain(`spells-build cites ${name}, which is not installed — \`spell update\` installs it, or \`spell add ${name}\``);
     }
   });
 
@@ -165,18 +165,69 @@ describe("UP03-A-04 — reported by doctor and update", () => {
     HEAVY_TEST_TIMEOUT,
   );
 
-  it("update lists the missing prerequisites once each, even where the profile also offers them, and installs none", async () => {
+  it("update no longer only lists the missing prerequisites: its dry run names the install, once each, and prints no Missing block (ARC-052 supersedes 'installs none')", async () => {
     await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
     const spy = vi.spyOn(console, "log");
 
     await runUpdate({ dryRun: true }, tmpDir, ASSETS_DIR, NEW_VERSION);
 
     const out = logged(spy);
-    expect(out).toContain("Missing prerequisites — installed components cite these, and they are not installed:");
+    expect(out).not.toContain("Missing prerequisites");
     for (const name of STANDARDS) {
-      expect(out).toContain(`    ${name} (required by spells-build)`);
-      expect(spy.mock.calls.filter((c: unknown[]) => c[0] === `      spell add ${name}`), name).toHaveLength(1);
+      const wouldInstall = out.split("\n").filter((l) => l.includes(`Would install: ${name} (prerequisite of spells-build)`));
+      expect(wouldInstall, name).toHaveLength(1);
+      expect(spy.mock.calls.filter((c: unknown[]) => c[0] === `      spell add ${name}`), name).toHaveLength(0);
       await expect(fs.access(join(tmpDir, getComponent(name).files[0]!))).rejects.toThrow();
     }
+  });
+});
+
+describe("R-293b — doctor names the one command and stays read-only", () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await fs.mkdtemp(join(tmpdir(), "up03-newly-"));
+  });
+
+  afterEach(async () => {
+    await removeFixtureDir(tmpDir);
+  });
+
+  const governanceWithout = (omit: string[]): InstalledComponent[] =>
+    listProfiles()
+      .find((p) => p.id === "governance-only")!
+      .components.filter((n) => !omit.includes(n))
+      .map(entry);
+
+  it("warns, non-blocking, naming `spell update --add-new` for an installable one and `spell add` for an initOnly one, and writes nothing", async () => {
+    await writeManifest(tmpDir, {
+      profile: "governance-only",
+      components: governanceWithout(["compliance-standards", "line-ending-baseline"]),
+    });
+    const before = (await fs.readdir(tmpDir, { recursive: true })).sort();
+
+    const result = await checkNewlyAvailableComponents(tmpDir);
+
+    expect(result).toMatchObject({ passed: false, blocking: false });
+    expect(result.message).toContain("compliance-standards — `spell update --add-new` installs it");
+    expect(result.message).toContain("line-ending-baseline — initOnly, so only `spell add line-ending-baseline`");
+    expect((await fs.readdir(tmpDir, { recursive: true })).sort()).toEqual(before);
+  });
+
+  it("passes when nothing is missing, skips in the user tier and without a manifest", async () => {
+    await writeManifest(tmpDir, { profile: "governance-only", components: governanceWithout([]) });
+    expect(await checkNewlyAvailableComponents(tmpDir)).toMatchObject({ passed: true });
+
+    await writeManifest(tmpDir, { scope: "user", components: [] });
+    expect(await checkNewlyAvailableComponents(tmpDir)).toMatchObject({ passed: true, skipped: true });
+
+    await removeFixtureDir(join(tmpDir, ".arcane.json"));
+    expect(await checkNewlyAvailableComponents(tmpDir)).toMatchObject({ passed: true, skipped: true });
+  });
+
+  it("does not repeat a missing prerequisite the prerequisites check already reports", async () => {
+    await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
+    const result = await checkNewlyAvailableComponents(tmpDir);
+    for (const name of STANDARDS) expect(result.message).not.toContain(name);
   });
 });

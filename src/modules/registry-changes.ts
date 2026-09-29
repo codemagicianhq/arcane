@@ -15,7 +15,9 @@ import type { InstallScope, InstalledComponent, Profile, RegistryRetirement } fr
  * (PRD D-15). Report-only by construction: everything here reads the manifest,
  * the registry and the disk and returns lines; nothing writes, installs or
  * deletes (EF-17: adding files to an existing repository is the operator's
- * call).
+ * call). `spell update` installs the `requires` prerequisites of installed
+ * components and, on request, newly available ones (ARC-052) -- in its own
+ * step, then removes what it installed from these lists before they print.
  */
 export interface RegistryChanges {
   /** Renamed or retired spells/components this manifest still tracks (#279). */
@@ -26,11 +28,17 @@ export interface RegistryChanges {
   profile?: Profile;
   /** Components an installed component `requires` that are not installed. */
   missingRequires?: MissingRequirement[];
+  /** `spell update` installed something this run, so "nothing was added" would be untrue. */
+  installedByUpdate?: boolean;
+  /** The run already used `--add-new`, so the hint to use it would be circular. */
+  addNewUsed?: boolean;
 }
 
 export interface MissingRequirement {
   name: string;
   requiredBy: string[];
+  /** Why `spell update` did not install it this run (ARC-052), when it declined. */
+  leftAloneReason?: string;
 }
 
 /**
@@ -157,22 +165,28 @@ export function formatRegistryChanges(changes: RegistryChanges): string[] {
   }
   if (newlyAvailable.length > 0) {
     const profile = changes.profile ? ` "${changes.profile}"` : "";
-    lines.push(`  Newly available for your${profile} profile, not installed — nothing was added:`);
+    lines.push(
+      changes.installedByUpdate
+        ? `  Newly available for your${profile} profile, not installed by this run:`
+        : `  Newly available for your${profile} profile, not installed — nothing was added:`,
+    );
     for (const component of newlyAvailable) {
       lines.push(`    ${component.name} — ${component.description}`);
       lines.push(`      spell add ${component.name}`);
       if (component.alreadyPresent.length > 0) {
         lines.push(
-          `      (already here and yours: ${component.alreadyPresent.join(", ")} — \`spell add\` stops at an existing file rather than overwrite it)`,
+          `      (already here and yours: ${component.alreadyPresent.join(", ")} — \`spell add\` keeps it rather than overwrite it)`,
         );
       }
     }
+    if (!changes.addNewUsed) lines.push("    To install them in one step: `spell update --add-new`");
   }
   if (missingRequires.length > 0) {
     lines.push("  Missing prerequisites — installed components cite these, and they are not installed:");
-    for (const { name, requiredBy } of missingRequires) {
+    for (const { name, requiredBy, leftAloneReason } of missingRequires) {
       lines.push(`    ${name} (required by ${requiredBy.join(", ")})`);
       lines.push(`      spell add ${name}`);
+      if (leftAloneReason) lines.push(`      (not installed by update: ${leftAloneReason})`);
     }
   }
   return lines;

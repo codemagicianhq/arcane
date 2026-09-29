@@ -310,6 +310,8 @@ export interface SpellUpdateOptions {
   defaultScope?: InstallScope;
   /** Preset answers to the retrofit questions (PRD D-02). */
   manifestFlags?: ManifestFlags;
+  /** Install every newly available component without asking (R-293b, ARC-052). Repository scope only. */
+  addNew?: boolean;
 }
 
 export interface VersionCheckResult {

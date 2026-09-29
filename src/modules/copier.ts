@@ -213,3 +213,18 @@ export async function copyDirectory(
 
   return copiedFiles;
 }
+
+/**
+ * Every file under srcDir, as a path relative to targetDir/relativeDir with
+ * forward slashes -- the list `copyDirectory` would write, without writing.
+ * Lets a plan name each destination before any of them is touched.
+ */
+export async function listDirectoryFiles(srcDir: string, relativeDir: string): Promise<string[]> {
+  const files: string[] = [];
+  for (const entry of await readdir(srcDir, { withFileTypes: true })) {
+    const rel = `${relativeDir}/${entry.name}`;
+    if (entry.isDirectory()) files.push(...(await listDirectoryFiles(path.join(srcDir, entry.name), rel)));
+    else files.push(rel);
+  }
+  return files;
+}

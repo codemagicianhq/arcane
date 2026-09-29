@@ -19,6 +19,7 @@ vi.mock("@inquirer/prompts", () => ({
   select: selectMock,
   confirm: confirmMock,
   input: vi.fn().mockResolvedValue("docs"),
+  checkbox: vi.fn().mockResolvedValue([]),
 }));
 vi.mock("../src/modules/npm-registry.js", () => ({ fetchPublishedFile: vi.fn().mockResolvedValue(undefined) }));
 

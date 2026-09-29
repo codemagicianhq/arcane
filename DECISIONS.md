@@ -83,7 +83,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-049](#arc-049--enforcing-a-recorded-push-policy-after-init) | Enforcing a Recorded Push Policy After Init | 2026-09-27 | Accepted   |
 | [ARC-050](#arc-050--decision-number-allocation-across-parallel-sessions) | Decision-Number Allocation Across Parallel Sessions | 2026-09-27 | Accepted   |
 | [ARC-051](#arc-051--placeholder-taxonomy-for-governance-documents) | Placeholder Taxonomy for Governance Documents | 2026-09-27 | Accepted   |
-| [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Proposed   |
+| [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Accepted   |
 
 ---
 
@@ -3351,7 +3351,7 @@ leaves the gap the issue describes.
 ## ARC-052 — `spell update` Installs the `requires` Prerequisites of Installed Components
 
 **Date:** 2026-09-29
-**Status:** Proposed (2026-09-29). Not accepted: the operator accepts it, and it must be Accepted before the PR that implements it merges.
+**Status:** Accepted — the operator accepted it in chat on 2026-09-29 (option 1: install the `requires` prerequisites only; never an `initOnly` component, never a newly available one). Recorded by the implementing agent from that stated acceptance.
 **Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) (the same-version restore path in `update`)
 **Intake:** [#293](https://github.com/codemagicianhq/arcane/issues/293)
 **Design:** [features/upstream-intake-wave-2026-09-28/PRD.md](features/upstream-intake-wave-2026-09-28/PRD.md) requirement R-293a
