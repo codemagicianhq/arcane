@@ -1,0 +1,50 @@
+Epic 1 - Safety fixes (upstream intake 2026-09-28). Append one block per story.
+
+[Phase 1] Re-verified the handed-in diagnoses against source on 2026-09-29 (main 546973d):
+  - #295: src/assets/.mcp.json args ["-y","@example/mcp-server"]; registry.ts:158 skipExisting. CONFIRMED.
+  - #296: exec.ts has no shell option and one caller; platform-policy.ts spawns "az" by name. CONFIRMED live:
+    execFile("az.cmd") -> EINVAL on Node 24.14.
+  - getCloseCommit completedDate branch: %cs committer date, no generatedOutputs exclusion. CONFIRMED (sources.ts:85-95).
+    The rebase cause (committer date rewritten) stays INFERRED, not reproduced.
+[Phase 2] R-296a mechanism measured, not argued: see architecture.md D1. Own error during the measurement:
+  a first A2/B run reused a pwned.txt left by the naive-shell step, so "A2 injects" was unsupported; re-ran each
+  mechanism with the file deleted between steps. The corrected result is the one in architecture.md.
+[Phase 3] R-295a e9ecca7, R-295b b3878f9, R-296a/b f32d0e7 (each an operator-approved local commit, no push).
+  Errors of mine on the way, named: a false "az arguments are fixed strings" claim (they come from a git remote);
+  a wrong assertion count (true 2, claimed 4) caught before any write; the heredoc backslash collapse three
+  more times (test paths, the exec.ts regex, sources.ts "\n"/"\t"), repaired with an explicit backslash char.
+[Phase 3] R-CLOSE a93a038. RECONSIDERED on my own pre-registered rule ("if any completed program's report drifts,
+  reconsider"): the author-date walk made `npm run check:report` fail. Measured, not inferred: commit 538a865 was
+  authored 2026-09-28 and landed 2026-09-29, so it flipped inside upstream-intake-2026-09 and moved the published
+  cast 55 -> 56. Dropped; committer date restored; the generatedOutputs exclusion kept. `check:report` EXIT_CODE=0.
+  Claim corrected on the record: the TODO and PRD said the exclusion fixes PR #304. It does not: b43df06 also
+  edited TODO.md, so it was never report-only. The exclusion is output-invisible on a completed program today.
+  Only the getCloseCommit unit test fails on the old code; the other two tests are guards.
+[Phase 3] Bump 9b0c8e8: fix:self-host-parity repaired 0 of 344; 1.9.0 -> 1.9.1; CHANGELOG entry; check:self-host-parity,
+  check:version-bump, check:stale-claims, check:report all EXIT_CODE=0.
+[Phase 4] Full suite, unpiped: 2049 passed, 2 skipped, 1 failed. The failure is test/up02-a-init-push-policy.test.ts
+  ("--push-policy blocked ... installs exactly what the interactive answer installs"). It ALSO FAILS on an untouched
+  main worktree (546973d), so it is pre-existing: the test masks repo.work by string replace, git prints forward
+  slashes and Windows repo.work has backslashes. up03-a-gitattributes failed in the first full run and passed in the
+  second (order-dependent, the known isolation bug); update.test.ts --user failed once under load and passed alone.
+  Own error: removing that scratch worktree with `git worktree remove --force` followed a node_modules junction
+  and emptied the real node_modules (194 entries -> 0). Restored with `npm ci` (exit 0, 169 entries); tracked
+  files were untouched, and the suite was re-run afterwards to prove the toolchain.
+[Phase 5] Independent adversarial review (subagent, no context from me). No HIGH. Security VERIFIED: no shell, exec,
+  spawn or cmd.exe path in src, and the options type has no shell key. Dash-leading values only make az fail (argparse),
+  not exploitable. The metacharacter test fails under a shell:true mutation. No vacuous pass found. Findings and disposition:
+  - MEDIUM: an unrecognised or missing az.exe packaging lost the working plain launch. FIXED by operator decision
+    ("fall back to plain az, no shell"): resolveAzureCli now returns { file: "az", prefixArgs: [] } instead of null.
+    This CHANGES the approved AC ("an unrecognised launcher... yields null") to "yields today's plain launch, never a shell".
+  - MEDIUM: a relative PATH entry (".", "tools") would have made the resolver read az.cmd from the working directory. FIXED:
+    win32.isAbsolute guard. Test added and shown to FAIL with the guard removed (mutation run), PASS with it.
+  - LOW: a test comment said "byte for byte" (false: the real file indents its body two spaces). FIXED.
+  - LOW: Node-spawning tests lacked the named HEAVY_TEST_TIMEOUT. FIXED. The live test's exec budgets (20s + 5s) now fit in
+    its 30s test timeout (they were 25s + 30s).
+  - Disclosed, not fixed: doctor misses "--package=@example/..." and a single-string "command"; its early return hides the
+    missing-timeout warning.
+  Removed as dead: the null guard in fetchAdoMergeTypePolicies and its test (the resolver can no longer return null).
+[Phase 5b] After the fixes: lint, typecheck, check:report, check:version-bump, check:stale-claims, check:staged-org-tokens
+  all EXIT_CODE=0. Full suite unpiped: 2047 passed, 2 skipped, 3 failed. up02 is the pre-existing failure (also fails on main).
+  The other two are update.test.ts --user tests that hit the 5000ms default timeout under full-suite load; the file passes
+  alone, 83 of 83, and I did not touch it.
