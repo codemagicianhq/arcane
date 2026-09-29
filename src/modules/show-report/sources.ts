@@ -50,17 +50,19 @@ export async function getVersionAtRef(cwd: string, ref: string): Promise<string 
 
 /**
  * The commit `main` stood at when a program's `completed` day ended: the most
- * recent commit whose COMMITTER date falls on or before that day, regardless
- * of which files it touched. Without a `completed` date (a program still in
- * progress) the close is simply HEAD -- "as of now".
+ * recent commit whose COMMITTER date falls on or before that day, ignoring the
+ * program's own report files. Without a `completed` date (a program still in
+ * progress) the close is the most recent commit that touched anything else --
+ * "as of now".
  *
  * Measured, not assumed, against both finished programs: Become Current's last
  * PLAN.md-touching commit on its completed day sat at 0.33.0, while two
  * version bumps landed later that same day without touching the plan -- the
- * human record and the hand ledger both say 0.33.2, and only this definition
- * reproduces it (and Lessons Hardening's 0.34.1). Anchoring to PLAN.md at all
- * was the wrong idea: a finished plan gets edited again (SR-01's own backfill
- * did it), and a program's version moves on commits that never touch it.
+ * human record and the hand ledger both say 0.33.2, and only a date-based
+ * definition reproduces it (and Lessons Hardening's 0.34.1). Anchoring to
+ * PLAN.md at all was the wrong idea: a finished plan gets edited again
+ * (SR-01's own backfill did it), and a program's version moves on commits that
+ * never touch it.
  *
  * Committer date, not author date, because it is the LANDING date: this repo
  * rebase-merges every PR, so it is the merge time and monotonic along the log,
@@ -68,20 +70,33 @@ export async function getVersionAtRef(cwd: string, ref: string): Promise<string 
  * authored at 06:46). `%cs` renders it in the commit's own recorded offset,
  * so the calendar-day comparison gives the same answer on the operator's
  * machine and on a UTC runner, where a `--until=<instant>` filter would not.
+ * Author date was tried for R-CLOSE and rejected: on upstream-intake-2026-09 it
+ * moved a published report (cast 55 -> 56), because a commit authored on the
+ * `completed:` day landed the next day. A rebase rewrites the committer date,
+ * so a PR authored on the completion day and merged after midnight can still
+ * make a report differ between its branch and main (PR #305's 56-vs-55 is
+ * INFERRED to be that, not reproduced); that stays open in TODO.md.
  *
- * For an in-progress program, "now" deliberately excludes the report's own
- * generated outputs (`generatedOutputs`, repository-relative): the close is
- * the most recent commit that touched anything ELSE. Without that, committing
- * a regenerated report moved the close onto the very commit that carried the
- * report, whose own `Agent:` trailer the cast then counted -- so a freshly
- * committed report for an active program was stale the instant it landed,
- * and only a trailer-free regeneration commit kept the parity gate green
- * (TODO.md, "the golden-parity gate has no notion of an in-progress
- * program"). Anchoring on paths rather than on a recorded SHA survives this
- * repo's rebase-merges, which rewrite every SHA on the way to main. The one
- * discipline left is the natural one: a regeneration commit touches only the
- * report files, which is what `spell report` produces.
+ * The generated outputs (`generatedOutputs`, repository-relative) are excluded
+ * from the search in both branches: a commit that touched only them, a
+ * regeneration, is never the close. For an in-progress program without that,
+ * committing a regenerated report moved the close onto the very commit that
+ * carried the report, whose own `Agent:` trailer the cast then counted, so a
+ * freshly committed report was stale the instant it landed (TODO.md, "the
+ * golden-parity gate has no notion of an in-progress program"). For a
+ * completed program the exclusion changes which commit is the close but, today,
+ * nothing in the report: getCast already ignores report-only commits and a
+ * report-only commit never moves the version. It does NOT help a commit that
+ * regenerates the report AND edits something else (that commit is still its own
+ * close and joins the cast; PR #304's `b43df06` was one) -- the standing rule
+ * that a regeneration is its own report-only commit is what makes it converge.
+ * Anchoring on paths rather than on a recorded SHA survives this repo's
+ * rebase-merges, which rewrite every SHA on the way to main.
  */
+function excludeOutputs(generatedOutputs: string[]): string[] {
+  return generatedOutputs.length === 0 ? [] : ["--", ".", ...generatedOutputs.map((p) => `:(exclude)${p}`)];
+}
+
 export async function getCloseCommit(
   cwd: string,
   completedDate?: string,
@@ -91,11 +106,11 @@ export async function getCloseCommit(
     const args =
       generatedOutputs.length === 0
         ? ["rev-parse", "HEAD"]
-        : ["log", "-1", "--format=%H", "HEAD", "--", ".", ...generatedOutputs.map((p) => `:(exclude)${p}`)];
+        : ["log", "-1", "--format=%H", "HEAD", ...excludeOutputs(generatedOutputs)];
     const head = await runGitTextOrNull(cwd, args);
     return head === null || head === "" ? null : head;
   }
-  const log = await runGitTextOrNull(cwd, ["log", "--format=%H%x09%cs", "HEAD"]);
+  const log = await runGitTextOrNull(cwd, ["log", "--format=%H%x09%cs", "HEAD", ...excludeOutputs(generatedOutputs)]);
   if (log === null || log === "") return null;
   for (const line of log.split("\n")) {
     const [sha, landed] = line.split("\t");
