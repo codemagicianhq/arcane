@@ -23,7 +23,7 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   — never squash).
 - **Rollback:** revert the merge, or remove the `upstream-intake-2026-09-plan` entry from
   `.arcane/delegations.json` later to revoke the grant without touching history.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-29 — UP-00 merged as #285 (2026-09-27T06:38Z); ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record.
 
 ## Q-002 — Accept or override the PRD's decision defaults (D-01 … D-16)
 
@@ -70,8 +70,7 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
     implements D-05.
   ARC-049 records two interpretations made while drafting, for the operator to confirm. The
   transcript-recovery ADR was not drafted, because Q-004 has not run.
-- **Status:** [ ] open. The ADRs are accepted under the pre-authorization above, and the entry stays
-  open for the operator to confirm, or to revise before merging UP-01, then mark done.
+- **Status:** [x] done 2026-09-29 — ARC-049..051 merged as `Accepted` in #286 under the 2026-09-27 "Yes, if faithful" pre-authorization and show `Accepted` in DECISIONS.md's index; ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record. No separate re-review of ARC-049's two recorded interpretations is on record from this session.
 
 ## Q-004 — Probe: does the client drop user messages on resume? (#267)
 
@@ -106,10 +105,7 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   session's size (2.7–2.9MB, hours long) — this cause is inferred, not confirmed with a compaction
   marker in the file. **#267 did not reproduce in this test:** a `/model` switch, including
   genuinely mid-stream, dropped nothing observed here.
-- **Status:** [ ] open. The result above is recorded; the operator decides whether this is sufficient
-  to close #267 as not reproducible, or to run the probe again under different conditions (a raw
-  CLI session rather than the desktop app, or a longer/fresher session where the unexplained
-  rotations might not occur) before marking this done.
+- **Status:** [x] done 2026-09-29 — result recorded above (#267 did not reproduce); #267 closed 2026-09-28T20:09Z; ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record. The probe ran in the desktop app only; a raw-CLI run was not made.
 
 ## Q-005 — Probe: does fenced Mermaid render in Claude Code's chat pane? (#270)
 
@@ -129,8 +125,7 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
 - **Result (2026-09-27, in session):** in the Claude app following a Claude Code cloud session, the
   operator saw a fenced ` ```mermaid ` block **"as text, with a copy button"**, not rendered. This is
   recorded as a verified cell in ARC-036's correction matrix. The other clients are still unobserved.
-- **Status:** [ ] open. The one observed client is recorded; the operator marks this done, or adds
-  more clients.
+- **Status:** [x] done 2026-09-29 — one client observed (Claude app: raw text with a copy button), recorded in ARC-036's matrix; #270 closed 2026-09-28T00:00Z; ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record. The other clients remain unobserved and unverified.
 
 ## Q-006 — Make the Show Report theme change in `arcane-ui` (#271)
 
@@ -147,7 +142,7 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   commit or tag to re-vendor from.
 - **Rollback:** revert in `arcane-ui`; this repository keeps the previous vendored template until
   re-vendored.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-29 — the toggle shipped in `arcane-ui` and was vendored as v2.2.1 (563a356), then `spell report --theme` in #302; #271 closed 2026-09-28T20:07Z; ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record.
 
 ## Q-007 — Review and merge the overnight stacked wave PRs, in order
 
@@ -177,7 +172,7 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
   Each merge publishes one minor.
 - **Rollback:** do not merge. Every wave stays reviewable and nothing is published until its merge.
 - **Deferred tonight (still open):** #267 waits on Q-004; #271 waits on Q-006.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-29 — UP-01..UP-04 merged into `main` in order as #286, #287, #288, #289 (2026-09-28T00:00Z to 00:24Z); ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record.
 
 ## Q-008 — Unrelated PRs into `main` must regenerate this program's Show Report until UP-05
 
@@ -199,4 +194,4 @@ Format per entry: **What / Why / Preconditions / Exact commands / Rollback / Sta
      UP-05 as planned requires all 19 issues closed, so closing now also means approving a scope
      change: #267 and #271 (UP-06) move to a follow-up plan.
 - **Rollback:** none needed; this is a scheduling decision.
-- **Status:** [ ] open
+- **Status:** [x] done 2026-09-29 — resolved by option 2: UP-05 wrote `completed: 2026-09-28` and closed the program in #304, with #267 and #271 closed by UP-06 and Q-004. One follow-up remains: the completed-day close-commit bug, filed in TODO.md (`getCloseCommit`) and scoped as R-CLOSE in `features/upstream-intake-wave-2026-09-28/`; ticked on the operator's instruction in session ("take care of both items"), after each entry was checked against the merged record.
