@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkMcpConfig } from "../src/commands/doctor.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
@@ -94,5 +94,90 @@ describe("checkMcpConfig (I12/BC-22)", () => {
     expect(result.passed).toBe(false);
     expect(result.blocking).toBe(false);
     expect(result.message).toContain("not a JSON object");
+  });
+});
+
+describe("checkMcpConfig: the shipped example package (R-295b, #295)", () => {
+  // The exact file `spell init` wrote before the scaffold was fixed.
+  const OLD_SCAFFOLD = JSON.stringify({
+    $comment: "Example MCP server config. Replace or remove the example server below with your own.",
+    mcpServers: {
+      "example-server": { command: "npx", args: ["-y", "@example/mcp-server"], timeout: 30000 },
+    },
+  });
+
+  it("warns, non-blocking, when a server still runs the old example package, naming the file, the server and the fix", async () => {
+    dir = await createFixtureDir("doctor-mcp-example-package");
+    await writeFile(join(dir, ".mcp.json"), OLD_SCAFFOLD, "utf8");
+    const result = await checkMcpConfig(dir);
+    expect(result.passed).toBe(false);
+    expect(result.blocking).toBe(false);
+    expect(result.message).toContain(".mcp.json");
+    expect(result.message).toContain("example-server");
+    expect(result.message).toContain("@example/mcp-server");
+    expect(result.message).toMatch(/replace|remove|delete/i);
+  });
+
+  it("never edits the user-owned file", async () => {
+    dir = await createFixtureDir("doctor-mcp-example-untouched");
+    await writeFile(join(dir, ".mcp.json"), OLD_SCAFFOLD, "utf8");
+    await checkMcpConfig(dir);
+    expect(await readFile(join(dir, ".mcp.json"), "utf8")).toBe(OLD_SCAFFOLD);
+  });
+
+  it("does not warn for a real server line", async () => {
+    dir = await createFixtureDir("doctor-mcp-real-server");
+    await writeFile(
+      join(dir, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          files: {
+            command: "npx",
+            args: ["-y", "@modelcontextprotocol/server-filesystem", "."],
+            timeout: 30000,
+          },
+        },
+      }),
+      "utf8",
+    );
+    const result = await checkMcpConfig(dir);
+    expect(result.passed).toBe(true);
+    expect(result.message).toBe("1 server(s) configured, all with a timeout set");
+  });
+
+  it("still passes silently when there is no .mcp.json", async () => {
+    dir = await createFixtureDir("doctor-mcp-example-absent");
+    const result = await checkMcpConfig(dir);
+    expect(result.passed).toBe(true);
+    expect(result.message).toBe("no .mcp.json — nothing to check");
+  });
+
+  it("finds the package anywhere in args, and only in the servers that run it", async () => {
+    dir = await createFixtureDir("doctor-mcp-example-position");
+    await writeFile(
+      join(dir, ".mcp.json"),
+      JSON.stringify({
+        mcpServers: {
+          good: { command: "npx", args: ["-y", "some-real-server"], timeout: 1000 },
+          bad: { command: "npx", args: ["--quiet", "-y", "@example/other-thing"], timeout: 1000 },
+        },
+      }),
+      "utf8",
+    );
+    const result = await checkMcpConfig(dir);
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain("bad");
+    expect(result.message).not.toContain("good");
+  });
+
+  it("does not throw on a server whose args is not an array", async () => {
+    dir = await createFixtureDir("doctor-mcp-example-bad-args");
+    await writeFile(
+      join(dir, ".mcp.json"),
+      JSON.stringify({ mcpServers: { odd: { command: "x", args: "@example/mcp-server", timeout: 1 } } }),
+      "utf8",
+    );
+    const result = await checkMcpConfig(dir);
+    expect(result.passed).toBe(true);
   });
 });
