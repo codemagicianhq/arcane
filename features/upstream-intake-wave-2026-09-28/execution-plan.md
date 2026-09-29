@@ -82,8 +82,9 @@ flowchart LR
 
 #### ADR Candidate: `spell update` installs a component's `requires` prerequisites
 
-**Trigger:** R-293a. It narrows the recorded position, in the prior program's D-09 and in the
-`initOnly` comment in `update.ts`, that `update` never installs a component on its own.
+**Trigger:** R-293a. It narrows the recorded position, in the `initOnly` comment in `update.ts`
+(and D-09 of the prior program, for `.gitattributes` only; corrected 2026-09-29, this line first
+said D-09 states it generally), that `update` does not add a component on its own.
 **Options:**
 1. Install `requires` only, never `initOnly`, never newly available components (the PRD's choice).
 2. Stay report-only and rely on the existing doctor warning.
@@ -125,10 +126,10 @@ This repository has no roster. Roles resolve to generic workers.
 
 ## Recommended Execution Order
 
-1. Operator answers Open Question 1 (ADR direction) and says go on Epic 1.
+1. Operator answers Open Question 1 (ADR direction) and says go on Epic 1. **Done 2026-09-29.**
 2. Epic 1 through `spell-full-cycle`: architect, implement, `fix:self-host-parity`, one
-   `spell-bump` (patch), `CHANGELOG.md`, review, one PR. **Operator merges.**
-3. While Epic 1 is in review, draft the ADR as `Proposed`. **Operator accepts it.**
+   `spell-bump` (patch), `CHANGELOG.md`, review, one PR. **Operator merges.** **Done: [PR #308](https://github.com/codemagicianhq/arcane/pull/308), merged 2026-09-29, `1.9.1`.**
+3. While Epic 1 is in review, draft the ADR as `Proposed`. **Operator accepts it.** **Drafted as ARC-052 (`Proposed`) on 2026-09-29; not yet accepted.**
 4. Operator runs `spell doctor` on the Windows machine and confirms the branch-policy warning is
    gone. The stubbed test is the CI proof, not the live one.
 5. Epic 2 through `spell-full-cycle`, one `spell-bump` (minor), one PR. **Operator merges.**
