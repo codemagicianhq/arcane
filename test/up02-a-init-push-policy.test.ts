@@ -147,11 +147,15 @@ describe("spell init — push_policy blocked (interactive answer)", () => {
     expect(selectMock).not.toHaveBeenCalled();
     expect(confirmMock).not.toHaveBeenCalled();
 
+    // git prints core.hookspath with forward slashes even on Windows, while the
+    // fixture paths carry backslashes there — normalise both sides before masking
+    // or the two repos' distinct temp-dir names survive and the comparison fails.
+    const slashes = (p: string): string => p.replaceAll("\\", "/");
     const pushControls = (repo: { work: string; bare: string }): string =>
       spawnSync("git", ["config", "--local", "--list"], { cwd: repo.work, encoding: "utf-8" })
         .stdout.split("\n")
         .filter((line) => /^core\.hookspath=|^remote\./i.test(line))
-        .map((line) => line.replaceAll(repo.work, "<work>").replaceAll(repo.bare, "<bare>"))
+        .map((line) => slashes(line).replaceAll(slashes(repo.work), "<work>").replaceAll(slashes(repo.bare), "<bare>"))
         .sort()
         .join("\n");
     expect(pushControls(scripted)).toBe(pushControls(interactive));
