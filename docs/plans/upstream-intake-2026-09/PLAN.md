@@ -598,6 +598,15 @@ evidenced from their own PR bodies and the 2026-09-28 waves journal:
   — is exactly what `spell-sync-pull-request` should name explicitly as its handling for *any*
   generated, script-regenerable artifact (a committed show-report, a compiled template, a lockfile),
   not just something an operator has to reason out fresh each time. Filed to `TODO.md`.
+  **Correction, same day:** this bullet was first written as if regenerating were always enough. It
+  isn't on the program's own `completed:` day. `getCloseCommit`'s `completedDate` branch has no
+  `generatedOutputs` exclusion, so with `completed:` set to *today* every commit made today — the
+  regeneration commit included — becomes the close and joins the cast: UP-05's own PR (#304) went red
+  on CI for exactly this after passing locally, because the regen was computed before the commit that
+  carried it existed. The only convergent fix was a **trailer-free**, report-only regeneration commit,
+  which the cast does not count — verified passing locally and on CI's merge ref. From the next
+  calendar day the problem disappears. Filed to `TODO.md` under Show Report as a real, small bug in
+  `sources.ts`; recorded here rather than silently rewriting the claim above.
 - **A second, unrelated structural finding: this repository's own pre-push hook currently blocks
   itself.** `test/up03-a-gitattributes.test.ts` fails deterministically inside the full suite (state
   leakage from an earlier test file) but passes alone — confirmed on a clean `main`, unrelated to this
