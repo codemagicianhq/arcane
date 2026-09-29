@@ -226,9 +226,8 @@ export async function fetchAdoMergeTypePolicies(
   project: string,
   repoName: string,
   branch: string,
-  launch: AzureCliLaunch | null = resolveAzureCli(),
+  launch: AzureCliLaunch = resolveAzureCli(),
 ): Promise<AdoMergeTypePolicy[] | null> {
-  if (!launch) return null;
   const az = (args: string[]) =>
     execFileWithTimeout(launch.file, [...launch.prefixArgs, ...args], EXTERNAL_CLI_TIMEOUT_MS, {
       ...(launch.env ? { env: launch.env } : {}),

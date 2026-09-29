@@ -99,21 +99,23 @@ const MSI_LAUNCHER_LINE = /^\s*"%~dp0\\\.\.\\python\.exe"\s+-IBm\s+azure\.cli\s+
  * Node cannot spawn `az.cmd` directly on Windows (EINVAL), and the usual cure, a shell, hands `&`, `|`, `"`
  * and `%VAR%` in a remote's project or repository name to `cmd.exe`. So on Windows this reads the MSI
  * launcher, and only when it is exactly the recognised one, runs the interpreter it points at directly with
- * the same arguments. Anything else resolves to `null` and the caller reports "could not query", never a
- * shell fallback. Elsewhere `az` is a plain executable and is launched by name.
+ * the same arguments. Anything else (no az.cmd, an unrecognised launcher, no interpreter) gets the plain
+ * launch `az` by name, which is what runs an `az.exe` packaging and fails harmlessly otherwise. It never
+ * falls back to a shell. Elsewhere `az` is a plain executable and is launched by name.
  */
-export function resolveAzureCli(probes: AzureCliProbes = defaultProbes()): AzureCliLaunch | null {
-  if (probes.platform !== "win32") return { file: "az", prefixArgs: [] };
+export function resolveAzureCli(probes: AzureCliProbes = defaultProbes()): AzureCliLaunch {
+  const plain: AzureCliLaunch = { file: "az", prefixArgs: [] };
+  if (probes.platform !== "win32") return plain;
 
   for (const raw of (probes.pathEnv ?? "").split(";")) {
     const dir = raw.trim().replace(/^"(.*)"$/, "$1");
-    if (!dir) continue;
+    if (!dir || !win32.isAbsolute(dir)) continue;
     const launcher = probes.readText(win32.join(dir, "az.cmd"));
     if (launcher === undefined) continue;
-    if (!MSI_LAUNCHER_LINE.test(launcher)) return null;
+    if (!MSI_LAUNCHER_LINE.test(launcher)) return plain;
     const interpreter = win32.resolve(dir, "..", "python.exe");
-    if (!probes.exists(interpreter)) return null;
+    if (!probes.exists(interpreter)) return plain;
     return { file: interpreter, prefixArgs: ["-IBm", "azure.cli"], env: { AZ_INSTALLER: "MSI" } };
   }
-  return null;
+  return plain;
 }
