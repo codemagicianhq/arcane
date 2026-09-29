@@ -283,20 +283,39 @@ export function parseGitHubRemote(url: string): { owner: string; repo: string } 
   return { owner, repo };
 }
 
+/**
+ * One path segment of an Azure DevOps remote, as text. Git stores the remote percent-encoded
+ * (`My%20Project`), and `az` wants the name itself. A malformed sequence makes the whole remote
+ * unusable (`null`, never a throw), and so does a decoded segment beginning with `-`: the segments
+ * become `az` arguments, and its parser would read such a value as an option rather than a name.
+ * Decoding changes nothing about how they are launched: resolveAzureCli() never involves a shell, so
+ * a decoded `&`, `|`, `"` or `%` is a character in an argument and nothing more.
+ */
+function decodeAdoSegment(raw: string): string | null {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+  if (!decoded || decoded.startsWith("-")) return null;
+  return decoded;
+}
+
 export function parseAdoRemote(
   url: string,
 ): { org: string; project: string; repo: string } | null {
   // Modern: https://dev.azure.com/{org}/{project}/_git/{repo}
-  const modern = /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?]+)/.exec(url);
-  if (modern) {
-    const [, org, project, repo] = modern;
-    if (org && project && repo) return { org, project, repo };
-  }
   // Legacy: https://{org}.visualstudio.com/{project}/_git/{repo}
-  const legacy = /([^./]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/.exec(url);
-  if (legacy) {
-    const [, org, project, repo] = legacy;
-    if (org && project && repo) return { org, project, repo };
-  }
-  return null;
+  const match =
+    /dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/([^/?]+)/.exec(url) ??
+    /([^./]+)\.visualstudio\.com\/([^/]+)\/_git\/([^/?]+)/.exec(url);
+  if (!match) return null;
+  const [, rawOrg, rawProject, rawRepo] = match;
+  if (!rawOrg || !rawProject || !rawRepo) return null;
+  const org = decodeAdoSegment(rawOrg);
+  const project = decodeAdoSegment(rawProject);
+  const repo = decodeAdoSegment(rawRepo);
+  if (org === null || project === null || repo === null) return null;
+  return { org, project, repo };
 }

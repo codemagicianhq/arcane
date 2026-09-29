@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.9.2] - 2026-09-29
+
+One fix, the one `1.9.1` recorded as "not fixed here": `spell doctor`'s Azure DevOps branch-policy check now works for a project or repository whose name contains a space.
+
+### Fixed
+
+- **An Azure DevOps project or repository name with a space in it reaches `az` as the name, not as `My%20Project`.** Git stores the remote percent-encoded, and the remote parser passed the segments on verbatim, so `spell doctor`'s branch-policy check asked `az` for a project that does not exist and warned "could not query" on a project that does. Each segment is now decoded. A remote with a malformed sequence (`%E0%A4%A`) is treated as not an Azure DevOps remote instead of crashing the check, and so is a segment that decodes to something beginning with `-`, which `az`'s argument parser would otherwise read as an option. The launch itself is unchanged and still shell-free: a decoded `&`, `|`, `"` or `%` is a character in an argument, and `1.9.1`'s metacharacter regression still passes.
+
 ## [1.9.1] - 2026-09-29
 
 Two fixes from the upstream intake: `spell init` no longer scaffolds a command that would run a package nobody here owns, and `spell doctor`'s branch-policy check can finally run the Azure CLI on Windows. Closes [#295](https://github.com/codemagicianhq/arcane/issues/295) and [#296](https://github.com/codemagicianhq/arcane/issues/296).

@@ -226,6 +226,55 @@ describe("parseAdoRemote", () => {
   it("returns null for a non-ADO remote", () => {
     expect(parseAdoRemote("https://github.com/codemagicianhq/arcane.git")).toBeNull();
   });
+
+  describe("percent-encoded segments (a project named `My Project` must not reach az as `My%20Project`)", () => {
+    it("decodes every segment of a modern dev.azure.com remote", () => {
+      expect(parseAdoRemote("https://dev.azure.com/my-org/My%20Project/_git/My%20Repo")).toEqual({
+        org: "my-org",
+        project: "My Project",
+        repo: "My Repo",
+      });
+    });
+
+    it("decodes every segment of a legacy visualstudio.com remote", () => {
+      expect(parseAdoRemote("https://myorg.visualstudio.com/Team%20Alpha/_git/Repo%2BPlus")).toEqual({
+        org: "myorg",
+        project: "Team Alpha",
+        repo: "Repo+Plus",
+      });
+    });
+
+    it("decodes multi-byte and metacharacter sequences to plain text, never to anything executable", () => {
+      // The launch is shell-free (resolveAzureCli), so a decoded `&` or `%` is just a character in an argument.
+      expect(parseAdoRemote("https://dev.azure.com/org/Caf%C3%A9%20%26%20Co/_git/r%25d")).toEqual({
+        org: "org",
+        project: "Café & Co",
+        repo: "r%d",
+      });
+    });
+
+    it("returns null instead of throwing on a malformed percent sequence", () => {
+      expect(() => parseAdoRemote("https://dev.azure.com/org/bad%E0%A4%A/_git/repo")).not.toThrow();
+      expect(parseAdoRemote("https://dev.azure.com/org/bad%E0%A4%A/_git/repo")).toBeNull();
+      expect(parseAdoRemote("https://dev.azure.com/org/proj/_git/bad%ZZ")).toBeNull();
+      expect(parseAdoRemote("https://myorg.visualstudio.com/bad%/_git/repo")).toBeNull();
+    });
+
+    it("rejects a decoded segment that begins with `-`, which az's argument parser would read as an option", () => {
+      expect(parseAdoRemote("https://dev.azure.com/org/%2D-help/_git/repo")).toBeNull();
+      expect(parseAdoRemote("https://dev.azure.com/org/proj/_git/-repo")).toBeNull();
+      expect(parseAdoRemote("https://dev.azure.com/-org/proj/_git/repo")).toBeNull();
+      expect(parseAdoRemote("https://myorg.visualstudio.com/--project/_git/repo")).toBeNull();
+    });
+
+    it("keeps a segment that decodes to whitespace; az, not the parser, decides whether it names a project", () => {
+      expect(parseAdoRemote("https://dev.azure.com/org/%20/_git/repo")).toEqual({
+        org: "org",
+        project: " ",
+        repo: "repo",
+      });
+    });
+  });
 });
 
 describe("SANCTIONED_MERGE_METHODS", () => {
