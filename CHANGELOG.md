@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.10.0] - 2026-09-29
+
+The install half of `spell update`, from the upstream intake: `spell update` now installs the prerequisites an installed component cites, and offers newly available components in one step, so an older install no longer needs one `spell add` per gap. `spell add` also stops leaving half a component behind. Closes [#293](https://github.com/codemagicianhq/arcane/issues/293) and [#294](https://github.com/codemagicianhq/arcane/issues/294). The design is [ARC-052](DECISIONS.md#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components), accepted by the operator on 2026-09-29.
+
+### Added
+
+- **`spell update` installs the `requires` prerequisites of installed components.** `spells-build` cites four standards documents; an install that predates them now gets them, hash-tracked and reported by name (`Installed: compliance-standards (prerequisite of spells-build)`). It never installs an `initOnly` component, and it leaves a prerequisite alone, with the reason printed, when a file already sits at its destination. This runs on a same-version `update` too. `--dry-run` names exactly the set a real run installs.
+- **`spell update --add-new` installs the newly available components.** In a terminal, `spell update` offers them as a checklist with nothing ticked; `--add-new` answers it for a script or an agent harness. With neither, nothing is installed and the list prints as before. `initOnly` components are never offered, `--add-new` is refused with `--user`, and a candidate whose file already exists is left alone and named.
+- **`spell add` takes several names.** `spell add a b c` adds them in order, stops at the first failure, reports which were added and which were not attempted, and skips a name that is already installed.
+- **`spell doctor` names the command.** A new non-blocking "Newly available components" check prints `spell update --add-new` (or `spell add` for an `initOnly` one). The prerequisites check now names `spell update`. Doctor installs nothing.
+
+### Changed
+
+- **`spell add` refuses before it writes.** A component with an existing destination file used to fail partway with a stack frame. It now checks every file first, prints one line naming the file and `--force`, exits 1 and writes nothing from that component. `--dry-run` prints three distinct lines (identical, differing, missing) and writes nothing.
+- **A `skipExisting` component keeps your file.** `spell add` on a component such as `.mcp.json` leaves an existing destination alone, reports it as kept, and creates it when missing. A kept file is not recorded as Arcane's, so `spell uninstall` does not remove it.
+- **An interactive `spell update` may now ask one more question**, the checklist above, when newly available components exist. Scripts are unaffected: without a terminal it is skipped.
+
 ## [1.9.2] - 2026-09-29
 
 One fix, the one `1.9.1` recorded as "not fixed here": `spell doctor`'s Azure DevOps branch-policy check now works for a project or repository whose name contains a space.
