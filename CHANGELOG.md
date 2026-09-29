@@ -20,7 +20,7 @@ Two fixes from the upstream intake: `spell init` no longer scaffolds a command t
 
 ### Notes
 
-- The Windows launch depends on the layout of the Azure CLI's MSI installer (`az.cmd` containing the recognised launcher line, with `python.exe` beside it). Any other packaging gets the same "could not query" warning as before, never a wrong answer and never a shell fallback.
+- The Windows launch depends on the layout of the Azure CLI's MSI installer (`az.cmd` containing the recognised launcher line, with `python.exe` beside it). Any other packaging (no `az.cmd` on `PATH`, an unrecognised launcher, or no interpreter beside it) launches plain `az` by name, exactly as before this release, and never through a shell. That works for an `az.exe` install and gives the same "could not query" warning otherwise. Relative `PATH` entries are skipped, so a launcher in the working directory is never read.
 - Not fixed here: an Azure DevOps project name containing a space arrives percent-encoded (`My%20Project`) because the remote parser does not decode it.
 - Not fixed here: the second half of the close-anchor problem, where a rebase-merge can move a completed program's close across midnight. Keying on the author date was tried and moved a published report, so it was dropped. It stays open in `TODO.md`.
 

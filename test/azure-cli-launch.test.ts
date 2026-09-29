@@ -5,9 +5,9 @@ import { join } from "node:path";
 import { execFileWithTimeout, resolveAzureCli, type AzureCliProbes } from "../src/modules/exec.js";
 import { fetchAdoMergeTypePolicies } from "../src/modules/platform-policy.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
-import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
+import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
-// The real launcher the Azure CLI MSI installs, byte for byte (CRLF line endings).
+// The launcher the Azure CLI MSI installs (CRLF line endings; the real file indents its body by two spaces).
 const MSI_LAUNCHER = [
   "::",
   ":: Microsoft Azure CLI - Windows Installer - Author file components script",
@@ -24,6 +24,7 @@ const MSI_LAUNCHER = [
   "",
 ].join("\r\n");
 
+const PLAIN_AZ = { file: "az", prefixArgs: [] };
 const WBIN = "C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\wbin";
 const PYTHON = "C:\\Program Files\\Microsoft SDKs\\Azure\\CLI2\\python.exe";
 
@@ -64,12 +65,24 @@ describe("resolveAzureCli (R-296a, R-296b)", () => {
     expect(launch?.file).toBe(PYTHON);
   });
 
-  it("returns null when PATH is unset or has no az.cmd", () => {
-    expect(resolveAzureCli(winProbes({ pathEnv: undefined }))).toBeNull();
-    expect(resolveAzureCli(winProbes({ pathEnv: "C:\\Windows;C:\\Tools" }))).toBeNull();
+  it("falls back to plain az, never a shell, when PATH is unset or has no az.cmd", () => {
+    expect(resolveAzureCli(winProbes({ pathEnv: undefined }))).toEqual(PLAIN_AZ);
+    expect(resolveAzureCli(winProbes({ pathEnv: "C:\\Windows;C:\\Tools" }))).toEqual(PLAIN_AZ);
   });
 
-  it("returns null for a launcher it does not recognise, never guessing", () => {
+  it("ignores relative PATH entries, so a launcher in the working directory is never read", () => {
+    const read: string[] = [];
+    const launch = resolveAzureCli({
+      platform: "win32",
+      pathEnv: "tools;.;..;",
+      readText: (p) => (read.push(p), MSI_LAUNCHER),
+      exists: () => true,
+    });
+    expect(launch).toEqual(PLAIN_AZ);
+    expect(read).toEqual([]);
+  });
+
+  it("falls back to plain az for a launcher it does not recognise, never guessing", () => {
     for (const body of [
       "@echo off\r\ncalc.exe %*\r\n",
       '"%~dp0\\..\\..\\elsewhere\\python.exe" -IBm azure.cli %*\r\n',
@@ -77,12 +90,12 @@ describe("resolveAzureCli (R-296a, R-296b)", () => {
       '"%~dp0\\..\\python.exe" -IBm azure.cli\r\n',
       "",
     ]) {
-      expect(resolveAzureCli(winProbes({ files: { [`${WBIN}\\az.cmd`]: body } })), JSON.stringify(body)).toBeNull();
+      expect(resolveAzureCli(winProbes({ files: { [`${WBIN}\\az.cmd`]: body } })), JSON.stringify(body)).toEqual(PLAIN_AZ);
     }
   });
 
-  it("returns null when the launcher is recognised but the interpreter is missing", () => {
-    expect(resolveAzureCli(winProbes({ existing: [] }))).toBeNull();
+  it("falls back to plain az when the launcher is recognised but the interpreter is missing", () => {
+    expect(resolveAzureCli(winProbes({ existing: [] }))).toEqual(PLAIN_AZ);
   });
 });
 
@@ -95,7 +108,7 @@ describe("execFileWithTimeout env option", () => {
       { env: { ARCANE_T_VAR: "yes" } },
     );
     expect(JSON.parse(stdout)).toEqual(["yes", "string"]);
-  });
+  }, HEAVY_TEST_TIMEOUT);
 
   it("has no shell option anywhere in exec.ts (comments excluded)", () => {
     const src = readFileSync(join(import.meta.dirname, "..", "src", "modules", "exec.ts"), "utf8")
@@ -148,29 +161,25 @@ describe("fetchAdoMergeTypePolicies with hostile remote-derived text (R-296a, me
     for (const suffix of ["-org", "-project", "-repo"]) {
       expect(await exists(`${marker}${suffix}`), `marker${suffix} was created: a metacharacter executed`).toBe(false);
     }
-  });
-
-  it("returns null, without running anything, when there is no usable launch plan", async () => {
-    expect(await fetchAdoMergeTypePolicies("o", "p", "r", "main", null)).toBeNull();
-  });
+  }, HEAVY_TEST_TIMEOUT);
 });
 
 describe.runIf(process.platform === "win32")("real Azure CLI interpreter on Windows (live)", () => {
   it("runs az --version and delivers hostile arguments unchanged", async (ctx) => {
     const launch = resolveAzureCli();
-    if (!launch) return ctx.skip();
+    if (launch.prefixArgs.length === 0) return ctx.skip();
     tmp = await createFixtureDir("arcane-az-live");
     const marker = join(tmp, "marker").replace(/\\/g, "/");
     const hostile = ["a b", `&echo pwned>"${marker}"&`, "x|y", 'q"q', "%PATH%", "^", "!x"];
 
     const env = launch.env;
-    const version = await execFileWithTimeout(launch.file, [...launch.prefixArgs, "--version"], 25_000, { env });
+    const version = await execFileWithTimeout(launch.file, [...launch.prefixArgs, "--version"], 20_000, { env });
     expect(version.stdout).toMatch(/azure-cli/i);
 
     const echo = await execFileWithTimeout(
       launch.file,
       ["-I", "-c", "import sys, json; sys.stdout.write(json.dumps(sys.argv[1:]))", ...hostile],
-      30_000,
+      5_000,
       { env },
     );
     expect(JSON.parse(echo.stdout)).toEqual(hostile);
