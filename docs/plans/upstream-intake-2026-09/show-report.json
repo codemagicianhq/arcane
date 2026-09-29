@@ -44,43 +44,7 @@
       "derived": true
     }
   ],
-  "needsYou": [
-    {
-      "id": "Q-001",
-      "title": "Merge UP-00",
-      "reason": "The merge *is* the grant. Nothing in this plan authorizes autonomous work until it lands,"
-    },
-    {
-      "id": "Q-003",
-      "title": "Accept, revise, or reject the UP-01 ADRs",
-      "reason": "Accepting an ADR is never within any delegation in this repository. UP-02 cannot start"
-    },
-    {
-      "id": "Q-004",
-      "title": "Probe: does the client drop user messages on resume? (#267)",
-      "reason": "#267's premise is client behaviour no source file can confirm. If it does not reproduce,"
-    },
-    {
-      "id": "Q-005",
-      "title": "Probe: does fenced Mermaid render in Claude Code's chat pane? (#270)",
-      "reason": "ARC-036 claims rendering surfaces that nobody has verified; #270 says Claude Code shows"
-    },
-    {
-      "id": "Q-006",
-      "title": "Make the Show Report theme change in `arcane-ui` (#271)",
-      "reason": "A local edit here would be silently dropped at the next re-vendor (decided 2026-09-27:"
-    },
-    {
-      "id": "Q-007",
-      "title": "Review and merge the overnight stacked wave PRs, in order",
-      "reason": "Every merge into `main` publishes to npm (`release-drift.yml` → `publish.yml`), and the"
-    },
-    {
-      "id": "Q-008",
-      "title": "Unrelated PRs into `main` must regenerate this program's Show Report until UP-05",
-      "reason": "This is the designed behaviour for an active program, not a bug. But the program now has two"
-    }
-  ],
+  "needsYou": [],
   "sections": [
     {
       "id": "wave-1",
