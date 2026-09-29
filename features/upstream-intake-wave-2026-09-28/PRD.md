@@ -62,10 +62,14 @@ running `spell doctor` on Windows against an Azure DevOps remote.
    space would break. The requirement below is *launch `az.cmd` without shell interpretation of the
    arguments*, not "add `shell: true`". The `TODO.md` entry carries the same wrong sentence and is
    corrected in the same change as this PRD.
-2. **#293's headline ask contradicts a recorded decision.** The prior program's D-09, and the
-   comment on `initOnly` in `src/commands/update.ts`, say `spell update` never installs a component
-   on its own, because a mid-life install is the operator's call. That reasoning is specific to
-   files that change how Git treats the whole repository. A `requires` prerequisite is a governance
+2. **#293's headline ask contradicts a recorded position.** The comment on `initOnly` in
+   `src/commands/update.ts` says `spell update` does not add such a file on its own, because a
+   mid-life install is the operator's call, and the prior program's D-09
+   (`features/upstream-intake-2026-09/PRD.md`) records that for the one component it covered,
+   `.gitattributes`. **Corrected 2026-09-29:** this paragraph first said D-09 states the general
+   position that `update` never installs anything. It does not: D-09 is about `.gitattributes`
+   only, and a search found no earlier ADR stating the general one (ARC-052 says so). That
+   reasoning is specific to files that change how Git treats the whole repository. A `requires` prerequisite is a governance
    document a spell already cites, so the spell is broken without it. The requirement below
    narrows the exception to `requires` only and leaves newly available components opt-in. It needs
    an ADR (Open Question 1).

@@ -57,3 +57,66 @@ PR #306 merged while I was committing the queue ticks. The merge auto-deleted th
 - **Four local `sync-backup/*` tags** — none on the remote; the operator decides whether to prune them.
 - **Queue ticks Q-003 and Q-005 carry two honest limits:** Q-003 was ticked under a "Yes, if faithful" pre-authorization with no separate re-review of ARC-049's two interpretations, and Q-005 observed one client only. Both limits are written in the entries themselves.
 - **Pre-push hook** — `up03-a-gitattributes` still fails inside the full suite on this Windows machine ([TODO.md](../TODO.md), Test Infrastructure), so each push needed the operator's per-branch `--no-verify`. CI on Linux is the real gate.
+
+## Session: Epic 1 "Safety fixes" of the 2026-09-28 upstream intake, and the ARC-052 draft
+
+### Prompt Context
+
+The operator answered the plan's Open Question 1 with "yes, approve the ADR direction and go on Epic 1".
+I ran `spell-full-cycle` on Epic 1 from `features/upstream-intake-wave-2026-09-28/execution-plan.md`:
+R-295a and R-295b (#295), R-296a and R-296b (#296), R-CLOSE (Show Report), one patch bump. Standing
+constraints from the operator: R-296a must not interpret remote-derived text through a shell and its
+metacharacter test is a merge blocker; the ADR is not part of Epic 1 and is never accepted by the agent;
+Epic 2 (#293, #294) is not started; the operator merges; every commit and every `--no-verify` push needs
+fresh approval. During review the operator decided "fall back to plain az, no shell" over returning null.
+
+### What Got Done
+
+1. **Epic 1 shipped as one PR.** [PR #308](https://github.com/codemagicianhq/arcane/pull/308) merged 2026-09-29 09:59Z by the operator (CI "Lint, typecheck, test, build", "PR branch is rebased on target" and "Review round clear" all `SUCCESS` at last read; `gh pr view 308` shows `MERGED`). #295 and #296 closed with it (`gh issue view` shows `CLOSED` for both).
+2. **#295:** the `.mcp.json` scaffold no longer names `@example/mcp-server` (`883e5c0`), and `spell doctor` warns installs that kept the line (`0418b99`).
+3. **#296:** `resolveAzureCli` in `src/modules/exec.ts` launches the Azure CLI's own interpreter with no shell on Windows and falls back to plain `az` (never a shell, never null) for any other packaging; relative `PATH` entries are skipped (`4e2a521`, `fe74ab0`). A metacharacter test fails under a `shell:true` mutation, and a relative-PATH test fails with the guard removed.
+4. **R-CLOSE, partly.** `getCloseCommit` excludes the program's generated outputs on the `completedDate` branch (`093f4e6`). Acceptance criterion 2 is NOT met (see Lessons and Open Items).
+5. **`1.9.1` published.** `5b4cddc` bumped it; the "Release drift" workflow created the `v1.9.1` GitHub Release at 09:59:29Z and `publish.yml` run 36552720436 finished `success`, including its "Publish to npm" step. The registry answered `1.9.0` at about 10:04Z and `1.9.1` on a read a few minutes later (`curl https://registry.npmjs.org/arcane-cli/latest`), so it lagged the workflow briefly; the later read is the one that counts.
+6. **Epic 1's record** is in `features/upstream-intake-wave-2026-09-28/epic-1-safety-fixes/` (`architecture.md`, `stories.json`, `progress.txt`), merged in the same PR (`7bc586f`).
+7. **ARC-052 drafted as `Proposed`** in `DECISIONS.md` (`spell update` installs a component's `requires` prerequisites), on branch `claude/docs/adr-update-installs-requires`. It is a draft, not accepted, and its PR is not yet merged.
+8. **The D-09 over-read corrected** in `features/upstream-intake-wave-2026-09-28/PRD.md` and `execution-plan.md` (see Lessons).
+
+### Decisions Made
+
+| ADR | Decision | Rationale |
+|---|---|---|
+| ARC-052 (Proposed) | `spell update` installs missing `requires` prerequisites of installed components (repo scope only, hash-tracked, `--dry-run` parity); never `initOnly` files, never newly available components | A cited-but-missing governance document leaves a spell broken; a newly available component is a preference, left opt-in for R-293b. Number: `max(this branch's highest ARC-052, origin/main's highest ARC-051) + 1`, with trunk fetched 2026-09-29 after #308 merged (origin/main `7bc586f`), so ARC-052 stands with no collision. |
+
+No decision was written for the plain-`az` fallback: it is an implementation choice inside R-296a, recorded in `architecture.md` D1.
+
+### Lessons Learned
+
+#### A plan's paraphrase of a recorded decision is a claim to check, not a source
+
+The PRD and execution plan said D-09 of the prior program states that `spell update` never installs a component. I repeated that in my first ARC-052 draft, with the wrong file for D-09 and the wrong anchor for ARC-045. Opening `features/upstream-intake-2026-09/PRD.md` showed D-09 is about `.gitattributes` only; the general position lives in the `initOnly` comment in `update.ts`, and a search found no earlier ADR stating it. I corrected the ADR and, in this close, the PRD and plan. An ADR that narrows a position is the worst place to get the position wrong.
+
+#### A green test can be vacuous, and the fail-first run is the evidence
+
+For R-CLOSE, the end-to-end regression passes on the old code too, and the exclusion changes no published report (`getCast` already ignores report-only commits). Only the unit test on `getCloseCommit` fails before the fix. I first wrote that the exclusion fixes #304; the commit it was meant to explain (`b43df06`) edited `TODO.md` too, so it is not report-only. The TODO and PRD were corrected. The author-date alternative was measured, not argued: it moved the published `upstream-intake-2026-09` report from 55 to 56, so it was dropped.
+
+#### The security test covered the arguments; the review found the hole in the lookup
+
+My metacharacter test proved no shell touches the arguments. The independent review found a different path: a relative `PATH` entry (`.`, `tools`) would have made the resolver read `az.cmd` from the working directory. A `shell:true` mutation and a guard-removed mutation now each fail a named test. When a mitigation names one threat, ask what else the new code reads from the environment.
+
+#### Merged is not published, and an inferred release step was wrong
+
+At close the PR was merged and the publish workflow was green, but the registry's `latest` still read `1.9.0` for a few minutes before it read `1.9.1`. Earlier in the close I inferred that publishing needed the operator to cut a Release; that was wrong, because "Release drift" creates the Release automatically. Reading `.github/workflows` and `gh release list` corrected it. Only the registry answers "is it published", and it can lag the workflow, so a first read that disagrees with a green run is a reason to read again, not to report either.
+
+#### Deleting a worktree can delete the real `node_modules`
+
+`git worktree remove --force` followed a `node_modules` junction and emptied the real directory (194 entries to 0). `npm ci` restored it; tracked files were untouched. Never `--force` a worktree that holds a junction; unlink the junction first.
+
+### Open Items Carried Forward
+
+- **Live Windows check** — `spell doctor` on the operator's Windows machine against an Azure DevOps remote must no longer warn "could not query". The stubbed test is CI's proof only, and the live test does not exercise the MSI launcher end to end.
+- **ARC-052** — `Proposed`; the operator accepts it before Epic 2 starts.
+- **Epic 2** (#294, #293) — not started, gated on ARC-052. Registered in `TODO.md` and the execution plan.
+- **R-CLOSE second facet** — the rebase-merge committer-date drift is still open (cause inferred, not reproduced); the entry in `TODO.md` stays `[ ]`.
+- **Registered in `TODO.md` this close:** `parseAdoRemote` does not percent-decode; `spell doctor`'s unowned-package check misses `--package=@example/...` and a single-string `command`, and its early return hides the missing-timeout warning; `up02-a-init-push-policy.test.ts` fails on Windows on clean `main`, and two `update.test.ts --user` tests time out at 5000 ms under full-suite load.
+- **Pre-push hook** — still fails on this machine (up02 and up03), so each push needed the operator's per-branch `--no-verify`. Linux CI is the gate.
+- **Four local `sync-backup/*` tags** — none on the remote; the operator decides whether to prune them.
