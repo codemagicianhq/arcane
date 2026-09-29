@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-09-27
+last_updated: 2026-09-29
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -83,6 +83,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-049](#arc-049--enforcing-a-recorded-push-policy-after-init) | Enforcing a Recorded Push Policy After Init | 2026-09-27 | Accepted   |
 | [ARC-050](#arc-050--decision-number-allocation-across-parallel-sessions) | Decision-Number Allocation Across Parallel Sessions | 2026-09-27 | Accepted   |
 | [ARC-051](#arc-051--placeholder-taxonomy-for-governance-documents) | Placeholder Taxonomy for Governance Documents | 2026-09-27 | Accepted   |
+| [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Proposed   |
 
 ---
 
@@ -3344,5 +3345,45 @@ leaves the gap the issue describes.
 
 - **Flag every token:** it fails every consumer on day one.
 - **Leave it undetected:** the reported gap stands.
+
+---
+
+## ARC-052 — `spell update` Installs the `requires` Prerequisites of Installed Components
+
+**Date:** 2026-09-29
+**Status:** Proposed (2026-09-29). Not accepted: the operator accepts it, and it must be Accepted before the PR that implements it merges.
+**Related:** [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) (the same-version restore path in `update`)
+**Intake:** [#293](https://github.com/codemagicianhq/arcane/issues/293)
+**Design:** [features/upstream-intake-wave-2026-09-28/PRD.md](features/upstream-intake-wave-2026-09-28/PRD.md) requirement R-293a
+
+**Context:**
+
+`spell update` does not install a component the repository has not installed. Two places record this:
+- the comment on `initOnly` in `src/commands/update.ts`: such a file's appearance "changes how Git treats the whole repository, so adding one mid-life is the operator's call, not a side effect of a version upgrade";
+- decision D-09 of the prior upstream-intake program ([PRD](features/upstream-intake-2026-09/PRD.md)): `.gitattributes` reaches existing installs through the "newly available" report and is "never auto-installed (EF-17's reasoning)". D-09 is about that one component. The general position, that `update` installs nothing on its own, is the `initOnly` comment plus the report-only lists below; a search of this file found no earlier ADR that states it.
+
+Since v1.7.0 `update` lists two things it does not install: components newly available in the profile, and `requires` prerequisites that an installed component cites but the manifest lacks (`findMissingRequires`, called from `src/commands/update.ts`). #293 asks `update` to install them, because older installs never catch up with a fresh `spell init` when each one costs a separate `spell add`.
+
+The two lists differ in kind. A newly available component is a preference: nothing is broken without it. A `requires` entry is a governance document that a spell already installed here cites (for example `spells-build` in `src/modules/registry.ts` requires `external-verification-standards`, `web-discoverability-standards`, `mobile-release-standards` and `compliance-standards`), so the installed spell points at a file that is not there.
+
+**Decision:**
+
+1. **`spell update` installs the missing `requires` prerequisites of installed components, repository scope only.** Each one is copied, hash-tracked in the manifest like any other component file, and reported by name. This is the same scope in which `update` lists them today.
+2. **It never installs an `initOnly` component, and never a newly available component.** The `initOnly` position above is unchanged. A prerequisite that is `initOnly` is listed with the `spell add` command, as today.
+3. **`--dry-run` reports exactly the list an install would act on and writes nothing.** An install and its dry run must not differ in the set they name.
+4. **Newly available components stay opt-in,** through the single accept-step and `--add-new` flag specified as R-293b in the PRD. That mechanism needs no decision here.
+5. **The narrowing is recorded where the old position lives:** the `initOnly` comment in `update.ts` and any spell or governance text that says "update installs nothing on its own" say "except the `requires` prerequisites of installed components (ARC-052)".
+
+**Consequences:**
+
+- A repository installed before a spell gained a governance citation ends its next `spell update` with the cited document present, instead of a warning it may not read.
+- `update` now creates files the operator did not name in that run. The report line for each is the operator's record of it, and the change is reviewable in `git diff` like every other update.
+- Implementation risks to test: hash recording for the added files, and `--dry-run` parity with the real run. Both are named in the PRD's R-293a acceptance criteria.
+- Nothing changes for `--user` installs, for `initOnly` components, or for components that are merely newly available.
+
+**Rejected alternatives:**
+
+- **Stay report-only and rely on the existing warning.** Keeps the recorded position unchanged, but leaves a spell broken until someone acts on a warning, which is the situation #293 reports.
+- **Install `requires` and newly available components together behind one flag.** Turns a repair into a preference: an operator who wants the repair must also accept every component the profile has gained.
 
 ---
