@@ -568,7 +568,12 @@ export async function checkGovernancePlaceholders(targetDir: string): Promise<Ch
 
 interface McpServerConfig {
   timeout?: number;
+  args?: unknown;
 }
+
+// A scope nobody on this project owns: the scaffold used to ship `@example/mcp-server`, which anyone
+// could publish (#295). A server whose args still name it runs a stranger's code on the next `npx -y`.
+const UNOWNED_EXAMPLE_SCOPE = "@example/";
 
 interface McpConfigFile {
   mcpServers?: Record<string, McpServerConfig>;
@@ -656,6 +661,26 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
   const serverNames = Object.keys(servers);
   if (serverNames.length === 0) {
     return { name, passed: true, blocking: false, message: "no MCP servers configured" };
+  }
+
+  const exampleHits: string[] = [];
+  for (const n of serverNames) {
+    const args = servers[n]?.args;
+    if (!Array.isArray(args)) continue;
+    for (const a of args) {
+      if (typeof a === "string" && a.startsWith(UNOWNED_EXAMPLE_SCOPE)) exampleHits.push(`${n} (${a})`);
+    }
+  }
+  if (exampleHits.length > 0) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message:
+        `.mcp.json runs a package under the ${UNOWNED_EXAMPLE_SCOPE} scope nobody here owns: ${exampleHits.join(", ")}. ` +
+        "The old `spell init` scaffold shipped it as a placeholder, and `npx -y` would run whoever publishes it. " +
+        "Replace the entry with your own MCP server package, or remove it; the file is yours, so doctor does not edit it",
+    };
   }
 
   const missingTimeout = serverNames.filter((n) => typeof servers[n]?.timeout !== "number");
