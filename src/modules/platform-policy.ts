@@ -13,7 +13,12 @@
  * limitation is disclosed here rather than presented as verified.
  */
 
-import { execFileWithTimeout, EXTERNAL_CLI_TIMEOUT_MS } from "./exec.js";
+import {
+  execFileWithTimeout,
+  resolveAzureCli,
+  EXTERNAL_CLI_TIMEOUT_MS,
+  type AzureCliLaunch,
+} from "./exec.js";
 
 
 // ─── Declared ladder (git-conventions.md § Merge Strategy by Repo Risk) ──────
@@ -221,11 +226,17 @@ export async function fetchAdoMergeTypePolicies(
   project: string,
   repoName: string,
   branch: string,
+  launch: AzureCliLaunch | null = resolveAzureCli(),
 ): Promise<AdoMergeTypePolicy[] | null> {
+  if (!launch) return null;
+  const az = (args: string[]) =>
+    execFileWithTimeout(launch.file, [...launch.prefixArgs, ...args], EXTERNAL_CLI_TIMEOUT_MS, {
+      ...(launch.env ? { env: launch.env } : {}),
+    });
   try {
     const orgUrl = `https://dev.azure.com/${org}`;
     // az repos policy list needs the repository's GUID, not its name.
-    const { stdout: repoOut } = await execFileWithTimeout("az", [
+    const { stdout: repoOut } = await az([
       "repos",
       "show",
       "--repository",
@@ -238,11 +249,11 @@ export async function fetchAdoMergeTypePolicies(
       "id",
       "--output",
       "tsv",
-    ], EXTERNAL_CLI_TIMEOUT_MS);
+    ]);
     const repositoryId = repoOut.trim();
     if (!repositoryId) return null;
 
-    const { stdout } = await execFileWithTimeout("az", [
+    const { stdout } = await az([
       "repos",
       "policy",
       "list",
@@ -256,7 +267,7 @@ export async function fetchAdoMergeTypePolicies(
       project,
       "--output",
       "json",
-    ], EXTERNAL_CLI_TIMEOUT_MS);
+    ]);
     return JSON.parse(stdout) as AdoMergeTypePolicy[];
   } catch {
     return null;
