@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.9.1] - 2026-09-29
+
+Two fixes from the upstream intake: `spell init` no longer scaffolds a command that would run a package nobody here owns, and `spell doctor`'s branch-policy check can finally run the Azure CLI on Windows. Closes [#295](https://github.com/codemagicianhq/arcane/issues/295) and [#296](https://github.com/codemagicianhq/arcane/issues/296).
+
+### Fixed
+
+- **The `.mcp.json` scaffold no longer names a package anyone could claim.** It shipped `npx -y @example/mcp-server`, a name that returns 404 on npm, so whoever published it would have had their code run on every machine that used the file. The example now reads `<your-mcp-server-package>`, which is not a valid npm package name and fails with `EINVALIDTAGNAME` instead of resolving to anything. The per-server `timeout` is unchanged.
+- **`spell doctor` warns repositories that already copied the old line.** `.mcp.json` is yours, so `spell update` never rewrites it and repositories initialised earlier still hold the old entry. The check now reports (a warning, not a blocker) any server whose arguments start with `@example/`, names the server and the package, and tells you to replace or remove it. It never edits the file.
+- **`spell doctor`'s Azure DevOps branch-policy check runs on Windows.** Node refuses to launch `az.cmd` without a shell, so the check reported "could not query" on every Windows run. It now launches the Azure CLI's own Python interpreter directly, with no shell, so a project or repository name taken from the git remote (which may contain `&`, `|`, `"` or `%`) reaches the CLI as plain text and is never interpreted by `cmd.exe`. `gh` and every non-Windows platform run exactly as before.
+- **A completed program's Show Report no longer treats its own regeneration commit as the close.** Cosmetic today: no published report changes.
+
+### Notes
+
+- The Windows launch depends on the layout of the Azure CLI's MSI installer (`az.cmd` containing the recognised launcher line, with `python.exe` beside it). Any other packaging gets the same "could not query" warning as before, never a wrong answer and never a shell fallback.
+- Not fixed here: an Azure DevOps project name containing a space arrives percent-encoded (`My%20Project`) because the remote parser does not decode it.
+- Not fixed here: the second half of the close-anchor problem, where a rebase-merge can move a completed program's close across midnight. Keying on the author date was tried and moved a published report, so it was dropped. It stays open in `TODO.md`.
+
 ## [1.9.0] - 2026-09-28
 
 `spell report` can now force the Show Report's in-page theme toggle to a fixed state when generating
