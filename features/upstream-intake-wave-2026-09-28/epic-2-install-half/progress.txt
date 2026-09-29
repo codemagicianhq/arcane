@@ -1,0 +1,7 @@
+Epic 2 progress (2026-09-29)
+Plan, Architect, Implement, Test, Review complete; Ship pending operator commit approval.
+Full suite after review fixes: 127 files, 2088 passed, 2 skipped, EXIT_CODE=0 (the earlier update.test.ts load-timeout did not recur this run; it is a known load flake, 83/83 alone).
+Gates EXIT_CODE=0: lint, tsc, check:self-host-parity, check:spell-catalog, check:report, check:report-template, check:adr-references, check:version-bump, check:citations, check:stale-claims, check:followups. check:review-round exits 1 locally only because PR_NUMBER/GITHUB_REPOSITORY are unset (pull_request-only gate).
+Independent review: F1-F4 and F6 fixed with regression tests (directory at a destination; multi-name dry run walks every name; update header/hint after an install; directory at a prerequisite destination). Mutation check: reverting the directory guard or the header/hint fix fails 3 of the new tests.
+Not fixed, to disclose: F5 (an identical unrecorded file counts as a conflict), F7 items, executeInstallPlan is not atomic, --force with a directory at the destination still fails at copy time, the dry-run wording for a directory says "differs from the packaged file", and doctor's initOnly-prerequisite wording is untested because no registry component cites an initOnly one.
+Known gap: program criterion 'same component set as fresh init --profile full' conflicts with Won't Have (initOnly: docs-baseline, line-ending-baseline stay spell add). Resolved literally (D6). Disclosed in the ship report.

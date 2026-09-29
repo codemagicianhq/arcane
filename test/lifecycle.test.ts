@@ -139,7 +139,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
   // ── Step 2: spell add ───────────────────────────────────────────────────────
   describe("spell add", () => {
     it("installs an additional component not in the lite profile", async () => {
-      await runAdd(EXTRA_COMPONENT, {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+      await runAdd([EXTRA_COMPONENT], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
       await expect(
         fs.access(join(tmpDir, EXTRA_FILE)),
@@ -158,7 +158,7 @@ describe("lifecycle — full spell loop (init → add → status → update → 
       // Adding an already-installed component without --force should print a
       // message and return (asserting no throw is the key behaviour here)
       await expect(
-        runAdd("git-conventions", {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION),
+        runAdd(["git-conventions"], {}, tmpDir, ASSETS_DIR, PACKAGE_VERSION),
       ).resolves.toBeUndefined();
 
       // Manifest should still have the same count (no duplicate)

@@ -1,0 +1,117 @@
+{
+  "feature": "upstream-intake-epic-2-install-half",
+  "branchName": "claude/feat/spell-update-install-half",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "R-294a",
+      "title": "spell add --dry-run reports an existing destination",
+      "description": "Plan-based dry run: each file line says missing, exists identical, or exists differs.",
+      "acceptanceCriteria": [
+        "A dry-run over an identical existing file, a differing existing file and a missing file prints three distinct lines and writes nothing"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/add-plan.test.ts R-294a (three distinct lines, nothing written); mutation: conflicts-never-detected and skipExisting-as-conflict each fail tests"
+    },
+    {
+      "id": "R-294b",
+      "title": "spell add never throws a stack trace on an existing file",
+      "description": "Plan before write; one clean error line naming the file and --force; exit 1; nothing written.",
+      "acceptanceCriteria": [
+        "Adding over an existing file exits 1 with one error line, no stack frame, and writes nothing"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/add-plan.test.ts R-294b (one error line naming file and --force, exit 1, nothing written, multi-file writes none); mutation M1 fails 3 tests"
+    },
+    {
+      "id": "R-294c",
+      "title": "skipExisting is honoured by spell add",
+      "description": "An existing skipExisting destination is kept, reported as kept, not recorded; a missing one is created.",
+      "acceptanceCriteria": [
+        "An existing .mcp.json is kept and reported as kept, exit 0",
+        "A missing .mcp.json is created"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/add-plan.test.ts R-294c (keep, create, force, dry-run Would keep); mutations M2/M3/M4 each fail tests"
+    },
+    {
+      "id": "R-293c",
+      "title": "spell add takes several names",
+      "description": "add <names...> in order, stop at first failure, report added and not attempted, skip installed.",
+      "acceptanceCriteria": [
+        "All-success adds every name",
+        "A failure in the middle keeps earlier adds, stops, reports Added and Not attempted, exits 1",
+        "An already-installed name is skipped, not an error"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/add-plan.test.ts R-293c (all-success, stop at first failure with Added/Not attempted, skip installed)"
+    },
+    {
+      "id": "R-293a",
+      "title": "spell update installs missing requires prerequisites",
+      "description": "Plan before the loop; install non-initOnly prerequisites with no existing destination; hash-track; report; dry-run names the same set (ARC-052).",
+      "acceptanceCriteria": [
+        "A repo with a spell component but not its cited governance component ends update with it present, hash-tracked and reported",
+        "--dry-run reports the same list and writes nothing",
+        "An initOnly or already-present prerequisite is not installed and stays listed with spell add",
+        "A same-version run installs them too"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/update-install.test.ts R-293a (5 tests: real run, dry-run set equals real set with N=4, same-version, existing destination left alone, initOnly prerequisite never planned); test/up03-a-requires.test.ts rewritten; mutation M2/M4 fail tests"
+    },
+    {
+      "id": "R-293b",
+      "title": "newly available components are offered in one step",
+      "description": "update --add-new; checkbox on a TTY; nothing without either; doctor names the command; --user refused.",
+      "acceptanceCriteria": [
+        "Interactive accept installs the chosen components",
+        "Interactive decline installs nothing",
+        "--add-new installs all non-initOnly candidates",
+        "No TTY without the flag installs nothing and prints the list",
+        "doctor prints the one command and writes nothing"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "test/update-install.test.ts R-293b (8 tests: --add-new, initOnly never, no flag no TTY, interactive accept/decline, dry-run set equals real set, conflict left alone, user tier refused); test/up03-a-requires.test.ts doctor check (3 tests); mutation M1/M3 fail tests"
+    },
+    {
+      "id": "ARC-052-status",
+      "title": "Record the operator's acceptance of ARC-052",
+      "description": "Status line records the operator's chat acceptance (2026-09-29); the initOnly comment in update.ts carries the exception.",
+      "acceptanceCriteria": [
+        "DECISIONS.md ARC-052 Status is Accepted with date and source",
+        "The initOnly comment in update.ts names the exception"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "DECISIONS.md ARC-052 Status line and index row read Accepted, citing the operator's chat acceptance of 2026-09-29"
+    },
+    {
+      "id": "EP2-docs",
+      "title": "Docs, changelog, version",
+      "description": "README command reference, CHANGELOG, minor bump via spell-bump, TODO and plan tick.",
+      "acceptanceCriteria": [
+        "README documents add <names...> and update --add-new",
+        "CHANGELOG entry",
+        "check:version-bump passes"
+      ],
+      "priority": "medium",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "README (add names, What spell update installs), CHANGELOG 1.10.0, package.json 1.10.0 via npm version minor; check:self-host-parity, check:spell-catalog, check:adr-references, lint, tsc all EXIT_CODE=0"
+    }
+  ]
+}

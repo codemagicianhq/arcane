@@ -146,17 +146,17 @@ withManifestFlags(
   );
 
 program
-  .command("add <component>")
-  .description("Add a component to an existing Arcane installation")
+  .command("add <components...>")
+  .description("Add one or more components to an existing Arcane installation, in order; stops at the first failure")
   .option("--force", "Overwrite existing files without error")
   .option("--dry-run", "Preview what would be added without making changes")
   .action(
     async (
-      component: string,
+      components: string[],
       opts: { force?: boolean; dryRun?: boolean },
     ) => {
       await runAdd(
-        component,
+        components,
         { force: opts.force, dryRun: opts.dryRun },
         process.cwd(),
         ASSETS_DIR,
@@ -176,11 +176,15 @@ withManifestFlags(
     )
     .option("--user", USER_FLAG_DESCRIPTION)
     .option(
+      "--add-new",
+      "Also install the components your profile gained since your install (never an initOnly component, never over an existing file). Without it a terminal asks and a script installs nothing",
+    )
+    .option(
       "--default-scope <scope>",
       "With --user: remember repo | user as the answer `spell init` pre-selects for NEW repositories on this machine. Never rewrites an existing repository, and the question is still asked",
     ),
 )
-  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean; defaultScope?: string } & ManifestFlags) => {
+  .action(async (opts: { dryRun?: boolean; prune?: boolean; user?: boolean; addNew?: boolean; defaultScope?: string } & ManifestFlags) => {
     if (opts.defaultScope !== undefined) {
       if (!opts.user) {
         console.error(
@@ -202,6 +206,7 @@ withManifestFlags(
         dryRun: opts.dryRun,
         prune: opts.prune,
         user: opts.user,
+        addNew: opts.addNew,
         manifestFlags: manifestFlagsFrom(opts),
         ...(opts.defaultScope === undefined
           ? {}

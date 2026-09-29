@@ -34,7 +34,8 @@ import {
   evaluateAdoMergePolicy,
 } from "../modules/platform-policy.js";
 import { scanGovernancePlaceholders, PLACEHOLDER_STANDARD_FILE } from "../modules/placeholders.js";
-import { findMissingRequires } from "../modules/registry-changes.js";
+import { findMissingRequires, findNewlyAvailable } from "../modules/registry-changes.js";
+import { LEGACY_COMPONENT_MIGRATIONS, getComponent } from "../modules/registry.js";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -589,7 +590,8 @@ interface McpConfigFile {
 /**
  * TODO.md "a spell can be installed without the governance doc it cites".
  * Warns -- never fails -- when an installed component's `requires` names a
- * component the manifest does not list; installs nothing (EF-17).
+ * component the manifest does not list; installs nothing (EF-17). `spell
+ * update` is what installs them (ARC-052), and the message names it.
  */
 export async function checkComponentRequires(targetDir: string): Promise<CheckResult> {
   const name = "Component prerequisites";
@@ -617,9 +619,47 @@ export async function checkComponentRequires(targetDir: string): Promise<CheckRe
     passed: false,
     blocking: false,
     message: missing
-      .map(({ name: required, requiredBy }) => `${requiredBy.join(", ")} cites ${required}, which is not installed — \`spell add ${required}\``)
+      .map(({ name: required, requiredBy }) => `${requiredBy.join(", ")} cites ${required}, which is not installed — ${getComponent(required).initOnly ? "" : "`spell update` installs it, or "}\`spell add ${required}\``)
       .join("; "),
   };
+}
+
+/**
+ * Names the components the repository's profile gained since it was installed
+ * and the command that installs them (R-293b). Read-only and non-blocking:
+ * doctor installs nothing (ARC-052). Prerequisites are left to
+ * checkComponentRequires, which reports them.
+ */
+export async function checkNewlyAvailableComponents(targetDir: string): Promise<CheckResult> {
+  const name = "Newly available components";
+  let manifest;
+  try {
+    manifest = await readManifest(targetDir);
+  } catch {
+    return { name, passed: true, blocking: false, skipped: true, message: "skipped — no readable .arcane.json" };
+  }
+  if (manifest.scope === "user" || !Array.isArray(manifest.components)) {
+    return { name, passed: true, blocking: false, skipped: true, message: "skipped — no repository install to compare" };
+  }
+  const installed = manifest.components.flatMap((c) =>
+    (LEGACY_COMPONENT_MIGRATIONS[c.name] ?? [c.name]).map((n) => ({ ...c, name: n })),
+  );
+  const prerequisites = findMissingRequires(manifest.components, manifest.profile).map((m) => m.name);
+  const fresh = (await findNewlyAvailable(targetDir, manifest.profile, installed, effectiveSpellScope(manifest)))
+    .filter((c) => !prerequisites.includes(c.name));
+  if (fresh.length === 0) {
+    return { name, passed: true, blocking: false, message: "the profile has nothing this install lacks" };
+  }
+  const offerable = fresh.filter((c) => !getComponent(c.name).initOnly).map((c) => c.name);
+  const byHand = fresh.filter((c) => getComponent(c.name).initOnly).map((c) => c.name);
+  const parts: string[] = [];
+  if (offerable.length > 0) {
+    parts.push(`${offerable.join(", ")} — \`spell update --add-new\` installs ${offerable.length === 1 ? "it" : "them"}`);
+  }
+  if (byHand.length > 0) {
+    parts.push(`${byHand.join(", ")} — initOnly, so only ${byHand.map((n) => `\`spell add ${n}\``).join(", ")}`);
+  }
+  return { name, passed: false, blocking: false, message: `newly available for your profile, not installed: ${parts.join("; ")}` };
 }
 
 export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
@@ -977,6 +1017,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkSpellScope(targetDir),
     checkGovernancePlaceholders(targetDir),
     checkComponentRequires(targetDir),
+    checkNewlyAvailableComponents(targetDir),
   ]);
 
   // Add session continuity checks

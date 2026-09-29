@@ -218,7 +218,19 @@ Install everything, or just the slice you want:
 ```bash
 spell init --profile full
 spell add agent-policies   # or install any component à la carte
+spell add spells-build compliance-standards   # or several, in order
 ```
+
+`spell add` takes one or more names. It checks each component's files before writing any of them: if one already exists, it prints one line naming the file and `--force`, exits 1, and writes nothing from that component. With several names it stops at the first failure and says which were added and which were not attempted; a name that is already installed is skipped. A component that keeps your own file (`.mcp.json`) leaves an existing one alone and creates a missing one. `--dry-run` lists each file as identical, differing or missing, or as one that would be kept or refused, and writes nothing.
+
+### What `spell update` installs
+
+Beyond refreshing what you have, `spell update` installs two things, and reports each by name ([ARC-052](DECISIONS.md#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components)):
+
+- **Missing prerequisites.** A component that cites another one in `requires` (`spells-build` cites the standards documents) gets it installed when it is missing. It is tracked with hashes like any other component. If a file at its destination already exists, or it is an `initOnly` component, `update` leaves it alone and keeps it in the list with the reason.
+- **Newly available components, only when you ask.** In a terminal, `spell update` offers them as a checklist with nothing ticked. Without one, pass `spell update --add-new`. With neither, nothing is installed and the list prints as before. `--add-new` is for repositories, not the user tier.
+
+`spell update` never installs an `initOnly` component (`line-ending-baseline`, `docs-baseline`): adding one changes how Git treats files you already have, so it stays a `spell add` you run yourself. `--dry-run` names exactly the components a real run would install. `spell doctor` installs nothing; it names the command.
 
 ### Setup questions, answered by flags
 
