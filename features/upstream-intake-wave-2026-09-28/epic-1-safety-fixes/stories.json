@@ -1,0 +1,79 @@
+{
+  "feature": "upstream-intake-epic-1-safety-fixes",
+  "branchName": "claude/fix/upstream-intake-safety-fixes",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "R-295a",
+      "title": "The shipped .mcp.json names no unowned package",
+      "description": "Replace the @example/mcp-server package argument in src/assets/.mcp.json with a placeholder that cannot be an npm package name (D3).",
+      "acceptanceCriteria": [
+        "A test reads the shipped file and fails on @example/",
+        "A test fails on any non-flag args entry that matches the npm package-name grammar",
+        "The timeout field is kept"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "e9ecca7. test/mcp-config-template.test.ts: 4 passed (no @example/, at least one server, every non-flag args entry is not an npm package name with 'checked > 0' anti-vacuity, timeout kept). Placeholder checked: npx rejects it with EINVALIDTAGNAME."
+    },
+    {
+      "id": "R-295b",
+      "title": "spell doctor warns installs that still run the example package",
+      "description": "checkMcpConfig warns, non-blocking, when a server's args name the @example/ scope; it names the file and the fix and never edits the user-owned file (D4).",
+      "acceptanceCriteria": [
+        "A .mcp.json with the old example line warns: passed false, blocking false, naming .mcp.json and the server",
+        "A .mcp.json with a real server line does not warn",
+        "No .mcp.json still passes silently with the existing message"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "b3878f9. test/doctor-mcp-config.test.ts: 13 passed, 6 of them new (old example line warns non-blocking naming file, server and package; real server line passes; no .mcp.json passes silently)."
+    },
+    {
+      "id": "R-296a",
+      "title": "az launches on Windows with no shell interpretation of any argument",
+      "description": "resolveAzureCli() plus an env option on execFileWithTimeout; fetchAdoMergeTypePolicies launches the Azure CLI's own interpreter (D1). Security flag: merge blocker.",
+      "acceptanceCriteria": [
+        "Arguments containing a space, &, |, a double quote and %VAR% reach the child unchanged (stub interpreter)",
+        "No side effect from any metacharacter: the marker file the payload tries to create is absent",
+        "An unrecognised launcher, a missing az.cmd or a missing interpreter yields today's plain az launch (operator decision after review; was null), never a shell; relative PATH entries are skipped",
+        "No shell option is set anywhere in exec.ts; the gh calls are unchanged"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "f32d0e7. test/azure-cli-launch.test.ts: 12 passed. Metacharacter test drives fetchAdoMergeTypePolicies with hostile org/project/repo (& | \" %PATH% ^ !) through a stub interpreter: arguments arrive unchanged and the marker files are absent. Unrecognised launcher, missing az.cmd and missing interpreter return plain az after the review-fix commit (they returned null in f32d0e7); a relative PATH entry is skipped (test fails without the guard). A source test asserts exec.ts sets no shell option. AC reinterpreted: stub interpreter, not stub az.cmd (architecture.md D2). Live win32 check ran the real interpreter only, NOT spell doctor against a real ADO remote."
+    },
+    {
+      "id": "R-296b",
+      "title": "No behaviour change on other platforms",
+      "description": "On non-win32 the launch plan is exactly the file 'az' with no prefix arguments; the existing exec tests are untouched.",
+      "acceptanceCriteria": [
+        "resolveAzureCli() on linux and darwin returns { file: 'az', prefixArgs: [] }",
+        "test/exec-timeout.test.ts is byte-identical to main and passes"
+      ],
+      "priority": "high",
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "f32d0e7. Non-win32 resolver returns { file: 'az', prefixArgs: [] } (in azure-cli-launch.test.ts). test/exec-timeout.test.ts is identical to main (git diff main --quiet) and 3 passed."
+    },
+    {
+      "id": "R-CLOSE",
+      "title": "getCloseCommit excludes generated outputs and survives a rebase",
+      "description": "Add the generatedOutputs exclusion to the completedDate branch and walk on the author date instead of the committer date (D5). Should Have: first story dropped if the epic runs long.",
+      "acceptanceCriteria": [
+        "Regenerating a completed program's report on its completed: day in a trailered commit leaves check:report passing (guard: passes on the old code too)",
+        "NOT MET, dropped: rewriting every committer date does not move the close (author-date anchor moved a published report)",
+        "npm run check:report reports no drift for the existing programs"
+      ],
+      "priority": "medium",
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": "a93a038. Scope reduced on the record: the exclusion only. The author-date facet moved the published upstream-intake-2026-09 report (cast 55 -> 56) and was dropped; check:report exits 0 with the exclusion alone. test/show-report-close-anchor.test.ts: 3 passed; only the getCloseCommit unit test fails on the old code, the other two are guards that also pass on main. AC 2 (rewriting committer dates does not move the close) is NOT met and stays open in TODO.md. AC 3 met (check:report EXIT_CODE=0).",
+      "status": "partial: exclusion shipped, committer-date facet not met and left open in TODO.md"
+    }
+  ]
+}
