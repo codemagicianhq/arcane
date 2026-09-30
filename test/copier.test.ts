@@ -7,6 +7,7 @@ import {
   validateTargetPath,
   copyFile,
   copyDirectory,
+  listDirectoryFiles,
   fileMatchesHash,
   hashContent,
   hashFile,
@@ -311,6 +312,35 @@ describe("copier", () => {
       const copy = join(tempDir, "copy.txt");
       await fs.writeFile(copy, "hello world");
       expect(await hashFile(srcFile)).toBe(await hashFile(copy));
+    });
+  });
+
+  describe("listDirectoryFiles", () => {
+    it("lists every file with forward slashes, recursing into subdirectories, and writes nothing", async () => {
+      const src = join(tempDir, "tree");
+      await fs.mkdir(join(src, "sub", "deeper"), { recursive: true });
+      await fs.writeFile(join(src, "a.txt"), "a");
+      await fs.writeFile(join(src, "sub", "b.txt"), "b");
+      await fs.writeFile(join(src, "sub", "deeper", "c.txt"), "c");
+
+      const listed = await listDirectoryFiles(src, "out/tree");
+
+      expect([...listed].sort()).toEqual(["out/tree/a.txt", "out/tree/sub/b.txt", "out/tree/sub/deeper/c.txt"]);
+      await expect(fs.stat(join(tempDir, "out"))).rejects.toThrow();
+    });
+
+    it("names exactly the files copyDirectory would write", async () => {
+      const src = join(tempDir, "tree");
+      await fs.mkdir(join(src, "sub"), { recursive: true });
+      await fs.writeFile(join(src, "a.txt"), "a");
+      await fs.writeFile(join(src, "sub", "b.txt"), "b");
+      const target = join(tempDir, "target");
+      await fs.mkdir(target);
+
+      const listed = await listDirectoryFiles(src, "tree");
+      const copied = await copyDirectory(src, target, "tree");
+
+      expect([...listed].sort()).toEqual(copied.map((c) => c.path).sort());
     });
   });
 });
