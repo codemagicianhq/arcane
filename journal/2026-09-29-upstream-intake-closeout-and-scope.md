@@ -182,3 +182,22 @@ Three full-suite runs on this machine this session each timed out a different `t
 - **Load timeouts** — `TODO.md` ("MEDIUM (test infrastructure): tests in `test/update.test.ts`"), third observation added.
 - **Three worktrees** the operator may remove, all with their content already on `main` (`git cherry main <sha>` reports every commit as landed): `.claude/worktrees/conventional-commit-tools-research-c973d6` (branch merged), `.claude/worktrees/priceless-ramanujan-2ea83e` (detached at `6e6fc6b`, the `1.9.2` release commits) and `../arcane-arc028` (`sessions/2026-08-15-ef34-gitdir-contamination`, also on `origin`); plus five local `backup/*` branches from August. Reported, not deleted: a worktree cannot remove itself and a remote branch deletion needs the operator.
 - **Issues #297, #298, #299** — open, untriaged; the operator decides whether they become a wave.
+
+## Session: post-close cleanups and the live Windows `spell doctor` check
+
+### Prompt Context
+
+After merging PR #315 the operator said "take care of the cleanups, and the doctor call, and what's next after that?".
+
+### What Got Done
+
+1. **`main` fast-forwarded to `949448e`** (#315 merged); `origin` pruned; the local `docs/session-close-2026-09-29` deleted after `git cherry main` showed 0 unlanded commits.
+2. **Three worktrees removed** after a link check found no junction or symlink in any of them (`node_modules` were real directories): `.claude/worktrees/conventional-commit-tools-research-c973d6` (branch merged, deleted with `-d`), `.claude/worktrees/priceless-ramanujan-2ea83e` (detached; its three commits are the `1.9.2` release, landed by patch-id) and `../arcane-arc028` (both commits landed by patch-id). The empty leftover `.claude/worktrees/cranky-einstein-5c20e3` was removed with `rmdir`.
+3. **Live Windows `spell doctor` passed.** The global CLI was updated from `1.8.0` to `1.10.0` (`npm i -g arcane-cli@1.10.0`), then `spell doctor` 1.10.0 on this Windows machine in `arcane-ui` (remote `dev.azure.com/codemagicianllc/arcane/_git/arcane-ui`, Azure CLI 2.83.0 signed in) reports `✓ [pass] Platform branch/merge policy (T11)` with no "could not query" warning. This closes the 2026-09-28 intake's step 4, the one step left open after Epic 2. The same run also fired the new "Newly available components" warning (`mcp-config-template`, `session-continuity` — `spell update --add-new` installs them), the first live sighting of D9.
+4. **Branch sweep, content-verified.** Fully landed and deleted: the two above. Fully landed but NOT deleted, because the auto-mode classifier refused the deletions to the agent: local `sessions/2026-08-15-ef34-gitdir-contamination`, and on `origin` that branch plus `docs/discoverability-session-journal`. Unlanded content, reported only: `origin/sessions/2026-08-15-queue-failfast-doclink-ideas` (1 commit), `origin/docs/spell-full-cycle-coordination-gaps` (2 commits), and the five local `backup/*` snapshots.
+
+### Open Items Carried Forward
+
+- The two branch deletions above, for the operator (commands in the handoff).
+- The unlanded branches, for a land-or-abandon call.
+- Issues #297, #298, #299, untriaged.

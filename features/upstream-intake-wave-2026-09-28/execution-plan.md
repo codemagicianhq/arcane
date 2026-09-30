@@ -131,7 +131,7 @@ This repository has no roster. Roles resolve to generic workers.
    `spell-bump` (patch), `CHANGELOG.md`, review, one PR. **Operator merges.** **Done: [PR #308](https://github.com/codemagicianhq/arcane/pull/308), merged 2026-09-29, `1.9.1`.**
 3. While Epic 1 is in review, draft the ADR as `Proposed`. **Operator accepts it.** **Drafted as ARC-052 (`Proposed`) on 2026-09-29 ([PR #312](https://github.com/codemagicianhq/arcane/pull/312)); accepted by the operator in chat the same day, Status set to `Accepted` in [PR #313](https://github.com/codemagicianhq/arcane/pull/313).**
 4. Operator runs `spell doctor` on the Windows machine and confirms the branch-policy warning is
-   gone. The stubbed test is the CI proof, not the live one.
+   gone. The stubbed test is the CI proof, not the live one. **Done 2026-09-29:** `spell doctor` 1.10.0 on this Windows machine in `arcane-ui` (remote `dev.azure.com/codemagicianllc/arcane/_git/arcane-ui`, Azure CLI 2.83.0 signed in) reports `✓ [pass] Platform branch/merge policy (T11)` with no "could not query" warning.
 5. Epic 2 through `spell-full-cycle`, one `spell-bump` (minor), one PR. **Operator merges.** **Done: [PR #313](https://github.com/codemagicianhq/arcane/pull/313), merged 2026-09-30T01:23Z, `1.10.0` on npm; #293 closed by the merge, #294 closed by hand the same day (the PR body's "Closes #293 and #294" only closed the first).**
 6. Tick the four intake items in `TODO.md` with PR and version, close #293–#296 if the PR text did
    not, and run `spell-close-session`. **Done 2026-09-29: #293 and #294 ticked in `TODO.md` (#295 and #296 were ticked with Epic 1). Only step 4, the operator's live Windows check, stays open.**
