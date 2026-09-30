@@ -120,3 +120,65 @@ At close the PR was merged and the publish workflow was green, but the registry'
 - **Registered in `TODO.md` this close:** `spell doctor`'s unowned-package check misses `--package=@example/...` and a single-string `command`, and its early return hides the missing-timeout warning; two `update.test.ts --user` tests time out at 5000 ms under full-suite load. (`up02-a-init-push-policy.test.ts` also failed here on clean `main`; `main`'s `08b6b0c` fixed it while this close was open, so it is not registered. `parseAdoRemote` percent-decoding was registered here too and shipped as `1.9.2` (`88df663`) from another session before this branch was pushed, so its item is closed on `main`.)
 - **Pre-push hook** — needed the operator's per-branch `--no-verify` for Epic 1's push, because up02 and up03 failed the full suite here. up02 is now fixed on `main` (`08b6b0c`), and that commit reports the up03 failure did not reproduce on two clean Windows runs. A later push attempt (2026-09-29, this branch rebased on `main` at `1.9.2`, hook run without `--no-verify`) failed the hook with 4 failures of 2052 tests, all `Test timed out in 5000ms`: two in `test/push-safety.test.ts` (`undisabledRemotes names a remote added after the block was applied`, `recognises equivalent spellings of its own hooks path`) and two in `test/update.test.ts` (`--user`: `runs no git check and asks no retrofit question`, `--prune removes an orphaned store spell…`). up02 and up03 passed in that run, so the hook now fails on load timeouts, not on those two. Nothing was pushed by that attempt. Linux CI is the gate.
 - **Four local `sync-backup/*` tags** — none on the remote; the operator decides whether to prune them.
+
+## Session: Epic 2 "The install half of `spell update`" shipped as 1.10.0
+
+### Prompt Context
+
+The operator said "I accept ARC-052, go on Epic 2". I ran `spell-full-cycle` on Epic 2 from
+`features/upstream-intake-wave-2026-09-28/execution-plan.md`: R-294a/b/c (#294) first, then
+R-293a/b/c (#293), docs, one minor bump, and the ARC-052 Status line set to `Accepted` as part of
+the work. Standing constraints: the operator merges; every commit needs a fresh fingerprinted
+approval; a normal push first and a per-branch `--no-verify` only when asked; the agent never
+accepts a decision (the Status edit records the operator's acceptance, given in chat). After the
+merge the operator asked "what's next?" and approved closing #294 by hand and this close.
+
+### What Got Done
+
+1. **Epic 2 shipped.** [PR #313](https://github.com/codemagicianhq/arcane/pull/313) merged by the operator at 2026-09-30T01:23Z (`gh pr view 313` reads `MERGED`, merge commit `7f7c9d8`): `7a8464b` the feature, `5f67bde` the bump to `1.10.0`, `7f7c9d8` the copier coverage fix. The `v1.10.0` Release exists, `publish.yml` run 36654866053 finished `success` with `+ arcane-cli@1.10.0` in its log, and the registry answered `1.10.0` at 18:40 PDT (`curl https://registry.npmjs.org/arcane-cli/latest`), after answering `1.9.2` for about fifteen minutes.
+2. **`spell update` installs missing `requires` prerequisites** (repository scope, hash-tracked, reported by name, never `initOnly`, also on a same-version run, `--dry-run` names the same set) and **offers newly available components** through a TTY checklist or `--add-new` (refused with `--user`; `initOnly` never offered; an existing destination is left alone and named). Modules: `src/modules/component-install.ts` (the plan), `src/modules/update-installs.ts`, changes in `update.ts`, `registry-changes.ts`.
+3. **`spell add` plans before it writes.** An existing destination is one refusal naming the file and `--force`, exit 1, nothing written; `--dry-run` prints missing, identical and differing lines; a `skipExisting` component keeps a present file and does not record it; `spell add a b c` runs in order and stops at the first failure.
+4. **`spell doctor`** gained a read-only "Newly available components" check that names `spell update --add-new` (or `spell add` for an `initOnly` one), and the prerequisites check names `spell update`.
+5. **ARC-052 is `Accepted`** in `DECISIONS.md` (Status line and index row), recorded in the same PR. The design decisions D1–D9 are in `features/upstream-intake-wave-2026-09-28/epic-2-install-half/architecture.md`, with `stories.json` (8 of 8 passing with test evidence) and `progress.txt`.
+6. **Independent adversarial review** found four defects and one wording issue, all fixed with failing-first regression tests: a directory at a destination crashed with `EISDIR` instead of refusing; a multi-name dry run stopped at the first refusal instead of walking every name; the newly-available header said "nothing was added" after an install; the `--add-new` hint printed under `--add-new`; a directory at a prerequisite destination crashed `update`. Reverting the directory guard or the header fix fails three of the new tests.
+7. **#293 closed by the merge; #294 closed by hand** (`gh issue close 294`, with a comment naming the PR and the version) after the operator's yes. Both read `CLOSED`.
+8. **This close:** `TODO.md`'s #293 and #294 items ticked; the review leftovers registered as one LOW item; the load-timeout item got a third observation; the execution plan's steps 3, 5 and 6 and Open Question 1 marked done; the handoff rewritten.
+
+### Decisions Made
+
+| ADR | Decision | Rationale |
+|---|---|---|
+| ARC-052 (`Proposed` → `Accepted`) | The operator accepted option 1 in chat on 2026-09-29; the Status line records it | No new number was allocated, so no trunk maximum was needed. The narrowing of the `initOnly` comment in `update.ts` is recorded in that comment. |
+
+Nine implementation decisions (plan-then-execute, refuse-before-write, a kept file is not recorded, stop at the first failure, prerequisites before the component loop, `initOnly` excluded from candidates, `--add-new` refused for the user tier, installed items removed from the registry-changes lists, doctor read-only) are D1–D9 in the epic's `architecture.md`, not ADRs.
+
+### Lessons Learned
+
+#### `npm test` is not the gate CI runs
+
+CI runs `npm run test:coverage`, which holds `src/modules/copier.ts` to 95 % per file. `listDirectoryFiles`, added for the install plan, had no test that reached it because no registry component ships a directory, so `copier.ts` fell to 88.57 % and the "Lint, typecheck, test, build" job failed after the PR was open. `spell-commit-work` step 2 names `test:coverage`; I ran `npm test` and read a green suite as the gate. The fix was two tests (`7f7c9d8`). Before a PR, run the command CI runs, not the shorter one.
+
+#### One `Closes #N` per issue
+
+The PR body said "Closes #293 and #294". GitHub reads a closing keyword only for the issue directly after it, so #293 closed with the merge and #294 stayed open until I closed it by hand. Write the keyword once per issue: "Closes #293. Closes #294."
+
+#### A file-state plan must name every state the filesystem can be in
+
+`planComponentInstall` asked two questions of a destination, "does it exist" and "does its hash match", so a directory at the destination reached `hashFile` and crashed with `EISDIR` in both `add` and `update`. The review found it; the tests had only ever put files there. When code decides from the disk, enumerate the states (missing, file identical, file differing, directory, unreadable) before writing the decision table, and put one test on each.
+
+#### An acceptance criterion can contradict its own Won't Have
+
+The program's criterion "a fresh `init --profile full` and `update --add-new` end with the same component set" cannot hold while `initOnly` components are a Won't Have (ARC-052 decision 2): `docs-baseline` and `line-ending-baseline` stay `spell add`. I resolved it literally and disclosed the gap in the PR and here. A PRD's criteria should be checked against its Won't Haves before an epic starts, since the conflict is visible from the text alone.
+
+#### The pre-push timeout moves between tests
+
+Three full-suite runs on this machine this session each timed out a different `test/update.test.ts` `--user` test at 5000 ms, or none: the first push attempt failed the hook on "--dry-run with a deleted store spell", a `test:coverage` run failed "--prune removes an orphaned store spell", and the hook run that pushed `8df7a7b` passed 2090 of 2090. Each test passes alone in under a second. The moving target confirms the TODO item's diagnosis (load, not logic) and argues for named timeouts on the whole `--user` describe rather than on two tests.
+
+### Open Items Carried Forward
+
+- **This close's docs PR** — `dispatched` once opened; the operator merges it.
+- **Live Windows `spell doctor`** against an Azure DevOps remote (execution plan step 4) — `unverifiable` here; only the operator's machine has a real Azure CLI.
+- **Review leftovers** — registered in `TODO.md` ("LOW: Epic 2 review leftovers in the install plan"): an identical unrecorded file counts as a conflict, `executeInstallPlan` is not atomic, `--force` over a directory fails at copy time, the dry-run wording for a directory, doctor's untested `initOnly` wording, and the `initOnly` gap above.
+- **Load timeouts** — `TODO.md` ("MEDIUM (test infrastructure): tests in `test/update.test.ts`"), third observation added.
+- **Three worktrees** the operator may remove, all with their content already on `main` (`git cherry main <sha>` reports every commit as landed): `.claude/worktrees/conventional-commit-tools-research-c973d6` (branch merged), `.claude/worktrees/priceless-ramanujan-2ea83e` (detached at `6e6fc6b`, the `1.9.2` release commits) and `../arcane-arc028` (`sessions/2026-08-15-ef34-gitdir-contamination`, also on `origin`); plus five local `backup/*` branches from August. Reported, not deleted: a worktree cannot remove itself and a remote branch deletion needs the operator.
+- **Issues #297, #298, #299** — open, untriaged; the operator decides whether they become a wave.

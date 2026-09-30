@@ -129,16 +129,16 @@ This repository has no roster. Roles resolve to generic workers.
 1. Operator answers Open Question 1 (ADR direction) and says go on Epic 1. **Done 2026-09-29.**
 2. Epic 1 through `spell-full-cycle`: architect, implement, `fix:self-host-parity`, one
    `spell-bump` (patch), `CHANGELOG.md`, review, one PR. **Operator merges.** **Done: [PR #308](https://github.com/codemagicianhq/arcane/pull/308), merged 2026-09-29, `1.9.1`.**
-3. While Epic 1 is in review, draft the ADR as `Proposed`. **Operator accepts it.** **Drafted as ARC-052 (`Proposed`) on 2026-09-29; not yet accepted.**
+3. While Epic 1 is in review, draft the ADR as `Proposed`. **Operator accepts it.** **Drafted as ARC-052 (`Proposed`) on 2026-09-29 ([PR #312](https://github.com/codemagicianhq/arcane/pull/312)); accepted by the operator in chat the same day, Status set to `Accepted` in [PR #313](https://github.com/codemagicianhq/arcane/pull/313).**
 4. Operator runs `spell doctor` on the Windows machine and confirms the branch-policy warning is
    gone. The stubbed test is the CI proof, not the live one.
-5. Epic 2 through `spell-full-cycle`, one `spell-bump` (minor), one PR. **Operator merges.**
+5. Epic 2 through `spell-full-cycle`, one `spell-bump` (minor), one PR. **Operator merges.** **Done: [PR #313](https://github.com/codemagicianhq/arcane/pull/313), merged 2026-09-30T01:23Z, `1.10.0` on npm; #293 closed by the merge, #294 closed by hand the same day (the PR body's "Closes #293 and #294" only closed the first).**
 6. Tick the four intake items in `TODO.md` with PR and version, close #293–#296 if the PR text did
-   not, and run `spell-close-session`.
+   not, and run `spell-close-session`. **Done 2026-09-29: #293 and #294 ticked in `TODO.md` (#295 and #296 were ticked with Epic 1). Only step 4, the operator's live Windows check, stays open.**
 
 ## Open Questions
 
-1. Approve the ADR direction (option 1 above)? It gates Epic 2.
+1. Approve the ADR direction (option 1 above)? It gates Epic 2. **Answered 2026-09-29: yes, option 1; ARC-052 is `Accepted`.**
 2. R-296a mechanism: argument escaping through `cmd.exe`, or the Azure CLI's own entry point. The
    architect can decide without the operator, unless the choice needs a new runtime dependency.
 3. Should R-CLOSE ride in Epic 1 or wait for a Show Report wave? Recommended: ride in Epic 1, one
