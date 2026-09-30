@@ -48,3 +48,22 @@
 
 ### Raw Notes
 > Source: `journal/2026-09-29-upstream-intake-closeout-and-scope.md`, lesson "Deleting a worktree can delete the real `node_modules`". The claim that the governance docs do not mention junctions was checked with a search of `.arcane/governance`, `src/assets/.arcane/governance` and `src/assets/.arcane/spells` (no match); the `--force` behaviour is as observed once on Windows, not re-tested.
+
+---
+
+## Feedback — Arcane workflow (2026-09-29)
+
+**Session:** Epic 2 "The install half of `spell update`" shipped as 1.10.0 (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The PR body written per `spell-create-pull-request` said "Closes #293 and #294". GitHub reads a closing keyword only for the issue reference directly after it, so the merge closed #293 and left #294 open until it was closed by hand. The template's `## Summary` gives no rule for naming several issues.
+- The PRD's acceptance criterion "a fresh `init --profile full` and `update --add-new` end with the same component set" contradicted its own Won't Have (`initOnly` components stay `spell add`, ARC-052 decision 2). Neither `spell-plan` nor `spell-scope` checks a PRD's criteria against its Won't Haves, so the conflict reached implementation and had to be resolved by disclosure.
+
+### Improvement Items
+- [ ] In `spell-create-pull-request` Step 4, tell the author to write one closing keyword per issue ("Closes #293. Closes #294.") and never "Closes #A and #B", and have Step 6's report confirm each named issue's state after the merge or list it for the operator. <!-- upstream: queued -->
+- [ ] Add a check to `spell-plan` (and `spell-scope`'s quick-check) that reads each acceptance criterion against the PRD's Won't Have list and flags a criterion that can only hold if a Won't Have is done. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-09-29-upstream-intake-closeout-and-scope.md`, lessons "One `Closes #N` per issue" and "An acceptance criterion can contradict its own Won't Have". The keyword behaviour was observed once on PR #313 (#293 `CLOSED`, #294 `OPEN` until `gh issue close 294`), not read from GitHub's documentation.
