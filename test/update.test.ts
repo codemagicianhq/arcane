@@ -1341,7 +1341,11 @@ describe("spell update — handler", () => {
   // fixture is a real `runInit --user`, so these run against exactly the
   // manifest and fan-out record the product writes.
 
-  describe("--user", () => {
+  // Every test here runs a real user-tier runUpdate (spell render + fan-out to two client
+  // trees) after a real runInit in beforeEach. Alone each takes ~0.4 s; under full-suite
+  // contention a different one crossed the 5 s default on 3 of 5 Windows runs (TODO.md,
+  // "MEDIUM (test infrastructure)"), so the budget is set on the describe, not per test.
+  describe("--user", { timeout: HEAVY_TEST_TIMEOUT }, () => {
     let home: string;
     let storeRoot: string;
     const storeFile = storeSpellPath("spell-status");

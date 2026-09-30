@@ -116,7 +116,11 @@ function tryPush(dir: string, args: string[] = ["origin", "main"]): { ok: boolea
   return { ok: res.status === 0, stderr: `${res.stderr ?? ""}${res.stdout ?? ""}` };
 }
 
-describe("push blocking (R2, R3) — against a real remote", () => {
+// Every test in this file creates a real fixture repository and spawns git (some push to a
+// real bare remote). Alone each takes well under a second; under full-suite contention two
+// different ones crossed the 5 s default on Windows (TODO.md, "MEDIUM (test infrastructure)"),
+// so every describe carries the subprocess budget rather than the eight tests that had it.
+describe("push blocking (R2, R3) — against a real remote", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("a normal push succeeds before any policy is applied", async () => {
     // Control. Without this, a later "push failed" assertion could pass for a
     // reason unrelated to the controls under test.
@@ -204,7 +208,7 @@ describe("push blocking (R2, R3) — against a real remote", () => {
   );
 });
 
-describe("enforcement is verified, not assumed", () => {
+describe("enforcement is verified, not assumed", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("isHookEnforced is false when the hook FILE is gone but config remains", async () => {
     // Found in review: checking core.hooksPath alone is a declaration check
     // wearing an enforcement check's name. Deleting the hook file leaves the
@@ -235,7 +239,7 @@ describe("enforcement is verified, not assumed", () => {
   });
 });
 
-describe("hook-manager collision guard (R7)", () => {
+describe("hook-manager collision guard (R7)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("refuses rather than clobbering a repository-local core.hooksPath", async () => {
     // Not hypothetical: this repository's own core.hooksPath is .husky/_,
     // running lint, typecheck and the full suite.
@@ -378,7 +382,7 @@ describe("hook-manager collision guard (R7)", () => {
   });
 });
 
-describe("generic multi-hook support (ARC-037 decision 2)", () => {
+describe("generic multi-hook support (ARC-037 decision 2)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("installs a hook under an arbitrary name, not just pre-push", async () => {
     const { work } = await repoWithRemote();
 
@@ -424,7 +428,7 @@ describe("generic multi-hook support (ARC-037 decision 2)", () => {
   });
 });
 
-describe("closed-PR push warning (ARC-035 decision 4)", () => {
+describe("closed-PR push warning (ARC-035 decision 4)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("installs successfully on a repo with no existing hook", async () => {
     const { work } = await repoWithRemote();
 
@@ -473,7 +477,7 @@ describe("closed-PR push warning (ARC-035 decision 4)", () => {
   });
 });
 
-describe("awkward but legal remote configurations", () => {
+describe("awkward but legal remote configurations", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   // Every test in this block does several real git operations (fixture repo
   // creation, remote add/rename/restore, real pushes) and was confirmed
   // timing out at vitest's default 5000ms under full-suite contention (5 of
@@ -582,7 +586,7 @@ describe("awkward but legal remote configurations", () => {
   }, HEAVY_TEST_TIMEOUT);
 });
 
-describe("push URLs configured outside this repository", () => {
+describe("push URLs configured outside this repository", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("refuses rather than pretending to cover a globally-configured push URL", async () => {
     // The worst shape available, and it shipped in 0.20.0: `remote.<r>.pushurl`
     // is multivalued and git collects values across scopes, so a local
@@ -621,7 +625,7 @@ describe("push URLs configured outside this repository", () => {
   });
 });
 
-describe("records left by the released 0.20.0", () => {
+describe("records left by the released 0.20.0", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("does not apply a legacy record when remote names collide case-insensitively", async () => {
     // 0.20.0 stored originals under a flat, case-INSENSITIVE key, so `origin`
     // and `Origin` shared one entry and only the last writer survived. Applying
@@ -681,7 +685,7 @@ describe("records left by the released 0.20.0", () => {
   });
 });
 
-describe("a neutered hook is not enforcement", () => {
+describe("a neutered hook is not enforcement", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("reports not-enforced when the hook body has been replaced with a no-op", async () => {
     // Existence alone is a declaration check wearing an enforcement check's
     // name — one level down from the same defect review already found.
@@ -725,7 +729,7 @@ describe("a neutered hook is not enforcement", () => {
   });
 });
 
-describe("no remote configured", () => {
+describe("no remote configured", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("reports nothing to disable rather than failing", async () => {
     const dir = await createFixtureDir("push-safety-noremote-");
     fixtureGit(dir, ["init", "-b", "main"]);
@@ -737,7 +741,7 @@ describe("no remote configured", () => {
   });
 });
 
-describe("the hook must exist where git actually looks", () => {
+describe("the hook must exist where git actually looks", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("fires from a LINKED WORKTREE, not just the checkout that installed it", async () => {
     // The worst defect this feature has had, and it shipped. `core.hooksPath`
     // lives in shared local config, but `.arcane/hooks/` is an untracked
@@ -790,7 +794,7 @@ describe("the hook must exist where git actually looks", () => {
   });
 });
 
-describe("hooks in git's DEFAULT directory are a collision too (R7)", () => {
+describe("hooks in git's DEFAULT directory are a collision too (R7)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("refuses rather than silently switching off .git/hooks", async () => {
     // The R7 guard only looked at core.hooksPath, so a repository using git's
     // default directory — no hook manager, no config key to collide with — had
@@ -821,7 +825,7 @@ describe("hooks in git's DEFAULT directory are a collision too (R7)", () => {
   });
 });
 
-describe("a partial unblock stays recoverable", () => {
+describe("a partial unblock stays recoverable", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("does not let the manifest's 'open' lock out a retry", async () => {
     // A partial lift writes push_policy "open" while controls remain in force.
     // Keying the retry on the manifest meant the failed attempt closed its own
