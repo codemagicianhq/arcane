@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.10.1] - 2026-09-30
+
+The leftovers of the `1.10.0` review, all in the install plan `spell add` and `spell update` share.
+
+### Fixed
+
+- **An unrecorded file identical to the packaged one is adopted, not refused.** `spell add` used to treat any existing destination as a conflict, even one whose content already matched. It now records such a file and its hash without touching it; `--dry-run` says `Would adopt`. `spell update` does the same for a prerequisite whose file is already in place.
+- **A directory at a destination is refused cleanly, with or without `--force`.** It used to fail at copy time with a raw `EISDIR`. The refusal names the directory and says `--force` does not replace it; `--dry-run` reports `is a directory` instead of `differs from the packaged file`, and `spell update` says so in its reason.
+- **An install that fails part-way leaves nothing behind.** If a copy fails after earlier files were written, the files created are removed and an overwritten one gets its previous content back before the error is reported, so a component is never half-installed and unrecorded.
+- **`spell doctor`'s wording for an `initOnly` prerequisite is now under test** (it names only `spell add`); no shipped component cites one, so the test fixtures the case.
+
 ## [1.10.0] - 2026-09-29
 
 The install half of `spell update`, from the upstream intake: `spell update` now installs the prerequisites an installed component cites, and offers newly available components in one step, so an older install no longer needs one `spell add` per gap. `spell add` also stops leaving half a component behind. Closes [#293](https://github.com/codemagicianhq/arcane/issues/293) and [#294](https://github.com/codemagicianhq/arcane/issues/294). The design is [ARC-052](DECISIONS.md#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components), accepted by the operator on 2026-09-29.
