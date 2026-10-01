@@ -1,10 +1,10 @@
 ---
 name: Spell — Sync Pull Request
-description: Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical-vs-ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points.
+description: Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical / regenerable / ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points.
 claude_description: Use PROACTIVELY whenever an open PR has fallen behind its target branch and needs a safe rebase/sync, or when spell-create-pull-request/spell-ship stop on a conflict they route here.
 argument-hint: '[PR number or branch name]'
 agent: agent
-last_updated: 2026-08-31
+last_updated: 2026-10-01
 ---
 
 ## Executive Summary
@@ -13,7 +13,9 @@ last_updated: 2026-08-31
 - It is the recovery path `spell-create-pull-request` and `spell-ship` route to when they detect a
   conflict they deliberately don't try to resolve themselves.
 - It draws a hard line between conflicts safe to resolve mechanically (identical changes on both sides)
-  and conflicts that need a human — it never guesses on the ambiguous side of that line.
+  and conflicts that need a human — it never guesses on the ambiguous side of that line. A third class,
+  a script-regenerable artifact, is neither merged nor handed off: it is regenerated against the rebased
+  tree and verified by its own check.
 - Every history-rewriting step is preceded by a recoverable ref, and every push uses
   `--force-with-lease`, never bare `--force`.
 
@@ -72,7 +74,7 @@ Resolve the repository's actual merge-strategy ladder from `git-conventions.md` 
 - **Never** produce a squash or semi-linear result as part of this sync — those are never sanctioned,
   regardless of which of the two above applies.
 
-## Step 3 — Classify any conflict: mechanical vs. ambiguous
+## Step 3 — Classify any conflict: mechanical, regenerable, or ambiguous
 
 If Step 2 completes with no conflicts, skip straight to Step 4 — **this is the common case and it must
 not be treated as a special case of conflict handling.**
@@ -84,6 +86,25 @@ then classify **each conflicted hunk independently** — a single file can conta
   same import added the same way), or one side's change is a strict superset of the other's with no
   semantic divergence. Resolve by keeping the superset/identical content, verify no line from either
   side's *unique* content was dropped, stage the file, and continue the rebase/merge.
+- **Regenerable** — the file is a committed artifact that a script owns: a known command regenerates it
+  from other files in the tree and overwrites it unconditionally, ignoring any conflict markers already
+  in it. Neither side's content is the right answer, because both were computed from trees that no
+  longer exist; the correct content is a fresh regeneration against the post-rebase tree. **Do not
+  hand-merge the diff and do not pick a side.** Leave the conflicted file as it is, run its regeneration
+  command, verify with the file's own `--check` command, then stage the file and continue the
+  rebase/merge. Known artifacts and their commands:
+  - `docs/plans/*/show-report.{json,html}` — `npm run fix:report` in Arcane's own repository (`spell
+    report` in a consumer), verified by `npm run check:report`. On a program's own `completed:` day the
+    regeneration must go in a **trailer-free, report-only commit** that touches nothing else, because
+    the close-commit logic counts any other commit made that day (recorded in
+    `docs/plans/upstream-intake-2026-09/PLAN.md`, "What this program taught").
+  - Self-hosted parity copies and client shims under `.arcane/`, `.github/`, `.claude/` and `.agents/`
+    in Arcane's own repository — `npm run fix:self-host-parity`, verified by
+    `npm run check:self-host-parity`. A compiled asset with its own `fix:*`/`check:*` pair in
+    `package.json` follows the same rule.
+  - `package-lock.json` — `npm install` against the rebased `package.json`, verified by `npm ci`.
+  A file you cannot name a regeneration command for is not regenerable: classify its hunks as mechanical
+  or ambiguous like any other, and never promote a hand-edited file to this class to avoid a STOP.
 - **Ambiguous** — the same lines changed with different intent, or you cannot establish with confidence
   that one side's content is a strict superset of the other's. **STOP.** Do not guess, do not pick a
   side, do not attempt a "reasonable-looking" merge of the two. Abort the in-progress rebase/merge
@@ -177,6 +198,8 @@ report the discrepancy rather than declaring the sync done.
 ```
 
 - If Step 3 resolved any mechanical conflicts, list exactly which files and what was kept from each side.
+- If Step 3 regenerated any artifact, name the file, the regeneration command that was run and the
+  `--check` command that verified the result.
 - If Step 3 aborted on an ambiguous conflict, this report never runs — Step 3's own STOP report is final.
 - Never delete the Step 1 recoverable ref as part of this report — that is the human's call.
 
@@ -185,6 +208,9 @@ report the discrepancy rather than declaring the sync done.
 - Never push with bare `--force` — only `--force-with-lease`, and never retry a rejected lease blindly.
 - Never guess on an ambiguous conflict — abort and hand off, every time, with no exception for
   "obviously trivial-looking" content on either side that this spell cannot independently verify.
+- Never hand-merge a script-regenerable artifact — regenerate it against the rebased tree and verify it
+  with its own check; and never classify a file as regenerable without naming the command that
+  regenerates it.
 - Never skip the recoverable ref (Step 1), even for a sync expected to be clean — the ref costs nothing
   and the alternative is an unrecoverable mistake on the case that turns out not to be clean.
 - Never report a sync as complete on a push success alone — provider verification (Step 5) is mandatory.
