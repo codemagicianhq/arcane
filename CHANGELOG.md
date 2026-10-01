@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.10.2] - 2026-10-01
+
+One spell change: `spell-sync-pull-request` learns what to do with a conflicted file that a script owns.
+
+### Changed
+
+- **`spell-sync-pull-request` Step 3 has a third conflict class, regenerable.** A committed artifact that a known command regenerates and overwrites unconditionally (the show report under `docs/plans/*/`, the self-hosted parity copies, `package-lock.json`) is neither hand-merged nor handed off: the spell leaves the conflicted file, runs its regeneration command against the rebased tree, verifies with the file's own `--check`, then stages and continues. Neither side of such a conflict is right, because both were computed from trees that no longer exist. A file with no nameable regeneration command stays mechanical or ambiguous. The Rules and the Step 6 report carry the class; the show report's completed-day rule (a trailer-free, report-only regeneration commit) is named where it applies.
+
 ## [1.10.1] - 2026-09-30
 
 The leftovers of the `1.10.0` review, all in the install plan `spell add` and `spell update` share.
