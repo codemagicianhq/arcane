@@ -116,3 +116,39 @@ describe("spell-create-pull-request and spell-ship route their conflict-stops he
     expect(ship).toContain("or run `spell-sync-pull-request`");
   });
 });
+
+describe("spell-sync-pull-request: fixture 6 — regenerable artifact, regenerate not merge (TODO 2026-09-28)", () => {
+  it("names the third conflict class between the mechanical and ambiguous ones", () => {
+    const mechanical = syncPr.indexOf("**Mechanically resolvable**");
+    const regenerable = syncPr.indexOf("**Regenerable**");
+    const ambiguous = syncPr.indexOf("**Ambiguous**");
+    expect(mechanical).toBeGreaterThan(-1);
+    expect(regenerable).toBeGreaterThan(mechanical);
+    expect(ambiguous).toBeGreaterThan(regenerable);
+    expect(syncPr).toContain("## Step 3 — Classify any conflict: mechanical, regenerable, or ambiguous");
+  });
+
+  it("says neither side is right and forbids hand-merging or picking a side", () => {
+    expect(syncPr).toContain("Neither side's content is the right answer");
+    expect(syncPr).toContain("**Do not\n  hand-merge the diff and do not pick a side.**");
+    expect(syncPr).toContain("run its regeneration\n  command, verify with the file's own `--check` command, then stage the file");
+  });
+
+  it("names the show report as the first artifact, with its fix and check commands and the completed-day rule", () => {
+    expect(syncPr).toContain("`docs/plans/*/show-report.{json,html}` — `npm run fix:report`");
+    expect(syncPr).toContain("verified by `npm run check:report`");
+    expect(syncPr).toContain("**trailer-free, report-only commit**");
+    expect(syncPr).toContain("npm run fix:self-host-parity");
+    expect(syncPr).toContain("`package-lock.json` — `npm install`");
+  });
+
+  it("refuses to promote a file without a named regeneration command, in Step 3 and in the Rules", () => {
+    expect(syncPr).toContain("A file you cannot name a regeneration command for is not regenerable");
+    expect(syncPr).toContain("Never hand-merge a script-regenerable artifact");
+    expect(syncPr).toContain("never classify a file as regenerable without naming the command");
+  });
+
+  it("reports a regeneration in Step 6 with the command and the check that verified it", () => {
+    expect(syncPr).toContain("If Step 3 regenerated any artifact, name the file, the regeneration command that was run and the\n  `--check` command that verified the result.");
+  });
+});

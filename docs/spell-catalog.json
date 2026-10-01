@@ -134,7 +134,7 @@
           "id": "spell-sync-pull-request",
           "shortName": "sync-pull-request",
           "name": "Spell — Sync Pull Request",
-          "description": "Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical-vs-ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points."
+          "description": "Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical / regenerable / ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points."
         },
         {
           "id": "spell-address-review",
