@@ -86,7 +86,7 @@ export async function planUpdateInstalls(args: {
     if (component.files.length === 0) continue;
     const plan = await planComponentInstall(component, args.targetDir, args.assetsDir, {});
     if (plan.conflicts.length > 0) {
-      leftAlone.push({ name, kind: "prerequisite", reason: `${plan.conflicts[0]!.file} already exists${plan.conflicts.length > 1 ? ` (and ${plan.conflicts.length - 1} more)` : ""}, and update does not overwrite` });
+      leftAlone.push({ name, kind: "prerequisite", reason: conflictReason(plan) });
       continue;
     }
     items.push({ plan, kind: "prerequisite", requiredBy });
@@ -97,13 +97,20 @@ export async function planUpdateInstalls(args: {
     if (component.initOnly || component.files.length === 0) continue;
     const plan = await planComponentInstall(component, args.targetDir, args.assetsDir, {});
     if (plan.conflicts.length > 0) {
-      leftAlone.push({ name: candidate.name, kind: "new", reason: `${plan.conflicts[0]!.file} already exists, and update does not overwrite` });
+      leftAlone.push({ name: candidate.name, kind: "new", reason: conflictReason(plan) });
       continue;
     }
     items.push({ plan, kind: "new", requiredBy: [] });
   }
 
   return { items, leftAlone };
+}
+
+function conflictReason(plan: InstallPlan): string {
+  const first = plan.conflicts[0]!;
+  if (first.state === "directory") return `${first.file} is a directory, which update does not replace`;
+  const more = plan.conflicts.length > 1 ? ` (and ${plan.conflicts.length - 1} more)` : "";
+  return `${first.file} already exists${more}, and update does not overwrite`;
 }
 
 function label(item: UpdateInstallItem): string {

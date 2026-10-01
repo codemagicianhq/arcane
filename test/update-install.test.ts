@@ -395,5 +395,32 @@ describe("spell update installs (ARC-052)", () => {
       expect(recorded).not.toContain(STANDARDS[0]!);
       for (const name of STANDARDS.slice(1)) expect(recorded).toContain(name);
     });
+
+    it("adopts a prerequisite whose unrecorded file is identical to the packaged one, instead of leaving it alone", async () => {
+      await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
+      const target = getComponent("compliance-standards").files[0]!;
+      await fs.mkdir(join(tmpDir, target, ".."), { recursive: true });
+      await fs.copyFile(join(ASSETS_DIR, target), join(tmpDir, target));
+      const spy = vi.spyOn(console, "log");
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, NEW_VERSION);
+
+      const out = logged(spy);
+      expect(names(out, "Installed")).toEqual(STANDARDS);
+      expect(out).not.toContain("not installed by update");
+      const recorded = (await readManifestFile(tmpDir)).components.find((c) => c.name === "compliance-standards")!;
+      expect(Object.keys(recorded.fileHashes ?? {})).toEqual([target]);
+    });
+
+    it("names a directory at a prerequisite destination as a directory in the reason", async () => {
+      await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
+      const target = getComponent(STANDARDS[0]!).files[0]!;
+      await fs.mkdir(join(tmpDir, target), { recursive: true });
+      const spy = vi.spyOn(console, "log");
+
+      await runUpdate({}, tmpDir, ASSETS_DIR, NEW_VERSION);
+
+      expect(logged(spy)).toContain(`not installed by update: ${target} is a directory, which update does not replace`);
+    });
   });
 });
