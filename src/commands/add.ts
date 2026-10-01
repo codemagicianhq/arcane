@@ -17,20 +17,34 @@ import type { InstalledComponent, SpellAddOptions } from "../types.js";
 type AddOutcome = "added" | "skipped" | "failed";
 
 function describeExisting(f: PlannedFile): string {
+  if (f.state === "directory") return "is a directory";
   return f.state === "identical" ? "identical to the packaged file" : "differs from the packaged file";
+}
+
+function directoryConflict(plan: InstallPlan): PlannedFile | undefined {
+  return plan.conflicts.find((f) => f.state === "directory");
 }
 
 function printDryRun(name: string, plan: InstallPlan, options: SpellAddOptions): void {
   for (const f of plan.files) {
     if (f.state === "missing") {
       console.log(`  [dry-run] Would copy: ${f.file}`);
+    } else if (f.state === "directory" && !(plan.component.skipExisting && !options.force)) {
+      console.log(`  [dry-run] Would refuse: ${f.file} (exists, is a directory) — remove it first`);
     } else if (options.force) {
       console.log(`  [dry-run] Would overwrite: ${f.file} (exists, ${describeExisting(f)})`);
     } else if (plan.component.skipExisting) {
       console.log(`  [dry-run] Would keep: ${f.file} (exists, yours, ${describeExisting(f)})`);
+    } else if (f.state === "identical") {
+      console.log(`  [dry-run] Would adopt: ${f.file} (exists, identical to the packaged file)`);
     } else {
       console.log(`  [dry-run] Would refuse: ${f.file} (exists, ${describeExisting(f)}) — needs --force`);
     }
+  }
+  const dir = directoryConflict(plan);
+  if (dir) {
+    console.log(`\n[dry-run] Would refuse component "${name}": a directory is at "${dir.file}", which --force does not replace. Remove it first.`);
+    return;
   }
   if (plan.conflicts.length > 0) {
     console.log(
@@ -75,6 +89,13 @@ async function addOne(
     return plan.conflicts.length > 0 ? "failed" : "added";
   }
 
+  const dir = directoryConflict(plan);
+  if (dir) {
+    console.error(
+      `Cannot add "${name}": "${dir.file}" is a directory, which --force does not replace. Nothing was written. Remove it first.`,
+    );
+    return "failed";
+  }
   if (plan.conflicts.length > 0) {
     const others = plan.conflicts.length - 1;
     console.error(

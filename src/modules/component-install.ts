@@ -1,9 +1,9 @@
-import { stat } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { copyFile, fileExists, hashFile, listDirectoryFiles } from "./copier.js";
+import { copyFile, fileExists, hashFile, listDirectoryFiles, removeEmptyAncestors, removeWithin } from "./copier.js";
 import type { RegistryComponent } from "../types.js";
 
-export type DestinationState = "missing" | "identical" | "differs";
+export type DestinationState = "missing" | "identical" | "differs" | "directory";
 
 export interface PlannedFile {
   /** Installed path, relative to the repository root. */
@@ -22,11 +22,11 @@ export interface InstallPlan {
   component: RegistryComponent;
   /** Every file the component ships, directories flattened. */
   files: PlannedFile[];
-  /** Files that will be written: absent, or present under `force`. */
+  /** Files that will be written: absent, identical (adopted), or present under `force`. */
   toCopy: PlannedFile[];
   /** Present and user-owned (`skipExisting`): left alone, and not recorded. */
   kept: PlannedFile[];
-  /** Present and not user-owned: refuse unless the caller forces. */
+  /** Present and not user-owned: refuse unless the caller forces. A directory is always refused. */
   conflicts: PlannedFile[];
 }
 
@@ -40,7 +40,7 @@ export async function planComponentInstall(
   const stateOf = async (file: string, src: string): Promise<PlannedFile> => {
     const dest = join(targetDir, file);
     if (!(await fileExists(dest))) return { file, src, state: "missing" };
-    if ((await stat(dest)).isDirectory()) return { file, src, state: "differs" };
+    if ((await stat(dest)).isDirectory()) return { file, src, state: "directory" };
     const same = (await hashFile(dest)) === (await hashFile(src));
     return { file, src, state: same ? "identical" : "differs" };
   };
@@ -54,12 +54,15 @@ export async function planComponentInstall(
     }
   }
 
-  const present = files.filter((f) => f.state !== "missing");
-  const missing = files.filter((f) => f.state === "missing");
-  if (opts.force) return { component, files, toCopy: files, kept: [], conflicts: [] };
-  return component.skipExisting
-    ? { component, files, toCopy: missing, kept: present, conflicts: [] }
-    : { component, files, toCopy: missing, kept: [], conflicts: present };
+  const of = (...states: DestinationState[]) => files.filter((f) => states.includes(f.state));
+  // --force overwrites a file's content; it never deletes a tree, so a directory stays a conflict.
+  if (opts.force) {
+    return { component, files, toCopy: of("missing", "identical", "differs"), kept: [], conflicts: of("directory") };
+  }
+  if (component.skipExisting) {
+    return { component, files, toCopy: of("missing"), kept: of("identical", "differs", "directory"), conflicts: [] };
+  }
+  return { component, files, toCopy: of("missing", "identical"), kept: [], conflicts: of("differs", "directory") };
 }
 
 export interface InstalledFiles {
@@ -67,13 +70,41 @@ export interface InstalledFiles {
   fileHashes: Record<string, string>;
 }
 
-/** Writes the plan's `toCopy` set and returns what to record in the manifest. */
+/**
+ * Writes the plan's `toCopy` set and returns what to record in the manifest.
+ * A failure part-way undoes the files already written (a created file is
+ * removed, an overwritten one gets its previous content back) before the
+ * error is rethrown, so nothing is half-installed and unrecorded.
+ */
 export async function executeInstallPlan(plan: InstallPlan, targetDir: string): Promise<InstalledFiles> {
   const files: string[] = [];
   const fileHashes: Record<string, string> = {};
-  for (const { file, src } of plan.toCopy) {
-    fileHashes[file] = await copyFile(src, targetDir, file, { force: true });
-    files.push(file);
+  const written: { file: string; previous: Buffer | null }[] = [];
+  try {
+    for (const { file, src, state } of plan.toCopy) {
+      const previous = state === "missing" ? null : await readFile(join(targetDir, file));
+      fileHashes[file] = await copyFile(src, targetDir, file, { force: true });
+      written.push({ file, previous });
+      files.push(file);
+    }
+  } catch (err) {
+    await rollback(written, targetDir);
+    throw err;
   }
   return { files, fileHashes };
+}
+
+async function rollback(written: { file: string; previous: Buffer | null }[], targetDir: string): Promise<void> {
+  for (const { file, previous } of [...written].reverse()) {
+    try {
+      if (previous === null) {
+        await removeWithin(targetDir, file);
+        await removeEmptyAncestors(targetDir, file);
+      } else {
+        await writeFile(join(targetDir, file), previous);
+      }
+    } catch {
+      // Best effort: the error that stopped the install is the one to report.
+    }
+  }
 }

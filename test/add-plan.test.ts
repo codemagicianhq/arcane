@@ -260,4 +260,81 @@ describe("spell add — plan, refusal, skipExisting, multiple names", () => {
       expect(await fs.readFile(join(tmpDir, TESTING), "utf8")).toBe(MINE);
     });
   });
+
+  describe("review leftovers — adopt identical, refuse a directory cleanly", () => {
+    it("adopts an unrecorded file identical to the packaged one: records it, leaves its content alone", async () => {
+      await fs.mkdir(join(tmpDir, ".arcane/governance"), { recursive: true });
+      await fs.copyFile(join(ASSETS_DIR, TESTING), join(tmpDir, TESTING));
+      const log = vi.spyOn(console, "log");
+      const exit = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+      await runAdd(["testing-standards"], {}, tmpDir, ASSETS_DIR, VERSION);
+
+      expect(exit).not.toHaveBeenCalled();
+      const recorded = (await readManifest(tmpDir)).components.find((c) => c.name === "testing-standards")!;
+      expect(recorded.files).toEqual([TESTING]);
+      expect(Object.keys(recorded.fileHashes ?? {})).toEqual([TESTING]);
+      expect(await fs.readFile(join(tmpDir, TESTING), "utf8")).toBe(await fs.readFile(join(ASSETS_DIR, TESTING), "utf8"));
+      expect(lines(log).some((l) => l.includes("Added component \"testing-standards\""))).toBe(true);
+    });
+
+    it("dry-run says Would adopt for an identical file, and does not refuse the component", async () => {
+      await fs.mkdir(join(tmpDir, ".arcane/governance"), { recursive: true });
+      await fs.copyFile(join(ASSETS_DIR, TESTING), join(tmpDir, TESTING));
+      const log = vi.spyOn(console, "log");
+      const exit = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+      await runAdd(["testing-standards"], { dryRun: true }, tmpDir, ASSETS_DIR, VERSION);
+
+      expect(lines(log).some((l) => l.includes(`Would adopt: ${TESTING}`))).toBe(true);
+      expect(lines(log).some((l) => l.includes("Would refuse"))).toBe(false);
+      expect(exit).not.toHaveBeenCalled();
+      expect((await readManifest(tmpDir)).components).toHaveLength(0);
+    });
+
+    it("refuses a directory at a destination with wording that names the directory, not --force", async () => {
+      await fs.mkdir(join(tmpDir, TESTING), { recursive: true });
+      const err = vi.spyOn(console, "error");
+      const exit = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+      await runAdd(["testing-standards"], {}, tmpDir, ASSETS_DIR, VERSION);
+
+      const errorLines = lines(err);
+      expect(errorLines).toHaveLength(1);
+      expect(errorLines[0]).toContain(`"${TESTING}" is a directory`);
+      expect(errorLines[0]).toContain("Remove it first");
+      expect(errorLines[0]).not.toContain("Use --force");
+      expect(exit).toHaveBeenCalledWith(1);
+    });
+
+    it("--force over a directory refuses cleanly instead of failing at copy time", async () => {
+      await fs.mkdir(join(tmpDir, TESTING), { recursive: true });
+      const err = vi.spyOn(console, "error");
+      const exit = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+      await runAdd(["testing-standards"], { force: true }, tmpDir, ASSETS_DIR, VERSION);
+
+      expect(lines(err)).toHaveLength(1);
+      expect(lines(err)[0]).toContain("is a directory, which --force does not replace");
+      expect(lines(err).join("\n")).not.toContain("EISDIR");
+      expect(exit).toHaveBeenCalledWith(1);
+      expect((await fs.stat(join(tmpDir, TESTING))).isDirectory()).toBe(true);
+      expect((await readManifest(tmpDir)).components).toHaveLength(0);
+    });
+
+    it("dry-run names the directory on its own line and in the component summary, with or without --force", async () => {
+      await fs.mkdir(join(tmpDir, TESTING), { recursive: true });
+      vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+
+      for (const options of [{ dryRun: true }, { dryRun: true, force: true }]) {
+        const log = vi.spyOn(console, "log");
+        await runAdd(["testing-standards"], options, tmpDir, ASSETS_DIR, VERSION);
+        const out = lines(log);
+        log.mockRestore();
+        expect(out.some((l) => l.includes(`Would refuse: ${TESTING} (exists, is a directory) — remove it first`))).toBe(true);
+        expect(out.some((l) => l.includes(`a directory is at "${TESTING}"`))).toBe(true);
+        expect(out.some((l) => l.includes("differs from the packaged file"))).toBe(false);
+      }
+    });
+  });
 });
