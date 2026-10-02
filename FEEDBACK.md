@@ -67,3 +67,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-09-29-upstream-intake-closeout-and-scope.md`, lessons "One `Closes #N` per issue" and "An acceptance criterion can contradict its own Won't Have". The keyword behaviour was observed once on PR #313 (#293 `CLOSED`, #294 `OPEN` until `gh issue close 294`), not read from GitHub's documentation.
+
+---
+
+## Feedback — spell-feedback flush and disclose prompt (2026-10-02)
+
+**Session:** Upstream intake to 1.10.2 (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- After `spell-feedback --flush` filed five issues, each on a literal `disclose`, the operator asked where the new issues had come from and whether the session had made them. The disclose prompt named the item but not the repository the issue would be created on, and the run ended without a list tying each new issue to the `FEEDBACK.md` entry it came from. In a repository that is its own upstream, the new issues sat beside older ones from another session with no visible difference in origin.
+
+### Improvement Items
+- [ ] In `spell-feedback` Step 6, have the disclosure confirm name the target repository in full (`owner/repo`) and say that a public issue will be created there, and have Flush Mode end with a table of every issue the run created (number, URL, the `FEEDBACK.md` heading it came from). <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-01-intake-followups-to-1.10.2.md`, lesson "A disclose prompt should say where the issue lands".
