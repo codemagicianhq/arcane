@@ -60,3 +60,5 @@
   - Decide land-or-abandon for `origin/sessions/2026-08-15-queue-failfast-doclink-ideas` (one unlanded docs commit, 2026-08-20), `origin/docs/spell-full-cycle-coordination-gaps` (two, 2026-07-17) and the five local `backup/*` snapshots — only you know whether their content is still wanted.
   - Triage issues #297, #298, #299 (a consumer session, 2026-09-28) and #321–#325 (filed by this session's `spell-feedback --flush` on your `disclose`) — whether they become a wave is your call.
 - **Notes:** (1) npm `latest` is `1.10.2` and the global CLI here was last updated to `1.10.0`; run `npm i -g arcane-cli@latest` before a live `spell` check. (2) `dist/` goes stale silently when `src` changes: run `npm run build` before trusting a test that spawns the built CLI. (3) GitHub honours one closing keyword per issue. (4) A flush in this repository files issues on this repository, because it is its own upstream. (5) The claude.ai connectors need authorization in the operator's connector settings and the datadog plugin failed to connect (ENOTFOUND); nothing here depends on them.
+
+> ✓ Consumed: 2026-10-02
