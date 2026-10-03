@@ -22,6 +22,7 @@ import {
   SPELL_COMPONENT_NAMES,
   LEGACY_COMPONENT_MIGRATIONS,
   COMPONENT_FILE_MOVES,
+  REGISTRY_RETIREMENTS,
 } from "../modules/registry.js";
 import {
   MANIFEST_RETROFITS,
@@ -344,6 +345,33 @@ export async function resolveOrphan(
   await removeEmptyAncestors(targetDir, file);
   console.log(`  Pruned orphaned file: ${file}`);
   return "pruned";
+}
+
+/**
+ * Whether a retired user-owned component's file is the operator's to keep:
+ * on disk, and either edited since Arcane wrote it or never hashed by Arcane
+ * (pre-dates ARC-038, or Arcane kept the operator's own copy at install).
+ * Such a file leaves the manifest instead of being reported as an orphan on
+ * every run -- the orphan path protects files Arcane owns, and a
+ * `skipExisting` file was the operator's from the moment it was written
+ * (#328). An untouched copy is not released: it is still the scaffold exactly
+ * as shipped, and `--prune` is the right way to remove it. A path that
+ * escapes the target directory is never read; resolveOrphan refuses it.
+ */
+async function isReleasableUserOwnedFile(
+  targetDir: string,
+  file: string,
+  recordedHash: string | undefined,
+): Promise<boolean> {
+  try {
+    validateTargetPath(targetDir, file);
+  } catch {
+    return false;
+  }
+  const filePath = join(targetDir, file);
+  if (!(await fileExists(filePath))) return false;
+  if (recordedHash === undefined) return true;
+  return !(await fileMatchesHash(filePath, recordedHash));
 }
 
 /**
@@ -793,14 +821,40 @@ export async function runUpdate(
         // even during dry-run (that's the point of a preview); only the
         // actual deletion is dry-run-gated, inside resolveOrphan's `prune`.
         console.log(`  ! ${installed.name} not in registry — skipping.`);
+        // A retired user-owned component (#328): an edited or never-hashed
+        // file is the operator's and leaves the manifest; only an untouched
+        // copy stays on the orphan path. See isReleasableUserOwnedFile.
+        const userOwned = REGISTRY_RETIREMENTS.some(
+          (r) => r.kind === "component" && r.name === installed.name && r.userOwned === true,
+        );
+        const stillTracked: string[] = [];
         for (const file of installed.files) {
+          const recordedHash = installed.fileHashes?.[file];
+          if (userOwned && (await isReleasableUserOwnedFile(targetDir, file, recordedHash))) {
+            console.log(
+              `  ${options.dryRun ? "[dry-run] Would release" : "Released"}: ${file} — yours (edited since Arcane wrote it, or never written by Arcane), no longer tracked. Delete it yourself if you do not want it.`,
+            );
+            continue;
+          }
           const status = await resolveOrphan(
             targetDir,
             file,
-            installed.fileHashes?.[file],
+            recordedHash,
             Boolean(options.prune) && !options.dryRun,
           );
           orphanReport.push({ file, status });
+          if (status === "reported") stillTracked.push(file);
+        }
+        if (userOwned && !options.dryRun) {
+          // Released, pruned or gone: nothing left for a later run to retry.
+          if (stillTracked.length === 0) continue;
+          const fileHashes: Record<string, string> = {};
+          for (const file of stillTracked) {
+            const hash = installed.fileHashes?.[file];
+            if (hash !== undefined) fileHashes[file] = hash;
+          }
+          updatedComponents.push({ ...installed, files: stillTracked, fileHashes });
+          continue;
         }
         // Drop the manifest entry once every file it tracked is gone or was
         // never there; otherwise keep it so a future update can retry

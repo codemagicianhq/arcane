@@ -131,45 +131,45 @@ describe("spell add — plan, refusal, skipExisting, multiple names", () => {
   });
 
   describe("R-294c a skipExisting component keeps a present destination", () => {
-    it("keeps an existing .mcp.json, reports it as kept, and does not record it", async () => {
-      await fs.writeFile(join(tmpDir, ".mcp.json"), MINE);
+    it("keeps an existing .gitattributes, reports it as kept, and does not record it", async () => {
+      await fs.writeFile(join(tmpDir, ".gitattributes"), MINE);
       const log = vi.spyOn(console, "log");
       const exit = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
 
-      await runAdd(["mcp-config-template"], {}, tmpDir, ASSETS_DIR, VERSION);
+      await runAdd(["line-ending-baseline"], {}, tmpDir, ASSETS_DIR, VERSION);
 
       expect(exit).not.toHaveBeenCalled();
-      expect(await fs.readFile(join(tmpDir, ".mcp.json"), "utf8")).toBe(MINE);
-      expect(lines(log).some((l) => l.includes("Kept") && l.includes(".mcp.json"))).toBe(true);
-      const installed = (await readManifest(tmpDir)).components.find((c) => c.name === "mcp-config-template");
+      expect(await fs.readFile(join(tmpDir, ".gitattributes"), "utf8")).toBe(MINE);
+      expect(lines(log).some((l) => l.includes("Kept") && l.includes(".gitattributes"))).toBe(true);
+      const installed = (await readManifest(tmpDir)).components.find((c) => c.name === "line-ending-baseline");
       expect(installed).toBeDefined();
-      expect(installed!.files).not.toContain(".mcp.json");
+      expect(installed!.files).not.toContain(".gitattributes");
     });
 
-    it("creates a missing .mcp.json and records it", async () => {
-      await runAdd(["mcp-config-template"], {}, tmpDir, ASSETS_DIR, VERSION);
+    it("creates a missing .gitattributes and records it", async () => {
+      await runAdd(["line-ending-baseline"], {}, tmpDir, ASSETS_DIR, VERSION);
 
-      expect((await fs.stat(join(tmpDir, ".mcp.json"))).isFile()).toBe(true);
-      const installed = (await readManifest(tmpDir)).components.find((c) => c.name === "mcp-config-template");
-      expect(installed!.files).toContain(".mcp.json");
+      expect((await fs.stat(join(tmpDir, ".gitattributes"))).isFile()).toBe(true);
+      const installed = (await readManifest(tmpDir)).components.find((c) => c.name === "line-ending-baseline");
+      expect(installed!.files).toContain(".gitattributes");
     });
 
     it("overwrites a kept file under --force and records it", async () => {
-      await fs.writeFile(join(tmpDir, ".mcp.json"), MINE);
-      await runAdd(["mcp-config-template"], { force: true }, tmpDir, ASSETS_DIR, VERSION);
+      await fs.writeFile(join(tmpDir, ".gitattributes"), MINE);
+      await runAdd(["line-ending-baseline"], { force: true }, tmpDir, ASSETS_DIR, VERSION);
 
-      expect(await fs.readFile(join(tmpDir, ".mcp.json"), "utf8")).not.toBe(MINE);
-      const installed = (await readManifest(tmpDir)).components.find((c) => c.name === "mcp-config-template");
-      expect(installed!.files).toContain(".mcp.json");
+      expect(await fs.readFile(join(tmpDir, ".gitattributes"), "utf8")).not.toBe(MINE);
+      const installed = (await readManifest(tmpDir)).components.find((c) => c.name === "line-ending-baseline");
+      expect(installed!.files).toContain(".gitattributes");
     });
 
     it("dry-run says Would keep, not Would copy, for a present skipExisting file", async () => {
-      await fs.writeFile(join(tmpDir, ".mcp.json"), MINE);
+      await fs.writeFile(join(tmpDir, ".gitattributes"), MINE);
       const log = vi.spyOn(console, "log");
-      await runAdd(["mcp-config-template"], { dryRun: true }, tmpDir, ASSETS_DIR, VERSION);
-      const line = lines(log).find((l) => l.includes(".mcp.json"));
+      await runAdd(["line-ending-baseline"], { dryRun: true }, tmpDir, ASSETS_DIR, VERSION);
+      const line = lines(log).find((l) => l.includes(".gitattributes"));
       expect(line).toContain("Would keep");
-      expect(await fs.readFile(join(tmpDir, ".mcp.json"), "utf8")).toBe(MINE);
+      expect(await fs.readFile(join(tmpDir, ".gitattributes"), "utf8")).toBe(MINE);
     });
   });
 

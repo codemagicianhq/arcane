@@ -45,6 +45,13 @@ describe("git-conventions.md: canonical MCP fail-fast / fallback rule (I8/BC-22)
     expect(gitConventions).toContain('set a per-server `"timeout"` (milliseconds) in `.mcp.json`');
   });
 
+  it("names the unit, the minimum, the doctor check and the retired scaffold (#328)", () => {
+    expect(gitConventions).toContain("must be 1000 or more; a smaller value is ignored");
+    expect(gitConventions).toContain("`spell doctor` warns on an\nentry without one and never edits the file");
+    expect(gitConventions).toContain("Arcane ships no example `.mcp.json`");
+    expect(gitConventions).not.toContain("or that a given `.mcp.json` entry sets a timeout");
+  });
+
   it("cites the real origin incident, not a hypothetical", () => {
     expect(gitConventions).toContain(
       "a real ops session lost roughly an hour to two consecutive 30-minute MCP hangs",

@@ -148,15 +148,10 @@ const COMPONENTS: RegistryComponent[] = [
     skipExisting: true,
     initOnly: true,
   },
-  // Optional MCP config scaffold (BC-22/I12). skipExisting: a repo's own
-  // .mcp.json is user-owned server config Arcane must never overwrite.
-  // Not initOnly -- useful to retrofit via `spell add` on an existing repo too.
-  {
-    name: "mcp-config-template",
-    description: "Example .mcp.json with a per-server timeout, companion to the MCP fail-fast rule",
-    files: [".mcp.json"],
-    skipExisting: true,
-  },
+  // NOTE: the `mcp-config-template` component (`.mcp.json`, BC-22/I12) was
+  // retired on 2026-10-02 -- see REGISTRY_RETIREMENTS. A root .mcp.json is
+  // live MCP config that clients execute, and the `full` profile's "*" put
+  // its example server in every full-profile repo (#328).
   {
     name: "records-conventions",
     description: "Supersession, tombstone, and retention conventions for records repositories",
@@ -559,6 +554,14 @@ export const REGISTRY_RETIREMENTS: readonly RegistryRetirement[] = [
     successors: [],
     reason:
       "`.github/agents/*.agent.md` files are rendered per roster by `spell agents init` / `spell agents sync` (ARC-047), which a fixed-path component cannot do",
+  },
+  {
+    name: "mcp-config-template",
+    kind: "component",
+    successors: [],
+    userOwned: true,
+    reason:
+      "retired 2026-10-02 (#328): a root .mcp.json is live MCP config that clients execute, and the `full` profile installed its example server everywhere; set per-server timeouts in your own .mcp.json, which `spell doctor` checks",
   },
   {
     name: "spell-prompts",

@@ -486,8 +486,14 @@ reported in output so a human sees it happened. The known-issues rows below (`MC
 `MCP create_pull_request`) are concrete instances of this general rule, not special cases of their own.
 **Consumer hardening:** set a per-server `"timeout"` (milliseconds) in `.mcp.json` so a hang aborts on a
 predictable schedule instead of running to the client's own default idle limit (as long as 30 minutes).
+In Claude Code the value goes inside each server's entry under `mcpServers` — `"timeout": 30000` is 30
+seconds — and must be 1000 or more; a smaller value is ignored (Claude Code MCP docs, checked 2026-10-02;
+other clients have their own keys, so check theirs before copying this one). `spell doctor` warns on an
+entry without one and never edits the file: `.mcp.json` is yours. Arcane ships no example `.mcp.json` —
+the `mcp-config-template` scaffold was retired on 2026-10-02 because a root `.mcp.json` is live
+configuration that clients execute, not documentation, and its placeholder server failed on every session start.
 Origin: a real ops session lost roughly an hour to two consecutive 30-minute MCP hangs before the
-documented `az` fallback was used (2026-08-14). **Enforcement: explicitly advisory prose (ARC-023) — this fail-fast behavior and the `.mcp.json` timeout hardening both depend on the acting agent actually following them; no check in this repo verifies an agent stopped retrying a downed MCP server or that a given `.mcp.json` entry sets a timeout.**
+documented `az` fallback was used (2026-08-14). **Enforcement: explicitly advisory prose (ARC-023) for the fail-fast behavior — no check in this repo verifies an agent stopped retrying a downed MCP server. The timeout hardening has an advisory check: `spell doctor`'s "MCP config (per-server timeout, I12)" row warns on a `.mcp.json` entry without a `"timeout"` (exit code unchanged) and edits nothing.**
 
 **Known issues:**
 

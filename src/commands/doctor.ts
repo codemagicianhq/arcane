@@ -576,6 +576,10 @@ interface McpServerConfig {
 // could publish (#295). A server whose args still name it runs a stranger's code on the next `npx -y`.
 const UNOWNED_EXAMPLE_SCOPE = "@example/";
 
+// The placeholder the retired `mcp-config-template` scaffold shipped (1.10.0 through 1.10.2, #328).
+// npm rejects it, so the server fails on every session start of every client that loads the file.
+const RETIRED_SCAFFOLD_PLACEHOLDER = "<your-mcp-server-package>";
+
 interface McpConfigFile {
   mcpServers?: Record<string, McpServerConfig>;
 }
@@ -585,7 +589,9 @@ interface McpConfigFile {
  * "timeout" -- companion to the MCP fail-fast/fallback rule in
  * git-conventions.md. Without one, a hung server runs to the client's own
  * default idle limit (as long as 30 minutes) instead of a predictable one.
- * A missing .mcp.json is a silent pass -- MCP is optional.
+ * Also warns on the two placeholders the old scaffold shipped (#295, #328).
+ * A missing .mcp.json is a silent pass -- MCP is optional. Advisory only:
+ * the file is the operator's, and doctor never edits it.
  */
 /**
  * TODO.md "a spell can be installed without the governance doc it cites".
@@ -704,11 +710,14 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
   }
 
   const exampleHits: string[] = [];
+  const placeholderHits: string[] = [];
   for (const n of serverNames) {
     const args = servers[n]?.args;
     if (!Array.isArray(args)) continue;
     for (const a of args) {
-      if (typeof a === "string" && a.startsWith(UNOWNED_EXAMPLE_SCOPE)) exampleHits.push(`${n} (${a})`);
+      if (typeof a !== "string") continue;
+      if (a.startsWith(UNOWNED_EXAMPLE_SCOPE)) exampleHits.push(`${n} (${a})`);
+      if (a === RETIRED_SCAFFOLD_PLACEHOLDER) placeholderHits.push(n);
     }
   }
   if (exampleHits.length > 0) {
@@ -722,6 +731,18 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
         "Replace the entry with your own MCP server package, or remove it; the file is yours, so doctor does not edit it",
     };
   }
+  if (placeholderHits.length > 0) {
+    return {
+      name,
+      passed: false,
+      blocking: false,
+      message:
+        `.mcp.json still holds the placeholder server from the retired mcp-config-template scaffold: ${placeholderHits.join(", ")} (${RETIRED_SCAFFOLD_PLACEHOLDER}). ` +
+        "Clients load this file as live MCP config, so the placeholder fails on every session start. " +
+        "Delete the file if you run no MCP servers, or replace the entry with a real server package; the file is yours, so doctor does not edit it. " +
+        "An untouched scaffold is removed by `spell update --prune`",
+    };
+  }
 
   const missingTimeout = serverNames.filter((n) => typeof servers[n]?.timeout !== "number");
   if (missingTimeout.length > 0) {
@@ -729,7 +750,9 @@ export async function checkMcpConfig(targetDir: string): Promise<CheckResult> {
       name,
       passed: false,
       blocking: false,
-      message: `server(s) missing a "timeout": ${missingTimeout.join(", ")} — a hang runs to the client's own default idle limit (up to 30 min) instead of a predictable one`,
+      message:
+        `server(s) missing a "timeout": ${missingTimeout.join(", ")} — add "timeout": 30000 (milliseconds; Claude Code ignores a value below 1000) ` +
+        "to each entry under mcpServers, so a stuck tool call ends after 30 s instead of running to the client's own idle limit (as long as 30 minutes)",
     };
   }
 
