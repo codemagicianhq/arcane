@@ -221,7 +221,7 @@ spell add agent-policies   # or install any component à la carte
 spell add spells-build compliance-standards   # or several, in order
 ```
 
-`spell add` takes one or more names. It checks each component's files before writing any of them: if one already exists, it prints one line naming the file and `--force`, exits 1, and writes nothing from that component. With several names it stops at the first failure and says which were added and which were not attempted; a name that is already installed is skipped. A component that keeps your own file (`.mcp.json`) leaves an existing one alone and creates a missing one. `--dry-run` lists each file as identical, differing or missing, or as one that would be kept or refused, and writes nothing.
+`spell add` takes one or more names. It checks each component's files before writing any of them: if one already exists, it prints one line naming the file and `--force`, exits 1, and writes nothing from that component. With several names it stops at the first failure and says which were added and which were not attempted; a name that is already installed is skipped. A component that keeps your own file (`.gitattributes`, for example) leaves an existing one alone and creates a missing one. `--dry-run` lists each file as identical, differing or missing, or as one that would be kept or refused, and writes nothing.
 
 ### What `spell update` installs
 

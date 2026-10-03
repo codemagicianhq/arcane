@@ -255,6 +255,14 @@ export interface RegistryRetirement {
   successors: readonly string[];
   /** One line: why it changed, and where the record is. */
   reason: string;
+  /**
+   * The component's files were the operator's from the moment they were
+   * written (`skipExisting` while it shipped). On retirement, `spell update`
+   * releases an edited or never-hashed copy from tracking instead of
+   * reporting it as an orphan on every run; an untouched copy keeps the
+   * ordinary orphan path, so `--prune` can still remove it (#328).
+   */
+  userOwned?: boolean;
 }
 
 export type Profile = "full" | "lite" | "governance-only" | "methodology" | "docs";

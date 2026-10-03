@@ -573,6 +573,13 @@ Status legend: `[ ]` open · `[x]` done (PR#) · `[P]` parked on operator queue.
   doctor` check `checkMcpConfig` (per-server timeout, silent pass when no `.mcp.json` exists). Both
   IDEAS.md sources (I8, I12) marked promoted. 16 new tests (patch bump — a new doctor check + optional
   scaffold, not a new spell, matching BC-17's precedent).
+  **Addendum 2026-10-02 ([#328](https://github.com/codemagicianhq/arcane/issues/328)):** "not in any
+  default profile" was never true in practice — the `full` profile is `components: "*"`, so `spell init
+  --profile full` and `spell update --add-new` installed the scaffold everywhere, and a root `.mcp.json`
+  is live config that clients execute, so its placeholder server failed on every session start. The
+  `mcp-config-template` component is retired (`REGISTRY_RETIREMENTS`, user-owned: an edited copy is
+  released from tracking, an untouched one is prunable); the rule and `checkMcpConfig` stay, and doctor
+  now also warns on the retired scaffold's placeholder.
 
   **Report:** A new standing rule: one abnormal MCP tool failure now marks that server down for
   the rest of the session instead of retrying blindly, backed by an optional `.mcp.json` scaffold

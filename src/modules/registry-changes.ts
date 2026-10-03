@@ -157,7 +157,10 @@ export function formatRegistryChanges(changes: RegistryChanges): string[] {
     lines.push("  Renamed or retired, still tracked here:");
     for (const entry of changes.retired) {
       const successor = entry.successors.length > 0 ? entry.successors.join(", ") : "no successor";
-      lines.push(`    ${entry.name} (${entry.kind}) → ${successor}: ${entry.reason}`);
+      const ownership = entry.userOwned
+        ? " (user-owned: a copy you edited is released from tracking, never deleted)"
+        : "";
+      lines.push(`    ${entry.name} (${entry.kind}) → ${successor}: ${entry.reason}${ownership}`);
     }
     lines.push(
       "    Nothing is deleted because of this list: their files go through the orphan handling above, which removes an untouched one only under `spell update --prune`.",
