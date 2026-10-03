@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.11.0] - 2026-10-02
+
+The `mcp-config-template` scaffold is retired, and `spell update` learns to let go of a file that was the operator's all along ([#328](https://github.com/codemagicianhq/arcane/issues/328)).
+
+### Removed
+
+- **`mcp-config-template` and the `.mcp.json` it shipped.** The component was meant to be opt-in, but the `full` profile is every component, so `spell init --profile full` and `spell update --add-new` wrote the example `.mcp.json` into every full-profile repository, and a root `.mcp.json` is live MCP configuration that clients execute: its placeholder server failed on every session start. No registered component ships a root `.mcp.json` now. The fail-fast rule and the per-server timeout advice stay in `git-conventions.md`; `spell doctor` carries the check.
+
+### Changed
+
+- **`spell update` releases a retired user-owned component's file instead of nagging about it.** A retirement can be marked `userOwned` (the component was `skipExisting` while it shipped). On the next update, a copy the operator edited, or one Arcane never hashed, leaves the manifest with one `Released:` line and stays on disk; an untouched scaffold stays on the ordinary orphan path, reported every run and removed by `spell update --prune`. Before this, an edited `.mcp.json` would have been reported as an orphan on every run with no exit short of hand-editing `.arcane.json`. Retirements that are not user-owned behave exactly as before.
+- **`spell doctor`'s MCP check names the retired scaffold's placeholder.** A `.mcp.json` whose server still runs `<your-mcp-server-package>` gets a non-blocking warning that says what to do (delete the file or replace the entry; `spell update --prune` removes an untouched scaffold). The missing-timeout warning now carries the edit itself: `"timeout": 30000`, in milliseconds, 1000 or more because Claude Code ignores a smaller value. Doctor still never edits the file.
+- **`git-conventions.md`'s consumer-hardening paragraph** states the unit and the minimum (checked against the Claude Code MCP docs on 2026-10-02), points at `spell doctor`, says Arcane ships no example `.mcp.json`, and no longer claims that no check verifies a timeout.
+
 ## [1.10.2] - 2026-10-01
 
 One spell change: `spell-sync-pull-request` learns what to do with a conflicted file that a script owns.
