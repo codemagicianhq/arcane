@@ -170,7 +170,9 @@ Workflow:
    - Enforcement: structured spell gate (ARC-023) — for `guarded`, this check is the only thing that holds a push for confirmation. A `blocked` push is also refused by the pre-push hook and the sentinel push URL that `spell init` or `spell block-push` install, and `spell doctor` reports a `blocked` policy whose controls are missing.
    <!-- fragment:push-policy-check:end -->
 
-   When the check allows it, run `git push origin <branch>`.
+   **PR-state check — before any push.** Run it after the push-policy check, before the push below and before the step 9b `--force-with-lease` push. Ask the provider whether this branch's pull request has already merged: `gh pr list --head <branch> --state all --json number,state` on GitHub, `az repos pr list --source-branch <branch> --status all` on Azure DevOps, or the provider's MCP equivalent. If any pull request for the branch is `MERGED` (`completed` on Azure DevOps), do not push: stop and name the merged PR. A push there recreates the remote branch the merge deleted and carries already-merged commits with it; put the follow-up work on a fresh branch from `<trunk>` instead. An open pull request, or none, lets the push proceed. If the provider cannot be queried, say so, and push only a branch this session created and opened no pull request for; otherwise stop and ask.
+
+   When the checks allow it, run `git push origin <branch>`.
 
    a1. **MCP fail-fast / fallback.** If an MCP tool used anywhere in this step (e.g. `create_pull_request`) fails abnormally once — a hang, an idle-timeout abort, a transport error, or an empty response where data is clearly expected — treat that server as down for the rest of this session. Do not retry it blindly; fall back to the raw CLI paths below (`gh pr create` / `az repos pr create`) and report the downgrade. Full rule: `.arcane/governance/git-conventions.md` → Known issues.
 
