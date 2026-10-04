@@ -33,6 +33,8 @@ From the input and recent context, determine:
 
 Do not ask for anything you can infer from the conversation.
 
+An assistant's private memory is a convenience for the current assistant only and is never a destination for a lesson. Anything worth keeping goes into the repository's journal, decision record or runbooks, and, when framework-shaped, upstream through `FEEDBACK.md` (Step 5).
+
 ## Step 2 — Prompt for Structured Feedback
 
 Ask all of this at once (not one at a time):
