@@ -704,8 +704,8 @@ Agent-authored commits MUST include trailers in the commit message footer. Human
 | `Agent`        | Yes         | `claude`, `copilot`, `codex`          | The runtime that executed — always resolvable from the tool itself. |
 | `Persona`      | Conditional | `kellar`, `merlin`                    | The roster identity operated as. Present only when a roster exists and one was assigned; omit entirely otherwise — never guess. |
 | `Role`         | Conditional | `CTO / Architecture Lead`             | Derived **only** from `Persona`'s roster entry (`AgentDefinition.role`, reached via the roster entry's `definition` pointer — see `agent-loader.ts`), never typed by hand. Present only when `Persona` is present; a `Role` value not sourced from the actual roster file is a defect, not a stylistic choice — see the grading-probe example below. |
-| `Model`        | Yes         | `claude-opus-4-20250918`, `gpt-4o`    | Self-reported by the runtime. |
-| `Model-Source` | Yes         | `self-reported`                       | Marks that `Model` (and `Agent`) is self-reported, not independently verified — currently the only defined value. Exists because a fabricated `Model`/author trailer once survived eight PRs and human review undetected; the field makes that limitation visible instead of silently trusted. |
+| `Model`        | Yes         | `claude-opus-4-20250918`, `gpt-4o`, `withheld` | Self-reported by the runtime. `withheld` only when the runtime forbids disclosing it (see below). |
+| `Model-Source` | Yes         | `self-reported`, `withheld-by-runtime` | `self-reported` marks that `Model` (and `Agent`) is self-reported, not independently verified. `withheld-by-runtime` marks that the runtime forbids disclosing the model, so `Model` is `withheld` on purpose (`Agent` and `Provider` remain self-reported in that case). The `Model-Source` field exists because a fabricated `Model`/author trailer once survived eight PRs and human review undetected; the field makes that limitation visible instead of silently trusted. |
 | `Provider`     | Yes         | `anthropic`, `openai`                 | |
 | `Task-Type`    | Optional    | `docs`, `code`, `review`, `marketing`  | |
 | `Approval`     | Optional    | `interactive`, `batch`, `post-review`  | |
@@ -714,6 +714,8 @@ Agent-authored commits MUST include trailers in the commit message footer. Human
 | `Request-ID`   | Optional    | `req-001`                              | |
 | `Session`      | Optional    | `session-01`                           | |
 | `Rollback-Ref` | Optional    | path or commit to the pre-change state | |
+
+**When the runtime withholds the model.** Some agent runtimes forbid writing a model identifier into commits. In that case write `Model: withheld` and `Model-Source: withheld-by-runtime`, and nothing else in their place. `Agent` and `Provider` stay required, because the tool and the company are still known; only the model name is held back. Never guess or infer a model name to fill the field. Use these two values only when the runtime's own instructions explicitly forbid disclosing the model. Not knowing the model is not the same as being forbidden to say it: an agent that cannot determine its model asks the operator before committing, and never writes `withheld` as a fallback. A runtime that can name its model writes it, with `Model-Source: self-reported`.
 
 **Grading probe for whether a session actually inherited this rule** (not a hypothetical — this exact question surfaced a real gap before this split existed): *"What does `Role: developer` in a commit trailer resolve from?"* The wrong answer is "the agent roster" stated with confidence. The correct behavior is to check — read `.arcane/agents.yaml` if it exists, resolve the acting persona's `AgentDefinition.role` — and if no roster exists or the value can't be traced to a real entry, omit the `Role` trailer rather than typing a plausible-sounding guess.
 
