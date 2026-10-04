@@ -140,8 +140,10 @@
         "accept-an-adr",
         "anything-in-agent-policies-prohibited-list (MCP/security config, etc.)"
       ],
-      "status": "active",
-      "revocation": "Edit or remove this entry and commit. Granted in-session on 2026-10-04 when the operator approved the wave plan. It covers this one wave only: the session that confirms the wave PR merged or closed sets status to \"revoked\" (spell doctor reports every \"active\" entry until then)."
+      "status": "revoked",
+      "revocation": "Edit or remove this entry and commit. Granted in-session on 2026-10-04 when the operator approved the wave plan. It covers this one wave only: the session that confirms the wave PR merged or closed sets status to \"revoked\" (spell doctor reports every \"active\" entry until then).",
+      "revokedAt": "2026-10-04",
+      "revocationReason": "Wave complete: PR #330 merged by the operator on 2026-10-04; issues #297, #298, #299, #321, #322, #323, #324 and #325 confirmed closed."
     }
   ]
 }
