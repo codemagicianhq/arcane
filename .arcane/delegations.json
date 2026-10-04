@@ -164,8 +164,10 @@
         "accept-an-adr",
         "anything-in-agent-policies-prohibited-list (MCP/security config, etc.)"
       ],
-      "status": "active",
-      "revocation": "Edit or remove this entry and commit. Granted in-session on 2026-10-04 (\"Same as last wave\"). It covers this one change only: the session that confirms its PR merged or closed sets status to \"revoked\"."
+      "status": "revoked",
+      "revocation": "Edit or remove this entry and commit. Granted in-session on 2026-10-04 (\"Same as last wave\"). It covers this one change only: the session that confirms its PR merged or closed sets status to \"revoked\".",
+      "revokedAt": "2026-10-04",
+      "revocationReason": "Change complete: PR #335 merged by the operator on 2026-10-04; issues #332 and #333 confirmed closed."
     }
   ]
 }
