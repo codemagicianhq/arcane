@@ -63,9 +63,10 @@
   - Close docs PR CI ("Lint, typecheck, test, build") — dispatched — run `gh pr checks <the PR number>` and read the pass lines before any merge.
 - **Needs you:**
   - Merge the docs PR opened from `docs/session-close-2026-10-04-b` — merges are outside the agent's delegation.
-  - Decide whether to revoke the five older `active` delegations in `.arcane/delegations.json` (`become-current-plan`, `lessons-hardening-plan`, `show-report-plan`, `codex-support-plan`, `upstream-intake-2026-09-plan`). Each grants commit and push rights, and only you can say whether its plan is finished.
   - Decide land-or-abandon for `origin/sessions/2026-08-15-queue-failfast-doclink-ideas` (one unlanded docs commit, 2026-08-20) and `origin/docs/spell-full-cycle-coordination-gaps` (two, 2026-07-17). Carried forward and not re-checked.
 - **Notes:**
   1. Commits from this session's runtime use `Model: withheld` / `Model-Source: withheld-by-runtime`, now defined in `git-conventions.md` ("When the runtime withholds the model").
   2. Right after a publish, npm can lag by a few minutes. Read the registry directly instead of trusting the first `npm view` or the publish log. Observed 2026-10-04 for both `1.11.1` and `1.11.2`; re-verify: `curl -sS https://registry.npmjs.org/arcane-cli | grep -o '"latest":"[^"]*"'`.
-  3. The five local `backup/*` snapshots named in the 2026-10-02 handoff live on the operator's Windows machine, not in this cloud checkout. They are unverified here.
+  3. The five older plan delegations were revoked on 2026-10-04 (all five plans are `status: complete`), and `.arcane/delegations.json` has no `active` entry left. A new program needs a new entry.
+  4. One lesson is queued in `FEEDBACK.md` ("Feedback — spell-close-session step 10 (2026-10-04)"). Filing it needs `spell-feedback --flush` and a literal `disclose`.
+  5. The five local `backup/*` snapshots named in the 2026-10-02 handoff live on the operator's Windows machine, not in this cloud checkout. They are unverified here.

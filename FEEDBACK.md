@@ -99,3 +99,18 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-04-issue-wave-297-325.md`, lesson "This runtime withholds model identifiers, but the repo requires a `Model:` trailer".
+
+## Feedback — spell-close-session step 10 (2026-10-04)
+
+**Session:** After the close — #332, #333 and 1.11.2 (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- An issue showed `closed`, and GitHub linked the closure to a merged PR, but that PR had only changed the issue's status marker in `FEEDBACK.md`. The change the issue asked for was not in the merged diff. `spell-close-session` step 10 confirms each issue the PR body closes is closed after a merge; it does not check that the merged diff contains the change the issue requested. The gap was caught only by reading the spell text by hand.
+
+### Improvement Items
+- [ ] In `spell-close-session` step 10 (and `spell-create-pull-request` Step 6's post-merge check), after confirming an issue is closed, confirm the merged diff contains the change that issue asked for, and reopen the issue with a comment when it does not. A `closed` state is not evidence the change shipped. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-04-issue-wave-297-325.md`, lesson "A closed issue is not proof its change shipped".
