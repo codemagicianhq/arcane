@@ -130,6 +130,8 @@ Workflow:
 
 5. **Validate against existing ADRs** — ensure the PRD doesn't contradict established decisions.
 
+5a. **Check acceptance criteria against Won't Have.** Read each acceptance criterion against the PRD's own `Won't Have (this iteration)` list. Flag any criterion that can only hold if a Won't Have item is done: `⚠ AC conflicts with Won't Have: "<criterion>" needs "<Won't Have item>"`. Resolve every flag before saving: rewrite the criterion so the excluded work is not needed, move the item out of Won't Have, or record the conflict under Open Questions. A conflict that reaches implementation can only be resolved by disclosure, after the work is built.
+
 6. **Save to disk** — derive the feature folder from the tracking configuration and slugified feature name, then write the PRD:
    ```bash
    # external/ado example: adoWorkItemId=541, feature name="Phase 2A" → slug="phase-2a"
