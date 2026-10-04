@@ -230,7 +230,7 @@ so they need no edit.
 - If no reviewers were resolved (none passed, or names the provider could not match): `⚠ No reviewers assigned — add them in the PR or re-run with --reviewers`.
 - If `--draft`: note it was created as a draft.
 - Delete the body temp file (`<git-dir>/arcane-pr-body.md`) once the PR is confirmed created and verified.
-- **Issues the body closes:** list each one by number. Once the PR has merged, in this run or in whichever later session first sees the merge, confirm each one's state (`gh issue view <number> --json state` on GitHub). An issue still open after the merge goes to the operator in the report, or is closed with a comment naming the merged PR. Never assume the merge closed it.
+- **Issues the body closes:** list each one by number. The PR has not merged yet, so add one line to the `Needs you` block: `After merging <PR URL>, confirm #A and #B are closed (gh issue view <number> --json state)`. `spell-close-session` step 10 runs the same check once it confirms the merge. Never assume the merge closed them.
 - **Branch topology** — per the generated state diagrams convention (rule 8, ARC-036), built only from
   Step 1's already-gathered branch name and commit list (`git log origin/<target>..HEAD --format="%h %s" --reverse`).
   Skip entirely (the applicability guard) if that commit list is empty — Step 0.4 already stops before

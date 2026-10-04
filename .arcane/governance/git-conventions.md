@@ -126,7 +126,7 @@ Changes:
 Use for:
 
 - **Breaking changes:** `BREAKING CHANGE: removed support for plaintext token auth`
-- **Issue/ticket references:** `Closes #535` or `Fixes #127` — one keyword per issue (`Closes #535. Closes #536.`), never `Closes #535 and #536`, because GitHub closes only the issue directly after a keyword
+- **Issue/ticket references:** `Closes #535` or `Fixes #127` — one keyword per issue, each on its own footer line (`Closes #535`, then `Closes #536`), never `Closes #535 and #536`, because GitHub closes only the issue directly after a keyword
 
 Most commits in this repo won't need footers.
 
@@ -397,6 +397,8 @@ git push origin --delete type/old-topic  # if the platform did not auto-delete
 Neither failure is an obstacle to work around: Git refusing to double-check-out a branch, and
 refusing to delete a worktree-attached one, are the enforcement ARC-028 R3/R7 rely on.
 
+This applies to all actors — humans, interactive tools (Copilot, Claude), and autonomous agents. The `spell-commit-work` and `spell-close-session` prompts enforce this check.
+
 **Links inside the worktree — check before `git worktree remove --force`.** A worktree can hold a
 directory link into another tree, most often a `node_modules` linked to the primary checkout's copy to
 skip a reinstall. Before removing a worktree with `--force`, list its links and remove each link (not
@@ -405,22 +407,26 @@ its target) first:
 ```bash
 # POSIX: find does not follow links, so this lists them without walking into their targets
 find <path> -type l
-rm <link>                                  # removes the link only
+rm "<link>"                                # removes the link only
 ```
 
 ```powershell
-# Windows: lists junctions and symlinks
-Get-ChildItem -Force -Recurse -Attributes ReparsePoint <path>
-cmd /c rmdir <link>                        # removes the junction only; never Remove-Item -Recurse on it
+# Windows: a recursive listing that never descends into a junction or symlink
+# (Windows PowerShell 5.1's Get-ChildItem -Recurse can follow them into the real tree)
+function Find-Links($p) { Get-ChildItem -Force -LiteralPath $p | ForEach-Object {
+  if ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) { $_.FullName }
+  elseif ($_.PSIsContainer) { Find-Links $_.FullName } } }
+Find-Links "<path>"
+cmd /c rmdir "<link>"                      # a directory junction or symlink only; a file symlink: cmd /c del "<link>"
 ```
 
 What the evidence covers: on Windows, `--force` was observed once (a consumer session, 2026-10-01) to
 follow a `node_modules` junction and empty the real directory, 194 entries to 0; that has not been
-re-tested. On Linux with git 2.43.0, a symlink to a 194-entry directory was tested on 2026-10-04 and
-removed as a link, with its target intact. Unlink first on every platform anyway: the check is one
-command, and the failure deletes real files.
-
-This applies to all actors — humans, interactive tools (Copilot, Claude), and autonomous agents. The `spell-commit-work` and `spell-close-session` prompts enforce this check.
+re-tested, and the PowerShell commands above have not been run. On Linux with git 2.43.0, a symlink to a
+194-entry directory was tested on 2026-10-04 and removed as a link, with its target intact. Unlink first
+on every platform anyway: the check is one command, and the failure deletes real files.
+**Enforcement: explicitly advisory prose (ARC-023) — `spell-close-session` step 10 points here; no check
+lists or unlinks links before a worktree removal, and `spell-commit-work` does not remove worktrees.**
 
 ### Content-Verified Branch Deletion (TODO.md merged-branch-cleanup finding)
 
