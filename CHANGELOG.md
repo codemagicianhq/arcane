@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.11.2] - 2026-10-04
+
+Two follow-ups from the 1.11.1 session ([#332](https://github.com/codemagicianhq/arcane/issues/332), [#333](https://github.com/codemagicianhq/arcane/issues/333)). This release changes text only; CLI behavior is unchanged.
+
+### Changed
+
+- **Commit trailers for a runtime that withholds its model.** `git-conventions.md`'s Required Commit Trailers table now defines `Model: withheld` with `Model-Source: withheld-by-runtime` for a runtime that forbids disclosing its model. A new "When the runtime withholds the model" rule keeps `Agent` and `Provider` required, forbids guessing a model name, and says that not knowing the model is not grounds for `withheld`. `spell-commit-work`'s trailer template points to it (#333).
+- **`spell-feedback` says where an issue lands and lists what it filed.** The disclosure confirm now opens by naming the target repository in full (`owner/repo`) and saying a public issue will be created there. `--flush` now ends with a table of every issue the run created: number, URL and the `FEEDBACK.md` heading it came from. Filing an item now replaces its `<!-- upstream: queued -->` marker with a `filed` marker, so the next `--flush` can't offer it again and create a duplicate public issue (#332).
+
 ## [1.11.1] - 2026-10-04
 
 Eight lessons from consumer sessions move into the spells that would have prevented them ([#297](https://github.com/codemagicianhq/arcane/issues/297), [#298](https://github.com/codemagicianhq/arcane/issues/298), [#299](https://github.com/codemagicianhq/arcane/issues/299), [#321](https://github.com/codemagicianhq/arcane/issues/321), [#322](https://github.com/codemagicianhq/arcane/issues/322), [#323](https://github.com/codemagicianhq/arcane/issues/323), [#324](https://github.com/codemagicianhq/arcane/issues/324), [#325](https://github.com/codemagicianhq/arcane/issues/325)). Text-only: no CLI behavior changes.
