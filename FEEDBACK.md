@@ -110,7 +110,7 @@
 - An issue showed `closed`, and GitHub linked the closure to a merged PR, but that PR had only changed the issue's status marker in `FEEDBACK.md`. The change the issue asked for was not in the merged diff. `spell-close-session` step 10 confirms each issue the PR body closes is closed after a merge; it does not check that the merged diff contains the change the issue requested. The gap was caught only by reading the spell text by hand.
 
 ### Improvement Items
-- [ ] In `spell-close-session` step 10 (and `spell-create-pull-request` Step 6's post-merge check), after confirming an issue is closed, confirm the merged diff contains the change that issue asked for, and reopen the issue with a comment when it does not. A `closed` state is not evidence the change shipped. <!-- upstream: queued -->
+- [ ] In `spell-close-session` step 10 (and `spell-create-pull-request` Step 6's post-merge check), after confirming an issue is closed, confirm the merged diff contains the change that issue asked for, and reopen the issue with a comment when it does not. A `closed` state is not evidence the change shipped. <!-- upstream: filed https://github.com/codemagicianhq/arcane/issues/339 (2026-10-04) -->
 
 ### Raw Notes
 > Source: `journal/2026-10-04-issue-wave-297-325.md`, lesson "A closed issue is not proof its change shipped".
