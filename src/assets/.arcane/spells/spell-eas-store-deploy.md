@@ -99,6 +99,17 @@ This section is common setup both stores' deployments depend on. Do it once.
   natively; it cannot rely on an OTA update being fetched, because of the next rule.
 - **OTA updates apply on the next launch, not the current one** — the client downloads in the background
   and swaps on relaunch. Do not diagnose a "stuck" update until after two full quit-and-reopen cycles.
+- **🔴 An OTA update must match the installed binary's native dependencies.** With
+  `runtimeVersion.policy: appVersion`, expo-updates refuses an OTA only when the app version differs. A
+  native dependency bump merged to trunk before its binary ships is invisible to that check: an OTA
+  published from trunk HEAD carries the new module's JavaScript onto binaries still running the old
+  native code, and the publish reports success. While a native bump is merged but its binary is not yet
+  installed, publish OTAs from the last commit whose `package.json` matches the installed binary: in a
+  pipeline, run the update job against that commit (for example with a `--commit-id <sha>` argument,
+  where the pipeline takes one); from the CLI, run `eas update` from a checkout of that commit. Prove the
+  alignment from `eas update`'s own output, its `Commit`, `Runtime version` and `Platform` lines, never
+  from pipeline status alone (`EV-02`). Bumping the app version in the same PR as the native change
+  closes the window, because later OTAs then target only the new runtime.
 - **🔴 Bundler transform caches do not key on `EXPO_PUBLIC_*` env vars.** On a persistent (self-hosted)
   build runner, the cache survives between runs, so an update published to one channel can ship
   another channel's inlined config — for example, a production build silently pointing at a development
@@ -108,6 +119,24 @@ This section is common setup both stores' deployments depend on. Do it once.
   actual published asset.
 - **When a feature is removed or renamed, both stores' screenshots and descriptions are in the blast
   radius.** Store metadata outlives the code it depicts, and it's the first thing a reviewer opens.
+
+### Console automation (both stores)
+
+- **Every mutating save is verified by reloading the page and re-reading the saved state** — character
+  counters, the attached-build row, draft fields — in Play Console and App Store Connect alike (`EV-01`).
+  Both consoles silently drop synthetic input, so a click that "succeeded" proves nothing.
+- **Large uploads are a human step.** Browser-automation upload tools cap file size far below a release
+  bundle, so plan for it: the operator drags the artifact into the console's upload box, and the agent
+  handles the rest of the page (release name, notes, review, submit).
+- **The agent never types credentials.** When a console session expires mid-task, stop and ask the
+  operator to sign in again, then re-read the page before continuing.
+
+**Observed in one consumer session (2026-09-28), not re-verified since** — re-check against the live
+console before relying on any of them: the session's upload tool capped files at 10 MB against a
+~94 MB `.aab`; Play's default release name is `<versionCode> (<version>)`; Play release notes go
+inside the listing's default-language tags (for example `<es-419>…</es-419>`); with managed publishing
+off, "Submit for review" is the last human action and Google's approval publishes the release; an
+expired App Store Connect session shows as a redirect carrying `authResult=FAILED`.
 
 ---
 
