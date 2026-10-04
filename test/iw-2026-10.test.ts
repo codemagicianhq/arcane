@@ -162,7 +162,8 @@ describe("#324 one closing keyword per issue, and each issue's state confirmed a
         expect(bullet).toContain("gh issue view <number> --json state");
         // ...and close-session step 10 actually runs the check once the merge is confirmed.
         const step10 = closeSession.slice(closeSession.indexOf("10. **Synchronize the configured integration branch"));
-        expectProseToContain(step10, "confirm each issue the PR's body closes is closed");
+        expectProseToContain(step10, "confirm each issue the PR closed is closed");
+        expect(step10).toContain("--json state");
     });
 
     it("git-conventions' footer example agrees", () => {

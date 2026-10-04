@@ -197,7 +197,14 @@ Rules:
    - Skip this entire step for local-only and read-only sessions.
    - Resolve `<remote>` and `<trunk>` from observed Git/provider state: use the usable authenticated remote selected in step 9 and the merged PR's target branch (falling back to that remote's default branch). Never assume `origin` or `main`.
    - Verify through the detected provider that the PR is merged before changing branches.
-   - Then confirm each issue the PR's body closes is closed (`gh issue view <number> --json state` on GitHub). A merge closes only the issue directly after each closing keyword, so list any issue still open under the closure report's `## ⚠ Needs you`, or close it with a comment naming the merged PR.
+   - Then confirm each issue the PR closed is closed. That is every issue its body names after a closing keyword, every issue named after a closing keyword in its commit messages (`git log <base>..<merge-sha> --format=%B`), and every issue GitHub links to it (`gh pr view <number> --json closingIssuesReferences`). Check each one's state with `gh issue view <number> --json state,stateReason`. If GraphQL is unavailable, use REST: `gh api repos/<owner>/<repo>/issues/<number> --jq '.state,.state_reason'` for the state. Then treat as linked every issue that follows a closing keyword in the PR body (ignore any negation) and any issue the PR references whose `closed` event (`gh api repos/<owner>/<repo>/issues/<number>/events`) falls within a minute of the PR's `merged_at`. A merge closes every issue that directly follows a closing keyword, even inside a negation: "does not close #N" closes #N. List any issue still open under the closure report's `## ⚠ Needs you`, or, once the diff check below passes, close it with a comment naming the merged PR.
+   - **A closed issue is not evidence its change shipped.** For each issue above, confirm the merged diff contains the change that issue asked for:
+     - Read the issue (`gh issue view <number> --json title,body`, or REST), then the diff (`gh pr diff <number>`).
+     - Name the file that carries the requested change. If you cannot name one, treat the change as missing.
+     - A diff that touches only tracking files (`FEEDBACK.md`, the journal, the handoff, `CHANGELOG.md`, `.arcane/delegations.json`) never counts as the change.
+     - Reopen the issue only when all of these hold: its `closed` event falls within a minute of this PR's merge; its state reason is `completed`; and the change is not already on `<trunk>` from an earlier PR (`git log <trunk> --grep '#<number>'`). When they hold, reopen the issue with a comment naming the merged PR and listing what is missing, or which part, if only part shipped.
+     - When you cannot reopen it (permissions), list it under the closure report's `## ⚠ Needs you` instead.
+     - Never report such an issue as done.
    - **Determine the isolation primitive first (ARC-028 R8).** Run both of these and compare:
      ```bash
      git rev-parse --path-format=absolute --git-common-dir
