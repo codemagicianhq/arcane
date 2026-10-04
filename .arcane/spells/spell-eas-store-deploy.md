@@ -101,15 +101,18 @@ This section is common setup both stores' deployments depend on. Do it once.
   and swaps on relaunch. Do not diagnose a "stuck" update until after two full quit-and-reopen cycles.
 - **🔴 An OTA update must match the installed binary's native dependencies.** With
   `runtimeVersion.policy: appVersion`, expo-updates refuses an OTA only when the app version differs. A
-  native dependency bump merged to trunk before its binary ships is invisible to that check: an OTA
+  native dependency change merged to trunk before its binary ships is invisible to that check: an OTA
   published from trunk HEAD carries the new module's JavaScript onto binaries still running the old
-  native code, and the publish reports success. While a native bump is merged but its binary is not yet
-  installed, publish OTAs from the last commit whose `package.json` matches the installed binary: in a
+  native code, and the publish reports success. **Bump the app version in the same PR as any native
+  dependency change** (or move to a runtime-version policy that tracks native changes, such as
+  `fingerprint`); that is the rule, because users keep running the old store build long after the new
+  one ships. Until a bump lands, publish OTAs only from the last commit whose native dependency set
+  (`package.json`, the lockfile and the app config's plugins) matches every binary still in use: in a
   pipeline, run the update job against that commit (for example with a `--commit-id <sha>` argument,
-  where the pipeline takes one); from the CLI, run `eas update` from a checkout of that commit. Prove the
-  alignment from `eas update`'s own output, its `Commit`, `Runtime version` and `Platform` lines, never
-  from pipeline status alone (`EV-02`). Bumping the app version in the same PR as the native change
-  closes the window, because later OTAs then target only the new runtime.
+  where the pipeline takes one); from the CLI, run `eas update` from a checkout of that commit. Read
+  `eas update`'s `Commit`, `Runtime version` and `Platform` lines, then prove the alignment by reading
+  the published update back (`eas update:view <group-id>`), never from pipeline status or the publish
+  step's own output alone (`EV-01`, `EV-02`).
 - **🔴 Bundler transform caches do not key on `EXPO_PUBLIC_*` env vars.** On a persistent (self-hosted)
   build runner, the cache survives between runs, so an update published to one channel can ship
   another channel's inlined config — for example, a production build silently pointing at a development
@@ -124,9 +127,10 @@ This section is common setup both stores' deployments depend on. Do it once.
 
 - **Every mutating save is verified by reloading the page and re-reading the saved state** — character
   counters, the attached-build row, draft fields — in Play Console and App Store Connect alike (`EV-01`).
-  Both consoles silently drop synthetic input, so a click that "succeeded" proves nothing.
-- **Large uploads are a human step.** Browser-automation upload tools cap file size far below a release
-  bundle, so plan for it: the operator drags the artifact into the console's upload box, and the agent
+  Both consoles can silently drop synthetic input (seen in Play Console; see its Known pitfalls), so a
+  click that "succeeded" proves nothing.
+- **Large uploads are a human step.** Browser-automation upload tools may cap file size below a release
+  bundle (one observation below), so plan for it: the operator drags the artifact into the console's upload box, and the agent
   handles the rest of the page (release name, notes, review, submit).
 - **The agent never types credentials.** When a console session expires mid-task, stop and ask the
   operator to sign in again, then re-read the page before continuing.

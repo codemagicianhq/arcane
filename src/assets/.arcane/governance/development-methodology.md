@@ -154,7 +154,7 @@ GitHub Issues has no configurable work-item-type hierarchy the way Azure DevOps 
 - **Creation:** `gh issue create --title "{title}" --body "{body}" [--label <name>]` — prints the issue URL on success; the trailing path segment is the issue number.
 - **Fetching:** `gh issue view {id} --json title,body,labels`.
 - **Closing:** `gh issue close {id} --reason completed [--comment "{note}"]` (`--reason` also accepts `not planned` or `duplicate`).
-- **Commit/PR linkage:** `Fixes #{id}` / `Closes #{id}` in a commit message or PR body auto-closes the issue on merge (GitHub-native behavior, no extra command needed) — prefer this over a manual `gh issue close` call when the fix lands via a PR.
+- **Commit/PR linkage:** `Fixes #{id}` / `Closes #{id}` in a commit message or PR body auto-closes the issue on merge (GitHub-native behavior, no extra command needed) — prefer this over a manual `gh issue close` call when the fix lands via a PR. Write one keyword per issue (git-conventions.md, Optional Footer), and confirm each issue's state after the merge (`spell-create-pull-request` Step 6).
 
 ### External Provider TODOs
 

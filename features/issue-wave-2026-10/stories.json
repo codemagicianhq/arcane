@@ -6,13 +6,101 @@
   "externalProvider": null,
   "adoWorkItemId": null,
   "stories": [
-    { "id": "IW-325", "title": "spell-plan/spell-scope: acceptance criteria vs Won't Have", "description": "Closes #325.", "acceptanceCriteria": ["AC-325"], "priority": 1, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-297", "title": "spell-bug: diff the environment before the code", "description": "Closes #297.", "acceptanceCriteria": ["AC-297"], "priority": 2, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-298", "title": "spell-eas-store-deploy: OTA/native alignment and console verification", "description": "Closes #298.", "acceptanceCriteria": ["AC-298"], "priority": 3, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-322", "title": "handoff: dated environment claims with a re-verify command", "description": "Closes #322.", "acceptanceCriteria": ["AC-322"], "priority": 4, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-299", "title": "close-session/feedback: private memory is not a home for lessons", "description": "Closes #299.", "acceptanceCriteria": ["AC-299"], "priority": 5, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-321", "title": "spell-commit-work: PR-state check before push", "description": "Closes #321.", "acceptanceCriteria": ["AC-321"], "priority": 6, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-324", "title": "spell-create-pull-request: one closing keyword per issue", "description": "Closes #324.", "acceptanceCriteria": ["AC-324"], "priority": 7, "passes": false, "assignedTo": "claude-code", "testEvidence": null },
-    { "id": "IW-323", "title": "git-conventions: links inside a worktree before remove --force", "description": "Closes #323.", "acceptanceCriteria": ["AC-323"], "priority": 8, "passes": false, "assignedTo": "claude-code", "testEvidence": null }
+    {
+      "id": "IW-325",
+      "title": "spell-plan/spell-scope: acceptance criteria vs Won't Have",
+      "description": "Closes #325.",
+      "acceptanceCriteria": [
+        "AC-325"
+      ],
+      "priority": 1,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#325 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-297",
+      "title": "spell-bug: diff the environment before the code",
+      "description": "Closes #297.",
+      "acceptanceCriteria": [
+        "AC-297"
+      ],
+      "priority": 2,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#297 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-298",
+      "title": "spell-eas-store-deploy: OTA/native alignment and console verification",
+      "description": "Closes #298.",
+      "acceptanceCriteria": [
+        "AC-298"
+      ],
+      "priority": 3,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#298 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-322",
+      "title": "handoff: dated environment claims with a re-verify command",
+      "description": "Closes #322.",
+      "acceptanceCriteria": [
+        "AC-322"
+      ],
+      "priority": 4,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#322 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-299",
+      "title": "close-session/feedback: private memory is not a home for lessons",
+      "description": "Closes #299.",
+      "acceptanceCriteria": [
+        "AC-299"
+      ],
+      "priority": 5,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#299 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-321",
+      "title": "spell-commit-work: PR-state check before push",
+      "description": "Closes #321.",
+      "acceptanceCriteria": [
+        "AC-321"
+      ],
+      "priority": 6,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#321 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-324",
+      "title": "spell-create-pull-request: one closing keyword per issue",
+      "description": "Closes #324.",
+      "acceptanceCriteria": [
+        "AC-324"
+      ],
+      "priority": 7,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#324 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    },
+    {
+      "id": "IW-323",
+      "title": "git-conventions: links inside a worktree before remove --force",
+      "description": "Closes #323.",
+      "acceptanceCriteria": [
+        "AC-323"
+      ],
+      "priority": 8,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/iw-2026-10.test.ts describe(\"#323 ...\"): red before the edit, green after; full suite green (2026-10-04)"
+    }
   ]
 }

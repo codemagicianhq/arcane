@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { blockContaining, expectProseToContain, normalizeProse } from "./helpers/prose.js";
+import { blockContaining, expectNotNegated, expectProseToContain, normalizeProse } from "./helpers/prose.js";
 
 // Issue wave 2026-10 (features/issue-wave-2026-10/PRD.md): eight consumer
 // lessons carried into the spells. One describe block per issue.
@@ -73,12 +73,17 @@ describe("#298 spell-eas-store-deploy: OTA/native alignment and console verifica
         const rule = blockContaining(eas, "**🔴 An OTA update must match the installed binary's native dependencies.**");
         expectProseToContain(rule, "`runtimeVersion.policy: appVersion`");
         expectProseToContain(rule, "`--commit-id <sha>`");
-        expectProseToContain(rule, "its `Commit`, `Runtime version` and `Platform` lines");
-        expectProseToContain(rule, "Bumping the app version in the same PR as the native change closes the window");
+        expectProseToContain(rule, "`eas update`'s `Commit`, `Runtime version` and `Platform` lines");
+        expectProseToContain(rule, "**Bump the app version in the same PR as any native dependency change**");
+        expectProseToContain(rule, "(`package.json`, the lockfile and the app config's plugins)");
+        expectProseToContain(rule, "reading the published update back (`eas update:view <group-id>`)");
+        expectNotNegated(rule);
     });
 
     it("verifies every console save by reload and re-read, leaves big uploads and credentials to the operator", () => {
-        const section = eas.slice(eas.indexOf("### Console automation (both stores)"));
+        const start = eas.indexOf("### Console automation (both stores)");
+        expect(start).toBeGreaterThan(-1);
+        const section = eas.slice(start, eas.indexOf("\n---", start));
         expectProseToContain(section, "reloading the page and re-reading the saved state");
         expect(section).toContain("`EV-01`");
         expectProseToContain(section, "the operator drags the artifact into the console's upload box");
@@ -97,6 +102,7 @@ describe("#322 environment claims in the handoff carry a date and a re-verify co
     it("close-session's Blockers and Notes require the date and command", () => {
         const blockers = blockContaining(closeSession, "- **Blockers:** Known unresolved blockers");
         expectProseToContain(blockers, "`<claim> — observed YYYY-MM-DD — re-verify: <command>`");
+        expectProseToContain(blockers, "read-only command");
         const notes = blockContaining(closeSession, "- **Notes:** Anything time-sensitive");
         expectProseToContain(notes, "date it and give its re-verify command");
     });
@@ -105,6 +111,9 @@ describe("#322 environment claims in the handoff carry a date and a re-verify co
         const bullet = blockContaining(openSession, "**Environment claims are re-verified, not repeated.**");
         expectProseToContain(bullet, "run its recorded re-verify command");
         expectProseToContain(bullet, "never as current");
+        // The command comes from an editable file, so it runs only when read-only and quick.
+        expectProseToContain(bullet, "run it only if it is read-only and quick");
+        expectProseToContain(bullet, "`not re-verified (command not run: <reason>)`");
     });
 });
 
@@ -116,19 +125,25 @@ describe("#299 private assistant memory is not a home for lessons", () => {
         expectProseToContain(step, sentence);
     });
 
-    it("spell-feedback's scope step says so", () => {
+    it("spell-feedback's scope step says so by reference, not by copy", () => {
         const step = feedback.slice(feedback.indexOf("## Step 1 — Identify Scope"), feedback.indexOf("## Step 2"));
-        expectProseToContain(step, sentence);
+        expectProseToContain(step, "Private assistant memory is never a destination for a lesson (`spell-close-session` step 2b)");
+        expect(normalizeProse(step)).not.toContain(sentence);
     });
 });
 
 describe("#321 spell-commit-work checks the branch's PR state before pushing", () => {
-    it("queries the provider and stops on a merged PR, before the push command", () => {
-        const check = blockContaining(commitWork, "**PR-state check — before any push.**");
+    it("queries the provider and stops on a merged PR, between the push-policy check and the push", () => {
+        const heading = "**PR-state check — before a branch push.**";
+        const check = commitWork.slice(commitWork.indexOf(heading), commitWork.indexOf("When the checks allow it"));
         expectProseToContain(check, "`gh pr list --head <branch> --state all --json number,state`");
         expectProseToContain(check, "`az repos pr list --source-branch <branch> --status all`");
         expectProseToContain(check, "do not push: stop and name the merged PR");
-        const checkAt = commitWork.indexOf("**PR-state check — before any push.**");
+        expectProseToContain(check, "**`CLOSED` without merging (`abandoned` on Azure DevOps):** name the PR and ask before pushing");
+        expectProseToContain(check, "It does not cover Step 10's `git push origin --delete <branch>`");
+        expectProseToContain(check, "Enforcement: structured spell gate (ARC-023)");
+        const checkAt = commitWork.indexOf(heading);
+        expect(checkAt).toBeGreaterThan(commitWork.indexOf("<!-- fragment:push-policy-check:end -->"));
         expect(checkAt).toBeLessThan(commitWork.indexOf("When the checks allow it, run `git push origin <branch>`."));
     });
 });
@@ -142,12 +157,16 @@ describe("#324 one closing keyword per issue, and each issue's state confirmed a
 
     it("Step 6 confirms each named issue's state after the merge", () => {
         const report = createPr.slice(createPr.indexOf("## Step 6 — Report"));
-        expectProseToContain(report, "confirm each one's state");
-        expect(report).toContain("`gh issue view <number> --json state`");
+        const bullet = blockContaining(report, "**Issues the body closes:**");
+        expectProseToContain(bullet, "add one line to the `Needs you` block");
+        expect(bullet).toContain("gh issue view <number> --json state");
+        // ...and close-session step 10 actually runs the check once the merge is confirmed.
+        const step10 = closeSession.slice(closeSession.indexOf("10. **Synchronize the configured integration branch"));
+        expectProseToContain(step10, "confirm each issue the PR's body closes is closed");
     });
 
     it("git-conventions' footer example agrees", () => {
-        expectProseToContain(gitConventions, "one keyword per issue (`Closes #535. Closes #536.`), never `Closes #535 and #536`");
+        expectProseToContain(gitConventions, "one keyword per issue, each on its own footer line (`Closes #535`, then `Closes #536`), never `Closes #535 and #536`");
     });
 });
 
@@ -159,7 +178,12 @@ describe("#323 links inside a worktree are unlinked before git worktree remove -
         );
         expectProseToContain(cleanup, "**Links inside the worktree — check before `git worktree remove --force`.**");
         expect(cleanup).toContain("find <path> -type l");
-        expect(cleanup).toContain("Get-ChildItem -Force -Recurse -Attributes ReparsePoint <path>");
+        expect(cleanup).toContain('rm "<link>"');
+        expect(cleanup).toContain("function Find-Links($p)");
+        expect(cleanup).toContain('cmd /c rmdir "<link>"');
+        // The listing must not recurse through junctions (Windows PowerShell 5.1 -Recurse can).
+        expect(cleanup).not.toContain("Get-ChildItem -Force -Recurse");
+        expectProseToContain(cleanup, "Enforcement: explicitly advisory prose (ARC-023) — `spell-close-session` step 10 points here");
         expectProseToContain(cleanup, "observed once");
         expectProseToContain(cleanup, "git 2.43.0");
     });
