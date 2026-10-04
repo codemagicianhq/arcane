@@ -84,3 +84,18 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-01-intake-followups-to-1.10.2.md`, lesson "A disclose prompt should say where the issue lands".
+
+## Feedback — git-conventions Required Commit Trailers (2026-10-04)
+
+**Session:** Issue wave #297–#299, #321–#325 (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The agent runtime in this session may not put a model identifier in commit messages. The Required Commit Trailers table in `git-conventions.md` makes `Model` required and gives `self-reported` as the only `Model-Source` value. It has no value for a runtime that withholds its model. The session wrote `Model: withheld`, a value the standard never defined. Nothing failed, because trailers are advisory under ARC-023.
+
+### Improvement Items
+- [ ] In `git-conventions.md` Required Commit Trailers, define the value an agent uses when its runtime forbids disclosing the model, for example `Model: withheld` with `Model-Source: withheld-by-runtime`, and say whether `Agent` and `Provider` stay required in that case. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-04-issue-wave-297-325.md`, lesson "This runtime withholds model identifiers, but the repo requires a `Model:` trailer".
