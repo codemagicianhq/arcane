@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.11.1] - 2026-10-04
+
+Eight lessons from consumer sessions move into the spells that would have prevented them ([#297](https://github.com/codemagicianhq/arcane/issues/297), [#298](https://github.com/codemagicianhq/arcane/issues/298), [#299](https://github.com/codemagicianhq/arcane/issues/299), [#321](https://github.com/codemagicianhq/arcane/issues/321), [#322](https://github.com/codemagicianhq/arcane/issues/322), [#323](https://github.com/codemagicianhq/arcane/issues/323), [#324](https://github.com/codemagicianhq/arcane/issues/324), [#325](https://github.com/codemagicianhq/arcane/issues/325)). Text-only: no CLI behavior changes.
+
+### Changed
+
+- **`spell-plan` checks acceptance criteria against the PRD's Won't Have list** (new step 5a), and `spell-scope`'s Quality Quick-Check runs the same check. A criterion that can only hold if an excluded item is done is flagged before the PRD is saved, not discovered during implementation (#325).
+- **`spell-bug` diffs the environment before the code** when a regression is reported as "it worked before" and the code the symptom points at is unchanged: compare the last good build's dependency and platform set, read the owning dependency's actual implementation and tracker, then prefer the upstream fix plus a stopgap (#297).
+- **`spell-eas-store-deploy` keeps OTA updates aligned with the installed binary.** While a native dependency bump is merged but its binary is not installed, OTAs are published from the last commit whose `package.json` matches the binary, and alignment is proved from `eas update`'s own `Commit` / `Runtime version` / `Platform` lines. A new Console automation section requires reload-and-re-read verification of every console save (`EV-01`), leaves large uploads and sign-ins to the operator, and records the source session's console specifics as dated observations to re-check (#298).
+- **Handoff environment claims carry a date and a re-verify command.** `spell-close-session`'s `Blockers` and `Notes` write each local-environment claim as `<claim> — observed YYYY-MM-DD — re-verify: <command>`, and `spell-open-session` runs the command before repeating the claim (#322).
+- **Private assistant memory is not a home for lessons**, stated in `spell-close-session` step 2b and `spell-feedback` Step 1 (#299).
+- **`spell-commit-work` checks the branch's PR state before every push** and stops, naming the PR, when it has merged, instead of recreating the remote branch the merge deleted (#321).
+- **One closing keyword per issue.** `spell-create-pull-request` Step 4 and `git-conventions.md`'s footer example forbid `Closes #A and #B`, which closes only #A; Step 6 confirms each named issue's state after the merge (#324).
+- **`git-conventions.md` Post-Merge Cleanup warns about links inside a worktree** before `git worktree remove --force`, with listing and unlinking commands for POSIX and PowerShell, and `spell-close-session` step 10 points to it. The evidence is scoped as found: a Windows junction was observed once to be followed (not re-tested); a Linux symlink was tested with git 2.43.0 and was not followed (#323).
+
 ## [1.11.0] - 2026-10-02
 
 The `mcp-config-template` scaffold is retired, and `spell update` learns to let go of a file that was the operator's all along ([#328](https://github.com/codemagicianhq/arcane/issues/328)).
