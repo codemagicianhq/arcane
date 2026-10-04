@@ -162,7 +162,7 @@ Documentation-only PR. No functional code changed.
 <Same as above — include only when this PR is one epic of a tracked program.> · category: docs
 ```
 
-**Closing issues: one keyword per issue.** GitHub reads a closing keyword only for the issue reference directly after it, so `Closes #A and #B` closes #A and leaves #B open. In either template, write one keyword per issue, each in its own sentence: `Closes #A. Closes #B.` (the same for `Fixes` and `Resolves`), never `Closes #A and #B`. Write `Part of #N` for an issue this PR does not finish.
+**Closing issues: one keyword per issue.** GitHub reads a closing keyword only for the issue reference directly after it, so `Closes #A and #B` closes #A and leaves #B open. In either template, write one keyword per issue, each in its own sentence: `Closes #A. Closes #B.` (the same for `Fixes` and `Resolves`), never `Closes #A and #B`. Write `Part of #N` for an issue this PR does not finish. Never put a closing keyword (close, closes, closed, fix, fixes, fixed, resolve, resolves, resolved) directly before an issue you do not mean to close, including in a negation: "does not close #N" closes #N. Write `Refs #N` or `Part of #N` instead.
 
 **About `## For the record`** — include it **only when this PR is one epic of a tracked program**
 (one with a `docs/plans/<slug>/PLAN.md`); omit the heading entirely otherwise, since an empty
@@ -230,7 +230,7 @@ so they need no edit.
 - If no reviewers were resolved (none passed, or names the provider could not match): `⚠ No reviewers assigned — add them in the PR or re-run with --reviewers`.
 - If `--draft`: note it was created as a draft.
 - Delete the body temp file (`<git-dir>/arcane-pr-body.md`) once the PR is confirmed created and verified.
-- **Issues the body closes:** list each one by number. The PR has not merged yet, so add one line to the `Needs you` block: `After merging <PR URL>, confirm #A and #B are closed (gh issue view <number> --json state)`. `spell-close-session` step 10 runs the same check once it confirms the merge. Never assume the merge closed them.
+- **Issues the body closes:** list each one by number, and any issue linked to the PR in GitHub's sidebar. The PR has not merged yet, so add one line to the `Needs you` block: `After merging <PR URL>, confirm #A and #B are closed (gh issue view <number> --json state)`. `spell-close-session` step 10 runs the same check once it confirms the merge, and that the merged diff contains each issue's requested change. Never assume the merge closed them, or that a closed issue's change shipped.
 - **Branch topology** — per the generated state diagrams convention (rule 8, ARC-036), built only from
   Step 1's already-gathered branch name and commit list (`git log origin/<target>..HEAD --format="%h %s" --reverse`).
   Skip entirely (the applicability guard) if that commit list is empty — Step 0.4 already stops before
