@@ -70,6 +70,12 @@ Workflow:
    - Identify the exact line(s) where the bug manifests.
    - Determine *why* the bug exists (data mismatch, missing case, race condition, etc.).
    - Document the root cause concisely.
+   - **"It worked before" and the code is unchanged: diff the environment before the code.** When the report is a regression and the code the symptom points at has not changed since the last build that worked, the runtime around it moved. Before patching that code:
+     1. Compare the dependency set and any platform or SDK version of the last good build against the current one, for example `git show <last-good-commit>:package.json` against the current file, or the two lockfiles.
+     2. If a dependency in that diff plausibly owns the behavior, read its actual implementation (for a native module, the native source under `node_modules`, not its README), and check its issue tracker and release notes for the versions in the diff.
+     3. Only then design the fix. Prefer the upstream fix plus a stopgap over a workaround in the calling code.
+
+     A run of fixes to the calling code that each address a real but narrower cause, none of which resolves the report, is the signal that this check was skipped.
 
 4. **Implement the fix** — write the minimal code change:
    - Fix only the bug — no refactoring, no feature additions.
