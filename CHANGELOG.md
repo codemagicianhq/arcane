@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.11.3] - 2026-10-04
+
+A closed issue is no longer treated as proof its change shipped ([#339](https://github.com/codemagicianhq/arcane/issues/339)). Text only; no CLI behavior changes.
+
+### Changed
+
+- **`spell-close-session` step 10 checks the merged diff, not just the issue state.** After a merge it covers every issue the PR's body closes and every issue GitHub links to it (`gh pr view <number> --json closingIssuesReferences`), and confirms the merged diff contains the change each one asked for. An issue that closed without its change is reopened with a comment naming the merged PR and listed under `Needs you`. It also covers closures from commit messages, falls back to REST when GraphQL is unavailable, and reopens only when the closure came from this merge, the state reason is `completed`, and the change is not already on trunk. A diff that touches only tracking files never counts as the change (#339).
+- **`spell-create-pull-request` forbids a closing keyword before an issue the PR does not close, even in a negation.** "Does not close #N" closes #N. Twice on 2026-10-04 a PR body that said "does not close #N" closed that issue on merge, though the PR only changed its `FEEDBACK.md` marker (#332 via #334, #339 via #340). Step 6 also lists issues linked in GitHub's sidebar and points to step 10's diff check (#339).
+
 ## [1.11.2] - 2026-10-04
 
 Two follow-ups from the 1.11.1 session ([#332](https://github.com/codemagicianhq/arcane/issues/332), [#333](https://github.com/codemagicianhq/arcane/issues/333)). This release changes text only; CLI behavior is unchanged.
