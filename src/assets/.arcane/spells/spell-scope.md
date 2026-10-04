@@ -84,6 +84,8 @@ If any dimension scores **Bronze**, recommend:
 
 This is a recommendation, not a gate — the user decides whether to enchant first or proceed directly. Include the scorecard results in the execution plan output regardless.
 
+Also run `spell-plan`'s acceptance-criteria-vs-Won't-Have check (its step 5a) on the PRD, and list every flag it raises in the execution plan output. Splitting a PRD into epics can move a criterion and the Won't Have item it depends on into different epics, so recommend resolving each flag before architecture.
+
 ### 2. Scope Assessment
 
 Evaluate the PRD against Spell Loop sizing rules:
