@@ -48,25 +48,26 @@
 > Generated: 2026-10-04
 
 - **Active task:** None in progress. Shipped on 2026-10-04:
-  - issue wave #297–#299, #321–#325 as `1.11.1` ([PR #330](https://github.com/codemagicianhq/arcane/pull/330));
-  - #332 and #333 as `1.11.2` ([PR #335](https://github.com/codemagicianhq/arcane/pull/335)).
+  - `1.11.1` (#297–#299, #321–#325);
+  - `1.11.2` (#332, #333);
+  - `1.11.3` (#339: a closed issue is checked against the merged diff; no closing keyword inside a negation).
 
-  All ten issues are confirmed closed. npm `latest` is `1.11.2`, read from registry.npmjs.org at 10:21Z.
-- **Last completed step:** Appended the post-close section to `journal/2026-10-04-issue-wave-297-325.md` and rewrote this handoff on `docs/session-close-2026-10-04-b`, then opened a docs PR from it.
-- **Next concrete action:** Run `spell-open-session`. Confirm the close docs PR merged (`gh pr list --head docs/session-close-2026-10-04-b --state all`). Then pick from `TODO.md`'s Open Items. Candidates:
-  - `TODO.md ("MEDIUM: Claude Code worktree branches bypass Arcane's branch-naming standard")`, which has a recorded decision;
+  Every issue is confirmed closed with its change on `main`. All delegations are revoked.
+- **Last completed step:** Appended the evening section to `journal/2026-10-04-issue-wave-297-325.md` and rewrote this handoff on `docs/session-close-2026-10-04-c`, then opened a docs PR from it.
+- **Next concrete action:** Run `spell-open-session`. Confirm the close docs PR merged (`gh pr list --head docs/session-close-2026-10-04-c --state all`). Then pick from `TODO.md`'s Open Items. Candidates:
+  - `TODO.md ("MEDIUM: Claude Code worktree branches bypass Arcane's branch-naming standard")`;
   - `TODO.md ("LOW: only `spell-commit-work` checks a branch's PR state before pushing")`.
 - **Active files:** `journal/2026-10-04-issue-wave-297-325.md`, `ai-context/system-prompt-context.md` — on the close branch, not yet merged.
-- **Branch:** `docs/session-close-2026-10-04-b` (docs-only; done once its PR merges, then `main`).
+- **Branch:** `docs/session-close-2026-10-04-c` (docs-only; done once its PR merges, then `main`).
 - **Blockers:** None.
 - **Pending Verification:**
-  - Close docs PR CI ("Lint, typecheck, test, build") — dispatched — run `gh pr checks <the PR number>` and read the pass lines before any merge.
+  - npm `1.11.3` publish — pending: npm `latest` read `1.11.2` at 21:29Z, one minute after the merge — re-verify with `curl -sS https://registry.npmjs.org/arcane-cli | grep -o '"latest":"[^"]*"'`.
+  - Close docs PR CI ("Lint, typecheck, test, build") — dispatched — run `gh pr checks <the PR number>` and read the pass lines before merging.
 - **Needs you:**
-  - Merge the docs PR opened from `docs/session-close-2026-10-04-b` — merges are outside the agent's delegation.
-  - Decide land-or-abandon for `origin/sessions/2026-08-15-queue-failfast-doclink-ideas` (one unlanded docs commit, 2026-08-20) and `origin/docs/spell-full-cycle-coordination-gaps` (two, 2026-07-17). Carried forward and not re-checked.
+  - Merge the docs PR opened from `docs/session-close-2026-10-04-c` — merges are outside the agent's authority.
+  - Delete `sessions/2026-08-15-queue-failfast-doclink-ideas` and `docs/spell-full-cycle-coordination-gaps` on the repository's Branches page. Their content is verified on `main` (journal 2026-10-04, "Two old branches checked"), and GitHub refused both deletion and archive tags from the cloud session.
 - **Notes:**
-  1. Commits from this session's runtime use `Model: withheld` / `Model-Source: withheld-by-runtime`, now defined in `git-conventions.md` ("When the runtime withholds the model").
-  2. Right after a publish, npm can lag by a few minutes. Read the registry directly instead of trusting the first `npm view` or the publish log. Observed 2026-10-04 for both `1.11.1` and `1.11.2`; re-verify: `curl -sS https://registry.npmjs.org/arcane-cli | grep -o '"latest":"[^"]*"'`.
-  3. The five older plan delegations were revoked on 2026-10-04 (all five plans are `status: complete`), and `.arcane/delegations.json` has no `active` entry left. A new program needs a new entry.
-  4. One lesson is queued in `FEEDBACK.md` ("Feedback — spell-close-session step 10 (2026-10-04)"). Filing it needs `spell-feedback --flush` and a literal `disclose`.
-  5. The five local `backup/*` snapshots named in the 2026-10-02 handoff live on the operator's Windows machine, not in this cloud checkout. They are unverified here.
+  1. Agent commits from this runtime use `Model: withheld` / `Model-Source: withheld-by-runtime` (`git-conventions.md`, "When the runtime withholds the model").
+  2. Right after a publish, npm can lag by a few minutes. Read the registry directly instead of trusting the first `npm view`. Observed 2026-10-04 for `1.11.1`, `1.11.2` and `1.11.3`; re-verify command as above.
+  3. No delegation in `.arcane/delegations.json` is active. A new unattended program needs a new entry.
+  4. The five local `backup/*` snapshots named in the 2026-10-02 handoff are on the operator's Windows machine; not verified here.
