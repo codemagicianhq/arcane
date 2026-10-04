@@ -80,7 +80,7 @@
 - After `spell-feedback --flush` filed five issues, each on a literal `disclose`, the operator asked where the new issues had come from and whether the session had made them. The disclose prompt named the item but not the repository the issue would be created on, and the run ended without a list tying each new issue to the `FEEDBACK.md` entry it came from. In a repository that is its own upstream, the new issues sat beside older ones from another session with no visible difference in origin.
 
 ### Improvement Items
-- [ ] In `spell-feedback` Step 6, have the disclosure confirm name the target repository in full (`owner/repo`) and say that a public issue will be created there, and have Flush Mode end with a table of every issue the run created (number, URL, the `FEEDBACK.md` heading it came from). <!-- upstream: queued -->
+- [ ] In `spell-feedback` Step 6, have the disclosure confirm name the target repository in full (`owner/repo`) and say that a public issue will be created there, and have Flush Mode end with a table of every issue the run created (number, URL, the `FEEDBACK.md` heading it came from). <!-- upstream: filed https://github.com/codemagicianhq/arcane/issues/332 (2026-10-04) -->
 
 ### Raw Notes
 > Source: `journal/2026-10-01-intake-followups-to-1.10.2.md`, lesson "A disclose prompt should say where the issue lands".
@@ -95,7 +95,7 @@
 - The agent runtime in this session may not put a model identifier in commit messages. The Required Commit Trailers table in `git-conventions.md` makes `Model` required and gives `self-reported` as the only `Model-Source` value. It has no value for a runtime that withholds its model. The session wrote `Model: withheld`, a value the standard never defined. Nothing failed, because trailers are advisory under ARC-023.
 
 ### Improvement Items
-- [ ] In `git-conventions.md` Required Commit Trailers, define the value an agent uses when its runtime forbids disclosing the model, for example `Model: withheld` with `Model-Source: withheld-by-runtime`, and say whether `Agent` and `Provider` stay required in that case. <!-- upstream: queued -->
+- [ ] In `git-conventions.md` Required Commit Trailers, define the value an agent uses when its runtime forbids disclosing the model, for example `Model: withheld` with `Model-Source: withheld-by-runtime`, and say whether `Agent` and `Provider` stay required in that case. <!-- upstream: filed https://github.com/codemagicianhq/arcane/issues/333 (2026-10-04) -->
 
 ### Raw Notes
 > Source: `journal/2026-10-04-issue-wave-297-325.md`, lesson "This runtime withholds model identifiers, but the repo requires a `Model:` trailer".
