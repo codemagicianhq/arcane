@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { checkDelegations } from "../src/commands/doctor.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
@@ -152,10 +152,16 @@ describe("checkDelegations (T13/BC-19)", () => {
 });
 
 describe("this repo's own real delegations.json (BC-19 migration)", () => {
-  it("is valid, contains the become-current-plan record, and matches PLAN.md's exclusion list", async () => {
+  it("is valid, keeps the become-current-plan record, and matches PLAN.md's exclusion list", async () => {
+    // The record stays as history after its plan completed (revoked 2026-10-04), so doctor no
+    // longer lists it as active; the file must still parse and the record must keep its shape.
     const result = await checkDelegations(process.cwd());
     expect(result.passed).toBe(true);
-    expect(result.message).toContain("become-current-plan");
-    expect(result.message).toContain("6 action(s)");
+    expect(result.message).not.toContain("become-current-plan");
+    const file = JSON.parse(await readFile(join(process.cwd(), ".arcane", "delegations.json"), "utf8")) as DelegationsFile;
+    const record = file.delegations.find((d) => d.id === "become-current-plan");
+    expect(record).toBeDefined();
+    expect(record!.status).toBe("revoked");
+    expect(record!.excludedActions).toHaveLength(6);
   });
 });
