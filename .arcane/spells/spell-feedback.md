@@ -19,7 +19,13 @@ Collect and record feedback to improve the Arcane workflow.
 
 ## Flush Mode (`--flush`)
 
-If the argument is `--flush`, skip Steps 1–5 entirely. Scan `FEEDBACK.md` for improvement items marked `<!-- upstream: queued -->`, and for each one run Step 6's filing flow (genericize, confirm, file or re-queue) without re-collecting feedback. Report how many were filed, re-queued, and how many remain.
+If the argument is `--flush`, skip Steps 1–5 entirely. Scan `FEEDBACK.md` for improvement items marked `<!-- upstream: queued -->`, and for each one run Step 6's filing flow (genericize, confirm, file or re-queue) without re-collecting feedback. Report how many were filed, how many were re-queued, and how many queued items remain in `FEEDBACK.md`, then end with a table of every issue the run created, so the operator can tell this run's issues from older ones:
+
+| Issue | URL | `FEEDBACK.md` heading |
+|---|---|---|
+| #<number> | <issue URL> | <the item's entry heading, e.g. `## Feedback — spell-review (2026-10-04)`> |
+
+Write `No issues created` instead of the table when the run filed nothing.
 
 The user's input describes what to give feedback on. If no argument is provided, ask one question: _"What part of the workflow or AI assistance do you want to give feedback on?"_ and wait.
 
@@ -123,9 +129,9 @@ For each framework-shaped item:
 
 1. **Genericize.** Strip anything identifying this specific consumer: venture/business names, org tokens, machine names, hub or local paths. Write "a consumer repo session" instead of naming the actual venture, generalize file paths to their relative form. The finding must read the same whether it came from this repo or any other arcane user's.
 2. **Check `gh`.** If unauthenticated or offline, skip straight to the fallback below.
-3. **Disclosure confirm.** Print the exact issue title and body that will be filed publicly on `{ARCANE_UPSTREAM_REPO}`, and ask for the literal word `disclose` — same discipline as `spell-manifest`'s disclosure gate; this is the same kind of act (private observation → public issue). Anything else is a decline, not an error.
-4. **File.** On `disclose`: `gh issue create --repo {ARCANE_UPSTREAM_REPO} --title "<title>" --body "<genericized body>"`. Report the issue URL.
-5. **Fallback.** If `gh` is unavailable, offline, or the operator declines: append `<!-- upstream: queued -->` to that item's line in `FEEDBACK.md`. Never block the rest of the session on this — queuing is a complete, valid outcome. The next `spell-feedback` run (or `spell-feedback --flush`) re-offers every queued item.
+3. **Disclosure confirm.** Print a first line that names the target repository in full (`owner/repo`, the resolved `{ARCANE_UPSTREAM_REPO}`) and says a public issue will be created there, then the exact issue title and body that will be filed, and ask for the literal word `disclose` — same discipline as `spell-manifest`'s disclosure gate; this is the same kind of act (private observation → public issue). Anything else is a decline, not an error.
+4. **File.** On `disclose`: `gh issue create --repo {ARCANE_UPSTREAM_REPO} --title "<title>" --body "<genericized body>"`. Report the issue URL, then replace that item's `<!-- upstream: queued -->` marker in `FEEDBACK.md`, if it has one, with `<!-- upstream: filed <issue URL> (<YYYY-MM-DD>) -->`. A filed item still marked `queued` is offered again by the next `--flush`, which risks a duplicate public issue.
+5. **Fallback.** If `gh` is unavailable, offline, or the operator declines: append `<!-- upstream: queued -->` to that item's line in `FEEDBACK.md`, unless the line already carries it. Never block the rest of the session on this — queuing is a complete, valid outcome. The next `spell-feedback` run (or `spell-feedback --flush`) re-offers every queued item.
 
 Maintainer side is unchanged: GitHub issues are arcane's normal public intake; triage into arcane's own `IDEAS.md`/`DECISIONS.md` happens in arcane sessions like any other issue. This spell never writes to a hub's venture books and never reads `ventures/registry.json` — framework feedback and venture ideas are different channels on purpose (venture ideas → hub books → `spell-manifest`; framework lessons → here → arcane's GitHub).
 
