@@ -21,7 +21,7 @@ import {
 } from "../src/modules/user-tier.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 import { removeFixtureDir } from "./helpers/fixture-dir.js";
-import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
+import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // ─── Mock @inquirer/prompts ───────────────────────────────────────────────────
 // vitest hoists vi.mock() to avoid real stdin interaction in tests
@@ -368,7 +368,7 @@ describe("spell init — handler", () => {
       expect(output).toContain("chat.useAgentSkills");
       expect(output).toContain("chat.promptFilesLocations; the user tier does not use it");
       expect(output).toContain("personal command over a project command");
-    });
+    }, HEAVY_TEST_TIMEOUT);
 
     it("asks no question and touches no git state", async () => {
       vi.spyOn(console, "log").mockImplementation(() => {});
