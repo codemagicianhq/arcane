@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.11.4] - 2026-10-06
+
+The branch formats are written in one place, and every assistant reads them at session start (TODO.md "Claude Code worktree branches bypass Arcane's branch-naming standard"; decision drafted as ARC-053).
+
+### Changed
+
+- **One branch-naming rule, three actors, one source.** The rule now lives in the ARC-039 fragment `.arcane/spells/_fragments/branch-naming.md`: humans `type/short-description`; interactive sessions, including every worktree they open and every parallel subagent they spawn, the session format with `-<agent>` for a parallel subagent; autonomous roster agents the agent-slug format, unchanged. A tool-generated name such as `claude/<adjective>-<surname>-<hash>` is noncompliant everywhere. `git-conventions.md`, the Copilot instruction file, `spell-open-session` and `spell-create-pull-request` host the rule as fragment spans; `agent-policies.md`, the agents template, `universal-agent-rules.md`, `spell-commit-work`, `spell-architect` and `spell-full-cycle` reference it instead of restating it. A test scans every shipped Markdown asset, every TypeScript source and this repository's own instruction files for a format written anywhere else.
+- **`spell agents sync` renders a `## Branch Naming` section into `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md`**, read from the same fragment, between the spell routing table and the roster. It tells the assistant to supply the branch name when a client offers to create a worktree or a parallel agent (Claude Code's `EnterWorktree` takes a `name`), never to accept a generated one.
+- **The rename gate is its own fragment, `branch-rename-gate`**, hosted by `git-conventions.md`, `spell-open-session`'s Mutation Guard and `spell-create-pull-request`'s Step 0 (a rename-before-PR gate over `git worktree list`). It acts only on the current worktree's branch and never on a branch an open pull request depends on.
+- **The fragment parity axis covers every Markdown asset**, not only spells. `hostsFragmentSpan` (new in `spell-compiler.ts`) treats a marker on its own line as a span and a marker quoted in prose as text, so the authoring standard's explanation of the mechanism is no longer mistaken for a consumer.
+
 ## [1.11.3] - 2026-10-04
 
 A closed issue is no longer treated as proof its change shipped ([#339](https://github.com/codemagicianhq/arcane/issues/339)). Text only; no CLI behavior changes.
