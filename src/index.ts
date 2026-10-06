@@ -11,6 +11,9 @@ import { runDoctor } from "./commands/doctor.js";
 import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
 import { runBlockPush } from "./commands/block-push.js";
+import { runLogin } from "./commands/login.js";
+import { runLogout } from "./commands/logout.js";
+import { runWhoami } from "./commands/whoami.js";
 import { runReport } from "./commands/report.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
@@ -248,6 +251,33 @@ program
   .description("Lift this repository's push block (interactive terminal only)")
   .action(async () => {
     await runUnblockPush(process.cwd());
+  });
+
+program
+  .command("login")
+  .description("Sign in to your Arcane account (browser by default; the session is kept in the OS keychain)")
+  .option("--device-code", "Sign in from another device by typing a code; for machines with no browser")
+  .option(
+    "--insecure-storage",
+    "Keep the session in a file under ~/.arcane instead of the OS keychain; protected only by your account's file permissions",
+  )
+  .action(async (opts: { deviceCode?: boolean; insecureStorage?: boolean }) => {
+    await runLogin({ deviceCode: opts.deviceCode, insecureStorage: opts.insecureStorage });
+  });
+
+program
+  .command("logout")
+  .description("Sign out on this machine: remove the stored session")
+  .action(() => {
+    runLogout();
+  });
+
+program
+  .command("whoami")
+  .description("Show who is signed in; exits 1 when signed out")
+  .option("--verify", "Also check the session with the identity service")
+  .action(async (opts: { verify?: boolean }) => {
+    await runWhoami({ verify: opts.verify });
   });
 
 program
