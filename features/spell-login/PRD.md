@@ -24,9 +24,21 @@ The CLI is MIT-licensed and must stay fully usable signed out. Nothing in this P
 5. **`spell whoami` ships in the first release.** It prints the signed-in account and whether the stored session is still valid, without contacting the network unless asked.
 6. **`spell login` asks for a read scope on the Arcane service API up front, along with `openid`, `profile` and `offline_access`.** Nothing calls that API in the first release. Asking at first sign-in means the person consents once instead of seeing a second consent screen when a later release starts using it. The scope's name is kept out of this document until it ships.
 
-## Gate: the Windows storage spike comes first
+## Gate: the Windows storage spike (done 2026-10-05; the secret is split across entries)
 
-Windows Credential Manager caps a stored credential at about 2.5 KB, and some keyring bindings store text as UTF-16, which would halve that. Entra refresh tokens are opaque and can be 1 to 1.5 KB or more. Neither number is verified. **Before any other story, a spike stores a realistic refresh token in Credential Manager through `@napi-rs/keyring` on Windows and fails loudly if it does not fit.** If it fails, the splitting options (split across entries, or a keychain-held encryption key with the token in a file) get the maintainer's full attention before one is chosen; the spike result and the choice are recorded here.
+**Result.** Through `@napi-rs/keyring` on Windows (x64), the largest secret that round-trips is **1,280 characters** (stored as UTF-16, against the 2,560-byte Credential Manager limit); anything longer is refused with a clear error and nothing is truncated. A real refresh token from the development identity tenant, obtained through the device-code flow, is **1,468 characters**, so a single credential does not fit. The access token (2,482 characters) and the ID token (1,175) are not stored.
+
+**Decision (maintainer, 2026-10-05): split the token across several credential entries**, on every platform so there is one code path. The alternatives were a keychain-held encryption key with the ciphertext in a file, and Windows' own encryption service through a native module; both were rejected because they add custom cryptography or native dependencies, where splitting keeps the secret entirely inside the OS credential store.
+
+**Design (requirement R4a below).**
+
+- The secret is cut into chunks of at most 1,000 characters, which leaves a wide margin under the 1,280 limit and room for a longer token later.
+- Each save gets a new random generation id. Chunks are written first, under names that include the generation id and the chunk number. A small index entry is written **last**; it records the generation id, the chunk count and a SHA-256 of the whole secret. The index is the switch: until it is written, the previous session is still the one that is read.
+- After the index is written, the previous generation's chunks are deleted. A crash at any point leaves either the old session or the new one, plus stray chunks that the next save or `spell logout` removes.
+- A read assembles the chunks named by the index and verifies the SHA-256. Any missing chunk or mismatch is treated as signed out, never as a partial token, and `spell doctor` reports it.
+- The number of chunks is not capped by the design; a test stores a secret several times the current size.
+
+**Also found.** The identity tenant publishes its issuer under a different host from the one that serves its discovery document, so the standard "discovery issuer must match the URL" check fails. The CLI builds its configuration from the fetched document instead, and a test pins this.
 
 ## Requirements
 
@@ -37,6 +49,7 @@ Windows Credential Manager caps a stored credential at about 2.5 KB, and some ke
 | R3 | `spell logout` deletes everything `spell login` stored, from the keychain and from the opt-in file if one exists, and says what it removed. It succeeds when nothing is stored. |
 | R4 | Stored: the refresh token, the account `sub`, the account's email, the environment (production or development) and the token's expiry time. Never stored: access tokens, ID tokens, passwords, anything else. |
 | R5 | A second `spell login` while signed in replaces the stored session after the new sign-in succeeds; a failed sign-in leaves the previous session untouched. |
+| R4a | The refresh token is stored split across entries as designed in the gate section: chunks of at most 1,000 characters under a generation id, an index entry written last with the chunk count and a SHA-256, old generation deleted afterwards, a failed read treated as signed out. |
 | R6 | No keychain: refuse with a message that names the cause and the opt-in flag, and write nothing. |
 | R7 | Every command that worked signed out still works signed out, and a broken or locked keychain never changes that. |
 | R8 | The flow uses PKCE and a `state` value, validates the returned ID token's issuer, audience, expiry and nonce, and listens for the redirect on `127.0.0.1` only, on a random free port, closing the listener on completion, timeout or interrupt. |
@@ -72,7 +85,7 @@ Not decided. Each is marked with the release it would land in. The aim is that a
 
 | ID | Check | Evidence |
 | --- | --- | --- |
-| AC1 | The Windows spike result is recorded in this PRD | Spike output, with the token size used |
+| AC1 | The Windows spike result and the storage decision are recorded in this PRD | Done 2026-10-05: 1,280-character limit, 1,468-character real token |
 | AC2 | A test account in the development tenant signs in through `spell login` and `spell whoami` shows the same `sub` | Terminal output |
 | AC3 | The same on a machine with no browser, through `--device-code` | Terminal output |
 | AC4 | `spell logout` leaves nothing behind in the keychain | Keychain listing before and after |
