@@ -663,7 +663,7 @@ unavailable; `arcane-cli`, `arcane-framework`, and `@arcane/cli` are free; `spel
 3. **GitHub org: `codemagicianhq`**, repo: `arcane` → `github.com/codemagicianhq/arcane` (created
    2026-06-24). `codemagician` was taken; `codemagicianhq` keeps the brand string with a clean,
    suffix-free public handle. The org is an umbrella for multiple public products (Arcane and, later,
-   `dark-matter-complex`).
+   `{PRODUCT_SLUG}`).
 4. **README leads with `spell`** (ties to the Spell Loop) and documents `arcane` as an equivalent alias.
 5. **Follow-up (non-blocking):** make the commander program name dynamic (derive from invoked binary
    basename) so `arcane --help` prints `Usage: arcane …` instead of `Usage: spell …`. Deferred because it
@@ -692,7 +692,7 @@ unavailable; `arcane-cli`, `arcane-framework`, and `@arcane/cli` are free; `spel
 - **Unscoped `arcane-framework`** — the `-framework` suffix reads like the product's _actual name_
   ("is it Arcane or Arcane Framework?") and caused confusion in review. Rejected.
 - **GitHub org `arcane-framework` or `arcane-dev`** — makes the org synonymous with one product, which
-  becomes awkward when `dark-matter-complex` and future products ship publicly. Rejected in favor of the
+  becomes awkward when `{PRODUCT_SLUG}` and future products ship publicly. Rejected in favor of the
   `codemagicianhq` umbrella.
 
 ---
@@ -3385,5 +3385,42 @@ The two lists differ in kind. A newly available component is a preference: nothi
 
 - **Stay report-only and rely on the existing warning.** Keeps the recorded position unchanged, but leaves a spell broken until someone acts on a warning, which is the situation #293 reports.
 - **Install `requires` and newly available components together behind one flag.** Turns a repair into a preference: an operator who wants the repair must also accept every component the profile has gained.
+
+---
+
+## ARC-053 — Branch Naming: One Rule per Actor, Written Once
+
+**Date:** 2026-10-06
+**Status:** Proposed (drafted by the implementing agent from the operator's calls in session on 2026-10-03 — keep both formats, decide by who creates the branch — and on 2026-10-06 — no format repeated by hand, not even twice. Accepting it is the operator's.)
+**Related:** [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy) (the session-branch helper this rule keeps), [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) (the fragment mechanism this extends beyond spells), [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work) (worktrees and parallel subagents are the branches this rule now names), [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)
+**Intake:** TODO.md ("MEDIUM: Claude Code worktree branches bypass Arcane's branch-naming standard"), operator report of 2026-09-02
+
+**Context:**
+
+- Three branch formats have shipped since 0.14.0, one per actor: humans `type/short-description`; interactive sessions `sessions/YYYY-MM-DD-<topic-slug>` (ARC-009); autonomous roster agents `{agent-slug}/type/short-description` (no decision record; its reason, ownership and collision avoidance, is in `agent-policies.md`).
+- The format strings were restated by hand in nine shipped places (`git-conventions.md` twice, `agent-policies.md`, the agents template, `universal-agent-rules.md`, `agent-output.instructions.md`, `spell-open-session.md` four times, `spell-commit-work.md`, `spell-architect.md`, `spell-full-cycle.md`) and in no client instruction file.
+- Claude Code's `EnterWorktree` and `Agent isolation: "worktree"` generate `claude/<adjective>-<surname>-<hash>` names when the session supplies none; 21 of this repository's 296 pull requests carried one. Nothing an assistant reads at session start told it to supply a name.
+- The 2026-09-02 TODO proposed collapsing every agent-created branch into the session format. Checked on 2026-10-03: 0 of the 296 pull-request heads used the autonomous format, so it was never the source of a random name; collapsing it would retire a live, reasoned format to fix a problem it did not cause.
+
+**Decision:**
+
+1. **One rule, three actors, decided by who creates the branch.** A human; an interactive session, including every worktree it opens and every parallel subagent it spawns (which append `-<agent>`); an autonomous roster agent on a dispatched job. A tool-generated name is noncompliant everywhere and is renamed on sight.
+2. **The rule is written in exactly one editable file**, the ARC-039 fragment `.arcane/spells/_fragments/branch-naming.md`. Every other appearance is generated: fragment spans in `git-conventions.md`, the Copilot instruction file and the spells, kept identical by `npm run fix:self-host-parity`; and the `## Branch Naming` section `spell agents sync` renders into `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md`. A test fails when a format string appears anywhere else outside a generated span.
+3. **The fragment axis covers every shipped Markdown file**, not only spells. A file hosts a fragment when a marker stands on a line of its own (`hostsFragmentSpan`); a marker quoted in prose, as the authoring standard does to explain the mechanism, is not a span.
+4. **The rename procedure is its own fragment**, `branch-rename-gate`, holding no format: it acts only on the current worktree's branch, never on a branch an open pull request depends on, and `spell-open-session`'s Mutation Guard and `spell-create-pull-request`'s Step 0 run it.
+5. **No CI check reads a pull request's head-branch name** (the operator's 2026-09-02 call stands). Enforcement labels: structured spell gate (ARC-023) for interactive sessions; explicitly advisory prose for autonomous agents.
+
+**Consequences:**
+
+- Changing a format is one file edit plus `npm run fix:self-host-parity` and `spell agents sync`. The copies cannot drift silently: the parity check runs in CI and the single-source test scans every shipped Markdown asset, every TypeScript source and the repository's own instruction files.
+- Every client reads the rule at session start, so a worktree or a parallel agent gets its branch name from the session, not from the tool.
+- The autonomous format is unchanged; roster agents keep ownership-prefixed branches.
+- Rendered copies still exist on disk in several files, as compiled output does. The rule has one source, which is the property the operator asked for.
+
+**Rejected alternatives:**
+
+- **Collapse every agent-created branch into the session format** (the TODO's reading): retires a format with a recorded reason to fix a problem it never caused.
+- **A reference-only instruction line** ("follow git-conventions.md"): the failure is exactly that an assistant does not open the governance file before creating a worktree; the rule has to be in front of it, so the instruction files carry the rendered rule.
+- **A CI check on pull-request head names:** declined by the operator on 2026-09-02; the spells rename on sight instead.
 
 ---
