@@ -18,7 +18,7 @@
  * at .arcane/generated/openclaw-roster.json for the user to apply manually.
  */
 
-import { writeFile, mkdir, readdir } from "node:fs/promises";
+import { writeFile, mkdir, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import type {
@@ -166,6 +166,36 @@ If a spell exists for the workflow you are about to perform, invoke it — do no
 `;
 }
 
+/**
+ * The branch-naming rule, read from its one source: the ARC-039 fragment
+ * `.arcane/spells/_fragments/branch-naming.md` in the bundled assets. Every
+ * client instruction file carries it so an assistant names the branch of a
+ * worktree or a parallel agent by the rule instead of accepting a generated
+ * one (TODO.md "Claude Code worktree branches bypass Arcane's branch-naming
+ * standard"). A bundle without the fragment (older assets) gets no section,
+ * never a throw.
+ */
+async function loadBranchNamingFragment(assetsDir: string): Promise<string | null> {
+  try {
+    const fragment = await readFile(
+      join(assetsDir, ".arcane", "spells", "_fragments", "branch-naming.md"),
+      "utf8",
+    );
+    return fragment.trim();
+  } catch {
+    return null;
+  }
+}
+
+function renderBranchNamingSection(fragment: string | null): string {
+  if (fragment === null) return "";
+  return `## Branch Naming
+
+${fragment}
+
+`;
+}
+
 function renderAgentRosterSection(entries: ResolvedEntry[]): string {
   const rows = entries
     .map(({ def, displayName }) =>
@@ -245,6 +275,7 @@ export async function syncAgents(
   const synced: string[] = [];
   const skipped: string[] = [];
   let hasUnresolvedRoles = false;
+  const branchNaming = renderBranchNamingSection(await loadBranchNamingFragment(assetsDir));
 
   // CS-06 / ARC-047. Two independent axes, deliberately not one flag:
   //   `scope`      -- is THIS run writing the user tier's own agent files?
@@ -415,7 +446,7 @@ export async function syncAgents(
     // opted-out repository (ARC-045 decision 5) and is never written at the
     // user tier, which has no repository to describe.
     if (!userTier) {
-      const copilotSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
+      const copilotSection = `${renderSpellRoutingSection()}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
       const copilotMerged = await mergeIntoFile(
         targetDir,
         ".github/copilot-instructions.md",
@@ -433,7 +464,7 @@ export async function syncAgents(
 
   // ── Claude output ────────────────────────────────────────────────────────
   if (options.claude !== false) {
-    const claudeSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
+    const claudeSection = `${renderSpellRoutingSection()}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
     const claudeMerged = await mergeIntoFile(
       targetDir,
       "CLAUDE.md",
@@ -445,7 +476,7 @@ export async function syncAgents(
 
   // ── Codex output ─────────────────────────────────────────────────────────
   if (options.codex !== false) {
-    const codexSection = `${renderSpellRoutingSection()}\n${renderAgentRosterSection(resolved)}`;
+    const codexSection = `${renderSpellRoutingSection()}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
     const codexMerged = await mergeIntoFile(
       targetDir,
       "AGENTS.md",

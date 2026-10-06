@@ -26,7 +26,9 @@ describe("session branch mutation guard", () => {
   it("creates a deterministic session branch immediately before first mutation", () => {
     expect(openSession).toContain("Immediately before the first file edit");
     expect(openSession).toContain("Supported, authenticated GitHub/ADO remote + trunk checked out");
-    expect(openSession).toContain("sessions/YYYY-MM-DD-<topic-slug>");
+    // The format itself lives in the branch-naming fragment, hosted here as a span (ARC-039).
+    expect(openSession).toContain("<!-- fragment:branch-naming:start -->");
+    expect(openSession).toContain("<!-- fragment:branch-rename-gate:start -->");
     expect(openSession).toContain("complete it before writing the handoff consumed marker");
   });
 
@@ -38,7 +40,7 @@ describe("session branch mutation guard", () => {
   });
 
   it("keeps an existing compliant session branch", () => {
-    expect(openSession).toContain("Already on a compliant `sessions/YYYY-MM-DD-<topic-slug>` branch");
+    expect(openSession).toContain("Already on a compliant session branch");
     expect(openSession).toContain("Stay on it; do not create or switch branches");
   });
 

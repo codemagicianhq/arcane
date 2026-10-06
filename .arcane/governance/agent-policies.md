@@ -332,10 +332,9 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 6. **Delete the branch** (local and remote) after merge. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 10 and `spell-close-session`'s branch-deletion step both require running the Same-Vantage-Point Check before a worktree-adjacent deletion; the vantage-point determination itself remains a manual judgment call, which `git-conventions.md` discloses as "not a code-level gate."**
 
-**Branch naming format:** `{agent-slug}/type/short-description`
+**Branch naming format:** the autonomous roster-agent form of the branch-naming rule in `git-conventions.md` → Branch Naming, stated once there and not restated here. The agent-slug prefix makes ownership obvious and prevents naming collisions.
 
-- The agent-slug prefix makes ownership obvious and prevents naming collisions.
-- Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an agent branch name against this format (unlike session-branch naming, which `spell-open-session` does check).**
+- Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an autonomous agent's branch name against that rule; the rename gate in `git-conventions.md` → Branch Naming runs only in interactive sessions.**
 
 **What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry — **from the primary checkout**, since this block checks out `main`:
 

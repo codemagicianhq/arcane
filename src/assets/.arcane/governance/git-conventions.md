@@ -198,34 +198,34 @@ Every unit of work runs in exactly one **session workspace**: one instance of on
 
 ### Branch Naming
 
-**Humans:**
+The rule below is the one source for every branch format Arcane names. The spells and the generated client instruction files carry copies that `npm run fix:self-host-parity` keeps identical to it (ARC-039 fragment `branch-naming`); nothing restates a format by hand.
 
-```
-type/short-description
-```
+<!-- fragment:branch-naming:start -->
+**Branch naming (every actor).** `main` is integration-only. All work happens on a topic branch, named by who creates it:
 
-**Session branches (interactive tools — Copilot, Claude Code, etc.):**
+| Who creates the branch | Format | Example |
+| --- | --- | --- |
+| A human | `type/short-description` | `fix/auth-token-regression` |
+| An interactive session (Claude Code, Copilot, Codex chat), including every worktree it opens and every parallel subagent it spawns | `sessions/YYYY-MM-DD-<topic-slug>`; a parallel subagent appends `-<agent>` | `sessions/2026-10-05-branch-naming`, `sessions/2026-10-05-branch-naming-merlin` |
+| An autonomous roster agent on a dispatched job (`spell-full-cycle`, from `stories.json`) | `{agent-slug}/type/short-description` | `lafayette/feat/api-endpoint` |
 
-```
-sessions/YYYY-MM-DD-topic-slug
-```
+The slug comes from the work — the focus, the handoff's active task, the top next action, the story, the pull request title — never from a generator. A tool-generated name (`claude/<adjective>-<surname>-<hash>`, any random adjective-noun name) is noncompliant wherever it appears and is renamed on sight. When a client offers to create a worktree or a parallel agent, supply the branch name yourself: Claude Code's `EnterWorktree` takes a `name`, and `git worktree add <path> -b <branch>` pre-creates the branch for any client; never accept a generated name. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s Mutation Guard and `spell-create-pull-request`'s Step 0 run the branch rename gate on the branch they find; `spell agents sync` renders this rule into every client instruction file; no CI check reads a pull request's head-branch name.**
+<!-- fragment:branch-naming:end -->
 
 Create the session branch as the **first action** of any session, before any file edits or commits. All session commits land on this branch. At close, push and open a PR. After merge, return to `main` — **in the primary checkout only** (ARC-028 R8). A session running in a linked worktree ends with push → PR → worktree removal instead; it must not check out `main`, because the primary checkout already holds it and Git will refuse the second checkout.
 
-**Examples:**
-
-- `sessions/2025-11-04-widget-app-implementation` (interactive session)
-- `sessions/2025-11-12-payment-webhook-fix` (interactive session)
-
 **Session branch policy (required):**
 
-- Session branches must be deterministic, human-readable, and derived from the active task title. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s Mutation Guard renames a noncompliant, unpushed branch to the deterministic `sessions/YYYY-MM-DD-<topic-slug>` format before the first mutation, and its "Session branch naming compliance" check records the required rename when a PR doesn't already depend on the old name.**
-- Default format for new interactive sessions: `sessions/YYYY-MM-DD-<topic-slug>`.
-- Random adjective-noun branches (for example, `ideal-disco`) are non-compliant and must be renamed.
-- If a non-compliant branch was already pushed, migrate it safely:
-  1. `git branch -m <old> <new>`
-  2. `git push -u origin <new>`
-  3. `git push origin --delete <old>` (skip this if an active PR still depends on `<old>`).
+<!-- fragment:branch-rename-gate:start -->
+**Branch rename gate.** Applied to the current branch before a session's first mutation (`spell-open-session`) and before a pull request's first push (`spell-create-pull-request`):
+
+1. Read `git branch --show-current` and `git worktree list` (a read only: across a bridged or mounted filesystem it can misreport a live worktree, EF-33 — never act on that output alone). Act only on the branch checked out in this worktree; never rename, switch or delete a branch attached to another worktree.
+2. Judge the name against the branch-naming rule above. A compliant name stays. A noncompliant one is renamed only when no open pull request depends on it — check with the provider (`gh pr list --head <branch> --state open` or `az repos pr list --source-branch <branch> --status active`); if one exists, keep the name, report it, and rename after that pull request merges.
+3. Derive the deterministic name from the work, in the session form of the rule: today's date, a kebab-case topic from the focus, the handoff's active task, the top next action or the pull request title, and the `-<agent>` suffix only for a parallel subagent.
+4. `git branch -m <old> <new>`. If `<old>` was already pushed: `git push -u origin <new>`, then `git push origin --delete <old>`, both under the push-policy check (ARC-049). Give each command a per-call timeout: on some Windows filesystems a rename or delete blocks on a file lock (the EF-20 hazard in git-conventions.md).
+5. Report `Renamed <old> → <new>` in the run's output. If the worktree, the pull-request state or the remote cannot be determined, stop without renaming and ask the operator.
+<!-- fragment:branch-rename-gate:end -->
+
 - **EF-20 hazard:** on some Windows/Git-for-Windows filesystems, a rename or delete can trigger
   an interactive retry prompt (e.g. a file lock from an editor or antivirus scan) that blocks
   indefinitely on a terminal with no non-interactive fallback. When running these commands
@@ -234,22 +234,7 @@ Create the session branch as the **first action** of any session, before any fil
   (`src/modules/git.ts`) applies this as a standing contract — closed stdin plus a
   command-class timeout — for every `git` invocation the CLI itself makes. **Enforcement: explicitly advisory prose (ARC-023) — the recommendation to set a timeout applies to an agent's own separate shell tool invocations of raw `git`, which nothing here checks. The cited precedent is independently verified: `runGit` (`src/modules/git.ts`) closes stdin immediately and applies a `DEFAULT_TIMEOUTS_MS`-scoped timeout for every git invocation Arcane's own CLI makes internally — a real executable check, but scoped to Arcane's own code path, not to a human's or agent's independent terminal command.**
 
-**Agents:**
-
-```
-{agent-slug}/type/short-description
-```
-
-The agent slug prefix makes branch ownership obvious in `git branch -r` output and prevents naming collisions between agents. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an agent branch name against this format, unlike session-branch naming above (which `spell-open-session` does check and, when noncompliant, rename).**
-
-**Examples:**
-
-- `docs/readme-update` (human)
-- `feat/spell-commit-work` (human)
-- `fix/auth-token-regression` (human)
-- `lafayette/feat/api-endpoint` (agent — Lafayette)
-- `merlin/docs/architecture-update` (agent — Merlin)
-- `lince/fix/test-regression` (agent — Lince)
+**Autonomous agents:** the agent-slug prefix in the rule above makes branch ownership obvious in `git branch -r` output and prevents naming collisions between agents working in parallel. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an autonomous agent's branch name against the rule; the rename gate above runs only in interactive sessions (`spell-open-session`, `spell-create-pull-request`).**
 
 ### Human Workflow
 
