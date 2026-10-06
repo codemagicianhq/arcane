@@ -12,7 +12,7 @@ import {
     renderCodexSkill,
     renderCopilotPromptShim,
     expandFragment,
-    referencesFragment,
+    hostsFragmentSpan,
 } from "../src/modules/spell-compiler.js";
 import type { PromptFrontmatter } from "../src/modules/spell-compiler.js";
 
@@ -217,39 +217,49 @@ export async function runShimParity(
 
 // ─── Fragment parity axis (ARC-039 / BC-32) ───────────────────────────────────
 // Fragments under .arcane/spells/_fragments/ are never shipped standalone
-// (no registry entry) -- they exist only to keep a consuming spell's marked
+// (no registry entry) -- they exist only to keep a consuming file's marked
 // span in sync with its one canonical source, expanded in place at this same
-// build step. A spell that does not reference a given fragment is untouched.
+// build step. Any Markdown asset can consume one: a spell, a governance
+// document, a client instruction file, an agent template (the branch-naming
+// rule is the first fragment a governance document hosts). A file that does
+// not reference a given fragment is untouched.
+
+const FRAGMENTS_DIR_SEGMENT = `/${CANONICAL_SPELLS_DIR.replace(/\/$/, "")}/_fragments/`;
 
 export async function runFragmentParity(
     mode: ParityMode,
     assetsDir: string,
 ): Promise<ParityResult> {
-    const spellsDir = join(assetsDir, CANONICAL_SPELLS_DIR);
-    const fragmentsDir = join(spellsDir, "_fragments");
-    const ids = await listSpellIds(spellsDir);
+    const fragmentsDir = join(assetsDir, CANONICAL_SPELLS_DIR, "_fragments");
     const fragmentNames = (await readdir(fragmentsDir).catch(() => [] as string[]))
         .filter((name) => name.endsWith(".md"))
         .map((name) => name.replace(/\.md$/, ""));
+    // Every Markdown asset except the fragment sources themselves.
+    const consumers = (await listFiles(assetsDir))
+        .filter((path) => path.endsWith(".md"))
+        .filter((path) => !toRegistryPath(path).includes(FRAGMENTS_DIR_SEGMENT))
+        .sort();
 
     const drifted: string[] = [];
     const repaired: string[] = [];
     let checked = 0;
 
-    for (const id of ids) {
-        const spellPath = join(spellsDir, `${id}.md`);
-        let content = await readFile(spellPath, "utf8");
+    for (const consumerPath of consumers) {
+        const label = toRegistryPath(relative(assetsDir, consumerPath));
+        let content = await readFile(consumerPath, "utf8");
         let fileChanged = false;
 
         for (const fragmentName of fragmentNames) {
-            if (!referencesFragment(content, fragmentName)) continue;
+            // A marker on its own line is a span; a marker quoted in prose
+            // (the authoring standard explains the mechanism that way) is not.
+            if (!hostsFragmentSpan(content, fragmentName)) continue;
             checked++;
 
             const fragmentContent = await readFile(join(fragmentsDir, `${fragmentName}.md`), "utf8");
             const expanded = expandFragment(content, fragmentName, fragmentContent);
             if (expanded === content) continue;
 
-            drifted.push(`${canonicalSpellPath(id)} (fragment: ${fragmentName})`);
+            drifted.push(`${label} (fragment: ${fragmentName})`);
             if (mode === "fix") {
                 content = expanded;
                 fileChanged = true;
@@ -257,8 +267,8 @@ export async function runFragmentParity(
         }
 
         if (fileChanged) {
-            await writeFile(spellPath, content, "utf8");
-            repaired.push(canonicalSpellPath(id));
+            await writeFile(consumerPath, content, "utf8");
+            repaired.push(label);
         }
     }
 

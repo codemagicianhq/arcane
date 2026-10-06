@@ -28,7 +28,7 @@ Workflow:
 1. **Check git status and guard the branch** — run `git status` to see what changed, and confirm the current branch.
    - Classify the Git/remote state before enforcing the protected-branch guard. A usable merge path requires a configured remote on a supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`) and authenticated provider tooling. A remote URL alone is insufficient.
    - Apply exactly one path:
-     - **Supported, authenticated GitHub/ADO remote + `main` or `master` checked out:** **STOP — do not stage or commit directly.** Create and switch the current worktree to a compliant topic branch (for example, `sessions/YYYY-MM-DD-<slug>`), then continue.
+     - **Supported, authenticated GitHub/ADO remote + `main` or `master` checked out:** **STOP — do not stage or commit directly.** Create and switch the current worktree to a compliant topic branch (a session branch, named per `git-conventions.md` → Branch Naming), then continue.
      - **Supported, authenticated GitHub/ADO remote + valid topic/PR branch checked out:** stay on that branch and continue.
      - **No remote, unsupported remote, or provider authentication unavailable:** remain on the current trunk. Print `Local-only checkpoint: no usable remote merge path; commit remains on <trunk> and no remote push/PR will run.` Continue through the local commit gate, then skip Steps 9 and 10 entirely.
    - If the current worktree, branch, provider, or authentication state cannot be determined, fail closed before staging and ask the operator. Never strand a local-only commit on a topic branch with no usable merge path.

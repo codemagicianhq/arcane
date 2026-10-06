@@ -89,6 +89,16 @@ beforeEach(async () => {
     stringify(DEV_DEF),
     "utf8",
   );
+  // The bundled assets also carry the branch-naming fragment, which the
+  // generator renders into every client instruction file; copy the real one
+  // so the fixture bundle looks like a published one.
+  const fragmentsDir = join(assetsDir, ".arcane", "spells", "_fragments");
+  await mkdir(fragmentsDir, { recursive: true });
+  await writeFile(
+    join(fragmentsDir, "branch-naming.md"),
+    await readFile(join(process.cwd(), "src", "assets", ".arcane", "spells", "_fragments", "branch-naming.md"), "utf8"),
+    "utf8",
+  );
   // Set up a fake openclaw root inside tmpDir (avoids touching real ~/.openclaw)
   openclawRoot = join(tmpDir, "openclaw");
   await mkdir(openclawRoot, { recursive: true });
@@ -174,6 +184,26 @@ describe("syncAgents — Copilot output", () => {
     expect(routingIndex).toBeGreaterThan(-1);
     expect(rosterIndex).toBeGreaterThan(routingIndex);
   });
+
+  it("renders the branch-naming rule from its one fragment, between the routing table and the roster", async () => {
+    const roster = makeRoster(openclawRoot);
+    await syncAgents(tmpDir, assetsDir, roster, { openclaw: false });
+
+    const instructions = await readFile(
+      join(tmpDir, ".github", "copilot-instructions.md"),
+      "utf8",
+    );
+    const fragment = (
+      await readFile(join(assetsDir, ".arcane", "spells", "_fragments", "branch-naming.md"), "utf8")
+    ).trim();
+    expect(instructions).toContain("## Branch Naming");
+    expect(instructions).toContain(fragment);
+    const routingIndex = instructions.indexOf("## Spell Routing");
+    const namingIndex = instructions.indexOf("## Branch Naming");
+    const rosterIndex = instructions.indexOf("## Agent Roster");
+    expect(namingIndex).toBeGreaterThan(routingIndex);
+    expect(rosterIndex).toBeGreaterThan(namingIndex);
+  });
 });
 
 // ─── Claude output ────────────────────────────────────────────────────────────
@@ -256,6 +286,9 @@ describe("syncAgents — spell routing table", () => {
       expect(content).toContain(
         "If a spell exists for the workflow you are about to perform, invoke it",
       );
+      // The branch-naming rule rides along on every surface, roster or not.
+      expect(content, file).toContain("## Branch Naming");
+      expect(content, file).toContain("never accept a generated name");
     }
   });
 });

@@ -48,8 +48,8 @@ Do not create a branch during a read-only session. Immediately before the first 
 
 | Observed state                                                        | Required action before mutation                                                                                                                                           |
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Supported, authenticated GitHub/ADO remote + trunk checked out        | Create and switch the **current worktree only** to `sessions/YYYY-MM-DD-<topic-slug>`, derived deterministically from the focus, handoff active task, or top next action. |
-| Already on a compliant `sessions/YYYY-MM-DD-<topic-slug>` branch      | Stay on it; do not create or switch branches.                                                                                                                             |
+| Supported, authenticated GitHub/ADO remote + trunk checked out        | Create and switch the **current worktree only** to a session branch named per the branch-naming rule below, derived deterministically from the focus, handoff active task, or top next action. |
+| Already on a compliant session branch                                 | Stay on it; do not create or switch branches.                                                                                                                             |
 | Noncompliant unpushed branch with no active PR                        | Rename it to the deterministic session name before mutation.                                                                                                              |
 | Branch has an active PR                                               | Stay on the PR branch and report it; never rename a branch backing an active PR.                                                                                          |
 | Current path is a linked worktree                                     | Mutate/switch only the current worktree. Never switch or delete a branch attached to another worktree.                                                                    |
@@ -58,6 +58,30 @@ Do not create a branch during a read-only session. Immediately before the first 
 A usable merge path requires a configured remote on a supported provider (`github.com`, `dev.azure.com`, or `visualstudio.com`) and authenticated provider tooling. A remote URL alone is insufficient. Re-evaluate immediately before the first mutation so a remote added or removed during the read-only portion is handled from observed state.
 
 If branch creation/rename is required, complete it before writing the handoff consumed marker or any other file. If the guard cannot determine the current worktree, active-PR state, or merge capability, fail closed without mutation and ask for operator direction.
+
+The branch-naming rule the table applies, and the rename gate it runs on a noncompliant branch:
+
+<!-- fragment:branch-naming:start -->
+**Branch naming (every actor).** `main` is integration-only. All work happens on a topic branch, named by who creates it:
+
+| Who creates the branch | Format | Example |
+| --- | --- | --- |
+| A human | `type/short-description` | `fix/auth-token-regression` |
+| An interactive session (Claude Code, Copilot, Codex chat), including every worktree it opens and every parallel subagent it spawns | `sessions/YYYY-MM-DD-<topic-slug>`; a parallel subagent appends `-<agent>` | `sessions/2026-10-05-branch-naming`, `sessions/2026-10-05-branch-naming-merlin` |
+| An autonomous roster agent on a dispatched job (`spell-full-cycle`, from `stories.json`) | `{agent-slug}/type/short-description` | `lafayette/feat/api-endpoint` |
+
+The slug comes from the work — the focus, the handoff's active task, the top next action, the story, the pull request title — never from a generator. A tool-generated name (`claude/<adjective>-<surname>-<hash>`, any random adjective-noun name) is noncompliant wherever it appears and is renamed on sight. When a client offers to create a worktree or a parallel agent, supply the branch name yourself: Claude Code's `EnterWorktree` takes a `name`, and `git worktree add <path> -b <branch>` pre-creates the branch for any client; never accept a generated name. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s Mutation Guard and `spell-create-pull-request`'s Step 0 run the branch rename gate on the branch they find; `spell agents sync` renders this rule into every client instruction file; no CI check reads a pull request's head-branch name.**
+<!-- fragment:branch-naming:end -->
+
+<!-- fragment:branch-rename-gate:start -->
+**Branch rename gate.** Applied to the current branch before a session's first mutation (`spell-open-session`) and before a pull request's first push (`spell-create-pull-request`):
+
+1. Read `git branch --show-current` and `git worktree list` (a read only: across a bridged or mounted filesystem it can misreport a live worktree, EF-33 — never act on that output alone). Act only on the branch checked out in this worktree; never rename, switch or delete a branch attached to another worktree.
+2. Judge the name against the branch-naming rule above. A compliant name stays. A noncompliant one is renamed only when no open pull request depends on it — check with the provider (`gh pr list --head <branch> --state open` or `az repos pr list --source-branch <branch> --status active`); if one exists, keep the name, report it, and rename after that pull request merges.
+3. Derive the deterministic name from the work, in the session form of the rule: today's date, a kebab-case topic from the focus, the handoff's active task, the top next action or the pull request title, and the `-<agent>` suffix only for a parallel subagent.
+4. `git branch -m <old> <new>`. If `<old>` was already pushed: `git push -u origin <new>`, then `git push origin --delete <old>`, both under the push-policy check (ARC-049). Give each command a per-call timeout: on some Windows filesystems a rename or delete blocks on a file lock (the EF-20 hazard in git-conventions.md).
+5. Report `Renamed <old> → <new>` in the run's output. If the worktree, the pull-request state or the remote cannot be determined, stop without renaming and ask the operator.
+<!-- fragment:branch-rename-gate:end -->
 
 **Drift Check (run before deep context gathering):**
 
@@ -98,10 +122,8 @@ Before anything else, check:
   - **Otherwise** → **primary checkout on a session branch** (R2). This is the default and it is deliberately the do-nothing path: one actor, one checkout, no new tooling.
   - **Footprint overlap overrides the choice (R4).** If this session's work touches the same files or the same shared sequence (migration numbers, generated indexes, lockfiles) as work already running in another primitive, do **not** isolate it — serialize instead: wait, or re-scope to a disjoint footprint first. Isolation does not prevent those collisions, it hides them until merge review.
   - Working in a linked worktree changes two things later in the session and nothing else: `spell-close-session` must not check out `main` (see git-conventions.md's Post-Merge Cleanup section), and the worktree contains no untracked tooling state — budget for `npm install` or equivalent in a code repo. Branch naming, attribution, and the PR gate are identical from every primitive (R8).
-- **Session branch naming compliance:** Branch names must be human-readable and policy-compliant:
-  - Interactive session default: `sessions/YYYY-MM-DD-<topic-slug>` (kebab-case topic from current task/session objective).
-  - Disallow random adjective-noun generator names (example: `ideal-disco`) as session defaults.
-  - If current branch is non-compliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
+- **Session branch naming compliance:** judge the current branch against the branch-naming rule (Mutation Guard section above), including a branch a worktree or a parallel subagent created:
+  - If it is noncompliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.
 - **Stale local branches:** Run `git branch --merged main` to list branches already merged that should be deleted — this session's own read-only candidate list (`--merged` also misses every branch landed via this repo's sanctioned rebase-and-fast-forward, so treat a *clean* result as "no ancestry-visible candidates," not "nothing to check"). Open-session only lists; it does not delete. Apply the [Content-Verified Branch Deletion](../../.arcane/governance/git-conventions.md#content-verified-branch-deletion-todomd-merged-branch-cleanup-finding) procedure (git-conventions.md) to any candidate before flagging it as safe, and leave the actual idempotent prune to `spell-close-session`'s sweep.
 - **Tracker configuration check (early):** resolve active tracking settings before planning, in this order: root `.arcane.json` (if present) -> the committed self-hosted source manifest (`src/assets/.arcane.json`, read only when it declares `selfHosted: true` -- this is EF-14's recorded self-hosting resolution tier, distinct from treating the mere presence of a self-host marker as license to infer other, unrelated config) -> the current feature PRD frontmatter -> ask. Persisted once at `spell init`/`spell update` (EF-14); do not re-ask when any of the first three sources already sets it.
@@ -159,7 +181,7 @@ Before anything else, check:
 - Provide a 1–4 word, sentence-case, human-meaningful session name.
 - If a focus/task argument is provided, generate the name deterministically from that focus (never use the generic name `Open session`).
 - If no focus argument is provided, generate the name from the top recommended action in `## Next Session Plan`.
-- Optional helper line: `Branch helper: sessions/YYYY-MM-DD-<kebab-case-slug>`.
+- Optional helper line: `Branch helper: <session branch name>`, in the session form of the branch-naming rule.
 
 ## Risks And Gaps
 

@@ -58,6 +58,27 @@ Before enabling auto-complete/auto-merge or completing an existing PR, resolve `
 > This rule is on the **agent**, not on the spell. Calling `az repos pr create` / `gh pr create` directly is **not** an escape hatch — it is a governance violation. See `.arcane/governance/git-conventions.md` → **🛑 Agent-mandatory pre-PR guard**.
 
 1. Run `git branch --show-current`. **STOP** if on `main`/`master` — you cannot PR the integration branch into itself. Also **STOP** if detached HEAD (empty output) — check out a named branch first.
+   - **Branch rename gate (before any push in this Step 0):** judge the branch you found against the branch-naming rule and rename it when the gate says so — a tool-generated name must not reach a pull request. A branch a worktree or a parallel subagent created is judged the same way.
+     <!-- fragment:branch-naming:start -->
+     **Branch naming (every actor).** `main` is integration-only. All work happens on a topic branch, named by who creates it:
+
+     | Who creates the branch | Format | Example |
+     | --- | --- | --- |
+     | A human | `type/short-description` | `fix/auth-token-regression` |
+     | An interactive session (Claude Code, Copilot, Codex chat), including every worktree it opens and every parallel subagent it spawns | `sessions/YYYY-MM-DD-<topic-slug>`; a parallel subagent appends `-<agent>` | `sessions/2026-10-05-branch-naming`, `sessions/2026-10-05-branch-naming-merlin` |
+     | An autonomous roster agent on a dispatched job (`spell-full-cycle`, from `stories.json`) | `{agent-slug}/type/short-description` | `lafayette/feat/api-endpoint` |
+
+     The slug comes from the work — the focus, the handoff's active task, the top next action, the story, the pull request title — never from a generator. A tool-generated name (`claude/<adjective>-<surname>-<hash>`, any random adjective-noun name) is noncompliant wherever it appears and is renamed on sight. When a client offers to create a worktree or a parallel agent, supply the branch name yourself: Claude Code's `EnterWorktree` takes a `name`, and `git worktree add <path> -b <branch>` pre-creates the branch for any client; never accept a generated name. **Enforcement: structured spell gate (ARC-023) — `spell-open-session`'s Mutation Guard and `spell-create-pull-request`'s Step 0 run the branch rename gate on the branch they find; `spell agents sync` renders this rule into every client instruction file; no CI check reads a pull request's head-branch name.**
+     <!-- fragment:branch-naming:end -->
+     <!-- fragment:branch-rename-gate:start -->
+     **Branch rename gate.** Applied to the current branch before a session's first mutation (`spell-open-session`) and before a pull request's first push (`spell-create-pull-request`):
+
+     1. Read `git branch --show-current` and `git worktree list` (a read only: across a bridged or mounted filesystem it can misreport a live worktree, EF-33 — never act on that output alone). Act only on the branch checked out in this worktree; never rename, switch or delete a branch attached to another worktree.
+     2. Judge the name against the branch-naming rule above. A compliant name stays. A noncompliant one is renamed only when no open pull request depends on it — check with the provider (`gh pr list --head <branch> --state open` or `az repos pr list --source-branch <branch> --status active`); if one exists, keep the name, report it, and rename after that pull request merges.
+     3. Derive the deterministic name from the work, in the session form of the rule: today's date, a kebab-case topic from the focus, the handoff's active task, the top next action or the pull request title, and the `-<agent>` suffix only for a parallel subagent.
+     4. `git branch -m <old> <new>`. If `<old>` was already pushed: `git push -u origin <new>`, then `git push origin --delete <old>`, both under the push-policy check (ARC-049). Give each command a per-call timeout: on some Windows filesystems a rename or delete blocks on a file lock (the EF-20 hazard in git-conventions.md).
+     5. Report `Renamed <old> → <new>` in the run's output. If the worktree, the pull-request state or the remote cannot be determined, stop without renaming and ask the operator.
+     <!-- fragment:branch-rename-gate:end -->
 2. **Verify the target exists:** `git rev-parse --verify origin/<target>`. If it fails, `git fetch origin <target>`; if still missing, **STOP** and ask the user for the correct `--target`.
 3. **Ensure the branch is on origin (upstream):** run the push-policy check below before any push in this Step 0 — this item's `git push -u` and item 6's `--force-with-lease` push. If it stops a push, stop the spell: a PR cannot be opened for a branch the remote does not have.
 

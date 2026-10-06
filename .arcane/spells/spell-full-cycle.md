@@ -119,7 +119,7 @@ Execute the `spell-implement` workflow:
    git fetch --prune origin        # origin/main is now current
    ```
    and branch from `origin/main` in step 1. Check which primitive you are in with `git rev-parse --path-format=absolute --git-common-dir` vs `--git-dir` — equal means primary checkout. `--path-format=absolute` is required, or every primary checkout looks like a worktree from any subdirectory.
-1. Create the topic branch from `stories.json.branchName` (format: `{agent}/type/description`).
+1. Create the topic branch from `stories.json.branchName` (the autonomous roster-agent form of the branch-naming rule in `git-conventions.md` → Branch Naming).
 2. Loop:
    a. Pick the next story where `passes: false`, ordered by priority.
    b. Implement the story — minimum code to satisfy acceptance criteria.

@@ -234,7 +234,10 @@ source under `.arcane/spells/_fragments/` and never shipped on its own. A spell 
 `<!-- fragment:needs-you:start -->` / `<!-- fragment:needs-you:end -->` marker pair placed where the
 spell describes its final output or report, and `npm run fix:self-host-parity` expands the fragment
 between the markers. Edit the fragment, never an expanded copy, and never restate its rules by hand
-in a spell body. Required actions also survive the end of a session: `spell-close-session` writes
+in a spell body. Any shipped Markdown file can host a fragment the same way, not only a spell: the
+`branch-naming` fragment is expanded into `git-conventions.md` and the Copilot instruction file as
+well as into spells, and `spell agents sync` renders it into every client instruction file, so the
+branch formats are written in exactly one place. Required actions also survive the end of a session: `spell-close-session` writes
 the open items into the handoff's `Needs you` field, and `spell-open-session` surfaces that field
 first, above the rest of the handoff, and does not mark the handoff consumed until it has.
 

@@ -174,7 +174,14 @@ describe("branch-deletion sites reference the check, attached to the actual comm
 
 describe("spell-open-session caveats the reads that can produce false-prunable state (EF-33)", () => {
   it("the worktree-list line itself carries the cross-mount caveat", () => {
-    const line = lineContaining(openSession, "git worktree list`.");
+    // Anchored on the Workspace Health Check's own read. The branch rename
+    // gate (ARC-053 fragment, hosted earlier in the file by the Mutation
+    // Guard) reads `git worktree list` too, so the bare command is no longer
+    // a unique anchor -- the same split the close-session anchor above needed.
+    const line = lineContaining(
+      openSession,
+      "- **Current branch:** Run `git branch --show-current` and `git worktree list`.",
+    );
     expect(line).toContain("can truthfully report a live, healthy worktree as `prunable`");
     expectNotNegated(line);
   });

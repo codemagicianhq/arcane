@@ -49,7 +49,7 @@ See also: [[README]], [[DECISIONS]], [[governance/git-conventions|Git Convention
 
 13. **For runtime config changes. Enforcement: structured spell gate (ARC-023), hedged — `spell-commit-work`'s Step 8 operator-approval gate covers this commit like any other before it can be made, though it verifies diff/message approval rather than a dedicated confirmation that testing occurred.** (anything touching the agent runtime's config files or service restarts): do NOT commit supporting docs until the user has confirmed the change is working. Stage and present — but wait for explicit approval after testing.
 
-14. **Never commit directly to main. Enforcement: explicitly advisory prose (ARC-023) — `spell doctor`'s `checkPlatformBranchPolicy` verifies only the platform's merge-method policy (squash disallowed), not that direct pushes/commits to main are blocked.** All work — human or agent — happens on topic branches. Humans use `type/short-description`; agents use `{agent-slug}/type/short-description`. Main receives changes only through PR completion, not local direct merges. See [[governance/git-conventions#branch-discipline|Branch Discipline]].
+14. **Never commit directly to main. Enforcement: explicitly advisory prose (ARC-023) — `spell doctor`'s `checkPlatformBranchPolicy` verifies only the platform's merge-method policy (squash disallowed), not that direct pushes/commits to main are blocked.** All work — human or agent — happens on topic branches, each named in the form the Branch Naming rule in git-conventions.md gives its actor (stated once there). Main receives changes only through PR completion, not local direct merges. See [[governance/git-conventions#branch-discipline|Branch Discipline]].
 
 ---
 

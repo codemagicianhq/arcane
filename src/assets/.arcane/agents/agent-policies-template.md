@@ -281,9 +281,8 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 6. **Delete the branch** (local and remote) after merge.
 
-**Branch naming format:** `{agent-slug}/type/short-description`
+**Branch naming format:** the autonomous roster-agent form of the branch-naming rule in `git-conventions.md` → Branch Naming, stated once there and not restated here. The agent-slug prefix makes ownership obvious and prevents naming collisions.
 
-- The agent-slug prefix makes ownership obvious and prevents naming collisions.
 - Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc.
 
 **What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry:

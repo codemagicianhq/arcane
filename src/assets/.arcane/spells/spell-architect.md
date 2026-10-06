@@ -77,7 +77,7 @@ Workflow:
 
 5a. **Validate stories.json schema** — before outputting, self-check every field. Missing fields break `spell-implement`. Required top-level fields:
    - `feature` (string)
-   - `branchName` (string, format: `agent/type/description`)
+   - `branchName` (string, in the autonomous roster-agent form of the branch-naming rule — `git-conventions.md` → Branch Naming)
    - `assignedAgent` (string, agent slug)
    - `trackingMode` (`internal` or `external`)
    - `externalProvider` (required when `trackingMode=external`)
