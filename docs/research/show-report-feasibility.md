@@ -1,7 +1,7 @@
 ---
 title: "Show Report — Feasibility, Data Derivability, and Rendering Options"
 audience: both
-last_updated: 2026-09-02
+last_updated: 2026-10-07
 status: active
 tags: [research, show-report, reporting, arcane-ui, feasibility]
 sources: [docs/plans/lessons-hardening/PLAN.md, docs/plans/lessons-hardening/OPERATOR-QUEUE.md, docs/verification-ledger.md, scripts/spell-catalog.ts, the arcane-ui repository (Azure DevOps project arcane), a gh pr list snapshot taken 2026-09-02]
@@ -26,7 +26,7 @@ effort scale: S ≤ half a session · M = 1–3 sessions · L = multi-session
 ## Summary
 
 1. **About 80% of both hand ledgers is derivable today** from PLAN.md frontmatter/waves/`[x]` epics, OPERATOR-QUEUE.md, `gh pr list`, `git show <baseline>:package.json`, commit trailers, the verification ledger, and the close-session journal — verified by re-deriving every stat-rail number (version spans, +5 spells, +4 checks, epic counts all match). Two fields are not: the per-row plain-English description (no honest source; PR `## Summary` usable verbatim in ~1 of 3 sampled PRs) and the category pill (Conventional-Commit type alone reproduces the hand category in 5/17 LH rows; type+scope rules ≈10/17). Keep those authored — once, at the source (PLAN.md epic entry), then generate.
-2. **arcane-ui** (`@codemagician/arcane-ui` 2.0.3, proprietary, React 18/19 peer, ESM-only, tsup) styles via CSS custom properties + 53 `arc-*` classes in one `theme.css` plus ~2,259 inline `style={{}}` objects inside components; published to a private Azure Artifacts feed (`codemagicianllc`). It is consumable only at build time by a credentialed builder and never from a CDN — any artifact using it must be pre-rendered or fully inlined.
+2. **arcane-ui** (`@codemagician/arcane-ui` 2.0.3, proprietary, React 18/19 peer, ESM-only, tsup) styles via CSS custom properties + 53 `arc-*` classes in one `theme.css` plus ~2,259 inline `style={{}}` objects inside components; published to a private Azure Artifacts feed (`{ADO_ORG}`). It is consumable only at build time by a credentialed builder and never from a CDN — any artifact using it must be pre-rendered or fully inlined.
 3. **arcane is PUBLIC + MIT** (verified via `gh repo view`); a private-feed dependency would break `npm ci` for anyone without a PAT (Dependabot included) and mix proprietary code into an MIT tree. Real-arcane-ui rendering belongs on the private side, not in `arcane`.
 4. **Recommendation — confidence high (~85%):** build **(C) now** as `scripts/report.ts` with `--check`/`--fix` and a CI step, mirroring `scripts/spell-catalog.ts` and ARC-012's parity-guard rule; it emits a committed `ledger.json` model plus `ledger.html` through a **(B)-style static template** (tokens/fonts borrowed from arcane-ui's look, re-expressed MIT-clean, no runtime). Add one authored `Ledger:` line + category per epic in PLAN.md as the single human input.
 5. Schedule an **(A1) `renderToStaticMarkup` spike in the arcane-ui repo** consuming that `ledger.json` — confidence medium (~60%) that it works without component patches: `StatTile`'s count-up renders "0" statically, `theme.css` restyles the whole host page, and arcane-ui has zero SSR/static-render tests.
@@ -141,9 +141,9 @@ effort scale: S ≤ half a session · M = 1–3 sessions · L = multi-session
 | Build | tsup, ESM-only (`format: ["esm"]`, `dts`, `treeshake`, externals react/react-dom); post-build `scripts/copy-css.ts` copies `src/theme/theme.css` → `dist/theme.css` and `dist/tokens.css` (identical files); `exports`: `.`, `./tokens.css`, `./theme.css`; `files`: `dist/` only | verified |
 | Toolchain | TypeScript 5.4 (`moduleResolution: Bundler`, `jsx: react-jsx`), vitest 2 + jsdom + testing-library + axe (`vitest-axe`), ESLint 9, husky, Ladle 5 (`stories: src/**/*.stories.{tsx,jsx}`, `base: "./"`) | verified |
 | Styling | CSS custom properties + `data-arcane-*` attribute variants + 53 `.arc-*` utility classes in `theme.css`; inline `style={{}}` inside components (≈2,259 sites); no Tailwind/CSS-in-JS/CSS Modules (ARCUI-003 rejected them); every component file starts with `"use client"` (ARCUI-005) | verified |
-| Publish target | `publishConfig.registry` = `https://pkgs.dev.azure.com/codemagicianllc/_packaging/codemagicianllc/npm/registry/`; `.npmrc` scopes `@codemagician` to it with `always-auth=true`; `azure-pipelines.yml` stage `Publish → Azure Artifacts` on `main` using `$(System.AccessToken)`, idempotent skip if the version exists | verified (files) |
+| Publish target | `publishConfig.registry` = `https://pkgs.dev.azure.com/{ADO_ORG}/_packaging/{ADO_ORG}/npm/registry/`; `.npmrc` scopes `@codemagician` to it with `always-auth=true`; `azure-pipelines.yml` stage `Publish → Azure Artifacts` on `main` using `$(System.AccessToken)`, idempotent skip if the version exists | verified (files) |
 | Actually in the feed? | README/CHANGELOG say auto-published on every merge to main; 2.0.3 dated 2026-06-21 | **told** — not checked against the feed (would need feed auth) |
-| Repo | `https://dev.azure.com/codemagicianllc/arcane/_git/arcane-ui`; clone HEAD `57f5e5d` (2026-08-21), depth 1 | verified (`git remote -v`, `git log`) |
+| Repo | `https://dev.azure.com/{ADO_ORG}/arcane/_git/arcane-ui`; clone HEAD `57f5e5d` (2026-08-21), depth 1 | verified (`git remote -v`, `git log`) |
 | Export surface | `src/index.ts`: 217 value exports, 184 PascalCase identifiers (README claims "182 components across 30 phases") | verified count / told claim |
 | Component groups | theme, primitives (HUDPanel, NotchedFrame, BracketFrame, CornerTicks, HazardStripe, Reticle, …), controls, data (StatTile, Badge, CodeTag, DataTable, KPIHex, ProgressBar, BarMeter, …), charts, overlays, forms, states, motion, keyboard, commands, nav, auth, settings, canvas, telemetry (LogsConsole, AuditLog, Inbox), schedule (WeekCalendar, OnCallRotation, SprintGantt), billing (BillingPlans, UsageDashboard, InvoiceLedger), boot, help, cinematic, graph, search, changelog (ChangelogViewer), tablet, api-explorer, roadmap, onboarding, print (InvoicePage, SpellCertificate), compare, mobile, oracle, diff, errors, postmortem, marketing, warroom, email, spells (SpellCatalogue) | verified (index.ts) |
 | Tests / a11y | pipeline label "test (913 tests)"; README "19 a11y checks" | told |
@@ -246,7 +246,7 @@ Repo root for relative paths: this repository's root. Scratchpad: the session sc
 - `git log --format='%h | %ad | %s%n%b' -n 12`, `git log --grep 'chore(release): bump version' -n 14`, `git tag --sort=-v:refname`
 - `git show fdf853e:package.json`, `git show b0992c1:package.json`, `git show a2dd1d3…:package.json`, `git show <sha>:DECISIONS.md`, `git ls-tree -r --name-only <sha> -- src/assets/.github/prompts | src/assets/.arcane/governance`
 
-**arcane-ui clone (`<scratchpad>\arcane-ui-clone`, origin `https://dev.azure.com/codemagicianllc/arcane/_git/arcane-ui`, HEAD `57f5e5d`)**
+**arcane-ui clone (`<scratchpad>\arcane-ui-clone`, origin `https://dev.azure.com/{ADO_ORG}/arcane/_git/arcane-ui`, HEAD `57f5e5d`)**
 - `package.json`, `.npmrc`, `azure-pipelines.yml`, `tsup.config.ts`, `tsconfig.json`, `README.md`, `CHANGELOG.md` (lines 1–40), `DECISIONS.md` (lines 1–70: ARCUI-001…005)
 - `src/index.ts` (full), `src/theme/theme.css` (full), `src/theme/ssr.ts`, `src/theme/ArcaneProvider.tsx`, `src/theme/persistence.ts`, `src/data/StatTile.tsx`, `src/data/Badge.tsx`, `src/changelog/ChangelogViewer.tsx` (lines 1–120), `src/primitives/HUDPanel.tsx` (lines 1–90), `scripts/copy-css.ts`, `.ladle/config.mjs`, `.ladle/components.tsx`, `build/meta.json` (lines 1–40)
 - Greps: `react-dom/server|renderToStaticMarkup|renderToString|hydrateRoot|typeof window` (tree-wide), `SSR|server-side|…` in `spec/`

@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-09-29
+last_updated: 2026-10-07
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)

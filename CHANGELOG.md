@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.11.5] - 2026-10-07
+
+### Fixed
+
+- The browser sign-in callback reports success only after refresh-token validation and local session storage succeed. A malformed response or failed keychain save now reaches the failure page.
+- Authentication coverage now enforces 95% per-file thresholds for `login.ts` and `oidc.ts`, backed by failure-path and browser-launch tests.
+- Private organization references in historical notes and distributed character image prompts use placeholders or descriptive text so the package build's privacy scan passes.
+
 ## [1.11.4] - 2026-10-06
 
 The branch formats are written in one place, and every assistant reads them at session start (TODO.md "Claude Code worktree branches bypass Arcane's branch-naming standard"; decision drafted as ARC-053).

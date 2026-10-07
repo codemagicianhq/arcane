@@ -5,6 +5,7 @@ import {
   FileSecretBackend,
   createSessionStorage,
   insecureSessionFilePath,
+  SessionClearError,
   parseSessionRecord,
   type SessionRecord,
 } from "../src/modules/session-store.js";
@@ -199,7 +200,15 @@ describe("createSessionStorage", () => {
     const { s } = storage(backend);
     s.save(record, { insecure: true });
     backend.broken = true;
-    expect(() => s.clear()).toThrow(KeychainUnavailableError);
+    let failure: unknown;
+    try {
+      s.clear();
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(SessionClearError);
+    expect((failure as SessionClearError).removed).toEqual(["file"]);
+    expect((failure as SessionClearError).keychainError).toBeInstanceOf(KeychainUnavailableError);
     expect(existsSync(filePath)).toBe(false);
   });
 });

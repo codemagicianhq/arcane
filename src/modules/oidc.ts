@@ -124,6 +124,8 @@ export interface BrowserLoginOptions {
   scopes: readonly string[];
   /** Opens the URL in the person's browser; resolves false when no browser could be opened. */
   openUrl: (url: string) => Promise<boolean>;
+  /** Completes local persistence before the browser can claim sign-in succeeded. */
+  onValidated?: (result: TokenResult) => void | Promise<void>;
   /** Called with the URL when the browser could not be opened, so the person can open it by hand. */
   onCannotOpen?: (url: string) => void;
   timeoutMs?: number;
@@ -194,9 +196,11 @@ export async function browserLogin(
           expectedNonce: nonce,
           idTokenExpected: true,
         })
-        .then((response) => {
+        .then(async (response) => {
+          const result = toTokenResult(response);
+          await options.onValidated?.(result);
           res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(CLOSE_PAGE);
-          resolve(toTokenResult(response));
+          resolve(result);
         })
         .catch((error: unknown) => {
           res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(FAILED_PAGE);

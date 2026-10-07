@@ -117,29 +117,43 @@ export async function runLogin(options: LoginOptions, deps: LoginDeps = defaultL
     return;
   }
 
-  let result: TokenResult;
+  let record: SessionRecord | undefined;
+  const saveValidatedSession = (result: TokenResult): void => {
+    const next = toSessionRecord(result, environment);
+    deps.storage.save(next, { insecure: Boolean(options.insecureStorage) });
+    record = next;
+  };
   try {
     if (options.deviceCode) {
-      result = await deps.deviceLogin(config, {
+      const result = await deps.deviceLogin(config, {
         scopes: SIGN_IN_SCOPES,
         prompt: (uri, code, seconds) => {
           printInfo(`Open ${uri} on any device and enter the code ${code}.`);
           printInfo(`Waiting up to ${Math.round(seconds / 60)} minutes for you to finish signing in.`);
         },
       });
+      saveValidatedSession(result);
     } else {
       printInfo("Opening your browser to sign in to Arcane. Come back here when it says you are signed in.");
-      result = await deps.browserLogin(config, {
+      await deps.browserLogin(config, {
         scopes: SIGN_IN_SCOPES,
         openUrl: deps.openUrl,
+        onValidated: saveValidatedSession,
         onCannotOpen: (url) => {
           printWarning("No browser could be opened. Open this address yourself, or run `spell login --device-code`:");
           printInfo(url);
         },
       });
+      if (!record) throw new Error("The browser sign-in ended without storing a session.");
     }
   } catch (error) {
-    if (error instanceof LoginTimeoutError || error instanceof LoginDeniedError) {
+    if (error instanceof KeychainUnavailableError) {
+      console.error(
+        `${error.message} Nothing was stored. If this machine has no keychain, ` +
+          "run `spell login --insecure-storage` to keep the session in a file instead " +
+          "(protected only by your account's file permissions).",
+      );
+    } else if (error instanceof LoginTimeoutError || error instanceof LoginDeniedError) {
       console.error(`${error.message} Nothing was changed.`);
     } else {
       console.error(`The sign-in did not complete: ${safeErrorText(error)}. Nothing was changed.`);
@@ -148,24 +162,7 @@ export async function runLogin(options: LoginOptions, deps: LoginDeps = defaultL
     return;
   }
 
-  const record = toSessionRecord(result, environment);
-  try {
-    deps.storage.save(record, { insecure: Boolean(options.insecureStorage) });
-  } catch (error) {
-    if (error instanceof KeychainUnavailableError) {
-      console.error(
-        `${error.message} Nothing was stored. If this machine has no keychain, ` +
-          "run `spell login --insecure-storage` to keep the session in a file instead " +
-          "(protected only by your account's file permissions).",
-      );
-      process.exit(1);
-      return;
-    }
-    console.error(`The session could not be stored: ${safeErrorText(error)}`);
-    process.exit(1);
-    return;
-  }
-
+  if (!record) throw new Error("The sign-in completed without a stored session.");
   printSuccess(`Signed in as ${describeAccount(record)}.`);
   if (options.insecureStorage) printWarning(INSECURE_STORAGE_WARNING);
 }

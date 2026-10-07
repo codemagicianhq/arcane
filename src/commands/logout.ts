@@ -1,6 +1,6 @@
 import { printInfo, printSuccess } from "../modules/banner.js";
 import { KeychainUnavailableError } from "../modules/credential-store.js";
-import { createSessionStorage, type SessionStorage } from "../modules/session-store.js";
+import { createSessionStorage, SessionClearError, type SessionStorage } from "../modules/session-store.js";
 
 /**
  * Runs `spell logout` (features/spell-login/PRD.md, R3): removes the session
@@ -14,6 +14,14 @@ export function runLogout(storage: SessionStorage = createSessionStorage()): voi
   try {
     removed = storage.clear().removed;
   } catch (error) {
+    if (error instanceof SessionClearError) {
+      const fileResult = error.removed.includes("file") ? "The insecure session file was removed. " : "";
+      console.error(
+        `${fileResult}${error.keychainError.message} Any session in the OS keychain could not be verified or removed.`,
+      );
+      process.exit(1);
+      return; // guard: process.exit is mocked in tests
+    }
     if (error instanceof KeychainUnavailableError) {
       console.error(`${error.message} The session could not be removed from it.`);
       process.exit(1);

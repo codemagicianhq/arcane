@@ -42,6 +42,18 @@ export default defineConfig({
         branches: 80,
         functions: 80,
         statements: 80,
+        "src/commands/login.ts": {
+          lines: 95,
+          branches: 95,
+          functions: 95,
+          statements: 95,
+        },
+        "src/modules/oidc.ts": {
+          lines: 95,
+          branches: 95,
+          functions: 95,
+          statements: 95,
+        },
         "src/modules/copier.ts": {
           lines: 95,
           branches: 95,

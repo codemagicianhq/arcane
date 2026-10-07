@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { runLogin, safeErrorText, type LoginDeps } from "../src/commands/login.js";
+import { defaultLoginDeps, describeAccount, runLogin, safeErrorText, type LoginDeps } from "../src/commands/login.js";
 import { runLogout } from "../src/commands/logout.js";
 import { runWhoami, type WhoamiDeps } from "../src/commands/whoami.js";
 import { KeychainUnavailableError, type SecretBackend } from "../src/modules/credential-store.js";
@@ -78,7 +79,11 @@ function deps(overrides: Partial<LoginDeps> = {}): LoginDeps {
     storage,
     environment: () => IDENTITY_ENVIRONMENTS.development,
     loadConfiguration: async () => fakeConfig,
-    browserLogin: async () => tokenResult(),
+    browserLogin: async (_config, options) => {
+      const result = tokenResult();
+      await options.onValidated?.(result);
+      return result;
+    },
     deviceLogin: async () => tokenResult(),
     openUrl: async () => true,
     isInteractive: () => true,
@@ -106,6 +111,39 @@ describe("identity environment", () => {
 });
 
 describe("spell login", () => {
+  it("wires the default environment and discovery adapter without starting a login", async () => {
+    const defaults = defaultLoginDeps();
+    expect(["production", "development"]).toContain(defaults.environment().environment);
+    expect(typeof defaults.isInteractive()).toBe("boolean");
+    const unreachable = {
+      ...IDENTITY_ENVIRONMENTS.development,
+      discoveryUrl: "http://127.0.0.1:1/.well-known/openid-configuration",
+    };
+    await expect(defaults.loadConfiguration(unreachable)).rejects.toBeInstanceOf(IdentityUnreachableError);
+  });
+
+  it("considers a terminal interactive only when both input and output are TTYs", () => {
+    const input = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
+    const output = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+    try {
+      const defaults = defaultLoginDeps();
+      Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+      expect(defaults.isInteractive()).toBe(true);
+      Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+      expect(defaults.isInteractive()).toBe(false);
+    } finally {
+      if (input) Object.defineProperty(process.stdin, "isTTY", input);
+      else delete (process.stdin as { isTTY?: boolean }).isTTY;
+      if (output) Object.defineProperty(process.stdout, "isTTY", output);
+      else delete (process.stdout as { isTTY?: boolean }).isTTY;
+    }
+  });
+
+  it("describes a production account without an optional email", () => {
+    expect(describeAccount({ sub: "account-123", email: null, environment: "production" })).toBe("account-123");
+  });
+
   it("signs in through the browser, stores the session in the keychain and names the account", async () => {
     await runLogin({}, deps());
     expect(exit).not.toHaveBeenCalled();
@@ -119,6 +157,16 @@ describe("spell login", () => {
     await runLogin({ deviceCode: true }, deps({ deviceLogin: device, isInteractive: () => false }));
     expect(device).toHaveBeenCalledOnce();
     expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("shows the device verification address, code, and wait time", async () => {
+    await runLogin({ deviceCode: true }, deps({ deviceLogin: async (_config, options) => {
+      options.prompt("https://example.test/device", "ABCD-1234", 600);
+      return tokenResult();
+    } }));
+    expect(allOutput()).toContain("https://example.test/device");
+    expect(allOutput()).toContain("ABCD-1234");
+    expect(allOutput()).toContain("10 minutes");
   });
 
   it("refuses a browser sign-in with no interactive terminal and points at --device-code (R16)", async () => {
@@ -135,6 +183,11 @@ describe("spell login", () => {
     expect(err.join("\n")).toContain("\"qa\" is not an environment");
   });
 
+  it("preserves an unexpected environment failure for the caller", async () => {
+    await expect(runLogin({}, deps({ environment: () => { throw new Error("environment adapter failed"); } })))
+      .rejects.toThrow("environment adapter failed");
+  });
+
   it("explains an unreachable identity service and stores nothing", async () => {
     await runLogin(
       {},
@@ -147,6 +200,15 @@ describe("spell login", () => {
     expect(exit).toHaveBeenCalledWith(1);
     expect(err.join("\n")).toContain("Could not reach the identity service at example.test");
     expect(storage.load()).toEqual({ state: "signed-out" });
+  });
+
+  it("redacts callback values when configuration fails unexpectedly", async () => {
+    await runLogin({}, deps({ loadConfiguration: async () => {
+      throw new Error("configuration failed ?code=private-code&state=private-state");
+    } }));
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(allOutput()).not.toContain("private-code");
+    expect(allOutput()).not.toContain("private-state");
   });
 
   it.each([
@@ -173,7 +235,10 @@ describe("spell login", () => {
   it("replaces an existing session after a new sign-in succeeds", async () => {
     await runLogin({}, deps());
     const second = { ...tokenResult(), sub: "second-account", refreshToken: "rt-second" + "y".repeat(1400) };
-    await runLogin({}, deps({ browserLogin: async () => second }));
+    await runLogin({}, deps({ browserLogin: async (_config, options) => {
+      await options.onValidated?.(second);
+      return second;
+    } }));
     expect(storage.load()).toMatchObject({ record: { sub: "second-account" } });
   });
 
@@ -198,6 +263,14 @@ describe("spell login", () => {
     expect(allOutput()).toContain("Insecure storage");
   });
 
+  it("reports a non-keychain storage failure without claiming sign-in success", async () => {
+    const failingStorage = { ...storage, save: () => { throw new Error("disk full"); } };
+    await runLogin({}, deps({ storage: failingStorage }));
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(allOutput()).toContain("disk full");
+    expect(allOutput()).not.toContain("Signed in as");
+  });
+
   it("tells the person what to do when no browser can be opened", async () => {
     await runLogin(
       {},
@@ -205,12 +278,21 @@ describe("spell login", () => {
         openUrl: async () => false,
         browserLogin: async (_c, o) => {
           o.onCannotOpen?.("http://127.0.0.1:1/authorize?x=1");
-          return tokenResult();
+          const result = tokenResult();
+          await o.onValidated?.(result);
+          return result;
         },
       }),
     );
     expect(allOutput()).toContain("No browser could be opened");
     expect(allOutput()).toContain("--device-code");
+  });
+
+  it("refuses a browser result when its adapter skipped session persistence", async () => {
+    await runLogin({}, deps({ browserLogin: async () => tokenResult() }));
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(storage.load()).toEqual({ state: "signed-out" });
+    expect(allOutput()).not.toContain("Signed in as");
   });
 });
 
@@ -302,11 +384,48 @@ describe("spell logout", () => {
     expect(text).toContain("this machine only");
   });
 
+  it("names the insecure file when that is the session medium", async () => {
+    await runLogin({ insecureStorage: true }, deps());
+    out.length = 0;
+    runLogout(storage);
+    expect(exit).not.toHaveBeenCalled();
+    expect(existsSync(join(dir, "session-insecure.json"))).toBe(false);
+    expect(out.join("\n")).toContain("removed the session from the insecure session file");
+  });
+
   it("reports an unusable keychain", () => {
     backend.broken = true;
     runLogout(storage);
     expect(exit).toHaveBeenCalledWith(1);
     expect(err.join("\n")).toContain("keychain is not available");
+  });
+
+  it("reports file removal even when unavailable keychain cleanup remains unverified", async () => {
+    backend.broken = true;
+    await runLogin({ insecureStorage: true }, deps());
+    expect(existsSync(join(dir, "session-insecure.json"))).toBe(true);
+    out.length = 0;
+    err.length = 0;
+
+    runLogout(storage);
+
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(existsSync(join(dir, "session-insecure.json"))).toBe(false);
+    expect(err.join("\n")).toContain("insecure session file was removed");
+    expect(err.join("\n")).toContain("keychain is not available");
+  });
+
+  it("keeps a direct keychain failure readable without exposing its cause", () => {
+    runLogout({ ...storage, clear: () => { throw new KeychainUnavailableError("delete", new Error("private value")); } });
+    expect(exit).toHaveBeenCalledWith(1);
+    expect(err.join("\n")).toContain("keychain is not available");
+    expect(err.join("\n")).not.toContain("private value");
+  });
+
+  it("does not hide an unexpected storage failure", () => {
+    expect(() => runLogout({ ...storage, clear: () => { throw new Error("disk unavailable"); } })).toThrow(
+      "disk unavailable",
+    );
   });
 });
 

@@ -135,4 +135,4 @@ Do not select weapon-carrying animations (Gun, Rifle, Shoot, Reload, Grenade, Bo
 
 ### Master Reference
 
-See dark-matter-complex/docs/animation-spec.md for the full cross-character mapping.
+See the shared character animation specification for the full cross-character mapping.
