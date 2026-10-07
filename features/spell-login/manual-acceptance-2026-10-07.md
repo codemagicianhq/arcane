@@ -155,7 +155,9 @@ For each extra run, record OS/version, Node version, branch commit SHA, whether 
 | AC3 device code on browserless host | Headless Linux | Redacted terminal result; completed on another device | Passed in disposable Alpine container with explicit file storage; live verify succeeded |
 | AC4 keychain empty after logout | Windows test profile | Entry counts before sign-in, after sign-in, after logout | Passed: three entries after sign-in; `logout` and signed-out `whoami` passed; operator refreshed Credential Manager and counted zero `arcane-cli` entries after logout |
 | AC5 no-keychain refusal and explicit file fallback | Headless Linux | Terminal refusal/warning; absent/present file; mode `600` | Passed: live refusal and explicit fallback observed, live verify succeeded, mode `600`, file absent after logout. Source inspection corroborates nonzero refusal and no file write; numeric exit and immediate file absence were not captured live. |
-| AC6 R3–R10 on three operating systems | GitHub Actions PR run | Links to Ubuntu, Windows, macOS `Sign-in tests` jobs | Pending |
+| AC6 R3–R10 on three operating systems | GitHub Actions PR #349 run | Links to Ubuntu, Windows, macOS `Sign-in tests` jobs | Passed: [Ubuntu](https://github.com/codemagicianhq/arcane/actions/runs/37700168036/job/113061447661?pr=349), [Windows](https://github.com/codemagicianhq/arcane/actions/runs/37700168036/job/113061447853?pr=349), and [macOS](https://github.com/codemagicianhq/arcane/actions/runs/37700168036/job/113061447569?pr=349) all completed successfully. |
+
+The AC6 jobs ran the mocked sign-in and session-storage test suite on GitHub-hosted Ubuntu, Windows, and macOS runners for commit `fd4f5c215fb89cc19298b777a07a603c1a37b2d0`. They do not replace the live browser, device-code, or native keychain checks above.
 
 Record failures and gotchas even when a later retry passes. A macOS Keychain access prompt, if testing manually on a Mac, may identify the `node` executable because the test runs the checkout directly; verify the prompt belongs to the expected local test before allowing it.
 
