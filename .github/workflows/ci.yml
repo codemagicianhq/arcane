@@ -131,3 +131,28 @@ jobs:
 
       - name: Test
         run: npm run test:coverage
+
+  auth-cross-platform:
+    name: Sign-in tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Mock identity and keychain fixtures exercise R3-R10 on each OS.
+      # Live tenant and real keychain acceptance checks remain manual.
+      - name: Test sign-in and session storage
+        run: npm test -- test/credential-store.test.ts test/session-store.test.ts test/login-commands.test.ts test/oidc.test.ts test/oidc-browser-opener.test.ts test/oidc-server-guard.test.ts --testTimeout=20000

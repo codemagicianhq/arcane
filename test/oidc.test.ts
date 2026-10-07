@@ -29,6 +29,10 @@ beforeAll(async () => {
 afterAll(() => provider.stop());
 beforeEach(() => {
   provider.failNextTokenWith = null;
+  provider.omitNextRefreshToken = false;
+  provider.nextIdentityClaims = "email";
+  provider.omitNextSubject = false;
+  provider.omitNextExpiresIn = false;
 });
 
 const load = () => loadIdentityConfiguration(environment, { allowInsecureHttp: true });
@@ -50,11 +54,40 @@ describe("loadIdentityConfiguration", () => {
     expect((error as Error).cause).toBeDefined();
   });
 
-  it("refuses an incomplete discovery document", async () => {
-    const fetchImpl: typeof fetch = async () => new Response(JSON.stringify({ issuer: "x" }), { status: 200 });
-    await expect(loadIdentityConfiguration(environment, { fetch: fetchImpl })).rejects.toBeInstanceOf(
-      IdentityUnreachableError,
-    );
+  it("accepts an injected discovery transport for a valid provider", async () => {
+    const seen: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      seen.push(String(input));
+      expect(init?.redirect).toBe("manual");
+      return fetch(input, init);
+    };
+    const config = await loadIdentityConfiguration(environment, { fetch: fetchImpl });
+    expect(config.serverMetadata().issuer).toBe(provider.issuer);
+    expect(seen).toEqual([environment.discoveryUrl]);
+  });
+
+  it.each(["issuer", "token_endpoint", "authorization_endpoint"] as const)(
+    "refuses discovery without %s",
+    async (missing) => {
+      const metadata: Record<string, string> = {
+        issuer: provider.issuer,
+        token_endpoint: `${provider.base}/token`,
+        authorization_endpoint: `${provider.base}/authorize`,
+      };
+      delete metadata[missing];
+      const fetchImpl: typeof fetch = async () => new Response(JSON.stringify(metadata), { status: 200 });
+      await expect(loadIdentityConfiguration(environment, { fetch: fetchImpl })).rejects.toBeInstanceOf(
+        IdentityUnreachableError,
+      );
+    },
+  );
+
+  it("reports a non-success discovery response without exposing its body", async () => {
+    const fetchImpl: typeof fetch = async () => new Response("private diagnostic", { status: 503 });
+    const error = await loadIdentityConfiguration(environment, { fetch: fetchImpl }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(IdentityUnreachableError);
+    expect((error as Error).message).not.toContain("private diagnostic");
+    expect((error as Error).cause).toBeInstanceOf(Error);
   });
 });
 
@@ -136,6 +169,89 @@ describe("browserLogin", () => {
     expect((error as Error).message).toContain("access_denied");
   });
 
+  it("does not show success when the token response has no refresh token", async () => {
+    const config = await load();
+    provider.omitNextRefreshToken = true;
+    let page = "";
+    const error = await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const redirect = authorize.headers.get("location");
+        expect(redirect).toBeTruthy();
+        const callback = await fetch(redirect!);
+        page = await callback.text();
+        return true;
+      },
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect(page).toContain("Sign-in not completed");
+    expect(page).not.toContain("Signed in to Arcane");
+  });
+
+  it("does not show success when the signed ID token has no account identifier", async () => {
+    const config = await load();
+    provider.omitNextSubject = true;
+    let page = "";
+    const error = await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const redirect = authorize.headers.get("location");
+        expect(redirect).toBeTruthy();
+        const callback = await fetch(redirect!);
+        page = await callback.text();
+        return true;
+      },
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect(page).toContain("Sign-in not completed");
+    expect(page).not.toContain("Signed in to Arcane");
+  });
+
+  it("does not show success when validated tokens cannot be stored", async () => {
+    const config = await load();
+    let page = "";
+    const error = await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      onValidated: () => { throw new Error("keychain save failed"); },
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const redirect = authorize.headers.get("location");
+        expect(redirect).toBeTruthy();
+        const callback = await fetch(redirect!);
+        page = await callback.text();
+        return true;
+      },
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("keychain save failed");
+    expect(page).toContain("Sign-in not completed");
+    expect(page).not.toContain("Signed in to Arcane");
+  });
+
+  it("uses preferred_username when email is absent and handles no optional account claim", async () => {
+    const config = await load();
+    provider.nextIdentityClaims = "preferred_username";
+    const preferred = await browserLogin(config, { scopes: SCOPES, openUrl: actAsBrowser });
+    expect(preferred.email).toBe(provider.email);
+
+    provider.nextIdentityClaims = "none";
+    const anonymous = await browserLogin(config, { scopes: SCOPES, openUrl: actAsBrowser });
+    expect(anonymous.sub).toBe(provider.sub);
+    expect(anonymous.email).toBeNull();
+  });
+
+  it("treats a missing optional token lifetime as immediately expired", async () => {
+    const config = await load();
+    provider.omitNextExpiresIn = true;
+    const result = await browserLogin(config, { scopes: SCOPES, openUrl: actAsBrowser });
+    expect(result.expiresAt.getTime()).toBe(result.obtainedAt.getTime());
+  });
+
   it("times out when no callback arrives, and reports when no browser could be opened", async () => {
     const config = await load();
     let told: string | null = null;
@@ -158,6 +274,8 @@ describe("browserLogin", () => {
         const redirect = new URL(new URL(url).searchParams.get("redirect_uri")!);
         const stray = await fetch(`${redirect.origin}/favicon.ico`);
         expect(stray.status).toBe(404);
+        const bareRoot = await fetch(redirect.origin);
+        expect(bareRoot.status).toBe(404);
         return actAsBrowser(url);
       },
     });
@@ -200,5 +318,13 @@ describe("refreshSession", () => {
   it("fails for a refresh token the provider does not know", async () => {
     const config = await load();
     await expect(refreshSession(config, "rt-never-issued", SCOPES)).rejects.toThrow();
+  });
+
+  it("keeps the previous refresh token when the provider does not rotate it", async () => {
+    const config = await load();
+    const first = await browserLogin(config, { scopes: SCOPES, openUrl: actAsBrowser });
+    provider.omitNextRefreshToken = true;
+    const second = await refreshSession(config, first.refreshToken, SCOPES);
+    expect(second.refreshToken).toBe(first.refreshToken);
   });
 });

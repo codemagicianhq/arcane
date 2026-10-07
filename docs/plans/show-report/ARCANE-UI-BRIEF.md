@@ -1,7 +1,7 @@
 # Cross-Repo Brief — Show Report in `arcane-ui` (SR-05a / SR-05b)
 
 > **What this is.** The input to `spell-plan` in the **private `arcane-ui` repository** (ADO,
-> `codemagicianllc/arcane/_git/arcane-ui`) — not a PRD, and not a backlog that repo inherits. Show
+> `{ADO_ORG}/arcane/_git/arcane-ui`) — not a PRD, and not a backlog that repo inherits. Show
 > Report's plan lives in `codemagicianhq/arcane` and deliberately specifies only the *interface*;
 > arcane-ui authors its own PRD and architecture from this brief, per
 > [PLAN.md](PLAN.md)'s "arcane-ui — the contract this plan fixes" section.

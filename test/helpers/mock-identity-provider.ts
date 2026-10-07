@@ -42,6 +42,14 @@ export class MockIdentityProvider {
   readonly tokenRequests: TokenRequestRecord[] = [];
   /** When set, the next token request fails with this OAuth error code. */
   failNextTokenWith: string | null = null;
+  /** When set, the next token response is otherwise valid but has no refresh token. */
+  omitNextRefreshToken = false;
+  /** Controls optional ID-token account claims in the next response. */
+  nextIdentityClaims: "email" | "preferred_username" | "none" = "email";
+  /** Omits the required account identifier from the next signed ID token. */
+  omitNextSubject = false;
+  /** Omits the optional token lifetime in the next response. */
+  omitNextExpiresIn = false;
   /** Characters in each issued refresh token; longer than one Windows credential by default. */
   refreshTokenLength = 1468;
 
@@ -92,23 +100,35 @@ export class MockIdentityProvider {
   }
 
   private async idToken(nonce: string | undefined): Promise<string> {
-    const jwt = new SignJWT({ email: this.email, ...(nonce ? { nonce } : {}) })
+    const identityClaims = this.nextIdentityClaims;
+    this.nextIdentityClaims = "email";
+    const omitSubject = this.omitNextSubject;
+    this.omitNextSubject = false;
+    let jwt = new SignJWT({
+      ...(identityClaims === "email" ? { email: this.email } : {}),
+      ...(identityClaims === "preferred_username" ? { preferred_username: this.email } : {}),
+      ...(nonce ? { nonce } : {}),
+    })
       .setProtectedHeader({ alg: "ES256", kid: this.kid })
       .setIssuer(this.issuer)
       .setAudience(this.clientId)
-      .setSubject(this.sub)
       .setIssuedAt()
       .setExpirationTime("1h");
+    if (!omitSubject) jwt = jwt.setSubject(this.sub);
     return jwt.sign(this.privateKey);
   }
 
   private async tokenResponse(scope: string, nonce: string | undefined): Promise<string> {
+    const refreshToken = this.omitNextRefreshToken ? undefined : this.newRefreshToken();
+    this.omitNextRefreshToken = false;
+    const includeExpiresIn = !this.omitNextExpiresIn;
+    this.omitNextExpiresIn = false;
     return JSON.stringify({
       token_type: "Bearer",
       access_token: randomBytes(600).toString("base64url"),
       id_token: await this.idToken(nonce),
-      refresh_token: this.newRefreshToken(),
-      expires_in: 3600,
+      ...(refreshToken ? { refresh_token: refreshToken } : {}),
+      ...(includeExpiresIn ? { expires_in: 3600 } : {}),
       scope,
     });
   }

@@ -44,6 +44,18 @@ export interface SessionRecord {
 
 export type SessionMedium = "keychain" | "file";
 
+/** Cleanup removed the listed media, but the OS keychain could not be verified or cleared. */
+export class SessionClearError extends Error {
+  constructor(
+    readonly keychainError: KeychainUnavailableError,
+    readonly removed: SessionMedium[],
+  ) {
+    super(keychainError.message);
+    this.name = "SessionClearError";
+    this.cause = keychainError;
+  }
+}
+
 export type SessionLoad =
   | { state: "signed-out"; keychainError?: KeychainUnavailableError }
   | { state: "ok"; source: SessionMedium; record: SessionRecord }
@@ -53,7 +65,7 @@ export interface SessionStorage {
   load(): SessionLoad;
   /** Throws `KeychainUnavailableError` when `insecure` is false and the keychain cannot be used (R6). */
   save(record: SessionRecord, options: { insecure: boolean }): void;
-  /** Removes the session from every medium. Succeeds when nothing is stored (R3). */
+  /** Removes the session from every medium. A partial cleanup error lists media actually removed (R3). */
   clear(): { removed: SessionMedium[] };
 }
 
@@ -238,14 +250,18 @@ export function createSessionStorage(options: SessionStorageOptions = {}): Sessi
       const removed: SessionMedium[] = [];
       let keychainError: unknown;
       try {
-        if (keychain.load().state !== "signed-out") removed.push("keychain");
+        const hadKeychainSession = keychain.load().state !== "signed-out";
         keychain.clear();
+        if (hadKeychainSession) removed.push("keychain");
       } catch (error) {
         keychainError = error;
       }
       if (fileBackend.exists()) {
         fileBackend.remove();
         removed.push("file");
+      }
+      if (keychainError instanceof KeychainUnavailableError) {
+        throw new SessionClearError(keychainError, removed);
       }
       if (keychainError) throw keychainError;
       return { removed };
