@@ -74,7 +74,7 @@ sequenceDiagram
     else Validation or storage fails
         OIDC-->>Loopback: Failure response
         Loopback-->>Browser: Fixed failure page
-        CLI-->>Person: Error; no success claim
+        CLI-->>Person: Error with no success claim
     end
 ```
 
@@ -105,7 +105,7 @@ sequenceDiagram
         CLI-->>Person: Signed in
     else No usable keychain
         Store-->>CLI: Storage failure
-        CLI-->>Person: Nothing stored; explain --insecure-storage
+        CLI-->>Person: Nothing stored and explain insecure storage flag
     end
 ```
 
