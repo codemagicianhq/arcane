@@ -6,6 +6,8 @@ source_intake: maintainer request, 2026-10-05 (sign-in for the CLI)
 
 # PRD - `spell login`: Sign In to the Arcane Account from the CLI
 
+Related: [[features/spell-login/architecture|Implementation architecture and diagrams]]
+
 Draft 2026-10-05. Decisions 1 to 6 were made by the maintainer in session on 2026-10-05; the hardening and adoption requirements (R12 and later) are proposals for review.
 
 ## Problem
