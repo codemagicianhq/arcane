@@ -277,7 +277,7 @@ describe("spell login", () => {
       deps({
         openUrl: async () => false,
         browserLogin: async (_c, o) => {
-          o.onCannotOpen?.("http://127.0.0.1:1/authorize?x=1");
+          o.onCannotOpen?.();
           const result = tokenResult();
           await o.onValidated?.(result);
           return result;
@@ -286,6 +286,7 @@ describe("spell login", () => {
     );
     expect(allOutput()).toContain("No browser could be opened");
     expect(allOutput()).toContain("--device-code");
+    expect(allOutput()).not.toContain("authorize?");
   });
 
   it("refuses a browser result when its adapter skipped session persistence", async () => {

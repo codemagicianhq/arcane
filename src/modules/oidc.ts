@@ -49,6 +49,13 @@ export class LoginTimeoutError extends Error {
   }
 }
 
+export class LoginBrowserUnavailableError extends Error {
+  constructor() {
+    super("No browser could be opened. Run `spell login --device-code` and finish signing in on another device.");
+    this.name = "LoginBrowserUnavailableError";
+  }
+}
+
 export class LoginDeniedError extends Error {
   constructor(code: string) {
     // `code` is the provider's error code (e.g. access_denied), never a secret.
@@ -139,8 +146,8 @@ export interface BrowserLoginOptions {
   openUrl: (url: string) => Promise<boolean>;
   /** Completes local persistence before the browser can claim sign-in succeeded. */
   onValidated?: (result: TokenResult) => void | Promise<void>;
-  /** Called with the URL when the browser could not be opened, so the person can open it by hand. */
-  onCannotOpen?: (url: string) => void;
+  /** Called when the browser could not be opened. The authorization URL stays private. */
+  onCannotOpen?: () => void;
   timeoutMs?: number;
 }
 
@@ -215,6 +222,10 @@ export async function browserLogin(
         res.writeHead(409, { "cache-control": "no-store" }).end();
         return;
       }
+      if (url.searchParams.get("state") !== state) {
+        res.writeHead(400, RESULT_HEADERS).end(FAILED_PAGE);
+        return;
+      }
       callbackConsumed = true;
 
       const redirectToResult = (result: BrowserResult): void => {
@@ -225,16 +236,13 @@ export async function browserLogin(
           location,
           "referrer-policy": "no-referrer",
         }).end();
+        if (result.kind === "success") {
+          // The session is already saved. A browser that never follows the
+          // redirect must not turn that success into a reported failure.
+          if (timer) clearTimeout(timer);
+          timer = setTimeout(() => resolve(result.result), Math.min(timeoutMs, 5_000));
+        }
       };
-
-      if (url.searchParams.get("state") !== state) {
-        redirectToResult({
-          kind: "failure",
-          page: FAILED_PAGE,
-          error: new Error("The sign-in response could not be verified."),
-        });
-        return;
-      }
 
       const errorCode = url.searchParams.get("error");
       if (errorCode) {
@@ -270,7 +278,10 @@ export async function browserLogin(
 
   try {
     const opened = await options.openUrl(authorizationUrl.href);
-    if (!opened) options.onCannotOpen?.(authorizationUrl.href);
+    if (!opened) {
+      options.onCannotOpen?.();
+      throw new LoginBrowserUnavailableError();
+    }
     return await tokens;
   } finally {
     close();
