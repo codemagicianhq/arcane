@@ -23,23 +23,28 @@ export interface IdentityEnvironmentConfig {
   discoveryUrl: string;
 }
 
+function defineIdentityEnvironment(
+  config: Omit<IdentityEnvironmentConfig, "discoveryUrl">,
+): IdentityEnvironmentConfig {
+  return {
+    ...config,
+    discoveryUrl: `https://${config.signInHost}/${config.tenantId}/v2.0/.well-known/openid-configuration`,
+  };
+}
+
 export const IDENTITY_ENVIRONMENTS: Readonly<Record<IdentityEnvironment, IdentityEnvironmentConfig>> = {
-  production: {
+  production: defineIdentityEnvironment({
     environment: "production",
     tenantId: "9f8edbfb-291c-4c4a-b9cc-8820a04f8973",
     signInHost: "arcaneai.ciamlogin.com",
     clientId: "7cd8f05d-9979-4458-8ca2-47c67748c41f",
-    discoveryUrl:
-      "https://arcaneai.ciamlogin.com/9f8edbfb-291c-4c4a-b9cc-8820a04f8973/v2.0/.well-known/openid-configuration",
-  },
-  development: {
+  }),
+  development: defineIdentityEnvironment({
     environment: "development",
     tenantId: "b365de0e-3026-4afe-bf5b-556fccb4ffcf",
     signInHost: "arcaneaidev.ciamlogin.com",
     clientId: "651be720-83cc-452b-8346-abf20713ad12",
-    discoveryUrl:
-      "https://arcaneaidev.ciamlogin.com/b365de0e-3026-4afe-bf5b-556fccb4ffcf/v2.0/.well-known/openid-configuration",
-  },
+  }),
 };
 
 /**
