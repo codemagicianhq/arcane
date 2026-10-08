@@ -1,8 +1,8 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   IdentityUnreachableError,
+  LoginBrowserUnavailableError,
   LoginDeniedError,
-  LoginTimeoutError,
   browserLogin,
   deviceLogin,
   loadIdentityConfiguration,
@@ -186,22 +186,27 @@ describe("browserLogin", () => {
     expect(url.searchParams.get("scope")).toBe(SCOPES.join(" "));
   });
 
-  it("rejects a callback whose state does not match, and the loopback server is closed afterwards", async () => {
+  it("rejects a wrong-state callback without consuming the subsequent valid callback", async () => {
     const config = await load();
     let callbackPort = 0;
-    const error = await browserLogin(config, {
+    const result = await browserLogin(config, {
       scopes: SCOPES,
       timeoutMs: HEAVY_TEST_TIMEOUT,
       openUrl: async (url) => {
-        const authorize = new URL(url);
-        const redirect = new URL(authorize.searchParams.get("redirect_uri")!);
-        callbackPort = Number(redirect.port);
-        authorize.searchParams.set("state", "forged-state-value-0000000000");
-        return actAsBrowser(authorize.href);
+        const authorize = await fetch(url, { redirect: "manual" });
+        const callback = new URL(authorize.headers.get("location")!);
+        callbackPort = Number(callback.port);
+        callback.searchParams.set("state", "forged-state-value-0000000000");
+        const rejected = await fetch(callback);
+        expect(rejected.status).toBe(400);
+        expect(rejected.headers.get("referrer-policy")).toBe("no-referrer");
+        expect(await rejected.text()).not.toContain("forged-state-value");
+        const valid = await fetch(authorize.headers.get("location")!);
+        expect(valid.ok).toBe(true);
+        return true;
       },
-    }).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(Error);
-    expect(String((error as Error).message)).not.toContain("forged-state-value");
+    });
+    expect(result.sub).toBe(provider.sub);
     // the port is released: a connection attempt now fails
     await expect(fetch(`http://127.0.0.1:${callbackPort}/`)).rejects.toThrow();
   });
@@ -231,7 +236,7 @@ describe("browserLogin", () => {
     expect((error as Error).message).toContain("access_denied");
   });
 
-  it("rejects a provider error callback whose state does not match", async () => {
+  it("rejects a provider error callback whose state does not match, then accepts a valid denial", async () => {
     const config = await load();
     const error = await browserLogin(config, {
       scopes: SCOPES,
@@ -241,14 +246,15 @@ describe("browserLogin", () => {
         redirect.searchParams.set("error", "access_denied");
         redirect.searchParams.set("state", "forged-state-value-0000000000");
         const res = await fetch(redirect.href);
-        expect(new URL(res.url).pathname).toBe("/result/failure");
+        expect(res.status).toBe(400);
         expect(await res.text()).not.toContain("forged-state-value");
+        redirect.searchParams.set("state", new URL(url).searchParams.get("state")!);
+        const denied = await fetch(redirect.href);
+        expect(new URL(denied.url).pathname).toBe("/result/failure");
         return true;
       },
     }).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(Error);
-    expect(error).not.toBeInstanceOf(LoginDeniedError);
-    expect((error as Error).message).toBe("The sign-in response could not be verified.");
+    expect(error).toBeInstanceOf(LoginDeniedError);
   });
 
   it("does not show success when the token response has no refresh token", async () => {
@@ -334,17 +340,37 @@ describe("browserLogin", () => {
     expect(result.expiresAt.getTime()).toBe(result.obtainedAt.getTime());
   });
 
-  it("times out when no callback arrives, and reports when no browser could be opened", async () => {
+  it("fails promptly when no browser could be opened without exposing the authorization URL", async () => {
     const config = await load();
-    let told: string | null = null;
+    let notified = false;
     const error = await browserLogin(config, {
       scopes: SCOPES,
       timeoutMs: 300,
       openUrl: async () => false,
-      onCannotOpen: (url) => (told = url),
+      onCannotOpen: () => { notified = true; },
     }).catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(LoginTimeoutError);
-    expect(told).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/authorize\?/);
+    expect(error).toBeInstanceOf(LoginBrowserUnavailableError);
+    expect(notified).toBe(true);
+    expect((error as Error).message).not.toContain("state=");
+  });
+
+  it("reports success after persistence when the browser never follows the result redirect", async () => {
+    const config = await load();
+    let persisted = false;
+    const result = await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: 500,
+      onValidated: () => { persisted = true; },
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const callback = await fetch(authorize.headers.get("location")!, { redirect: "manual" });
+        expect(callback.status).toBe(303);
+        expect(callback.headers.get("location")).toBe("/result/success");
+        return true;
+      },
+    });
+    expect(persisted).toBe(true);
+    expect(result.sub).toBe(provider.sub);
   });
 
   it("ignores stray requests such as a favicon and keeps waiting", async () => {

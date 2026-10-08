@@ -139,9 +139,8 @@ export async function runLogin(options: LoginOptions, deps: LoginDeps = defaultL
         scopes: SIGN_IN_SCOPES,
         openUrl: deps.openUrl,
         onValidated: saveValidatedSession,
-        onCannotOpen: (url) => {
-          printWarning("No browser could be opened. Open this address yourself, or run `spell login --device-code`:");
-          printInfo(url);
+        onCannotOpen: () => {
+          printWarning("No browser could be opened. Run `spell login --device-code` to sign in on another device.");
         },
       });
       if (!record) throw new Error("The browser sign-in ended without storing a session.");

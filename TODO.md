@@ -12,6 +12,12 @@ last_updated: 2026-10-07
 
 ### Bugs
 
+- [x] **MEDIUM bug: a saved browser-login session can be reported as unchanged if the browser misses the success page.** Found in the 2026-10-08 independent auth review. Repro: complete a valid loopback callback but do not request `/result/success`; the CLI times out after saving the session. Expected: terminal success reflects persisted state. Fixed on `sessions/2026-10-08-login-review-fixes` by completing after a short result-page grace period; regression in `test/oidc.test.ts`. <!-- status: done -->
+
+- [x] **LOW bug: a wrong-state loopback callback consumes the valid callback slot.** Found in the 2026-10-08 independent auth review. Repro: send a forged callback before the valid one. Expected: reject the forged request without blocking the valid one. Fixed on `sessions/2026-10-08-login-review-fixes` with an HTTP regression in `test/oidc.test.ts`. <!-- status: done -->
+
+- [x] **LOW bug: browser-open fallback prints an authorization URL containing `state`.** Found in the 2026-10-08 independent auth review against PRD R10. Repro: make the browser opener fail. Expected: give a safe recovery path without printing the URL. Fixed on `sessions/2026-10-08-login-review-fixes` by exiting promptly with device-code guidance. <!-- status: done -->
+
 - [x] **HIGH bug: the loopback callback can show “Signed in to Arcane” before the CLI confirms a usable session.** Resolved 2026-10-07 in [PR #349](https://github.com/codemagicianhq/arcane/pull/349): `browserLogin` validates and stores before selecting the success result, with HTTP-level regressions for missing refresh tokens, missing subjects, and failed persistence.
 
 - [x] **MEDIUM bug: headless `spell logout` removes the insecure file but reports only a keychain failure.** Resolved 2026-10-07 in [PR #349](https://github.com/codemagicianhq/arcane/pull/349): partial cleanup reports the removed insecure file separately from unverified keychain cleanup and retains a nonzero result. Evidence: `features/spell-login/manual-acceptance-2026-10-07.md`. <!-- status: done -->
