@@ -54,7 +54,7 @@ The CLI is MIT-licensed and must stay fully usable signed out. Nothing in this P
 | R4a | The refresh token is stored split across entries as designed in the gate section: chunks of at most 1,000 characters under a generation id, an index entry written last with the chunk count and a SHA-256, old generation deleted afterwards, a failed read treated as signed out. |
 | R6 | No keychain: refuse with a message that names the cause and the opt-in flag, and write nothing. |
 | R7 | Every command that worked signed out still works signed out, and a broken or locked keychain never changes that. |
-| R8 | The flow uses PKCE and a `state` value, validates the returned ID token's issuer, audience, expiry and nonce, and listens for the redirect on `127.0.0.1` only, on a random free port, closing the listener on completion, timeout or interrupt. |
+| R8 | The flow uses PKCE and a `state` value, validates the returned ID token's issuer, audience, expiry and nonce, and listens for the redirect on `127.0.0.1` only, on a random free port. After processing the query-bearing OAuth callback exactly once, it redirects the browser to a query-free local result route and keeps the listener open until that route is served. Result pages use `no-store`, `no-referrer`, `nosniff`, and a restrictive content security policy. The listener closes on result delivery, timeout, failure or interrupt. |
 | R9 | The environment is selected by `ARCANE_ENVIRONMENT=dev`; the default is production. The two tenants' identifiers are public configuration, not secrets, and are kept in one module. |
 | R10 | No token, code, or `state` value is ever written to a log, an error message or the terminal. |
 | R11 | `spell whoami` prints the account's email and `sub`, the environment, and when the session expires; with `--verify` it checks the session against the identity tenant. Signed out, it says so and exits non-zero. |
@@ -93,6 +93,7 @@ Not decided. Each is marked with the release it would land in. The aim is that a
 | AC4 | `spell logout` leaves nothing behind in the keychain | Keychain listing before and after |
 | AC5 | With no keychain, `spell login` refuses and writes nothing; with `--insecure-storage` it works and warns | Terminal output on a headless Linux container |
 | AC6 | Tests for R3 to R10 pass on macOS, Windows and Linux in CI | CI run |
+| AC7 | The loopback callback redirects to a query-free success or failure URL, rejects a replayed callback, sends the required security headers, and closes after the result is served | HTTP-level integration tests |
 
 ## Open questions
 

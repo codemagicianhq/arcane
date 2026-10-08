@@ -34,7 +34,7 @@ flowchart LR
     Loopback --> OIDC
 ```
 
-The CLI selects production by default or development with `ARCANE_ENVIRONMENT=dev`. The listener binds to `127.0.0.1` on a free port and closes on completion, timeout, or failure. The fixed browser result page contains no account details or tokens. The callback URL still contains the authorization code; a query-free result route and response-header hardening are tracked separately before integrating a visual Gate page.
+The CLI selects production by default or development with `ARCANE_ENVIRONMENT=dev`. The listener binds to `127.0.0.1` on a free port. It consumes one query-bearing OAuth callback, finishes validation and persistence, and redirects the browser to `/result/success` or `/result/failure`; those result URLs contain no query. The listener stays open through that result request and then closes. A replayed callback is rejected. Result pages contain no account details or tokens and send `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and a restrictive CSP.
 
 Only the refresh token, `sub`, email, environment, acquisition time, and access-token expiry hint are stored. Access and ID tokens are not stored. The default keychain uses multiple credential entries because a real refresh token exceeds the measured Windows entry limit. The file fallback requires an explicit flag and prints a warning.
 
@@ -67,13 +67,17 @@ sequenceDiagram
         CLI->>Store: Save refresh token and metadata
         Store-->>CLI: Saved
         CLI-->>OIDC: Persistence complete
-        OIDC-->>Loopback: Success response
-        Loopback-->>Browser: Fixed success page
+        OIDC-->>Loopback: Select success result
+        Loopback-->>Browser: 303 /result/success
+        Browser->>Loopback: GET query-free result route
+        Loopback-->>Browser: Fixed success page + security headers
         OIDC-->>CLI: Return account after browser response
         CLI-->>Person: Signed in
     else Validation or storage fails
-        OIDC-->>Loopback: Failure response
-        Loopback-->>Browser: Fixed failure page
+        OIDC-->>Loopback: Select failure result
+        Loopback-->>Browser: 303 /result/failure
+        Browser->>Loopback: GET query-free result route
+        Loopback-->>Browser: Fixed failure page + security headers
         CLI-->>Person: Error with no success claim
     end
 ```
