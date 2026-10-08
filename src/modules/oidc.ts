@@ -120,6 +120,19 @@ const FAILED_PAGE = [
   "<p>Go back to the terminal for what to do next.</p></body>",
 ].join("");
 
+const RESULT_HEADERS = {
+  "cache-control": "no-store",
+  "content-security-policy":
+    "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  "content-type": "text/html; charset=utf-8",
+  "referrer-policy": "no-referrer",
+  "x-content-type-options": "nosniff",
+} as const;
+
+type BrowserResult =
+  | { kind: "success"; page: string; result: TokenResult }
+  | { kind: "failure"; page: string; error: unknown };
+
 export interface BrowserLoginOptions {
   scopes: readonly string[];
   /** Opens the URL in the person's browser; resolves false when no browser could be opened. */
@@ -170,6 +183,8 @@ export async function browserLogin(
 
   const timeoutMs = options.timeoutMs ?? 5 * 60 * 1000;
   let timer: NodeJS.Timeout | undefined;
+  let callbackConsumed = false;
+  let browserResult: BrowserResult | undefined;
   const close = (): void => {
     if (timer) clearTimeout(timer);
     server.closeAllConnections?.();
@@ -179,14 +194,55 @@ export async function browserLogin(
   const tokens = new Promise<TokenResult>((resolve, reject) => {
     server.on("request", (req, res) => {
       const url = new URL(req.url ?? "/", redirectUri);
+
+      if (url.pathname === "/result/success" || url.pathname === "/result/failure") {
+        const expectedPath = browserResult?.kind === "success" ? "/result/success" : "/result/failure";
+        if (!browserResult || url.pathname !== expectedPath || url.search !== "") {
+          res.writeHead(404).end();
+          return;
+        }
+        res.writeHead(200, RESULT_HEADERS).end(browserResult.page);
+        if ("result" in browserResult) resolve(browserResult.result);
+        else reject(browserResult.error);
+        return;
+      }
+
       if (url.pathname !== "/" || (!url.searchParams.has("code") && !url.searchParams.has("error"))) {
         res.writeHead(404).end();
         return;
       }
+      if (callbackConsumed) {
+        res.writeHead(409, { "cache-control": "no-store" }).end();
+        return;
+      }
+      callbackConsumed = true;
+
+      const redirectToResult = (result: BrowserResult): void => {
+        browserResult = result;
+        const location = result.kind === "success" ? "/result/success" : "/result/failure";
+        res.writeHead(303, {
+          "cache-control": "no-store",
+          location,
+          "referrer-policy": "no-referrer",
+        }).end();
+      };
+
+      if (url.searchParams.get("state") !== state) {
+        redirectToResult({
+          kind: "failure",
+          page: FAILED_PAGE,
+          error: new Error("The sign-in response could not be verified."),
+        });
+        return;
+      }
+
       const errorCode = url.searchParams.get("error");
       if (errorCode) {
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(FAILED_PAGE);
-        reject(new LoginDeniedError(errorCode.replace(/[^a-z_]/gi, "")));
+        redirectToResult({
+          kind: "failure",
+          page: FAILED_PAGE,
+          error: new LoginDeniedError(errorCode.replace(/[^a-z_]/gi, "")),
+        });
         return;
       }
       client
@@ -199,12 +255,10 @@ export async function browserLogin(
         .then(async (response) => {
           const result = toTokenResult(response);
           await options.onValidated?.(result);
-          res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(CLOSE_PAGE);
-          resolve(result);
+          redirectToResult({ kind: "success", page: CLOSE_PAGE, result });
         })
         .catch((error: unknown) => {
-          res.writeHead(200, { "content-type": "text/html; charset=utf-8" }).end(FAILED_PAGE);
-          reject(error);
+          redirectToResult({ kind: "failure", page: FAILED_PAGE, error });
         });
     });
     timer = setTimeout(() => reject(new LoginTimeoutError()), timeoutMs);

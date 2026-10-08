@@ -109,6 +109,61 @@ describe("browserLogin", () => {
     HEAVY_TEST_TIMEOUT,
   );
 
+  it("moves the browser to a query-free result page with restrictive security headers", async () => {
+    const config = await load();
+    let resultUrl = "";
+    await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const callbackUrl = authorize.headers.get("location");
+        expect(callbackUrl).toBeTruthy();
+        expect(new URL(callbackUrl!).searchParams.has("code")).toBe(true);
+
+        const resultPage = await fetch(callbackUrl!);
+        resultUrl = resultPage.url;
+        expect(await resultPage.text()).toContain("Signed in to Arcane");
+        expect(resultPage.headers.get("cache-control")).toBe("no-store");
+        expect(resultPage.headers.get("referrer-policy")).toBe("no-referrer");
+        expect(resultPage.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(resultPage.headers.get("content-security-policy")).toContain("default-src 'none'");
+        return true;
+      },
+    });
+    expect(new URL(resultUrl).pathname).toBe("/result/success");
+    expect(new URL(resultUrl).search).toBe("");
+  });
+
+  it("rejects a replayed authorization callback before serving the result", async () => {
+    const config = await load();
+    await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const callbackUrl = authorize.headers.get("location");
+        expect(callbackUrl).toBeTruthy();
+
+        const first = await fetch(callbackUrl!, { redirect: "manual" });
+        expect(first.status).toBe(303);
+        expect(first.headers.get("location")).toBe("/result/success");
+
+        const replay = await fetch(callbackUrl!, { redirect: "manual" });
+        expect(replay.status).toBe(409);
+
+        const wrongState = await fetch(new URL("/result/failure", callbackUrl!));
+        expect(wrongState.status).toBe(404);
+        const resultUrl = new URL(first.headers.get("location")!, callbackUrl!);
+        const resultWithQuery = await fetch(`${resultUrl.href}?code=must-not-be-accepted`);
+        expect(resultWithQuery.status).toBe(404);
+        const result = await fetch(resultUrl);
+        expect(result.status).toBe(200);
+        return true;
+      },
+    });
+  });
+
   it("sends the redirect to 127.0.0.1 on an ephemeral port, with PKCE S256, state and nonce", async () => {
     const config = await load();
     let seen = "";
@@ -157,16 +212,43 @@ describe("browserLogin", () => {
       scopes: SCOPES,
       timeoutMs: HEAVY_TEST_TIMEOUT,
       openUrl: async (url) => {
-        const redirect = new URL(new URL(url).searchParams.get("redirect_uri")!);
+        const authorize = new URL(url);
+        const redirect = new URL(authorize.searchParams.get("redirect_uri")!);
         redirect.searchParams.set("error", "access_denied");
-        redirect.searchParams.set("state", "whatever");
+        redirect.searchParams.set("state", authorize.searchParams.get("state")!);
         const res = await fetch(redirect.href);
+        expect(new URL(res.url).pathname).toBe("/result/failure");
+        expect(new URL(res.url).search).toBe("");
+        expect(res.headers.get("cache-control")).toBe("no-store");
+        expect(res.headers.get("referrer-policy")).toBe("no-referrer");
+        expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+        expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");
         expect(await res.text()).not.toContain("whatever");
         return true;
       },
     }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(LoginDeniedError);
     expect((error as Error).message).toContain("access_denied");
+  });
+
+  it("rejects a provider error callback whose state does not match", async () => {
+    const config = await load();
+    const error = await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      openUrl: async (url) => {
+        const redirect = new URL(new URL(url).searchParams.get("redirect_uri")!);
+        redirect.searchParams.set("error", "access_denied");
+        redirect.searchParams.set("state", "forged-state-value-0000000000");
+        const res = await fetch(redirect.href);
+        expect(new URL(res.url).pathname).toBe("/result/failure");
+        expect(await res.text()).not.toContain("forged-state-value");
+        return true;
+      },
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(LoginDeniedError);
+    expect((error as Error).message).toBe("The sign-in response could not be verified.");
   });
 
   it("does not show success when the token response has no refresh token", async () => {
@@ -276,6 +358,8 @@ describe("browserLogin", () => {
         expect(stray.status).toBe(404);
         const bareRoot = await fetch(redirect.origin);
         expect(bareRoot.status).toBe(404);
+        const earlyResult = await fetch(`${redirect.origin}/result/success`);
+        expect(earlyResult.status).toBe(404);
         return actAsBrowser(url);
       },
     });
