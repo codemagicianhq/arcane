@@ -107,7 +107,8 @@ scrubbed. Two of the matched names were a product slug inside an old decision's 
 text, one an Azure DevOps organization in a remote URL. The fix is the sanctioned one (ARC-031 class
 placeholders); the lesson is that a denylist added after the fact needs a repository-wide scrub, or
 the next unrelated commit pays for it. Two image prompts under `src/assets/.arcane/image-prompts/`
-are still flagged and block `npm run build` locally (TODO.md, "LOW: two image prompts").
+were flagged the same way on 2026-10-06; the login session scrubbed them on `main` (`ebf405b`) before
+this close, and `npm run build` exited 0 again on this machine when checked on 2026-10-09.
 
 #### The TODO's literal reading was not the decision; the census was
 
@@ -132,7 +133,6 @@ spell hosts a fragment that uses the same command; the fix was the same one the 
 - **ARC-053** awaits the operator's accept, revise or reject (`DECISIONS.md`).
 - **Next release is 1.12.0** — registered in `TODO.md` ("Next release is 1.12.0").
 - **Primary checkout repair** — the operator's; its state at close is recorded in the handoff.
-- **Two image prompts flagged by the local org-token denylist** — `TODO.md` ("LOW: two image prompts").
 - **Dependabot high-severity alert** on the default branch ([dependabot/22](https://github.com/codemagicianhq/arcane/security/dependabot/22)) — the operator's.
 - **The pluggable-skeleton idea** — `IDEAS.md` (2026-10-02 20:56); explore with `spell-brainstorm`.
 - Unchanged from before: `TODO.md` ("LOW: `spell doctor`'s unowned-package check (R-295b) misses two shapes").
