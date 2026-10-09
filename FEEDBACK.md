@@ -114,3 +114,24 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-04-issue-wave-297-325.md`, lesson "A closed issue is not proof its change shipped".
+
+## Feedback — Arcane workflow (2026-10-09)
+
+**Session:** Branch naming, written once — #328 to 1.11.0 and branch naming to 1.11.4 (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- A four-second `npm ci` run in the background, with nothing else to do, left the session idle for 73 minutes: the completion notice is delivered on the next turn, and nothing in the agent rules says to keep short work in the foreground.
+- `spell-open-session`'s Mutation Guard ran `git switch -c` in a primary checkout another session was using; that session's staged files followed HEAD and its next commit landed on the new branch. The guard checks remote, branch and PR state, not whether the checkout is occupied (ARC-028 R3), and `git worktree list` cannot show a second session sharing one worktree.
+- The pre-PR rebase (`spell-create-pull-request` Step 0.6) pulled in new dependencies and tests that spawn the built CLI; the pre-push suite then failed twice with a `0 test` file, because `node_modules` and `dist/` still matched the old tree. Neither spell says to reinstall and rebuild after a rebase.
+- The pre-commit org-token scan (`check:staged-org-tokens`) reads every staged file whole, so a denylist added after the fact blocks any commit touching a file whose unchanged lines match; three unrelated lines on `main` had to be scrubbed before the session's own `TODO.md` and `DECISIONS.md` edits could be committed.
+
+### Improvement Items
+- [ ] In `universal-agent-rules.md` (or `agent-policies.md`), add: run any task under a few minutes in the foreground; never end a turn only to wait for a background notice. <!-- upstream: queued -->
+- [ ] In `spell-open-session`'s Mutation Guard and isolation-primitive selection, before `git switch -c` in the primary checkout, check `git status --short` for staged or untracked files the session did not write and the session roster for a busy peer; when either shows activity, create a linked worktree from the trunk instead (ARC-028 R3), and never repair a peer's branch. <!-- upstream: queued -->
+- [ ] In `spell-create-pull-request` Step 0.6 and `spell-commit-work` step 9b, after a rebase that changes `package-lock.json` or `src/`, run the dependency install and the build before the push, so the pre-push suite tests the rebased tree. <!-- upstream: queued -->
+- [ ] In `scripts/check-staged-org-tokens.ts`, scan only the lines a commit adds (or report unchanged-line hits as advisory), and have `spell ward` or `spell doctor` offer a repository-wide scrub when a local denylist is created, so a new denylist does not block unrelated commits. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-09-branch-naming-written-once.md`, lessons "A backgrounded four-second task stalled the session for 73 minutes", "Two sessions in one primary checkout: `git switch -c` carried a peer's staged work onto my branch", "After a rebase, the suite lies until the dependencies and `dist/` match the new tree", "A local denylist blocks commits on lines nobody changed".
