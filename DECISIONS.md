@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -84,7 +84,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-050](#arc-050--decision-number-allocation-across-parallel-sessions) | Decision-Number Allocation Across Parallel Sessions | 2026-09-27 | Accepted   |
 | [ARC-051](#arc-051--placeholder-taxonomy-for-governance-documents) | Placeholder Taxonomy for Governance Documents | 2026-09-27 | Accepted   |
 | [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Accepted   |
-| [ARC-053](#arc-053--branch-naming-one-rule-per-actor-written-once) | Branch Naming: One Rule per Actor, Written Once | 2026-10-06 | Proposed |
+| [ARC-053](#arc-053--branch-naming-one-rule-per-actor-written-once) | Branch Naming: One Rule per Actor, Written Once | 2026-10-06 | Accepted |
 | [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) | Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token | 2026-10-05 | Accepted |
 
 ---
@@ -3393,7 +3393,7 @@ The two lists differ in kind. A newly available component is a preference: nothi
 ## ARC-053 — Branch Naming: One Rule per Actor, Written Once
 
 **Date:** 2026-10-06
-**Status:** Proposed (drafted by the implementing agent from the operator's calls in session on 2026-10-03 — keep both formats, decide by who creates the branch — and on 2026-10-06 — no format repeated by hand, not even twice. Accepting it is the operator's.)
+**Status:** Accepted — operator, 2026-10-10. Drafted by the implementing agent from the operator's calls in session on 2026-10-03 (keep both formats, decide by who creates the branch) and 2026-10-06 (no format repeated by hand, not even twice); implemented in 1.11.4.
 **Related:** [ARC-009](#arc-009--session-naming-and-pr-lifecycle-reliability-policy) (the session-branch helper this rule keeps), [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) (the fragment mechanism this extends beyond spells), [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work) (worktrees and parallel subagents are the branches this rule now names), [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts)
 **Intake:** TODO.md ("MEDIUM: Claude Code worktree branches bypass Arcane's branch-naming standard"), operator report of 2026-09-02
 

@@ -8,6 +8,8 @@ last_updated: 2026-10-09
 
 ## Open Items
 
+- [ ] **A cloud session's pull request arrives on a random `claude/<adjective>-<noun>-<hash>` branch, and ARC-053 cannot catch it (raised 2026-10-10).** ARC-053 renames a non-compliant branch on sight from inside a session, but a cloud session creates its branch before any spell runs and may open the pull request without one. PR 354 (2026-10-10) arrived that way. Decide: accept the generated name for cloud-originated pull requests and say so in the branch-naming fragment, or add a rename step the cloud session runs at start (the fragment is read at session start already; the rename gate would need to run there too). Until decided, merging such a pull request and letting the branch delete is the right end.
+
 <!-- Add task items here during sessions. Mark completed with [x] and date. -->
 
 ### Bugs
