@@ -19,6 +19,10 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 The branch formats are written in one place, and every assistant reads them at session start (TODO.md "Claude Code worktree branches bypass Arcane's branch-naming standard"; decision drafted as ARC-053).
 
+### Added
+
+- **`spell login`, `spell logout` and `spell whoami`.** Sign in to the Arcane account from the CLI: a browser flow with PKCE by default, `--device-code` for machines with no browser. The session is kept in the OS keychain, split across entries so Windows' credential-size limit does not apply; with no keychain, `spell login` refuses unless `--insecure-storage` is passed. `whoami` shows who is signed in (`--verify` checks with the identity service); `logout` removes the session from this machine. Decisions in ARC-054; requirements in `features/spell-login/PRD.md`. (Entry added 2026-10-09; the commands shipped in this release without one.)
+
 ### Changed
 
 - **One branch-naming rule, three actors, one source.** The rule now lives in the ARC-039 fragment `.arcane/spells/_fragments/branch-naming.md`: humans `type/short-description`; interactive sessions, including every worktree they open and every parallel subagent they spawn, the session format with `-<agent>` for a parallel subagent; autonomous roster agents the agent-slug format, unchanged. A tool-generated name such as `claude/<adjective>-<surname>-<hash>` is noncompliant everywhere. `git-conventions.md`, the Copilot instruction file, `spell-open-session` and `spell-create-pull-request` host the rule as fragment spans; `agent-policies.md`, the agents template, `universal-agent-rules.md`, `spell-commit-work`, `spell-architect` and `spell-full-cycle` reference it instead of restating it. A test scans every shipped Markdown asset, every TypeScript source and this repository's own instruction files for a format written anywhere else.

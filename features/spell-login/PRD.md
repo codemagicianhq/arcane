@@ -1,5 +1,5 @@
 ---
-status: draft
+status: shipped
 tracking_mode: internal
 source_intake: maintainer request, 2026-10-05 (sign-in for the CLI)
 ---
@@ -8,7 +8,7 @@ source_intake: maintainer request, 2026-10-05 (sign-in for the CLI)
 
 Related: [[features/spell-login/architecture|Implementation architecture and diagrams]]
 
-Draft 2026-10-05. Decisions 1 to 6 were made by the maintainer in session on 2026-10-05; the hardening and adoption requirements (R12 and later) are proposals for review.
+Drafted 2026-10-05. Shipped: the commands in `arcane-cli` 1.11.4 and the callback fix in 1.11.5; the 2026-10-08 callback hardening (AC7) is on `main` and unreleased as of 2026-10-09. Decisions 1 to 6 were made by the maintainer in session on 2026-10-05 and are recorded in [[DECISIONS#ARC-054|ARC-054 — Sign-In from the CLI]]; the hardening and adoption requirements (R12 and later) are proposals for review.
 
 ## Problem
 
@@ -24,7 +24,7 @@ The CLI is MIT-licensed and must stay fully usable signed out. Nothing in this P
 4. **Flow: the browser (loopback) flow by default, `--device-code` for machines with no browser.** The `arcane-cli` app registration already allows the `http://127.0.0.1` redirect and the device-code flow. If no browser can be opened, the CLI suggests `--device-code` and does not hang.
 
 5. **`spell whoami` ships in the first release.** It prints the signed-in account and whether the stored session is still valid, without contacting the network unless asked.
-6. **`spell login` asks for a read scope on the Arcane service API up front, along with `openid`, `profile` and `offline_access`.** Nothing calls that API in the first release. Asking at first sign-in means the person consents once instead of seeing a second consent screen when a later release starts using it. The scope's name is kept out of this document until it ships.
+6. **`spell login` asks for `openid`, `profile`, `email` and `offline_access`.** The read scope on the Arcane service API was to be requested up front as well, so the person consents once instead of seeing a second consent screen later; it is held back until that API's name can ship publicly, and `SIGN_IN_SCOPES` in `src/modules/identity-config.ts` is the one place to add it. Amended 2026-10-09 to match the code; the intent is recorded in [[DECISIONS#ARC-054|ARC-054]].
 
 ## Gate: the Windows storage spike (done 2026-10-05; the secret is split across entries)
 
@@ -88,12 +88,12 @@ Not decided. Each is marked with the release it would land in. The aim is that a
 | ID | Check | Evidence |
 | --- | --- | --- |
 | AC1 | The Windows spike result and the storage decision are recorded in this PRD | Done 2026-10-05: 1,280-character limit, 1,468-character real token |
-| AC2 | A test account in the development tenant signs in through `spell login` and `spell whoami` shows the same `sub` | Terminal output |
-| AC3 | The same on a machine with no browser, through `--device-code` | Terminal output |
-| AC4 | `spell logout` leaves nothing behind in the keychain | Keychain listing before and after |
-| AC5 | With no keychain, `spell login` refuses and writes nothing; with `--insecure-storage` it works and warns | Terminal output on a headless Linux container |
-| AC6 | Tests for R3 to R10 pass on macOS, Windows and Linux in CI | CI run |
-| AC7 | The loopback callback redirects to a query-free success or failure URL, rejects a replayed callback, sends the required security headers, and closes after the result is served | HTTP-level integration tests |
+| AC2 | A test account in the development tenant signs in through `spell login` and `spell whoami` shows the same `sub` | Passed 2026-10-07 on Windows against the development tenant; `sub` matched ([[features/spell-login/manual-acceptance-2026-10-07#evidence-record|evidence record]]) |
+| AC3 | The same on a machine with no browser, through `--device-code` | Passed 2026-10-07 in a headless Linux container, with explicit file storage ([[features/spell-login/manual-acceptance-2026-10-07#evidence-record|evidence record]]) |
+| AC4 | `spell logout` leaves nothing behind in the keychain | Passed 2026-10-07: zero entries after `logout` ([[features/spell-login/manual-acceptance-2026-10-07#evidence-record|evidence record]]) |
+| AC5 | With no keychain, `spell login` refuses and writes nothing; with `--insecure-storage` it works and warns | Passed 2026-10-07, with a caveat: the numeric exit status and immediate file absence were not captured live, and a partial-cleanup reporting bug found in the run was fixed ([[features/spell-login/manual-acceptance-2026-10-07#evidence-record|evidence record]]) |
+| AC6 | Tests for R3 to R10 pass on macOS, Windows and Linux in CI | Passed on Ubuntu, Windows and macOS: PR 349's run for `fd4f5c2` ([[features/spell-login/manual-acceptance-2026-10-07#evidence-record|evidence record]]) |
+| AC7 | The loopback callback redirects to a query-free success or failure URL, rejects a replayed callback, sends the required security headers, and closes after the result is served | `test/oidc.test.ts` (query-free result page with security headers; replayed callback rejected) and `test/oidc-server-guard.test.ts`; production smoke test on 2026-10-08 ([[features/spell-login/manual-acceptance-2026-10-07#evidence-record|evidence record]]) |
 
 ## Open questions
 
