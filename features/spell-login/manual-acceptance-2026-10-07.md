@@ -1,8 +1,8 @@
 ---
 title: Spell Login Manual Acceptance Guide
 audience: both
-last_updated: 2026-10-07
-status: draft
+last_updated: 2026-10-09
+status: active
 tags: [login, testing, acceptance, security]
 ---
 
@@ -15,7 +15,7 @@ Use this guide for the live checks in AC2–AC5 and optional live Mac/Ubuntu smo
 ## Before starting
 
 - Use a **development tenant test account** and a dedicated OS user profile, VM, or disposable container. `login` replaces an existing Arcane session after successful authentication, so first run `whoami` and stop if that profile holds a session you need to keep.
-- Use this CLI checkout on Windows now, or the same PR branch once it is published, with a working network connection to the development identity tenant. CI uses Node.js 20; the current Windows workstation has Node.js 24. Record the version you use. Run `npm ci` on a fresh checkout, then `npm run build`; the current Windows checkout already has dependencies installed, so it only needs a fresh build. The commands below use `node dist/index.js` to ensure the checkout is tested, rather than a globally installed `spell` of unknown version. Until the changes are committed, record that the Windows run used staged work in addition to the printed HEAD SHA.
+- Use a checkout of the branch under test, with a working network connection to the development identity tenant. CI uses Node.js 20; record the Node.js version you use. Run `npm ci` on a fresh checkout, then `npm run build`. The commands below use `node dist/index.js` so the checkout is tested, rather than a globally installed `spell` of unknown version. If the run used uncommitted work, record that beside the printed HEAD SHA.
 - Keep the terminal output local. It can contain account email, `sub`, and a short-lived device code or sign-in URL. Never paste the raw output, callback URL, session file, or keychain secret into a PR. Record a redacted result and the equality of the two `sub` values instead.
 - Record OS/version, Node version, CLI commit SHA, test account alias, date, each check's pass/fail, and any unexpected prompt or error. A screenshot may be used only after removing account identifiers, codes, and callback query values.
 
@@ -53,16 +53,16 @@ node dist/index.js whoami
 
 ## 2. Headless Linux without a browser or Secret Service — AC3, AC5
 
-Use WSL2 for the browserless device-code check (AC3) if it has no usable browser launcher. The PRD names a **headless Linux container** as AC5's evidence environment, so repeat the no-keychain refusal and explicit file fallback in a container for formal AC5 evidence. Docker Desktop is available on this Windows PC; booting a separate Ubuntu installation is unnecessary. In either environment use Linux Node.js 20, network access, no usable browser launcher, and no usable Secret Service/keyring. Keep a separate browser-capable phone or computer nearby to complete device authorization. After the branch is published, clone and build that exact branch **inside the Linux filesystem**; do not reuse the Windows checkout's `node_modules`, which contains platform-specific dependencies. Use a dedicated Linux home directory/profile with no existing `~/.arcane/session-insecure.json` or Arcane keychain entries. An ordinary desktop Linux session with an unlocked keyring is **not** a valid environment for the no-keychain check.
+Use WSL2 for the browserless device-code check (AC3) if it has no usable browser launcher. The PRD names a **headless Linux container** as AC5's evidence environment, so repeat the no-keychain refusal and explicit file fallback in a container for formal AC5 evidence. A disposable container is enough; a separate Linux installation is unnecessary. In either environment use Linux Node.js 20, network access, no usable browser launcher, and no usable Secret Service/keyring. Keep a separate browser-capable phone or computer nearby to complete device authorization. After the branch is published, clone and build that exact branch **inside the Linux filesystem**; do not reuse the Windows checkout's `node_modules`, which contains platform-specific dependencies. Use a dedicated Linux home directory/profile with no existing `~/.arcane/session-insecure.json` or Arcane keychain entries. An ordinary desktop Linux session with an unlocked keyring is **not** a valid environment for the no-keychain check.
 
-On this workstation, Ubuntu 24.04 WSL2 currently has no Linux `node`, no `xdg-open`, and no active Secret Service. WSLg and a user DBus are present, so verify the no-keychain behavior with the CLI rather than inferring it from the WSL label. WSL can find the **Windows** `npm` through PATH; do not use it. Install Linux Node.js 20 in the distro and confirm `node -p 'process.platform'` prints `linux`, while `command -v node` and `command -v npm` point into Linux paths such as `~/.nvm/`, not `/mnt/c/`. A Linux Node version manager is suitable; see the [nvm installation instructions](https://github.com/nvm-sh/nvm#installing-and-updating).
+A WSL2 distribution can have no Linux `node`, no `xdg-open` and no active Secret Service while WSLg and a user DBus are present, so verify the no-keychain behavior with the CLI rather than inferring it from the WSL label. WSL can find the **Windows** `npm` through PATH; do not use it. Install Linux Node.js 20 in the distro and confirm `node -p 'process.platform'` prints `linux`, while `command -v node` and `command -v npm` point into Linux paths such as `~/.nvm/`, not `/mnt/c/`. A Linux Node version manager is suitable; see the [nvm installation instructions](https://github.com/nvm-sh/nvm#installing-and-updating).
 
-### Container setup on this Windows PC
+### Container setup from a Windows checkout
 
-The following setup was checked with Docker Desktop and the cached `node:22-alpine` image on 2026-10-07. It mounts the staged Windows source read-only, copies it into the disposable Linux container without Windows dependencies or local settings, installs Linux dependencies, and builds successfully. Run this in PowerShell:
+The following setup was checked with Docker and the `node:22-alpine` image on 2026-10-07. It mounts the Windows checkout read-only, copies it into the disposable Linux container without Windows dependencies or local settings, installs Linux dependencies, and builds successfully. Run this in PowerShell:
 
 ```powershell
-docker run --rm -it --mount 'type=bind,source=X:\Code\CodeMagician\products\arcane\arcane-wt-login-callback,target=/source,readonly' -e ARCANE_ENVIRONMENT=dev node:22-alpine sh
+docker run --rm -it --mount 'type=bind,source=<path to your checkout>,target=/source,readonly' -e ARCANE_ENVIRONMENT=dev node:22-alpine sh
 ```
 
 Then run these commands **inside the container** before the test commands below:

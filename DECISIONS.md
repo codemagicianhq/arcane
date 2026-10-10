@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-10-07
+last_updated: 2026-10-09
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -84,6 +84,8 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-050](#arc-050--decision-number-allocation-across-parallel-sessions) | Decision-Number Allocation Across Parallel Sessions | 2026-09-27 | Accepted   |
 | [ARC-051](#arc-051--placeholder-taxonomy-for-governance-documents) | Placeholder Taxonomy for Governance Documents | 2026-09-27 | Accepted   |
 | [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Accepted   |
+| [ARC-053](#arc-053--branch-naming-one-rule-per-actor-written-once) | Branch Naming: One Rule per Actor, Written Once | 2026-10-06 | Proposed |
+| [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) | Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token | 2026-10-05 | Accepted |
 
 ---
 
@@ -3422,5 +3424,48 @@ The two lists differ in kind. A newly available component is a preference: nothi
 - **Collapse every agent-created branch into the session format** (the TODO's reading): retires a format with a recorded reason to fix a problem it never caused.
 - **A reference-only instruction line** ("follow git-conventions.md"): the failure is exactly that an assistant does not open the governance file before creating a worktree; the rule has to be in front of it, so the instruction files carry the rendered rule.
 - **A CI check on pull-request head names:** declined by the operator on 2026-09-02; the spells rename on sight instead.
+
+---
+
+## ARC-054 — Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token
+
+**Date:** 2026-10-05
+**Status:** Accepted — operator decisions in session on 2026-10-05 (the library, the flow, the storage rule, the file opt-in, `whoami`, and the split after the Windows measurement the same day); the PRD recording them was approved by the operator on 2026-10-05. Decisions 1 to 8 shipped in 1.11.4 and 1.11.5; decision 9 is on `main` and unreleased. Recorded on 2026-10-09.
+**Related:** [PRD](features/spell-login/PRD.md), [architecture](features/spell-login/architecture.md), [manual acceptance guide and evidence record](features/spell-login/manual-acceptance-2026-10-07.md)
+**Intake:** operator request, 2026-10-05 (sign-in for the CLI); `features/spell-login/PRD.md`
+
+**Context:**
+
+- Arcane is getting an account a person signs in to once, and the CLI is the first product that has to sign in to it; nothing in the CLI could. The CLI is MIT-licensed and must stay fully usable signed out.
+- On 2026-10-05 a measurement found that Windows' credential store accepts at most 1,280 characters per secret through the chosen keyring library (stored as UTF-16 against a 2,560-byte limit), while a real refresh token from the development identity tenant is 1,468 characters.
+- The identity tenant publishes its issuer under a different host from the one that serves its discovery document, so a client library's standard "issuer matches the document URL" check refuses it.
+- Review of the first shipped callback (2026-10-06 and 2026-10-07) found that the browser could show the authorization code in its address bar, and that the page could claim success before the session was stored.
+
+**Decision:**
+
+1. **A standard OpenID client library: `openid-client`.** Certified, with the PKCE authorization-code and device-code flows and two small dependencies. The CLI is tied to the OpenID standard, not to one provider, so a change of identity provider stays a configuration change.
+2. **Browser flow by default, device code on request.** Authorization code with PKCE, `state` and `nonce`, through a loopback redirect on `127.0.0.1` and a random free port. `spell login --device-code` serves machines with no browser. Without an interactive terminal, `spell login` refuses to start a browser flow and points at device code.
+3. **The OS keychain is the only default storage.** Through `@napi-rs/keyring`, loaded on first use so signed-out commands never touch it. With no usable keychain, `spell login` refuses and stores nothing. A file is an explicit opt-in, `--insecure-storage`, which warns on every use: mode `0600` on POSIX; on Windows, access restricted to the current account, and the write refused when that restriction fails.
+4. **The session secret is split across keychain entries, on every platform.** Chunks of at most 1,000 characters under a generation id; an index entry written last with the chunk count and a SHA-256 of the whole secret; the previous generation removed after the switch. A missing chunk or a checksum mismatch reads as signed out, never as a partial secret.
+5. **What is stored and what is requested.** Stored: the refresh token, the account's `sub` and email, the environment, and the times the tokens were obtained and expire; never access or ID tokens. Requested: `openid`, `profile`, `email` and `offline_access`. The Arcane service API's read scope is added at the one extension point in `identity-config.ts` when that API's name can ship publicly.
+6. **The configuration is built from the fetched discovery document**, not through the library's discovery helper, because of the issuer-host difference above. A test pins it.
+7. **One variable selects the environment.** `ARCANE_ENVIRONMENT=dev` selects the development tenant; production is the default; any other value is an error. Tenant and client identifiers are public configuration, kept in one module.
+8. **`spell whoami` and `spell logout` ship with `spell login`.** `whoami` prints the account, the environment and the expiry from the stored session, and `--verify` checks with the identity tenant; signed out, it exits 1. `logout` removes the session from every medium, says what it removed, succeeds when nothing was stored, and says that it signs out this machine only.
+9. **Callback hardening (2026-10-08).** A validated callback redirects the browser to a fixed, query-free result route; a replayed callback is rejected; the result pages carry restrictive security headers; the listener closes once the result is served; success is reported only after the session is stored.
+
+**Consequences:**
+
+- Two production dependencies, `openid-client` and `@napi-rs/keyring`, pinned to exact versions; their release notes are reviewed before any bump.
+- The keyring package ships prebuilt binaries for macOS, Windows (x64, ia32, arm64) and Linux. Linux needs a Secret Service; a headless Linux machine signs in by device code and, by explicit opt-in only, keeps the session in a file.
+- `spell logout` is local: a stolen refresh token stays valid at the identity tenant until it expires. Server-side revocation, proxy support, `spell doctor` sign-in checks, `spell uninstall` offering logout, several accounts on one machine and unattended automation are open proposals in the PRD (R12 to R22).
+- The PRD's decision 6 was amended on 2026-10-09 to match decision 5 here.
+
+**Rejected alternatives:**
+
+- **The identity provider's own client library.** It requires Node.js 20 or later, where the CLI supports 18 or later; its secure token cache pulls in native modules; and it ties the CLI to one provider.
+- **A hand-written flow on `fetch`.** No dependencies, but PKCE, `state`, `nonce` and token validation are where mistakes hide.
+- **Falling back to a file automatically when no keychain exists.** Quietly puts a long-lived credential on disk, which is what the keychain exists to prevent.
+- **A keychain-held encryption key with the token in a file, or the platform's own encryption service through a native module.** Both add custom cryptography or native dependencies; splitting keeps the secret entirely inside the OS store.
+- **Device code only.** Simpler, with no local port, but clumsier on a laptop; the browser flow is what people expect.
 
 ---
