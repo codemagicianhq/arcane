@@ -1,7 +1,7 @@
 ---
 title: Spell Login Manual Acceptance Guide
 audience: both
-last_updated: 2026-10-09
+last_updated: 2026-10-10
 status: active
 tags: [login, testing, acceptance, security]
 ---
@@ -194,4 +194,4 @@ Post-fix verification on the Windows development checkout: full suite **139 file
 
 ## Production callback-hardening smoke test — 2026-10-08
 
-The operator created a production Arcane External ID account and completed browser login with the hardened CLI build on Windows. The CLI reported a production account, and Chrome finished at a fixed `http://127.0.0.1:<ephemeral-port>/result/success` URL with no query string. `whoami --verify` confirmed the session was active at `arcaneai.ciamlogin.com` and stored in the OS keychain. `logout` then removed the production session from the keychain, and the final `whoami` reported signed out. The account email, subject identifier, authorization code, state, token values, and exact ephemeral port are omitted from public evidence.
+The operator created a production Arcane External ID account and completed browser login with the hardened CLI build on Windows. The CLI reported a production account, and Chrome finished at a fixed `http://127.0.0.1:<ephemeral-port>/result/success` URL with no query string. `whoami --verify` confirmed the session was active at `arcaneai.ciamlogin.com` and stored in the OS keychain. `logout` then removed the production session from the keychain, and the final `whoami` reported signed out. The account email, subject identifier, authorization code, state, token values, and exact ephemeral port are omitted from public evidence. The account was deleted on 2026-10-10: test accounts belong in the development tenant, and a production account exists only for a check that production alone can host, and only until that check is done.
