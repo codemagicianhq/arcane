@@ -11,13 +11,15 @@
  *   and the standard "issuer must match the URL" check would refuse it.
  * - Nothing in this module prints or throws a token, an authorization code or
  *   a `state` value (R10). The loopback server answers the browser with a
- *   fixed page and never echoes the request.
+ *   fixed page per result (R8a, `result-pages.ts`) and never echoes the
+ *   request.
  */
 
 import { createServer, type Server } from "node:http";
 import { execFile } from "node:child_process";
 import * as client from "openid-client";
 import type { IdentityEnvironmentConfig } from "./identity-config.js";
+import { PLAIN_RESULT_PAGES, RESULT_KINDS, type ResultKind, type ResultPages } from "./result-pages.js";
 
 export interface TokenResult {
   refreshToken: string;
@@ -115,30 +117,12 @@ function toTokenResult(
   };
 }
 
-const CLOSE_PAGE = [
-  "<!doctype html><meta charset=\"utf-8\"><title>Arcane</title>",
-  "<body style=\"font-family:system-ui;margin:3rem\"><h1>Signed in to Arcane</h1>",
-  "<p>You can close this window and go back to the terminal.</p></body>",
-].join("");
-
-const FAILED_PAGE = [
-  "<!doctype html><meta charset=\"utf-8\"><title>Arcane</title>",
-  "<body style=\"font-family:system-ui;margin:3rem\"><h1>Sign-in not completed</h1>",
-  "<p>Go back to the terminal for what to do next.</p></body>",
-].join("");
-
-const RESULT_HEADERS = {
-  "cache-control": "no-store",
-  "content-security-policy":
-    "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
-  "content-type": "text/html; charset=utf-8",
-  "referrer-policy": "no-referrer",
-  "x-content-type-options": "nosniff",
-} as const;
-
 type BrowserResult =
-  | { kind: "success"; page: string; result: TokenResult }
-  | { kind: "failure"; page: string; error: unknown };
+  | { kind: "success"; result: TokenResult }
+  | { kind: Exclude<ResultKind, "success">; error: unknown };
+
+const resultPath = (kind: ResultKind): string => `/result/${kind}`;
+const RESULT_PATHS = new Set(RESULT_KINDS.map(resultPath));
 
 export interface BrowserLoginOptions {
   scopes: readonly string[];
@@ -148,6 +132,8 @@ export interface BrowserLoginOptions {
   onValidated?: (result: TokenResult) => void | Promise<void>;
   /** Called when the browser could not be opened. The authorization URL stays private. */
   onCannotOpen?: () => void;
+  /** The page shown for each result; the plain built-in pages when absent. */
+  pages?: ResultPages;
   timeoutMs?: number;
 }
 
@@ -188,6 +174,7 @@ export async function browserLogin(
     nonce,
   });
 
+  const pages = options.pages ?? PLAIN_RESULT_PAGES;
   const timeoutMs = options.timeoutMs ?? 5 * 60 * 1000;
   let timer: NodeJS.Timeout | undefined;
   let callbackConsumed = false;
@@ -202,15 +189,21 @@ export async function browserLogin(
     server.on("request", (req, res) => {
       const url = new URL(req.url ?? "/", redirectUri);
 
-      if (url.pathname === "/result/success" || url.pathname === "/result/failure") {
-        const expectedPath = browserResult?.kind === "success" ? "/result/success" : "/result/failure";
-        if (!browserResult || url.pathname !== expectedPath || url.search !== "") {
+      if (RESULT_PATHS.has(url.pathname)) {
+        if (!browserResult || url.pathname !== resultPath(browserResult.kind) || url.search !== "") {
           res.writeHead(404).end();
           return;
         }
-        res.writeHead(200, RESULT_HEADERS).end(browserResult.page);
-        if ("result" in browserResult) resolve(browserResult.result);
-        else reject(browserResult.error);
+        const served = browserResult;
+        const page = pages[served.kind];
+        // Settle once the page has left this process, or the browser hung up:
+        // settling closes the listener, which would cut a large page short.
+        const settle = (): void => {
+          if (served.kind === "success") resolve(served.result);
+          else reject(served.error);
+        };
+        res.once("finish", settle).once("close", settle);
+        res.writeHead(200, page.headers).end(page.html);
         return;
       }
 
@@ -223,17 +216,16 @@ export async function browserLogin(
         return;
       }
       if (url.searchParams.get("state") !== state) {
-        res.writeHead(400, RESULT_HEADERS).end(FAILED_PAGE);
+        res.writeHead(400, pages.failure.headers).end(pages.failure.html);
         return;
       }
       callbackConsumed = true;
 
       const redirectToResult = (result: BrowserResult): void => {
         browserResult = result;
-        const location = result.kind === "success" ? "/result/success" : "/result/failure";
         res.writeHead(303, {
           "cache-control": "no-store",
-          location,
+          location: resultPath(result.kind),
           "referrer-policy": "no-referrer",
         }).end();
         if (result.kind === "success") {
@@ -246,10 +238,12 @@ export async function browserLogin(
 
       const errorCode = url.searchParams.get("error");
       if (errorCode) {
+        const code = errorCode.replace(/[^a-z_]/gi, "");
+        // access_denied is the person cancelling at the identity service; it
+        // gets the neutral page. Any other provider error is a failure.
         redirectToResult({
-          kind: "failure",
-          page: FAILED_PAGE,
-          error: new LoginDeniedError(errorCode.replace(/[^a-z_]/gi, "")),
+          kind: code === "access_denied" ? "denied" : "failure",
+          error: new LoginDeniedError(code),
         });
         return;
       }
@@ -263,10 +257,10 @@ export async function browserLogin(
         .then(async (response) => {
           const result = toTokenResult(response);
           await options.onValidated?.(result);
-          redirectToResult({ kind: "success", page: CLOSE_PAGE, result });
+          redirectToResult({ kind: "success", result });
         })
         .catch((error: unknown) => {
-          redirectToResult({ kind: "failure", page: FAILED_PAGE, error });
+          redirectToResult({ kind: "failure", error });
         });
     });
     timer = setTimeout(() => reject(new LoginTimeoutError()), timeoutMs);

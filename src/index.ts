@@ -11,7 +11,7 @@ import { runDoctor } from "./commands/doctor.js";
 import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
 import { runBlockPush } from "./commands/block-push.js";
-import { runLogin } from "./commands/login.js";
+import { defaultLoginDeps, runLogin } from "./commands/login.js";
 import { runLogout } from "./commands/logout.js";
 import { runWhoami } from "./commands/whoami.js";
 import { runReport } from "./commands/report.js";
@@ -262,7 +262,7 @@ program
     "Keep the session in a file under ~/.arcane instead of the OS keychain; protected only by your account's file permissions",
   )
   .action(async (opts: { deviceCode?: boolean; insecureStorage?: boolean }) => {
-    await runLogin({ deviceCode: opts.deviceCode, insecureStorage: opts.insecureStorage });
+    await runLogin({ deviceCode: opts.deviceCode, insecureStorage: opts.insecureStorage }, defaultLoginDeps(ASSETS_DIR));
   });
 
 program

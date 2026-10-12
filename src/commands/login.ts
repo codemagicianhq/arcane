@@ -16,6 +16,7 @@ import {
   openInDefaultBrowser,
   type TokenResult,
 } from "../modules/oidc.js";
+import { loadResultPages, type ResultPages } from "../modules/result-pages.js";
 import { createSessionStorage, type SessionRecord, type SessionStorage } from "../modules/session-store.js";
 import type { Configuration } from "openid-client";
 
@@ -33,9 +34,12 @@ export interface LoginDeps {
   deviceLogin: typeof deviceLogin;
   openUrl: (url: string) => Promise<boolean>;
   isInteractive: () => boolean;
+  /** The browser's result pages (R8a); null when this install is missing them. */
+  resultPages: () => Promise<ResultPages | null>;
 }
 
-export function defaultLoginDeps(): LoginDeps {
+/** @param assetsDir  The package's assets directory, which holds the result pages under `sign-in/`. */
+export function defaultLoginDeps(assetsDir: string): LoginDeps {
   return {
     storage: createSessionStorage(),
     environment: () => resolveIdentityEnvironment(),
@@ -44,12 +48,17 @@ export function defaultLoginDeps(): LoginDeps {
     deviceLogin,
     openUrl: openInDefaultBrowser,
     isInteractive: () => Boolean(process.stdin.isTTY && process.stdout.isTTY),
+    resultPages: () => loadResultPages(assetsDir),
   };
 }
 
 export const INSECURE_STORAGE_WARNING =
   "Insecure storage: the session is kept in a file protected only by your account's file permissions, " +
   "not in the OS keychain. Run `spell logout` to remove it.";
+
+export const MISSING_RESULT_PAGES_WARNING =
+  "This arcane-cli install is missing its sign-in result pages (assets/sign-in/), so the browser will show a plain page. " +
+  "Reinstall the package to restore them.";
 
 /**
  * Error text that is safe to show (R10): the first line only, with anything
@@ -78,11 +87,11 @@ export function describeAccount(record: Pick<SessionRecord, "sub" | "email" | "e
 }
 
 /**
- * Runs `spell login` (features/spell-login/PRD.md, R1, R2, R5, R6, R16):
+ * Runs `spell login` (features/spell-login/PRD.md, R1, R2, R5, R6, R8a, R16):
  * browser flow by default, device code on request, the session stored only
  * after the sign-in succeeded so a failure leaves any previous session alone.
  */
-export async function runLogin(options: LoginOptions, deps: LoginDeps = defaultLoginDeps()): Promise<void> {
+export async function runLogin(options: LoginOptions, deps: LoginDeps): Promise<void> {
   let environment: IdentityEnvironmentConfig;
   try {
     environment = deps.environment();
@@ -134,10 +143,13 @@ export async function runLogin(options: LoginOptions, deps: LoginDeps = defaultL
       });
       saveValidatedSession(result);
     } else {
+      const pages = await deps.resultPages();
+      if (!pages) printWarning(MISSING_RESULT_PAGES_WARNING);
       printInfo("Opening your browser to sign in to Arcane. Come back here when it says you are signed in.");
       await deps.browserLogin(config, {
         scopes: SIGN_IN_SCOPES,
         openUrl: deps.openUrl,
+        pages: pages ?? undefined,
         onValidated: saveValidatedSession,
         onCannotOpen: () => {
           printWarning("No browser could be opened. Run `spell login --device-code` to sign in on another device.");

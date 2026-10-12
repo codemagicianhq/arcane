@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-12
 ---
 
 # TODO
@@ -573,7 +573,7 @@ The older malformed `behavioral_rules` / `[object Object]` defect is already clo
 
 ### Release
 
-- [ ] **Next release is 1.12.0: `spell login`, `spell logout` and `spell whoami` shipped unannounced in 1.11.4.** Found 2026-10-07 at the merge of [PR #348](https://github.com/codemagicianhq/arcane/pull/348): `main` carried the sign-in commands ("feat(login): add spell login, logout and whoami on openid-client") with no version bump, so the branch-naming patch became the first release carrying new CLI commands, which `spell-bump`'s table calls a minor. Decided under the operator's delegation on 2026-10-07: leave 1.11.4 as published (an npm version cannot be renamed) and do not cut an empty 1.12.0; the pull request that completes sign-in (`features/spell-login/PRD.md`, R12–R22 still proposals) bumps to 1.12.0 with a CHANGELOG entry saying the commands first shipped in 1.11.4.
+- [x] **Next release is 1.12.0: `spell login`, `spell logout` and `spell whoami` shipped unannounced in 1.11.4.** Resolved 2026-10-12 on `sessions/2026-10-12-sign-in-gate-pages`: the sign-in result pages (ARC-055, R8a) bump to 1.12.0, and its CHANGELOG entry says the commands first shipped in 1.11.4. Found 2026-10-07 at the merge of [PR #348](https://github.com/codemagicianhq/arcane/pull/348): `main` carried the sign-in commands ("feat(login): add spell login, logout and whoami on openid-client") with no version bump, so the branch-naming patch became the first release carrying new CLI commands, which `spell-bump`'s table calls a minor. Decided under the operator's delegation on 2026-10-07: leave 1.11.4 as published (an npm version cannot be renamed) and do not cut an empty 1.12.0; the pull request that completes sign-in (`features/spell-login/PRD.md`, R12–R22 still proposals) bumps to 1.12.0 with a CHANGELOG entry saying the commands first shipped in 1.11.4.
 
 ## Upstream intake — 2026-09-16 (from the hub idea book)
 
