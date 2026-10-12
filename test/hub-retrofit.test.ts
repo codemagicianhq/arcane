@@ -239,7 +239,7 @@ describe("spell update — manifest retrofit wizard", () => {
   });
 
   afterEach(async () => {
-    process.stdin.isTTY = realIsTTY;
+    process.stdin.isTTY = realIsTTY as boolean;
     await removeFixtureDir(tmpDir);
   });
 
@@ -410,7 +410,7 @@ describe("spell update without a TTY", () => {
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "no-tty-test-"));
     realIsTTY = process.stdin.isTTY;
-    process.stdin.isTTY = undefined;
+    process.stdin.isTTY = undefined as unknown as boolean;
     inspectGitRepositoryMock.mockResolvedValue({ status: "ready", uncommittedChanges: 0 });
     confirmMock.mockReset();
     confirmMock.mockResolvedValue(true);
@@ -418,7 +418,7 @@ describe("spell update without a TTY", () => {
   });
 
   afterEach(async () => {
-    process.stdin.isTTY = realIsTTY;
+    process.stdin.isTTY = realIsTTY as boolean;
     await removeFixtureDir(tmpDir);
   });
 

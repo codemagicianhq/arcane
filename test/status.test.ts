@@ -5,6 +5,7 @@ import {
   beforeEach,
   afterEach,
   vi,
+  type MockInstance,
 } from "vitest";
 import { promises as fs } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -51,8 +52,8 @@ async function writeManifest(dir: string, partial?: Partial<ArcaneManifest>) {
 
 describe("spell status — handler", () => {
   let tmpDir: string;
-  let logSpy: ReturnType<typeof vi.spyOn>;
-  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: MockInstance<typeof console.log>;
+  let errorSpy: MockInstance<typeof console.error>;
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(join(tmpdir(), "status-test-"));
