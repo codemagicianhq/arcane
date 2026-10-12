@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { promises as fs } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 
 describe("fixture-dir helpers (LH-03)", () => {
@@ -9,6 +9,26 @@ describe("fixture-dir helpers (LH-03)", () => {
         const stat = await fs.stat(dir);
         expect(stat.isDirectory()).toBe(true);
         await removeFixtureDir(dir);
+    });
+
+    it("createFixtureDir returns the real path when the temp root is a symlink", async () => {
+        // macOS's default temp root (/var/folders/...) sits under the
+        // /var -> /private/var symlink. Rebuilt here on any OS by pointing every
+        // temp-root variable os.tmpdir() reads at a link (a junction, so Windows
+        // needs no privilege; the type is ignored elsewhere).
+        const realRoot = await createFixtureDir("fixture-dir-real-root");
+        const linkParent = await createFixtureDir("fixture-dir-link-parent");
+        const linkedRoot = join(linkParent, "tmp");
+        await fs.symlink(realRoot, linkedRoot, "junction");
+        for (const name of ["TMPDIR", "TMP", "TEMP"]) vi.stubEnv(name, linkedRoot);
+        try {
+            const dir = await createFixtureDir("fixture-dir-through-link");
+            expect(dirname(dir)).toBe(realRoot);
+        } finally {
+            vi.unstubAllEnvs();
+            await removeFixtureDir(linkParent);
+            await removeFixtureDir(realRoot);
+        }
     });
 
     it("removeFixtureDir removes a populated directory tree", async () => {

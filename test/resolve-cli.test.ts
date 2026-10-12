@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { promises as fs } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { findBuiltCli, resolveBuiltCli, resolveTsxCli } from "./helpers/resolve-cli.js";
-import { removeFixtureDir } from "./helpers/fixture-dir.js";
+import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 
 // These tests fabricate the exact directory shape a git worktree of this
 // repo has: a nested directory with its own package.json but no dist/ or
@@ -20,8 +19,11 @@ afterEach(async () => {
   );
 });
 
+// A real path, via the shared helper: resolveTsxCli goes through Node's module
+// resolution, which resolves symlinks, so an expectation built from a path
+// spelled through one (macOS's /var -> /private/var temp root) never matches.
 async function makeTempDir(prefix: string): Promise<string> {
-  const dir = await fs.mkdtemp(join(tmpdir(), prefix));
+  const dir = await createFixtureDir(prefix);
   tempDirs.push(dir);
   return dir;
 }

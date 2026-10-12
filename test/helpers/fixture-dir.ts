@@ -2,9 +2,18 @@ import { promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-/** Create a fresh `mkdtemp`'d directory for a fixture. Pair with `removeFixtureDir`. */
+/**
+ * Create a fresh `mkdtemp`'d directory for a fixture and return its real
+ * path. Pair with `removeFixtureDir`.
+ *
+ * Real, because git and Node's module resolution both hand back paths with
+ * symlinks resolved, and the temp root is not always a real path: on macOS it
+ * is /var/folders/..., and /var is a symlink to /private/var. A fixture path
+ * spelled through the link never equals what `git rev-parse` or
+ * `require.resolve` reports for the same directory.
+ */
 export async function createFixtureDir(prefix: string): Promise<string> {
-    return fs.mkdtemp(join(tmpdir(), `${prefix}-`));
+    return fs.realpath(await fs.mkdtemp(join(tmpdir(), `${prefix}-`)));
 }
 
 /**
