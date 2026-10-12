@@ -345,11 +345,12 @@ Arcane is built *with Arcane*. From this repo's first commit forward, developmen
 PRs welcome. See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for dev setup and conventions, and **[SECURITY.md](./SECURITY.md)** to report a vulnerability. By contributing you agree your contributions are licensed under MIT.
 
 ```bash
-npm ci             # install dependencies
-npm test           # run the test suite
-npm run build      # produces dist/index.js + dist/assets/
-npm run lint       # lint
-npm run typecheck  # type-check
+npm ci                 # install dependencies
+npm test               # run the test suite
+npm run build          # produces dist/index.js + dist/assets/
+npm run lint           # lint
+npm run typecheck      # type-check src/
+npm run typecheck:all  # type-check src/, scripts/, test/ and the root configs
 ```
 
 **Claude Code preview config:** [.claude/launch.json](./.claude/launch.json) registers dev-server launch configs (`arcane-website`, `arcane-ui`) for Claude Code's in-editor preview tooling. It assumes both repos are cloned as sibling directories next to this one (`../arcane-website`, `../arcane-ui`).

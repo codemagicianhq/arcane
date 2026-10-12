@@ -40,6 +40,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src test",
     "typecheck": "tsc --noEmit",
+    "typecheck:all": "tsc -p tsconfig.all.json",
     "check:self-host-parity": "tsx scripts/self-host-parity.ts --check",
     "fix:self-host-parity": "tsx scripts/self-host-parity.ts --fix",
     "check:spell-catalog": "tsx scripts/spell-catalog.ts --check",

@@ -119,8 +119,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Both runs are needed. typecheck covers src/ alone under rootDir "src",
+      # so it also fails when a src/ file imports from outside src/.
+      # typecheck:all adds scripts/, test/ and the root config files, which
+      # nothing else type-checks: tsx and vitest run them with types stripped.
       - name: Type-check
-        run: npm run typecheck
+        run: |
+          npm run typecheck
+          npm run typecheck:all
 
       - name: Build
         env:
