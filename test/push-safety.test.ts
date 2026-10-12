@@ -316,6 +316,58 @@ describe("hook-manager collision guard (R7)", { timeout: HEAVY_TEST_TIMEOUT }, (
     }
   });
 
+  // Git reports the repository root with symlinks resolved, so an absolute
+  // value spelled through a link (macOS's /var -> /private/var, a linked
+  // projects directory) compared unequal to our own path. Real-path fixtures
+  // never spell one, so these make the link explicitly: a junction, which
+  // Windows creates without privilege (the type is ignored elsewhere).
+  async function linkTo(target: string): Promise<string> {
+    const link = join(await createFixtureDir("push-safety-link-"), "link");
+    await fs.symlink(target, link, "junction");
+    return link;
+  }
+
+  it("recognises its own hooks path spelled through a symlinked directory, and removes it", async () => {
+    const { work } = await repoWithRemote();
+    await installPrePushHook(work);
+    fixtureGit(work, ["config", "--local", "core.hooksPath", join(await linkTo(work), ".arcane", "hooks")]);
+
+    expect(await isHookEnforced(work)).toBe(true);
+    expect(tryPush(work).ok).toBe(false);
+
+    // unblock-push depends on removal recognising the same spelling.
+    await removePrePushHook(work);
+    expect(await readHooksPath(work)).toBeUndefined();
+    expect(tryPush(work).ok).toBe(true);
+  });
+
+  it("claims a symlinked spelling of its own hooks path before that directory exists", async () => {
+    // Only the part that exists can be resolved: the link does, .arcane/hooks
+    // does not yet, so the rest is re-appended as spelled.
+    const { work } = await repoWithRemote();
+    fixtureGit(work, ["config", "--local", "core.hooksPath", join(await linkTo(work), ".arcane", "hooks")]);
+
+    expect((await installPrePushHook(work)).status).toBe("installed");
+    expect(tryPush(work).ok).toBe(false);
+  });
+
+  it("still refuses a foreign hooks directory that .arcane/hooks itself links to", async () => {
+    // Resolving symlinks must not let a foreign directory pass as ours. If our
+    // side were resolved too, this org directory, linked in as .arcane/hooks,
+    // would compare equal, and installing would overwrite the org's own
+    // pre-push hook through the link.
+    const { work } = await repoWithRemote();
+    const orgHooks = await createFixtureDir("push-safety-org-hooks-");
+    const orgHook = "#!/bin/sh\necho org pre-push\n";
+    await fs.writeFile(join(orgHooks, "pre-push"), orgHook);
+    await fs.mkdir(join(work, ".arcane"));
+    await fs.symlink(orgHooks, join(work, ".arcane", "hooks"), "junction");
+    fixtureGit(work, ["config", "--local", "core.hooksPath", orgHooks]);
+
+    expect((await installPrePushHook(work)).status).toBe("refused-foreign-hooks-path");
+    expect(await fs.readFile(join(orgHooks, "pre-push"), "utf8")).toBe(orgHook);
+  });
+
   it("refuses any foreign hooks path regardless of the scope it came from", async () => {
     // The security-relevant property: refusal keys on "this value is not ours",
     // never on where it was configured.
