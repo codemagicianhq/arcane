@@ -27,6 +27,7 @@ Useful scripts:
 | `npm run test:coverage`          | Tests with coverage                                        |
 | `npm run lint`                   | ESLint                                                     |
 | `npm run typecheck`              | `tsc --noEmit`                                             |
+| `npm run typecheck:all`          | `tsc -p tsconfig.all.json`: adds `scripts/` and `test/`    |
 | `npm run build`                  | Bundle the CLI and copy assets                             |
 | `npm run check:self-host-parity` | Fail when generated dogfood copies have real content drift |
 | `npm run fix:self-host-parity`   | Regenerate dogfood copies from canonical assets            |
