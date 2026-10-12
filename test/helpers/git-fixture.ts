@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { realpathSync } from "node:fs";
 
 export { createFixtureDir, removeFixtureDir } from "./fixture-dir.js";
 
@@ -75,18 +76,33 @@ function normalizePath(p: string): string {
 }
 
 /**
+ * Whether `path` is `dir` itself (a bare `init`) or lies beneath it, judged by
+ * real path. Git reports `--absolute-git-dir` with every symlink resolved, so
+ * the fixture side has to be resolved too: macOS's default temp directory is
+ * reached through the /var -> /private/var symlink, and comparing paths as
+ * spelled tripped on every fixture there. The trailing separator keeps a
+ * sibling that merely shares the fixture's name as a prefix
+ * (`<fixture>-other/.git`) from counting as inside.
+ */
+function resolvesInside(path: string, dir: string): boolean {
+    const realPath = normalizePath(realpathSync.native(path));
+    const realDir = normalizePath(realpathSync.native(dir));
+    return realPath === realDir || realPath.startsWith(`${realDir}/`);
+}
+
+/**
  * Run `git` against a fixture directory only. Hermetic against the invoking
  * process's own repository context regardless of what GIT_* vars it has set.
  *
  * When `args` is an `init` command, immediately verifies (via
- * `--absolute-git-dir`) that the resulting repository resolves inside `dir` --
- * the EF-34 tripwire. Throws loudly if it does not.
+ * `--absolute-git-dir`, compared by real path) that the resulting repository
+ * resolves inside `dir` -- the EF-34 tripwire. Throws loudly if it does not.
  */
 export function runGit(dir: string, args: string[], dates: FixtureGitDates = {}): string {
     const output = rawGit(dir, args, dates);
     if (args[0] === "init") {
         const absoluteGitDir = rawGit(dir, ["rev-parse", "--absolute-git-dir"]);
-        if (!normalizePath(absoluteGitDir).startsWith(normalizePath(dir))) {
+        if (!resolvesInside(absoluteGitDir, dir)) {
             throw new Error(
                 `EF-34 tripwire: \`git init\` in fixture directory "${dir}" resolved ` +
                     `--absolute-git-dir to "${absoluteGitDir}", which is OUTSIDE the fixture. ` +

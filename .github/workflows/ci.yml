@@ -156,3 +156,31 @@ jobs:
       # Live tenant and real keychain acceptance checks remain manual.
       - name: Test sign-in and session storage
         run: npm test -- test/credential-store.test.ts test/session-store.test.ts test/login-commands.test.ts test/oidc.test.ts test/oidc-browser-opener.test.ts test/oidc-server-guard.test.ts --testTimeout=20000
+
+  # The full suite above runs only on Linux, whose temp directory is a real
+  # path. macOS's is not -- /var/folders/... sits under the /var ->
+  # /private/var symlink -- and git reports real paths, which failed 179 tests
+  # on a Mac while this workflow stayed green (2026-10-12). The fixture
+  # helpers' own tests rebuild that symlink on every OS, so the Linux job
+  # guards it too; this job runs against the real thing: those tests, two
+  # suites that reach the same mismatch another way (lifecycle's bare mkdtemp,
+  # resolve-cli's require.resolve), and the two suites that failed most that
+  # day (init-git-state, push-safety).
+  fixtures-macos:
+    name: Fixture tests (macos-latest)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test fixtures against the default macOS temp directory
+        run: npm test -- test/fixture-dir.test.ts test/git-fixture-isolation.test.ts test/resolve-cli.test.ts test/lifecycle.test.ts test/init-git-state.test.ts test/push-safety.test.ts

@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { spawnSync } from "node:child_process";
 import { promises as fs } from "node:fs";
-import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
 import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 
 /**
@@ -113,5 +114,73 @@ describe("EF-34 regression: fixture git isolation from a leaked GIT_DIR", () => 
             if (originalGitDir === undefined) delete process.env.GIT_DIR;
             else process.env.GIT_DIR = originalGitDir;
         }
+    });
+});
+
+/**
+ * The tripwire compares real paths. Git prints `--absolute-git-dir` with every
+ * symlink resolved, and macOS's default temp root (/var/folders/...) sits under
+ * the /var -> /private/var symlink, so a check comparing paths as spelled
+ * tripped on every fixture on a Mac. This block rebuilds that layout on any OS
+ * -- every temp-root variable `os.tmpdir()` reads points at a link (a junction,
+ * so Windows needs no privilege; the type is ignored elsewhere) -- and then
+ * proves resolving it loosened nothing.
+ */
+describe("EF-34 tripwire under a symlinked temp root", () => {
+    let realRoot: string;
+
+    beforeEach(async () => {
+        realRoot = await createFixtureDir("ef34-real-temp-root");
+        const linkParent = await createFixtureDir("ef34-temp-root-link");
+        tempDirs.push(realRoot, linkParent);
+        const linkedRoot = join(linkParent, "tmp");
+        await fs.symlink(realRoot, linkedRoot, "junction");
+        for (const name of ["TMPDIR", "TMP", "TEMP"]) vi.stubEnv(name, linkedRoot);
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    /** Point `dir`'s `.git` at another repository's, the way a linked worktree's gitfile does. */
+    async function redirectGitDir(dir: string, gitDir: string): Promise<void> {
+        await fs.writeFile(join(dir, ".git"), `gitdir: ${gitDir}\n`);
+    }
+
+    it("accepts a fixture made there by createFixtureDir or by a bare mkdtemp", async () => {
+        const viaHelper = await createFixtureDir("ef34-helper");
+        // The pattern many suites still call directly: its path stays spelled through the link.
+        const viaMkdtemp = await fs.mkdtemp(join(tmpdir(), "ef34-mkdtemp-"));
+
+        expect(() => runGit(viaHelper, ["init"])).not.toThrow();
+        expect(() => runGit(viaMkdtemp, ["init"])).not.toThrow();
+        // Git answered with the real directory, not the spelling it ran in --
+        // the macOS mismatch, reproduced rather than assumed.
+        const gitDir = runGit(viaMkdtemp, ["rev-parse", "--absolute-git-dir"]);
+        expect(gitDir.replace(/\\/g, "/").toLowerCase()).toBe(
+            join(realRoot, basename(viaMkdtemp), ".git").replace(/\\/g, "/").toLowerCase(),
+        );
+    });
+
+    it("still trips when init lands in a repository outside the fixture", async () => {
+        // A leaked GIT_DIR can no longer reach runGit (fixtureGitEnv strips it),
+        // so a gitfile stands in for the redirect: `git init` follows it and
+        // re-initializes the decoy -- the outcome the tripwire exists to catch.
+        const decoy = await createFixtureDir("ef34-outside-decoy");
+        runGit(decoy, ["init"]);
+        const fixture = await fs.mkdtemp(join(tmpdir(), "ef34-outside-fixture-"));
+        await redirectGitDir(fixture, join(decoy, ".git"));
+
+        expect(() => runGit(fixture, ["init"])).toThrow(/EF-34 tripwire/);
+    });
+
+    it("still trips on a sibling that only shares the fixture's path as a prefix", async () => {
+        const fixture = await createFixtureDir("ef34-prefix");
+        const sibling = `${fixture}-sibling`;
+        await fs.mkdir(sibling);
+        runGit(sibling, ["init"]);
+        await redirectGitDir(fixture, join(sibling, ".git"));
+
+        expect(() => runGit(fixture, ["init"])).toThrow(/EF-34 tripwire/);
     });
 });
