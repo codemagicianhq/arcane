@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-10-10
+last_updated: 2026-10-12
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -86,6 +86,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Accepted   |
 | [ARC-053](#arc-053--branch-naming-one-rule-per-actor-written-once) | Branch Naming: One Rule per Actor, Written Once | 2026-10-06 | Accepted |
 | [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) | Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token | 2026-10-05 | Accepted |
+| [ARC-055](#arc-055--sign-in-result-pages-vendored-gate-pages-inlined-art-and-fonts-hash-only-policy) | Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy | 2026-10-12 | Proposed |
 
 ---
 
@@ -3467,5 +3468,44 @@ The two lists differ in kind. A newly available component is a preference: nothi
 - **Falling back to a file automatically when no keychain exists.** Quietly puts a long-lived credential on disk, which is what the keychain exists to prevent.
 - **A keychain-held encryption key with the token in a file, or the platform's own encryption service through a native module.** Both add custom cryptography or native dependencies; splitting keeps the secret entirely inside the OS store.
 - **Device code only.** Simpler, with no local port, but clumsier on a laptop; the browser flow is what people expect.
+
+---
+
+## ARC-055 — Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy
+
+**Date:** 2026-10-12
+**Status:** Proposed — drafted by the implementing agent on 2026-10-12, after the operator accepted the lit Gate design and its light sequences and asked for the CLI integration the same day. Awaiting the operator's accept, revise or reject before merge; implemented for 1.12.0.
+**Related:** [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) (the compiled-template model this follows, and decision 6, which this departs from for these pages), [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) (decision 9: the query-free result route and security headers this builds on), [PRD](features/spell-login/PRD.md) (R8a, AC8)
+**Intake:** operator request, 2026-10-12; arcane-ui's sign-in callback template, whose release dependency is a CLI policy that allows `img-src data:` and `font-src data:`
+
+**Context:**
+
+- Since 1.11.4 a browser sign-in has ended on a one-line page drawn inside `oidc.ts`. The 2026-10-08 hardening (ARC-054 decision 9) serves it from a query-free route, with `style-src 'unsafe-inline'` for its inline style attribute.
+- arcane-ui 2.4.0 compiles three result pages: success, denied and failure. Each shows the sign-in Gate, lit by a short CSS-only sequence for its result, and each is one static document: one inline stylesheet, no script, and the Gate's six image layers and four font subsets inlined as `data:` URLs, about 426 KB.
+- ARC-042 set the model for shipping arcane-ui output in this MIT package: rendered output only, under a licence notice, with the source kept private. Its decision 6 says no font files are vendored and the template loads its fonts from Google Fonts. A sign-in result page cannot follow that: its policy is `default-src 'none'`, and it should not tell a third party when someone signs in.
+- A cancelled sign-in and a failed one share a page today, so a person who pressed Cancel is told the sign-in failed.
+
+**Decision:**
+
+1. **The three pages are vendored as compiled output.** `src/assets/sign-in/sign-in-callback-{success,denied,failure}.html`, byte-for-byte from arcane-ui's `build:sign-in-callback`, never edited here. The source, the artwork's masters and the build stay in arcane-ui.
+2. **The art and fonts ship inside the pages; for these pages this departs from ARC-042 decision 6.** The Gate artwork (Code Magician LLC) and Latin subsets of Chakra Petch and Rajdhani (SIL Open Font License 1.1) are embedded. The fonts' licence texts and a `NOTICE.txt` ship beside the pages. Show Report keeps decision 6.
+3. **Three results, three routes.** `/result/success` after the session is stored; `/result/denied` when the person cancels at the identity service (`error=access_denied`); `/result/failure` for any other provider error and for a failed token exchange or save. A wrong-`state` request is answered 400 with the failure page. The page is chosen by the result's kind alone; nothing from the request reaches it.
+4. **Each page's policy allows only its own stylesheet, by hash:** `default-src 'none'; style-src 'sha256-…'; img-src data:; font-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'`. The hash is computed from the page as it is loaded, the way a browser computes it, so it cannot drift from the bytes served. `'unsafe-inline'` is gone.
+5. **A missing page degrades visibly.** If an install lacks any of the three, `spell login` warns, and the browser gets plain built-in pages for all three results under the same hash-only policy. The sign-in itself never depends on the pages.
+
+**Consequences:**
+
+- The package grows by about 1.3 MB unpacked (1.11.5 was 2.4 MB). Each page carries its own copy of the same art and fonts, about 420 KB; a test holds each page under 480 KB, arcane-ui's own budget.
+- The listener now settles a sign-in only once the result page has been handed to the operating system, or the browser has hung up, because settling closes the listener. Closing it straight after the write cut the 426 KB page off mid-transfer (`ERR_INCOMPLETE_CHUNKED_ENCODING` in the browser), which the small 1.11.x pages never showed.
+- Re-vendoring is a copy of the three files and a version bump; the policy follows the bytes. Tests check each page's header, its single stylesheet, the absence of scripts, inline style attributes and external URLs, its heading, its size and its policy.
+- arcane-ui's header on both vendored templates reads "SEE LICENSE IN LICENSE", which inside this package points at its MIT licence. `NOTICE.txt` states the pages' terms; ARC-042 decision 1 asks the header itself to name Code Magician LLC, which is an arcane-ui follow-up for both templates.
+
+**Rejected alternatives:**
+
+- **Fonts from Google Fonts (ARC-042 decision 6's model):** the policy would have to allow two Google hosts, a third party would learn when someone finished signing in, and offline the page would fall back to system fonts.
+- **Serving the art and fonts as separate files from the listener:** saves the three-fold copy (about 840 KB) but adds routes and requests to a listener meant to answer one result and close, and a page whose art is still loading when it closes renders half-drawn.
+- **`style-src 'unsafe-inline'`:** works, but each page has exactly one fixed stylesheet, so a hash costs nothing.
+- **A precomputed hash constant:** drifts when the pages are re-vendored, and a wrong hash leaves the page unstyled with nothing reported in the terminal.
+- **One page for a cancellation and a failure:** tells a person who pressed Cancel that the sign-in failed.
 
 ---

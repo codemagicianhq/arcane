@@ -1,7 +1,7 @@
 ---
 title: Spell login architecture
 audience: both
-last_updated: 2026-10-07
+last_updated: 2026-10-12
 status: active
 tags: [login, identity, security, architecture]
 ---
@@ -34,7 +34,9 @@ flowchart LR
     Loopback --> OIDC
 ```
 
-The CLI selects production by default or development with `ARCANE_ENVIRONMENT=dev`. The listener binds to `127.0.0.1` on a free port. It consumes one query-bearing OAuth callback, finishes validation and persistence, and redirects the browser to `/result/success` or `/result/failure`; those result URLs contain no query. The listener stays open through that result request and then closes. A replayed callback is rejected. Result pages contain no account details or tokens and send `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and a restrictive CSP.
+The CLI selects production by default or development with `ARCANE_ENVIRONMENT=dev`. The listener binds to `127.0.0.1` on a free port. It consumes one query-bearing OAuth callback, finishes validation and persistence, and redirects the browser to `/result/success`, `/result/denied` (the person cancelled at the identity service: `access_denied`) or `/result/failure` (anything else); those result URLs contain no query. The listener stays open until that result page has been sent, then closes. A replayed callback is rejected. Result pages contain no account details or tokens and send `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, and a content security policy that allows only the page's own stylesheet, by hash, plus `data:` images and fonts.
+
+The pages are arcane-ui's compiled sign-in pages, vendored as `src/assets/sign-in/sign-in-callback-{success,denied,failure}.html` with the Gate's art and fonts inlined ([[DECISIONS#ARC-055|ARC-055 — Sign-In Result Pages]]). `modules/result-pages.ts` loads them and computes each page's policy from its `<style>` text the way a browser hashes it. `spell login` loads them from the package's assets directory before the browser flow starts; if any is missing it warns and the browser gets plain built-in pages under the same policy. To re-vendor, run `npm run build:sign-in-callback` in arcane-ui, copy the three files from its `dist/exports/`, and bump the version; `test/result-pages.test.ts` checks each page. The 1.12.0 pages are arcane-ui 2.4.0, built from its commit `db47e9b`.
 
 Only the refresh token, `sub`, email, environment, acquisition time, and access-token expiry hint are stored. Access and ID tokens are not stored. The default keychain uses multiple credential entries because a real refresh token exceeds the measured Windows entry limit. The file fallback requires an explicit flag and prints a warning.
 
@@ -71,9 +73,15 @@ sequenceDiagram
         Loopback-->>Browser: 303 /result/success
         Browser->>Loopback: GET query-free result route
         Loopback-->>Browser: Fixed success page + security headers
-        OIDC-->>CLI: Return account after browser response
+        OIDC-->>CLI: Return account once the page is sent
         CLI-->>Person: Signed in
-    else Validation or storage fails
+    else Person cancels at the identity service (access_denied)
+        OIDC-->>Loopback: Select denied result
+        Loopback-->>Browser: 303 /result/denied
+        Browser->>Loopback: GET query-free result route
+        Loopback-->>Browser: Fixed denied page + security headers
+        CLI-->>Person: Refused, nothing changed
+    else Validation or storage fails, or another provider error
         OIDC-->>Loopback: Select failure result
         Loopback-->>Browser: 303 /result/failure
         Browser->>Loopback: GET query-free result route
@@ -124,6 +132,9 @@ flowchart TB
     Entry --> Logout["commands/logout.ts"]
     Login --> Config["modules/identity-config.ts<br/>tenant and scopes"]
     Login --> OIDC["modules/oidc.ts<br/>browser and device flows"]
+    Login --> Pages["modules/result-pages.ts<br/>result pages · hash-only policy"]
+    Pages --> Assets["assets/sign-in/<br/>vendored arcane-ui pages"]
+    OIDC --> Pages
     Whoami --> OIDC
     Login --> Storage["modules/session-store.ts<br/>load · save · clear"]
     Whoami --> Storage
