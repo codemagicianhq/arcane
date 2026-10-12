@@ -1,0 +1,16 @@
+Sign-in result pages
+
+spell login shows one of the three sign-in-callback-*.html pages in the
+browser when a sign-in ends: success, denied (the sign-in was cancelled) or
+failure. They are compiled output of arcane-ui, Code Magician LLC's design
+system, copied here without changes.
+
+Design and artwork: Copyright (c) 2026 Code Magician LLC. The pages, including
+the Gate artwork inlined in them, are distributed with arcane-cli for use with
+Arcane. The arcane-ui source and the artwork's masters are not part of this
+package.
+
+Fonts: each page embeds Latin subsets of Chakra Petch (Medium and SemiBold)
+and Rajdhani (Medium and SemiBold), unmodified, under the
+SIL Open Font License 1.1. Their copyright notices and licence texts are in
+OFL-chakra-petch.txt and OFL-rajdhani.txt.

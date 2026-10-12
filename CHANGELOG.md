@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.12.0] - 2026-10-12
+
+A browser sign-in now ends on the Arcane Gate: one page per result, lit by a short sequence, with nothing loaded from outside the page (decision drafted as ARC-055). `spell login`, `spell logout` and `spell whoami` first shipped in 1.11.4 without a minor bump (see that entry); this is the minor release that carries them.
+
+### Added
+
+- **Sign-in result pages.** After a browser sign-in, the browser shows one of three pages compiled by arcane-ui 2.4.0 and vendored under `dist/assets/sign-in/`: success, denied or failure. Each shows the sign-in Gate lit by a CSS-only sequence for its result (about 1.3 to 2.4 seconds, never looping; reduced motion shows the final frame at once) and carries its art and fonts inside it, so it loads nothing. The fonts' licence texts and a notice ship beside the pages.
+- **A denied result.** A sign-in cancelled at the identity service (`error=access_denied`) now ends on `/result/denied`, which says the sign-in was not completed, instead of on the failure page. Any other provider error, and a failed token exchange or save, still ends on `/result/failure`. The terminal messages are unchanged.
+
+### Changed
+
+- **Each result page's content security policy allows only its own stylesheet, by SHA-256 hash**, plus `data:` images and fonts; `style-src 'unsafe-inline'` is gone. The hash is computed from the page as it is served, so re-vendored pages need no policy change.
+- **The listener waits for the result page to be sent before it closes.** It settles the sign-in once the page has been handed to the operating system, or the browser has hung up, so a large page is never cut short.
+- **An install missing the pages says so** and shows plain pages for all three results under the same policy; the sign-in itself does not depend on them.
+- **The loopback callback hardening of 2026-10-08 ships in this release** (ARC-054 decision 9). A validated callback redirects the browser to a fixed, query-free result route, and a replayed callback is rejected. Result pages send `Cache-Control: no-store`, `Referrer-Policy: no-referrer` and `X-Content-Type-Options: nosniff`. Success is reported only after the session is stored, and still reported when the browser never follows the redirect.
+
 ## [1.11.5] - 2026-10-07
 
 ### Fixed

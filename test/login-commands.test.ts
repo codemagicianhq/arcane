@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { defaultLoginDeps, describeAccount, runLogin, safeErrorText, type LoginDeps } from "../src/commands/login.js";
+import {
+  MISSING_RESULT_PAGES_WARNING,
+  defaultLoginDeps,
+  describeAccount,
+  runLogin,
+  safeErrorText,
+  type LoginDeps,
+} from "../src/commands/login.js";
 import { runLogout } from "../src/commands/logout.js";
 import { runWhoami, type WhoamiDeps } from "../src/commands/whoami.js";
 import { KeychainUnavailableError, type SecretBackend } from "../src/modules/credential-store.js";
@@ -11,9 +18,14 @@ import {
   resolveIdentityEnvironment,
 } from "../src/modules/identity-config.js";
 import { IdentityUnreachableError, LoginDeniedError, LoginTimeoutError, type TokenResult } from "../src/modules/oidc.js";
+import { PLAIN_RESULT_PAGES, type ResultPages } from "../src/modules/result-pages.js";
 import { FileSecretBackend, createSessionStorage } from "../src/modules/session-store.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 import type { Configuration } from "openid-client";
+
+// The source tree's assets have the same layout the published package ships
+// under dist/assets/, so this stands in for ASSETS_DIR without a build.
+const ASSETS_DIR = join(process.cwd(), "src", "assets");
 
 class MemoryBackend implements SecretBackend {
   readonly entries = new Map<string, string>();
@@ -87,6 +99,7 @@ function deps(overrides: Partial<LoginDeps> = {}): LoginDeps {
     deviceLogin: async () => tokenResult(),
     openUrl: async () => true,
     isInteractive: () => true,
+    resultPages: async () => PLAIN_RESULT_PAGES,
     ...overrides,
   };
 }
@@ -112,7 +125,7 @@ describe("identity environment", () => {
 
 describe("spell login", () => {
   it("wires the default environment and discovery adapter without starting a login", async () => {
-    const defaults = defaultLoginDeps();
+    const defaults = defaultLoginDeps(ASSETS_DIR);
     expect(["production", "development"]).toContain(defaults.environment().environment);
     expect(typeof defaults.isInteractive()).toBe("boolean");
     const unreachable = {
@@ -126,7 +139,7 @@ describe("spell login", () => {
     const input = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
     const output = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
     try {
-      const defaults = defaultLoginDeps();
+      const defaults = defaultLoginDeps(ASSETS_DIR);
       Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
       Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
       expect(defaults.isInteractive()).toBe(true);
@@ -152,10 +165,54 @@ describe("spell login", () => {
     expect(allOutput()).not.toContain(SECRET.slice(0, 30));
   });
 
+  it("gives the browser sign-in the installed result pages (R8a)", async () => {
+    const installed = { ...PLAIN_RESULT_PAGES } as ResultPages;
+    let given: ResultPages | undefined;
+    await runLogin({}, deps({
+      resultPages: async () => installed,
+      browserLogin: async (_config, options) => {
+        given = options.pages;
+        const result = tokenResult();
+        await options.onValidated?.(result);
+        return result;
+      },
+    }));
+    expect(given).toBe(installed);
+    expect(allOutput()).not.toContain(MISSING_RESULT_PAGES_WARNING);
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("says so, and signs in with the plain pages, when the install is missing its result pages", async () => {
+    let given: ResultPages | undefined = PLAIN_RESULT_PAGES;
+    await runLogin({}, deps({
+      resultPages: async () => null,
+      browserLogin: async (_config, options) => {
+        given = options.pages;
+        const result = tokenResult();
+        await options.onValidated?.(result);
+        return result;
+      },
+    }));
+    expect(given).toBeUndefined();
+    expect(allOutput()).toContain(MISSING_RESULT_PAGES_WARNING);
+    expect(allOutput()).toContain("Signed in as person@example.test");
+    expect(exit).not.toHaveBeenCalled();
+  });
+
+  it("loads the vendored Gate pages from the assets directory, and none from a directory without them", async () => {
+    const pages = await defaultLoginDeps(ASSETS_DIR).resultPages();
+    expect(pages?.success.html).toContain("<h1>Signed in to Arcane</h1>");
+    expect(pages?.denied.html).toContain("<h1>Sign-in was not completed</h1>");
+    expect(pages?.failure.html).toContain("<h1>Could not finish sign-in</h1>");
+    expect(await defaultLoginDeps(dir).resultPages()).toBeNull();
+  });
+
   it("uses the device-code flow on request, even without a terminal", async () => {
     const device = vi.fn(async () => tokenResult());
-    await runLogin({ deviceCode: true }, deps({ deviceLogin: device, isInteractive: () => false }));
+    const resultPages = vi.fn(async () => PLAIN_RESULT_PAGES);
+    await runLogin({ deviceCode: true }, deps({ deviceLogin: device, isInteractive: () => false, resultPages }));
     expect(device).toHaveBeenCalledOnce();
+    expect(resultPages).not.toHaveBeenCalled();
     expect(exit).not.toHaveBeenCalled();
   });
 

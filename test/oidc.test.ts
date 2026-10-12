@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { join } from "node:path";
 import {
   IdentityUnreachableError,
   LoginBrowserUnavailableError,
@@ -9,14 +10,21 @@ import {
   refreshSession,
 } from "../src/modules/oidc.js";
 import type { IdentityEnvironmentConfig } from "../src/modules/identity-config.js";
+import { PLAIN_RESULT_PAGES, loadResultPages, type ResultPages } from "../src/modules/result-pages.js";
 import { MockIdentityProvider, actAsBrowser } from "./helpers/mock-identity-provider.js";
 import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 const SCOPES = ["openid", "profile", "email", "offline_access"];
+const CSP = "content-security-policy";
 const provider = new MockIdentityProvider();
 let environment: IdentityEnvironmentConfig;
+/** The vendored Gate pages, as `spell login` loads them from the package's assets. */
+let gatePages: ResultPages;
 
 beforeAll(async () => {
+  const loaded = await loadResultPages(join(process.cwd(), "src", "assets"));
+  if (!loaded) throw new Error("src/assets/sign-in/ is missing a result page");
+  gatePages = loaded;
   await provider.start();
   environment = {
     environment: "development",
@@ -115,6 +123,7 @@ describe("browserLogin", () => {
     await browserLogin(config, {
       scopes: SCOPES,
       timeoutMs: HEAVY_TEST_TIMEOUT,
+      pages: gatePages,
       openUrl: async (url) => {
         const authorize = await fetch(url, { redirect: "manual" });
         const callbackUrl = authorize.headers.get("location");
@@ -123,16 +132,68 @@ describe("browserLogin", () => {
 
         const resultPage = await fetch(callbackUrl!);
         resultUrl = resultPage.url;
-        expect(await resultPage.text()).toContain("Signed in to Arcane");
+        expect(await resultPage.text()).toBe(gatePages.success.html);
         expect(resultPage.headers.get("cache-control")).toBe("no-store");
         expect(resultPage.headers.get("referrer-policy")).toBe("no-referrer");
         expect(resultPage.headers.get("x-content-type-options")).toBe("nosniff");
-        expect(resultPage.headers.get("content-security-policy")).toContain("default-src 'none'");
+        expect(resultPage.headers.get("content-type")).toBe("text/html; charset=utf-8");
+        const policy = resultPage.headers.get(CSP)!;
+        expect(policy).toBe(gatePages.success.headers[CSP]);
+        expect(policy).toMatch(/^default-src 'none'; style-src 'sha256-[A-Za-z0-9+/]{43}='; img-src data:; font-src data:;/);
+        expect(policy).not.toContain("unsafe-inline");
         return true;
       },
     });
     expect(new URL(resultUrl).pathname).toBe("/result/success");
     expect(new URL(resultUrl).search).toBe("");
+  });
+
+  it.each(["success", "denied", "failure"] as const)(
+    "sends the whole %s page before closing the listener, though the browser opener returns at once",
+    async (kind) => {
+      const config = await load();
+      let page: Promise<string> | undefined;
+      await browserLogin(config, {
+        scopes: SCOPES,
+        timeoutMs: HEAVY_TEST_TIMEOUT,
+        pages: gatePages,
+        // A real opener resolves as soon as the browser is launched, so the
+        // result page is still on its way when the sign-in settles.
+        openUrl: async (url) => {
+          const authorize = new URL(url);
+          const callback = new URL(authorize.searchParams.get("redirect_uri")!);
+          page = (async () => {
+            if (kind === "success") {
+              callback.href = (await fetch(url, { redirect: "manual" })).headers.get("location")!;
+            } else {
+              callback.searchParams.set("error", kind === "denied" ? "access_denied" : "server_error");
+              callback.searchParams.set("state", authorize.searchParams.get("state")!);
+            }
+            const response = await fetch(callback);
+            // A browser reads at its own pace; the page must not depend on it being quick.
+            await new Promise((resolve) => setTimeout(resolve, 100));
+            return response.text();
+          })();
+          return true;
+        },
+      }).catch((e: unknown) => e);
+      expect(await page).toBe(gatePages[kind].html);
+    },
+  );
+
+  it("shows the plain pages, under the same hash-only policy, when no pages are given", async () => {
+    const config = await load();
+    await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      openUrl: async (url) => {
+        const authorize = await fetch(url, { redirect: "manual" });
+        const resultPage = await fetch(authorize.headers.get("location")!);
+        expect(await resultPage.text()).toBe(PLAIN_RESULT_PAGES.success.html);
+        expect(resultPage.headers.get(CSP)).toBe(PLAIN_RESULT_PAGES.success.headers[CSP]);
+        return true;
+      },
+    });
   });
 
   it("rejects a replayed authorization callback before serving the result", async () => {
@@ -152,8 +213,10 @@ describe("browserLogin", () => {
         const replay = await fetch(callbackUrl!, { redirect: "manual" });
         expect(replay.status).toBe(409);
 
-        const wrongState = await fetch(new URL("/result/failure", callbackUrl!));
-        expect(wrongState.status).toBe(404);
+        for (const otherResult of ["/result/failure", "/result/denied"]) {
+          const wrongResult = await fetch(new URL(otherResult, callbackUrl!));
+          expect(wrongResult.status).toBe(404);
+        }
         const resultUrl = new URL(first.headers.get("location")!, callbackUrl!);
         const resultWithQuery = await fetch(`${resultUrl.href}?code=must-not-be-accepted`);
         expect(resultWithQuery.status).toBe(404);
@@ -211,24 +274,28 @@ describe("browserLogin", () => {
     await expect(fetch(`http://127.0.0.1:${callbackPort}/`)).rejects.toThrow();
   });
 
-  it("maps a provider error on the callback to LoginDeniedError without echoing the query", async () => {
+  it("shows the denied page for a cancellation (access_denied) and reports LoginDeniedError without echoing the query", async () => {
     const config = await load();
     const error = await browserLogin(config, {
       scopes: SCOPES,
       timeoutMs: HEAVY_TEST_TIMEOUT,
+      pages: gatePages,
       openUrl: async (url) => {
         const authorize = new URL(url);
         const redirect = new URL(authorize.searchParams.get("redirect_uri")!);
         redirect.searchParams.set("error", "access_denied");
+        redirect.searchParams.set("error_description", "whatever the provider says");
         redirect.searchParams.set("state", authorize.searchParams.get("state")!);
         const res = await fetch(redirect.href);
-        expect(new URL(res.url).pathname).toBe("/result/failure");
+        expect(new URL(res.url).pathname).toBe("/result/denied");
         expect(new URL(res.url).search).toBe("");
         expect(res.headers.get("cache-control")).toBe("no-store");
         expect(res.headers.get("referrer-policy")).toBe("no-referrer");
         expect(res.headers.get("x-content-type-options")).toBe("nosniff");
-        expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");
-        expect(await res.text()).not.toContain("whatever");
+        expect(res.headers.get(CSP)).toBe(gatePages.denied.headers[CSP]);
+        const page = await res.text();
+        expect(page).toBe(gatePages.denied.html);
+        expect(page).not.toContain("whatever");
         return true;
       },
     }).catch((e: unknown) => e);
@@ -236,21 +303,51 @@ describe("browserLogin", () => {
     expect((error as Error).message).toContain("access_denied");
   });
 
+  it("shows the failure page for any other provider error", async () => {
+    const config = await load();
+    const error = await browserLogin(config, {
+      scopes: SCOPES,
+      timeoutMs: HEAVY_TEST_TIMEOUT,
+      pages: gatePages,
+      openUrl: async (url) => {
+        const authorize = new URL(url);
+        const redirect = new URL(authorize.searchParams.get("redirect_uri")!);
+        redirect.searchParams.set("error", "server_error");
+        redirect.searchParams.set("state", authorize.searchParams.get("state")!);
+        const callback = await fetch(redirect.href, { redirect: "manual" });
+        expect(callback.status).toBe(303);
+        expect(callback.headers.get("location")).toBe("/result/failure");
+        const denied = await fetch(new URL("/result/denied", redirect));
+        expect(denied.status).toBe(404);
+        const failure = await fetch(new URL("/result/failure", redirect));
+        expect(await failure.text()).toBe(gatePages.failure.html);
+        expect(failure.headers.get(CSP)).toBe(gatePages.failure.headers[CSP]);
+        return true;
+      },
+    }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(LoginDeniedError);
+    expect((error as Error).message).toContain("server_error");
+  });
+
   it("rejects a provider error callback whose state does not match, then accepts a valid denial", async () => {
     const config = await load();
     const error = await browserLogin(config, {
       scopes: SCOPES,
       timeoutMs: HEAVY_TEST_TIMEOUT,
+      pages: gatePages,
       openUrl: async (url) => {
         const redirect = new URL(new URL(url).searchParams.get("redirect_uri")!);
         redirect.searchParams.set("error", "access_denied");
         redirect.searchParams.set("state", "forged-state-value-0000000000");
         const res = await fetch(redirect.href);
         expect(res.status).toBe(400);
-        expect(await res.text()).not.toContain("forged-state-value");
+        expect(res.headers.get(CSP)).toBe(gatePages.failure.headers[CSP]);
+        const page = await res.text();
+        expect(page).toBe(gatePages.failure.html);
+        expect(page).not.toContain("forged-state-value");
         redirect.searchParams.set("state", new URL(url).searchParams.get("state")!);
         const denied = await fetch(redirect.href);
-        expect(new URL(denied.url).pathname).toBe("/result/failure");
+        expect(new URL(denied.url).pathname).toBe("/result/denied");
         return true;
       },
     }).catch((e: unknown) => e);
@@ -274,7 +371,7 @@ describe("browserLogin", () => {
       },
     }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Error);
-    expect(page).toContain("Sign-in not completed");
+    expect(page).toContain("Could not finish sign-in");
     expect(page).not.toContain("Signed in to Arcane");
   });
 
@@ -295,7 +392,7 @@ describe("browserLogin", () => {
       },
     }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Error);
-    expect(page).toContain("Sign-in not completed");
+    expect(page).toContain("Could not finish sign-in");
     expect(page).not.toContain("Signed in to Arcane");
   });
 
@@ -305,6 +402,7 @@ describe("browserLogin", () => {
     const error = await browserLogin(config, {
       scopes: SCOPES,
       timeoutMs: HEAVY_TEST_TIMEOUT,
+      pages: gatePages,
       onValidated: () => { throw new Error("keychain save failed"); },
       openUrl: async (url) => {
         const authorize = await fetch(url, { redirect: "manual" });
@@ -317,7 +415,7 @@ describe("browserLogin", () => {
     }).catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Error);
     expect((error as Error).message).toBe("keychain save failed");
-    expect(page).toContain("Sign-in not completed");
+    expect(page).toContain("Could not finish sign-in");
     expect(page).not.toContain("Signed in to Arcane");
   });
 
@@ -384,8 +482,10 @@ describe("browserLogin", () => {
         expect(stray.status).toBe(404);
         const bareRoot = await fetch(redirect.origin);
         expect(bareRoot.status).toBe(404);
-        const earlyResult = await fetch(`${redirect.origin}/result/success`);
-        expect(earlyResult.status).toBe(404);
+        for (const kind of ["success", "denied", "failure"]) {
+          const earlyResult = await fetch(`${redirect.origin}/result/${kind}`);
+          expect(earlyResult.status).toBe(404);
+        }
         return actAsBrowser(url);
       },
     });
