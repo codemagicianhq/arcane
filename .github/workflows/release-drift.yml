@@ -2,11 +2,18 @@ name: Release drift
 
 # Guardrail for npm publish drift.
 #
-# publish.yml only fires on `release: published`, so a merge that bumps
-# package.json without a matching GitHub Release leaves npm behind silently.
-# This workflow watches package.json on main and, when the local version is
-# ahead of what's on npm, auto-creates a GitHub Release tagged v<version>,
-# which in turn triggers publish.yml (OIDC trusted publish, no token).
+# A merge that bumps package.json without a matching GitHub Release and npm
+# publish leaves npm behind silently. This workflow watches package.json on
+# main and, when the local version is ahead of what's on npm, creates a GitHub
+# Release tagged v<version> and then starts publish.yml on that tag (OIDC
+# trusted publish, no token).
+#
+# No stored credential. Both steps use the job's own GITHUB_TOKEN. GitHub does
+# not let a release created with that token fire publish.yml's
+# `release: published` trigger, but `workflow_dispatch` is the documented
+# exception, so this job starts publish.yml itself. It used a personal access
+# token before, and that token's expiry left 1.12.0 merged but unpublished on
+# 2026-10-12 (HTTP 401 from the Releases API).
 #
 # Safe by construction:
 #   - Only runs on codemagicianhq/arcane (skipped on forks).
@@ -30,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # needed to create the GitHub Release + tag
+      actions: write # needed to start publish.yml (workflow_dispatch)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -90,24 +98,33 @@ jobs:
           if gh api "repos/${{ github.repository }}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
             echo "tag_exists=true" >> "$GITHUB_OUTPUT"
             echo "⚠️  Tag ${TAG} already exists -- assuming a Release is in flight. Skipping auto-release."
+            echo "If npm is still behind once that run ends, start the publish by hand: gh workflow run publish.yml --ref ${TAG}"
           else
             echo "tag_exists=false" >> "$GITHUB_OUTPUT"
             echo "Tag ${TAG} does not exist yet."
           fi
 
-      - name: Create GitHub Release (fires publish.yml)
+      - name: Create GitHub Release
         if: steps.compare.outputs.needs_release == 'yes' && steps.tagcheck.outputs.tag_exists == 'false'
         env:
-          GH_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: v${{ steps.compare.outputs.pkg_version }}
         run: |
           set -euo pipefail
-          if [ -z "${GH_TOKEN}" ]; then
-            echo "::error::GH_RELEASE_PAT secret is empty or missing — create a fine-grained PAT (Contents: read/write) as repo secret GH_RELEASE_PAT so 'gh release create' can authenticate. (An empty secret makes gh fail with a cryptic 'set the GH_TOKEN environment variable' / exit 4.)"
-            exit 1
-          fi
-          echo "Creating Release ${TAG} -- this will trigger publish.yml via 'release: published'."
+          echo "Creating Release ${TAG}."
           gh release create "${TAG}" \
             --title "${TAG}" \
             --generate-notes \
             --target "${GITHUB_SHA}"
+
+      - name: Start publish.yml on the new tag
+        if: steps.compare.outputs.needs_release == 'yes' && steps.tagcheck.outputs.tag_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: v${{ steps.compare.outputs.pkg_version }}
+        run: |
+          set -euo pipefail
+          # The release above came from GITHUB_TOKEN, so it fired no workflow;
+          # workflow_dispatch is the one way that token may start publish.yml.
+          gh workflow run publish.yml --repo "${{ github.repository }}" --ref "${TAG}"
+          echo "Started publish.yml on ${TAG}. If that run fails, rerun it, or: gh workflow run publish.yml --ref ${TAG}"

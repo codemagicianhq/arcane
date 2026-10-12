@@ -24,3 +24,22 @@ describe("npm publish workflow", () => {
     expect(workflow).toContain("npm publish --provenance --access public");
   });
 });
+
+describe("release drift workflow", () => {
+  it("creates the release and starts publish.yml with the built-in token, holding no stored credential", async () => {
+    const workflow = await fs.readFile(
+      join(process.cwd(), ".github", "workflows", "release-drift.yml"),
+      "utf8",
+    );
+
+    // A personal access token here expired silently and left 1.12.0 merged
+    // but unpublished (2026-10-12). The built-in token cannot expire.
+    expect([...new Set(workflow.match(/secrets\.\w+/g))]).toEqual(["secrets.GITHUB_TOKEN"]);
+    expect(workflow).toContain("contents: write");
+    expect(workflow).toContain("actions: write");
+    expect(workflow).toContain('gh release create "${TAG}"');
+    // A release created with GITHUB_TOKEN fires no `release` event, so the job
+    // must start publish.yml itself, on the tag it just created.
+    expect(workflow).toContain('gh workflow run publish.yml --repo "${{ github.repository }}" --ref "${TAG}"');
+  });
+});

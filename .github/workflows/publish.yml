@@ -1,8 +1,10 @@
 name: Publish
 
-# Publishes arcane-cli to the public npm registry when a GitHub Release
-# is published, authenticated via npm OIDC trusted publishing (no stored token).
-# The release tag's version should match package.json "version".
+# Publishes arcane-cli to the public npm registry, authenticated via npm OIDC
+# trusted publishing (no stored token). release-drift.yml starts it on the new
+# release tag (workflow_dispatch, since a release created with GITHUB_TOKEN
+# fires no `release` event); a Release published by a person starts it through
+# the `release` trigger. The tag's version should match package.json "version".
 
 on:
   release:
