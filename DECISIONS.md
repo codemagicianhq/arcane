@@ -86,7 +86,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-052](#arc-052--spell-update-installs-the-requires-prerequisites-of-installed-components) | `spell update` Installs the `requires` Prerequisites of Installed Components | 2026-09-29 | Accepted   |
 | [ARC-053](#arc-053--branch-naming-one-rule-per-actor-written-once) | Branch Naming: One Rule per Actor, Written Once | 2026-10-06 | Accepted |
 | [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) | Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token | 2026-10-05 | Accepted |
-| [ARC-055](#arc-055--sign-in-result-pages-vendored-gate-pages-inlined-art-and-fonts-hash-only-policy) | Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy | 2026-10-12 | Proposed |
+| [ARC-055](#arc-055--sign-in-result-pages-vendored-gate-pages-inlined-art-and-fonts-hash-only-policy) | Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy | 2026-10-12 | Accepted |
 
 ---
 
@@ -3474,7 +3474,7 @@ The two lists differ in kind. A newly available component is a preference: nothi
 ## ARC-055 — Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy
 
 **Date:** 2026-10-12
-**Status:** Proposed — drafted by the implementing agent on 2026-10-12, after the operator accepted the lit Gate design and its light sequences and asked for the CLI integration the same day. Awaiting the operator's accept, revise or reject before merge; implemented for 1.12.0.
+**Status:** Accepted — operator, 2026-10-12, as drafted. Drafted by the implementing agent the same day, after the operator accepted the lit Gate design and its light sequences and asked for the CLI integration; implemented in 1.12.0 ([PR #360](https://github.com/codemagicianhq/arcane/pull/360)).
 **Related:** [ARC-042](#arc-042--show-report-compiled-template-distribution-model-and-program-decisions) (the compiled-template model this follows, and decision 6, which this departs from for these pages), [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) (decision 9: the query-free result route and security headers this builds on), [PRD](features/spell-login/PRD.md) (R8a, AC8)
 **Intake:** operator request, 2026-10-12; arcane-ui's sign-in callback template, whose release dependency is a CLI policy that allows `img-src data:` and `font-src data:`
 

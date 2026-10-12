@@ -9,7 +9,7 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [1.12.0] - 2026-10-12
 
-A browser sign-in now ends on the Arcane Gate: one page per result, lit by a short sequence, with nothing loaded from outside the page (decision drafted as ARC-055). `spell login`, `spell logout` and `spell whoami` first shipped in 1.11.4 without a minor bump (see that entry); this is the minor release that carries them.
+A browser sign-in now ends on the Arcane Gate: one page per result, lit by a short sequence, with nothing loaded from outside the page (ARC-055). `spell login`, `spell logout` and `spell whoami` first shipped in 1.11.4 without a minor bump (see that entry); this is the minor release that carries them.
 
 ### Added
 
