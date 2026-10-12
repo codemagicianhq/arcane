@@ -1,7 +1,8 @@
 import { readdir, readFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
-import { join, resolve as resolvePath, sep } from "node:path";
+import { join, sep } from "node:path";
 import { homedir } from "node:os";
+import { resolveRealPath } from "../src/modules/real-path.js";
 import {
   createDenylistRules,
   scanFile,
@@ -46,13 +47,17 @@ function repoToplevel(cwd: string): string | null {
 
 /**
  * True when `candidatePath` resolves to somewhere inside `repoRoot`. Both
- * sides are normalized/resolved first so `..`-segments, a trailing slash, or
- * relative-vs-absolute spelling can't produce a false "outside."
+ * sides are compared by real path, because git prints the toplevel with
+ * symlinks resolved: a file named through a symlinked directory (macOS's
+ * /var -> /private/var, a linked projects folder) never matched it as spelled,
+ * and was read with no warning. Resolving also settles `..`-segments, a
+ * trailing slash, and relative-vs-absolute spelling; a path that does not
+ * exist yet is placed by its nearest existing ancestor.
  */
 function isInsideRepo(candidatePath: string, repoRoot: string): boolean {
-  const resolvedCandidate = resolvePath(candidatePath);
-  const resolvedRoot = resolvePath(repoRoot);
-  return resolvedCandidate === resolvedRoot || resolvedCandidate.startsWith(resolvedRoot + sep);
+  const realCandidate = resolveRealPath(candidatePath);
+  const realRoot = resolveRealPath(repoRoot);
+  return realCandidate === realRoot || realCandidate.startsWith(realRoot + sep);
 }
 
 /**

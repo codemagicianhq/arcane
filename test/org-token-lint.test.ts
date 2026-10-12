@@ -340,6 +340,74 @@ describe("resolvePrivateTokens: local out-of-repo file source (ARC-041)", () => 
     }
   });
 
+  // Git prints the toplevel with symlinks resolved, so the guard has to place
+  // the file by its real path too. Real-path fixtures never spell a path
+  // through a link, so these make one explicitly: a junction, which Windows
+  // creates without privilege (the type is ignored elsewhere).
+  async function repoThroughLink(prefix: string): Promise<{ repoDir: string; link: string }> {
+    const repoDir = await createFixtureDir(prefix);
+    const linkParent = await createFixtureDir(`${prefix}-link`);
+    tempDirs.push(repoDir, linkParent);
+    runGit(repoDir, ["init", "-b", "main"]);
+    const link = join(linkParent, "repo");
+    await fs.symlink(repoDir, link, "junction");
+    return { repoDir, link };
+  }
+
+  it("refuses an in-repository file named through a symlinked directory", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+
+    const { repoDir, link } = await repoThroughLink("org-token-local-file-via-link");
+    await fs.writeFile(join(repoDir, "org-tokens"), "should-never-be-read\n", "utf8");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = join(link, "org-tokens");
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // The cwd goes through the link too, as a shell opened there would.
+      const tokens = await resolvePrivateTokens(undefined, link);
+      expect(tokens).toEqual([]);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("resolves inside this repository"));
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("refuses a missing in-repository path named through a symlink, rather than throwing", async () => {
+    // realpath rejects a path that does not exist, and a token file that does
+    // not exist yet is a normal case. The guard still places it by its parent.
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+
+    const { link } = await repoThroughLink("org-token-local-file-missing-via-link");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = join(link, "not-created-yet", "org-tokens");
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await expect(resolvePrivateTokens(undefined, link)).resolves.toEqual([]);
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("resolves inside this repository"));
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("reads a file in a sibling directory that only shares the repository's path as a prefix", async () => {
+    stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
+    delete process.env["ARCANE_ORG_TOKENS"];
+
+    const repoDir = await createFixtureDir("org-token-local-file-prefix");
+    tempDirs.push(repoDir);
+    runGit(repoDir, ["init", "-b", "main"]);
+    const sibling = `${repoDir}-sibling`;
+    await fs.mkdir(sibling);
+    tempDirs.push(sibling);
+    const filePath = join(sibling, "org-tokens");
+    await fs.writeFile(filePath, "a-sibling-token\n", "utf8");
+    process.env["ARCANE_ORG_TOKENS_FILE"] = filePath;
+
+    expect(await resolvePrivateTokens(undefined, repoDir)).toEqual(["a-sibling-token"]);
+  });
+
   it("does not refuse a file that merely resolves OUTSIDE any repository", async () => {
     stashEnv("ARCANE_ORG_TOKENS", "ARCANE_ORG_TOKENS_FILE");
     delete process.env["ARCANE_ORG_TOKENS"];

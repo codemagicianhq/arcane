@@ -30,6 +30,7 @@ import { constants } from "node:fs";
 import { join, resolve, dirname, basename } from "node:path";
 import { fileExists } from "./copier.js";
 import { runGit } from "./git.js";
+import { resolveRealPath } from "./real-path.js";
 
 /**
  * Sentinel push URL. Not a real scheme, so git fails to resolve a helper.
@@ -153,7 +154,18 @@ function isArcaneHooksPath(root: string, value: string): boolean {
     const absolute = resolve(root, separated).replace(/\\/g, "/").replace(/\/+$/, "");
     return windows ? absolute.toLowerCase() : absolute;
   };
-  return normalize(value) === normalize(ARCANE_HOOKS_DIR);
+  if (normalize(value) === normalize(ARCANE_HOOKS_DIR)) return true;
+  // `root` comes from git with symlinks resolved, so an absolute value spelled
+  // through a link (macOS's /var -> /private/var) matches only once it is
+  // resolved too, as far as it exists. Only the configured value follows links.
+  // Ours stays the literal .arcane/hooks under the real root: if that were
+  // itself a link into a foreign hooks directory, resolving it would let the
+  // foreign directory pass as ours, and installing would overwrite its hooks
+  // through the link -- the R7 guard failing OPEN again.
+  return (
+    normalize(resolveRealPath(resolve(root, value))) ===
+    normalize(join(resolveRealPath(root), ARCANE_HOOKS_DIR))
+  );
 }
 
 const PRE_PUSH_HOOK_BODY = `#!/bin/sh
