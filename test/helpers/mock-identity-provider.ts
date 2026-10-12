@@ -11,7 +11,7 @@
 
 import { createServer, type Server } from "node:http";
 import { createHash, randomBytes } from "node:crypto";
-import { SignJWT, exportJWK, generateKeyPair, type KeyLike } from "jose";
+import { SignJWT, exportJWK, generateKeyPair, type CryptoKey } from "jose";
 
 interface PendingCode {
   codeChallenge: string;
@@ -27,7 +27,7 @@ export interface TokenRequestRecord {
 
 export class MockIdentityProvider {
   private server!: Server;
-  private privateKey!: KeyLike;
+  private privateKey!: CryptoKey;
   private jwk!: Record<string, unknown>;
   readonly kid = "test-key-1";
   port = 0;

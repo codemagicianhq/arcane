@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
-import { copyAssets, copyDir } from "../scripts/copy-assets.js";
+import { copyAssets, copyDir, type ScanViolation } from "../scripts/copy-assets.js";
 import { resolveTsxCli, TSX_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const tempDirs: string[] = [];
@@ -92,7 +92,7 @@ describe("copyAssets pruning", () => {
     await fs.mkdir(dest, { recursive: true });
     await fs.writeFile(join(src, "leaky.md"), "API_KEY=abc123\n", "utf8");
 
-    const violations: Array<{ file: string }> = [];
+    const violations: ScanViolation[] = [];
     await copyDir(src, dest, violations);
 
     expect(violations.length).toBeGreaterThan(0);

@@ -28,7 +28,7 @@ describe("execFileWithTimeout", () => {
       ).catch((err: NodeJS.ErrnoException & { killed?: boolean }) => err);
 
       expect(error).toBeInstanceOf(Error);
-      expect(error.killed).toBe(true);
+      expect(error).toMatchObject({ killed: true });
       // Bounded by the budget, not by the child's own 60s lifetime.
       expect(Date.now() - started).toBeLessThan(HEAVY_TEST_TIMEOUT);
     },

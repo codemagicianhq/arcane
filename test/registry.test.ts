@@ -201,10 +201,7 @@ describe("registry", () => {
   // ─── Exhaustive file existence check ────────────────────────────────────────
 
   describe("file integrity — every registered file must exist in src/assets/", () => {
-    const all = getAllComponents();
-    const nonExternal = all.filter((c) => !c.external);
-
-    for (const component of nonExternal) {
+    for (const component of getAllComponents()) {
       for (const file of component.files) {
         // A file's SOURCE path can differ from its installed path -- see
         // RegistryComponent.sourceOverrides, used for dotfiles that must not
@@ -219,11 +216,6 @@ describe("registry", () => {
         });
       }
     }
-
-    it("no external components are registered", () => {
-      const external = all.filter((c) => c.external);
-      expect(external).toHaveLength(0);
-    });
   });
 
   // ─── Spell source + client-shim parity (CS-01: three shims; CS-03: canonical first) ──

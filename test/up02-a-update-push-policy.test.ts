@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi, type MockInstance } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -101,7 +101,7 @@ async function recorded(work: string): Promise<ArcaneManifest> {
 
 describe("spell update — push_policy retrofit notice (ARC-049 decision 2)", () => {
   let realIsTTY: boolean | undefined;
-  let logSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: MockInstance<typeof console.log>;
   const output = (): string => logSpy.mock.calls.map((c) => String(c[0])).join("\n");
 
   beforeEach(() => {
