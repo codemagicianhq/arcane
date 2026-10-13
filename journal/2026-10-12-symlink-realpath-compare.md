@@ -21,7 +21,8 @@ symlinks only where the path exists; name the branch `sessions/YYYY-MM-DD-<slug>
 after presenting the staged diff and message; verify with `npm run test:coverage`, `npm run lint`
 and `npm run typecheck`; close the two TODO items. Later in the session the operator asked to push
 and open the pull request, to turn on Auto-fix, for a plain-language explanation of the work, and
-for this close.
+for this close. After the close, the operator asked for the POSIX backslash bug to be fixed next,
+then for this entry to record it.
 
 ### What Got Done
 
@@ -37,10 +38,10 @@ for this close.
    four failed without the fix, two guard the separator boundary and R7, and four mutations of the
    fix each failed the test meant to catch them. Locally, `npm run test:coverage` gave 2313 passed,
    5 skipped, 0 failed (statements 91.95%, branches 87.05%). `TODO.md` closes both items.
-2. **A third bug recorded, not fixed** — on POSIX, `isArcaneHooksPath` folds a backslash after
-   resolving, so a foreign directory literally named `.arcane\hooks` passes as Arcane's own.
-   Reproduced against the real module on `deb2412`. `TODO.md` ("LOW bug: on POSIX,
-   `isArcaneHooksPath` folds a backslash in `core.hooksPath` onto `/` after resolving").
+2. **A third bug recorded** — on POSIX, `isArcaneHooksPath` folds a backslash after resolving, so a
+   foreign directory literally named `.arcane\hooks` passes as Arcane's own. Reproduced against the
+   real module on `deb2412` and recorded in `TODO.md` ("LOW bug: on POSIX, `isArcaneHooksPath`
+   folds a backslash in `core.hooksPath` onto `/` after resolving"); fixed after the close (item 5).
 3. **The type-check gap handed to its own session** — nothing type-checked `scripts/` or `test/`.
    Flagged as a separate task; the operator started it, and it merged as
    [PR #365](https://github.com/codemagicianhq/arcane/pull/365) on 2026-10-12T23:39Z (`8ee8d44`,
@@ -53,6 +54,15 @@ for this close.
    `sessions/2026-10-12-symlink-realpath-compare` (`b67ea5f`, PR #364's merged head) and
    `docs/spell-full-cycle-coordination-gaps` (`2fae664`, the merged head of
    [PR #3](https://github.com/codemagicianhq/arcane/pull/3)).
+5. **The backslash bug fixed, after the close** —
+   [PR #368](https://github.com/codemagicianhq/arcane/pull/368), merged by the operator on
+   2026-10-13T00:24Z (`e3a976f`); all seven checks passed, and `main`'s CI on `e3a976f` passed.
+   Diagnosis found a second instance of the same fold, and the worse one: `hooksPathValue`, the
+   value Arcane writes to `core.hooksPath`, also folded backslashes on POSIX. In a repository whose
+   own path contains a backslash, the hook never ran (a real push succeeded) while `isHookEnforced`
+   reported it enforced (probed on `02b39f8`). Both folds are Windows-only now. Two POSIX-only tests
+   each fail with only their own fold restored. Locally, `npm run test:coverage` gave 2314 passed,
+   5 skipped, 0 failed. `TODO.md` marks the item done.
 
 ### Lessons Learned
 
@@ -106,6 +116,15 @@ granting the one commit and running it; the operator granted each commit by fing
 so a clean typecheck was no evidence for them; a separate strict `tsc` over those files was. Know
 what a gate covers before citing it. The type-check session then found 21 real errors in `test/`.
 
+#### A check that folds both sides the same way hides the fold
+
+`isHookEnforced` compared the configured hooks path with Arcane's own after folding backslashes on
+both, so when `hooksPathValue` folded the path it wrote, the comparison still matched: the report
+said enforced while git looked in a directory that does not exist. Only a real push showed it, and
+fixing the comparison alone would have turned that silent failure into Arcane refusing its own
+install. When a check normalises both sides, look for the same normalisation in whatever produced
+the value, and test the effect, a real push, not only the check.
+
 ### Open Items Carried Forward
 
 - **The Next Session Handoff was not rewritten by this close**, at the operator's call. The call was
@@ -113,9 +132,12 @@ what a gate covers before citing it. The type-check session then found 21 real e
   footprint overlap); that session's PR #365 then merged with the 2026-10-09 handoff marked consumed,
   so `main`'s handoff reads as consumed and open work lives in `TODO.md`. This session leaves no work
   in progress.
-- **This close's docs pull request** — dispatched; it needs the operator's merge.
-- **The POSIX backslash fold** — `TODO.md` ("LOW bug: on POSIX, `isArcaneHooksPath` folds a
-  backslash in `core.hooksPath` onto `/` after resolving").
+- **This close's docs pull request** — [PR #366](https://github.com/codemagicianhq/arcane/pull/366),
+  merged (`02b39f8`).
+- **This entry's update** — its docs pull request is dispatched and needs the operator's merge.
+- **This session's worktree** — remove it from the primary checkout once the session ends and that
+  pull request merges (`git worktree remove`, then `git fetch --prune origin`); a worktree cannot
+  remove itself.
 - **From the 2026-10-09 handoff**, not checkable from this Mac and left with the operator: removing
   the linked worktree `X:/Code/CodeMagician/products/arcane/arcane-wt-branch-naming`, and deciding
   on the five local `backup/*` snapshots. Checked and resolved at this close:
