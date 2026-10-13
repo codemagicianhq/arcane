@@ -189,3 +189,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-13-handoff-release-correction.md`, lessons "The branch-name rule and the session's branch designation conflict", "The attribution rules conflict over model names", and "The drift check's parity pairing produced false findings".
+
+## Feedback — Arcane workflow (2026-10-12)
+
+**Session:** macOS test fixtures compared by real path, PR [#363](https://github.com/codemagicianhq/arcane/pull/363), and this session's close (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- `spell-bug` step 2 resolves `tracking_mode` only from a root `.arcane.json` and asks when it is unset. Arcane's own repository keeps its self-hosted manifest at `src/assets/.arcane.json` (`tracking_mode: "internal"`), which the push-policy check already reads when the file declares `selfHosted: true`, so the spell asks a question its own repository has already answered.
+- `spell-commit-work` step 3 resolves `{OPERATOR_DOMAIN}` for a CLI tool's author identity from `.arcane.json`, and neither manifest in this repository carries one, so the domain came from an earlier commit's author and the operator's choice at the approval prompt.
+
+### Improvement Items
+- [ ] In `spell-bug` step 2, and in every spell that reads `.arcane.json`, resolve the manifest the way the push-policy check does: the root file, else `src/assets/.arcane.json` when it declares `selfHosted: true`. <!-- upstream: queued -->
+- [ ] Give `{OPERATOR_DOMAIN}` a home in the manifest, or name a fallback in `spell-commit-work` step 3, so a CLI tool's author identity resolves without asking on every commit. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-12-macos-fixture-realpath.md`, lessons "`spell-bug` read `tracking_mode` only from a root manifest this repository does not have" and "`spell-commit-work` had nowhere to read the tool author's domain from".

@@ -3509,3 +3509,35 @@ The two lists differ in kind. A newly available component is a preference: nothi
 - **One page for a cancellation and a failure:** tells a person who pressed Cancel that the sign-in failed.
 
 ---
+
+## ARC-056 — The macOS Fixture Job Is a Required Check
+
+**Date:** 2026-10-12
+**Status:** Accepted — operator, 2026-10-12. The operator asked for the change after [PR #363](https://github.com/codemagicianhq/arcane/pull/363), which added the job, merged; in force on `main` since 2026-10-12T22:29:59Z. Recorded at the session's close.
+**Related:** [ARC-035](#arc-035--auto-merge-requires-a-clear-review-round) (the last check added to the required set, `Review round clear`), [EF-34](docs/intake/batch-001/EF-34.md) (the tripwire whose macOS failure the job guards)
+**Intake:** operator request, 2026-10-12, in the session that fixed the macOS test fixtures ([journal](journal/2026-10-12-macos-fixture-realpath.md))
+
+**Context:**
+
+- On macOS the default temp directory, `/var/folders/...`, sits under the `/var` -> `/private/var` symlink, and git reports real paths. Until #363 the test helpers compared the two as spelled, so 179 of 2282 tests failed on a Mac (`main` at `4e04f5c`).
+- CI runs the full suite on `ubuntu-latest` only, whose temp directory is a real path, so no check saw it. The macOS leg of the sign-in job runs six sign-in test files.
+- #363 added `Fixture tests (macos-latest)`: six fixture-heavy test files against the runner's real temp directory. As an advisory check, its failure would show red and still allow a merge.
+
+**Decision:**
+
+`Fixture tests (macos-latest)` is the fourth required status check in the `protect main` ruleset, alongside `Lint, typecheck, test, build`, `PR branch is rebased on target` and `Review round clear`. Nothing else in the ruleset changed.
+
+**Consequences:**
+
+- A pull request that breaks fixture paths on macOS cannot merge until it is fixed. [PR #364](https://github.com/codemagicianhq/arcane/pull/364) was the first gated by it, and passed.
+- Every pull request waits for a macOS runner. On #363 the job finished before the required Linux job did.
+- A flaky macOS run blocks merges until it is re-run.
+- The job's name is load-bearing: renaming it in `.github/workflows/ci.yml` without updating the ruleset leaves a required check that never reports, which blocks every merge.
+
+**Rejected alternatives:**
+
+- **Keep the job advisory:** a red check that can be merged over guards nothing at the moment it matters.
+- **A monitor that reacts to failures (the desktop app's Auto-fix):** it acts after a failure lands on a pull request; the operator asked for prevention at the root rather than repair after the fact.
+- **The full suite on macOS instead:** broader, but it lengthens every pull request, and its macOS-only flakiness is unmeasured; the six files cover the failure that was seen.
+
+---
