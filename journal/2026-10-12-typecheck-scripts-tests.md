@@ -98,7 +98,10 @@ what landed since the 2026-10-09 close, which no journal had recorded.
 
 No journal recorded these. They are summarized from their commits and pull requests, as the
 operator chose. [PR #364](https://github.com/codemagicianhq/arcane/pull/364) has its own entry,
-[[2026-10-12-symlink-realpath-compare]].
+[[2026-10-12-symlink-realpath-compare]]. So does
+[PR #368](https://github.com/codemagicianhq/arcane/pull/368), the POSIX backslash fold, which
+merged at 2026-10-13T00:24Z while this close was being written; the update that adds it to that
+entry, [PR #369](https://github.com/codemagicianhq/arcane/pull/369), was open at this close.
 
 - **2026-10-10, [PR #353](https://github.com/codemagicianhq/arcane/pull/353):** ARC-054 records
   the sign-in decisions of 2026-10-05 and the 2026-10-08 hardening. The login PRD is marked
@@ -189,13 +192,14 @@ Re-verify with `git config --get core.hooksPath`.
 ### Open Items Carried Forward
 
 - **This close's docs pull request:** dispatched. It needs the operator's merge.
-- **The primary checkout's `main` is at `ecf7a0d`, seven commits behind `origin/main`.** Until it is
+- **The primary checkout's `main` is at `ecf7a0d`, eight commits behind `origin/main`.** Until it is
   fast-forwarded, commits from linked worktrees run its older pre-commit hook, which has no
   `typecheck:all`. CI runs both checks regardless.
-- **`main` carries unreleased product fixes:** #364's changes to `src/modules/push-safety.ts` and
-  `src/modules/real-path.ts` reach users only in the next release, a patch per `spell-bump`'s table.
-  The governance documents' hook description (`TODO.md`, "two governance documents still say
-  `.husky/pre-commit` runs only lint and typecheck") can ride with it.
+- **`main` carries unreleased product fixes:** the changes from #364 and #368 to
+  `src/modules/push-safety.ts` and `src/modules/real-path.ts` reach users only in the next release,
+  a patch per `spell-bump`'s table (`TODO.md`, "Next release is a patch, 1.12.1"). The governance
+  documents' hook description (`TODO.md`, "two governance documents still say `.husky/pre-commit`
+  runs only lint and typecheck") can ride with it.
 - **`TODO.md` LOW items from this session:**
   - "`npm run lint` (`eslint src test`) never lints `scripts/`".
   - The governance documents' hook description.
