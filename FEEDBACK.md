@@ -135,3 +135,22 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-09-branch-naming-written-once.md`, lessons "A backgrounded four-second task stalled the session for 73 minutes", "Two sessions in one primary checkout: `git switch -c` carried a peer's staged work onto my branch", "After a rebase, the suite lies until the dependencies and `dist/` match the new tree", "A local denylist blocks commits on lines nobody changed".
+
+## Feedback — Arcane workflow (2026-10-12)
+
+**Session:** Symlinked paths compared by real path — both TODO bugs fixed in [PR #364](https://github.com/codemagicianhq/arcane/pull/364) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- A commit message cited an unmerged commit by SHA (`58f1eff`). The mandatory pre-PR rebase (`spell-commit-work` step 9b, `spell-create-pull-request` Step 0.6) rewrites unmerged SHAs, so the citation was bound to go stale, and nothing in either spell or in `git-conventions.md` warns against it.
+- `spell-create-pull-request` Step 4 and `spell-commit-work` step 9a2 write the PR body to `<git-dir>/arcane-pr-body.md`. In a Claude Code linked worktree that path is inside the primary checkout's `.git/worktrees/<name>/`, which Claude Code's worktree hook refuses to write; the alternative path the hook suggests cannot exist, because a linked worktree's `.git` is a gitfile.
+- `spell-commit-work` step 4.5 gives two rows for an interactive commit in a repository with no roster and no active delegation: "Interactive, any power" (exact operator approval required) and, because roster identity is missing, "Missing or invalid authority" (human execution required). The step does not say which governs, or whether an exact per-commit operator approval is the explicit grant `agent-policies.md` asks for.
+
+### Improvement Items
+- [ ] In `git-conventions.md` (the commit body guidance) and `spell-commit-work` step 7, add: cite an unmerged commit by its subject, never its SHA, because the pre-PR rebase rewrites it. <!-- upstream: queued -->
+- [ ] In `spell-create-pull-request` Step 4 and `spell-commit-work` step 9a2, name a fallback for the body file when the git dir is not writable by the agent: a temp file outside the repository, keeping the `<!-- arcane-pr-body: <branch> -->` first line, deleted after the read-back. <!-- upstream: queued -->
+- [ ] In `spell-commit-work` step 4.5, say which row governs an interactive session in a repository with no roster and no active delegation, and whether an exact, fingerprint-bound operator approval of one commit counts as the explicit grant `agent-policies.md` requires. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-12-symlink-realpath-compare.md`, lessons "A commit message cited an unmerged commit by SHA", "`spell-create-pull-request`'s body file cannot be written from a Claude Code worktree", "`spell-commit-work`'s authority table has two rows for a repo with no roster".
