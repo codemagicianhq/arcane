@@ -32,7 +32,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 
 | ARC                                                                                                | Title                                                                          | Date       | Status     |
 | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------- | ---------- |
-| [ARC-001](#arc-001--arcane-ops-separation-dual-prefix-adr-strategy-and-content-ownership)          | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership        | 2026-05-04 | Accepted   |
+| [ARC-001](#arc-001--framework--operations-separation-dual-prefix-adr-strategy-and-content-ownership)          | Arcane / Ops Separation: Dual-Prefix ADR Strategy and Content Ownership        | 2026-05-04 | Accepted   |
 | [ARC-002](#arc-002--distribute-vs-code-agent-mode-files-via-spell-init)                            | Distribute VS Code Agent Mode Files via spell init                             | 2026-05-14 | Superseded |
 | [ARC-003](#arc-003--agent-persona-schema-v2-and-operations-comms-persona-replacement)              | Agent Persona Schema v2 and Operations-Comms Persona Replacement               | 2026-05-18 | Accepted   |
 | [ARC-004](#arc-004--image-prompt-asset-ownership-model)                                            | Image-Prompt Asset Ownership Model                                             | 2026-05-19 | Accepted   |
@@ -1272,7 +1272,7 @@ An operator running Arcane across a private governance-hub repo (holding per-ven
 
 **Date:** 2026-08-22
 **Status:** Accepted
-**Related:** [ARC-014](#arc-014--org-token-lint-as-a-build-gate) (org-token gate — this widens its surface and splits its purpose), [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (build-in-public leak gate), [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (the venture examples this governs)
+**Related:** [ARC-014](#arc-014--spell-authoring-standards-a-quality-rubric-for-spell-prompts) (decision 5's org-token gate — this widens its surface and splits its purpose), [ARC-016](#arc-016--public-repository-model-fresh-start-build-in-public-with-an-org-leak-gate) (build-in-public leak gate), [ARC-030](#arc-030--venture-idea-lifecycle-hub-role-registry-and-spell-manifest-promotion) (the venture examples this governs)
 
 **Context:**
 
@@ -3431,7 +3431,7 @@ The two lists differ in kind. A newly available component is a preference: nothi
 ## ARC-054 — Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token
 
 **Date:** 2026-10-05
-**Status:** Accepted — operator decisions in session on 2026-10-05 (the library, the flow, the storage rule, the file opt-in, `whoami`, and the split after the Windows measurement the same day); the PRD recording them was approved by the operator on 2026-10-05. Decisions 1 to 8 shipped in 1.11.4 and 1.11.5; decision 9 is on `main` and unreleased. Recorded on 2026-10-09.
+**Status:** Accepted — operator decisions in session on 2026-10-05 (the library, the flow, the storage rule, the file opt-in, `whoami`, and the split after the Windows measurement the same day); the PRD recording them was approved by the operator on 2026-10-05. Decisions 1 to 8 shipped in 1.11.4 and 1.11.5; decision 9 shipped in 1.12.0 (`CHANGELOG.md`, `## [1.12.0] - 2026-10-12`). Recorded on 2026-10-09; corrected on 2026-10-12.
 **Related:** [PRD](features/spell-login/PRD.md), [architecture](features/spell-login/architecture.md), [manual acceptance guide and evidence record](features/spell-login/manual-acceptance-2026-10-07.md)
 **Intake:** operator request, 2026-10-05 (sign-in for the CLI); `features/spell-login/PRD.md`
 
