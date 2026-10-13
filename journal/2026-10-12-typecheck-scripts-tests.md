@@ -101,7 +101,7 @@ operator chose. [PR #364](https://github.com/codemagicianhq/arcane/pull/364) has
 [[2026-10-12-symlink-realpath-compare]]. So does
 [PR #368](https://github.com/codemagicianhq/arcane/pull/368), the POSIX backslash fold, which
 merged at 2026-10-13T00:24Z while this close was being written; the update that adds it to that
-entry, [PR #369](https://github.com/codemagicianhq/arcane/pull/369), was open at this close.
+entry, [PR #369](https://github.com/codemagicianhq/arcane/pull/369), merged at 2026-10-13T03:43Z.
 
 - **2026-10-10, [PR #353](https://github.com/codemagicianhq/arcane/pull/353):** ARC-054 records
   the sign-in decisions of 2026-10-05 and the 2026-10-08 hardening. The login PRD is marked
@@ -192,7 +192,8 @@ Re-verify with `git config --get core.hooksPath`.
 ### Open Items Carried Forward
 
 - **This close's docs pull request:** dispatched. It needs the operator's merge.
-- **The primary checkout's `main` is at `ecf7a0d`, eight commits behind `origin/main`.** Until it is
+- **The primary checkout's `main` is at `ecf7a0d`, nine commits behind `origin/main` at this
+  close.** Until it is
   fast-forwarded, commits from linked worktrees run its older pre-commit hook, which has no
   `typecheck:all`. CI runs both checks regardless.
 - **`main` carries unreleased product fixes:** the changes from #364 and #368 to
