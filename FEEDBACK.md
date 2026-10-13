@@ -170,3 +170,22 @@
 ### Raw Notes
 > Source: `journal/2026-10-12-typecheck-scripts-tests.md`, lesson "`spell-create-pull-request` pushes before it rebases".
 > A data point for the 2026-10-12 symlink session's body-file item above: in this session's Claude Code linked worktree, the body file was written to `<git-dir>/arcane-pr-body.md` from the shell without any refusal, for both PR #365 and PR #367.
+
+## Feedback — Arcane workflow (2026-10-13)
+
+**Session:** Handoff release correction, PR [#354](https://github.com/codemagicianhq/arcane/pull/354), and this session's close (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The designated-branch rule and the branch-rename gate conflict. `CLAUDE.md` says a tool-generated branch name is renamed before a PR, and `spell-create-pull-request` Step 0's rename gate would push a new branch and delete the designated remote branch. The spell has no path for a branch the session harness designates, so the choice had to go to the operator.
+- The attribution rules conflict over model names. `spell-commit-work` requires a `Model:` trailer, the runtime forbids naming the model in commits, and the attribution reminder asks for a `Co-Authored-By` line that names a model. The spell describes the `withheld` path but not how a `Co-Authored-By` line should read.
+- `spell-check-drift`'s canonical-versus-installed parity rule pairs each `src/assets/` file with a root file of the same name. That produced five false "real content" findings in files outside the parity contract (`GENERATED_ROOTS` in `scripts/self-host-parity.ts`).
+
+### Improvement Items
+- [ ] In `spell-create-pull-request` Step 0 and `spell-commit-work` step 9, when the session harness designates a branch, keep that branch and report the conflict with the branch-naming rule, instead of running the rename gate. <!-- upstream: queued -->
+- [ ] In `spell-commit-work` step 7, state the trailer rule when the runtime forbids naming a model: use `Model: withheld` and `Model-Source: withheld-by-runtime`, and say what a `Co-Authored-By` line should name. <!-- upstream: queued -->
+- [ ] In `spell-check-drift`'s canonical-versus-installed parity rule, pair files only inside the managed roots of `scripts/self-host-parity.ts` (`GENERATED_ROOTS`), not by filename across `src/assets/` and the root. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-13-handoff-release-correction.md`, lessons "The branch-name rule and the session's branch designation conflict", "The attribution rules conflict over model names", and "The drift check's parity pairing produced false findings".
