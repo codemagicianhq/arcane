@@ -144,14 +144,17 @@ function isArcaneHooksPath(root: string, value: string): boolean {
   // Backslash-to-slash folding is Windows-only for the same reason as case
   // folding: on POSIX a backslash is a legal filename character, so a directory
   // genuinely named `.arcane\hooks` would normalise onto ours and the R7 guard
-  // would fail OPEN -- installing over someone else's hooks.
+  // would fail OPEN -- installing over someone else's hooks. That holds after
+  // resolving too: `resolve` keeps a POSIX backslash as part of a name, and an
+  // unconditional fold there let exactly that directory through.
   const windows = process.platform === "win32";
   const normalize = (p: string): string => {
     const separated = windows ? p.replace(/\\/g, "/") : p;
     // Relative values resolve against the repository ROOT, matching how git
     // itself resolves core.hooksPath -- against the worktree top level, never
     // against the process's working directory.
-    const absolute = resolve(root, separated).replace(/\\/g, "/").replace(/\/+$/, "");
+    const resolved = resolve(root, separated);
+    const absolute = (windows ? resolved.replace(/\\/g, "/") : resolved).replace(/\/+$/, "");
     return windows ? absolute.toLowerCase() : absolute;
   };
   if (normalize(value) === normalize(ARCANE_HOOKS_DIR)) return true;
@@ -277,9 +280,15 @@ export async function hookFilePath(cwd: string, hookName: string = "pre-push"): 
  * full history in one ordinary command while `doctor` reported the repository
  * blocked. That is not an edge case here: Arcane's own methodology sends
  * concurrent sessions into linked worktrees.
+ *
+ * Forward slashes on Windows only. On POSIX a backslash in the repository's
+ * own path is part of a directory name: folding it wrote a path git could not
+ * find, so the hook never ran, while `isArcaneHooksPath` folded both sides and
+ * reported it enforced.
  */
 async function hooksPathValue(cwd: string): Promise<string> {
-  return join(await repositoryRoot(cwd), ARCANE_HOOKS_DIR).replace(/\\/g, "/");
+  const value = join(await repositoryRoot(cwd), ARCANE_HOOKS_DIR);
+  return process.platform === "win32" ? value.replace(/\\/g, "/") : value;
 }
 
 /**
