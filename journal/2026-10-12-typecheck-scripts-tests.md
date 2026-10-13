@@ -186,16 +186,16 @@ either way.
 
 This worktree's `core.hooksPath` points at the primary checkout's `.husky/_`, so the pre-commit
 change made on this branch never ran on this branch's own commits. It takes effect where
-`.husky/pre-commit` is read, which is the primary checkout once its `main` is fast-forwarded.
-Re-verify with `git config --get core.hooksPath`.
+`.husky/pre-commit` is read, which is the primary checkout once its `main` is fast-forwarded. The
+operator fast-forwarded it to `421b6ac` during this close, so the step is live there now. Re-verify
+with `git config --get core.hooksPath`.
 
 ### Open Items Carried Forward
 
-- **This close's docs pull request:** dispatched. It needs the operator's merge.
-- **The primary checkout's `main` is at `ecf7a0d`, nine commits behind `origin/main` at this
-  close.** Until it is
-  fast-forwarded, commits from linked worktrees run its older pre-commit hook, which has no
-  `typecheck:all`. CI runs both checks regardless.
+- **This close's docs pull request,
+  [PR #370](https://github.com/codemagicianhq/arcane/pull/370),** merged at 2026-10-13T03:56Z with
+  all seven checks passing, before a refresh of its handoff could reach it. The refresh is its own
+  docs PR, from `sessions/2026-10-12-handoff-refresh`; it needs the operator's merge.
 - **`main` carries unreleased product fixes:** the changes from #364 and #368 to
   `src/modules/push-safety.ts` and `src/modules/real-path.ts` reach users only in the next release,
   a patch per `spell-bump`'s table (`TODO.md`, "Next release is a patch, 1.12.1"). The governance
