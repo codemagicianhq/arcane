@@ -1,7 +1,7 @@
 ---
 title: Spell Login Manual Acceptance Guide
 audience: both
-last_updated: 2026-10-10
+last_updated: 2026-10-12
 status: active
 tags: [login, testing, acceptance, security]
 ---
@@ -199,3 +199,7 @@ The operator created a production Arcane External ID account and completed brows
 ## Operator macOS keychain run — 2026-10-10
 
 The opt-in test against the real OS keychain, `test/credential-store.keychain.test.ts` with `ARCANE_KEYCHAIN_TESTS=1`, passed on the operator's Mac (Apple silicon) at `main` after PR 353, under vitest 5.0.0: four of four, in 1.3 seconds. It stored and read back a 1,468-character secret (the measured size of a real refresh token) and a 9,000-character one through the chunked store, replaced a session leaving no stray entries, and cleared everything it wrote, all under a throwaway service name. This is the first run of the native keychain path on macOS; CI covers the mocked suite there, not the keychain. The prebuilt `@napi-rs/keyring` binary for macOS loaded from a fresh `npm ci`. Whether a Keychain access prompt appeared was not recorded; a denied prompt is still untested (PRD R17).
+
+## Operator macOS sign-in with the published 1.12.0 — 2026-10-12
+
+The operator installed the published `arcane-cli` 1.12.0 on their Mac (`npm install -g arcane-cli@1.12.0`) and ran `ARCANE_ENVIRONMENT=dev spell login`. The browser flow completed against the development tenant, the browser ended on the lit Gate success page (`/result/success`, AC8), and the CLI reported a development account. `spell logout` then removed the session from the OS keychain. The account's email and subject identifier are omitted from public evidence.
