@@ -368,6 +368,26 @@ describe("hook-manager collision guard (R7)", { timeout: HEAVY_TEST_TIMEOUT }, (
     expect(await fs.readFile(join(orgHooks, "pre-push"), "utf8")).toBe(orgHook);
   });
 
+  it.skipIf(process.platform === "win32")(
+    "refuses a foreign directory literally named .arcane\\hooks on POSIX",
+    async () => {
+      // On POSIX a backslash is part of a name, so this is not .arcane/hooks.
+      // Folding it after resolving took it for ours: install re-pointed
+      // core.hooksPath away from it and silently switched its hooks off.
+      const { work } = await repoWithRemote();
+      const foreign = join(work, ".arcane\\hooks");
+      await fs.mkdir(foreign);
+      const foreignHook = "#!/bin/sh\necho foreign pre-push\n";
+      await fs.writeFile(join(foreign, "pre-push"), foreignHook);
+      fixtureGit(work, ["config", "--local", "core.hooksPath", ".arcane\\hooks"]);
+
+      expect((await installPrePushHook(work)).status).toBe("refused-foreign-hooks-path");
+      expect((await readHooksPath(work))?.value).toBe(".arcane\\hooks");
+      expect(await fs.readFile(join(foreign, "pre-push"), "utf8")).toBe(foreignHook);
+      expect(await isHookEnforced(work)).toBe(false);
+    },
+  );
+
   it("refuses any foreign hooks path regardless of the scope it came from", async () => {
     // The security-relevant property: refusal keys on "this value is not ours",
     // never on where it was configured.
@@ -844,6 +864,31 @@ describe("the hook must exist where git actually looks", { timeout: HEAVY_TEST_T
     }
     expect(tryPush(work, [bare, "main"]).ok).toBe(false);
   });
+
+  it.skipIf(process.platform === "win32")(
+    "installs a hook git runs when the repository's own path contains a backslash on POSIX",
+    async () => {
+      // core.hooksPath was written with that backslash folded to a slash, naming
+      // a directory that does not exist: the hook never ran, while the check
+      // folded both sides the same way and reported it enforced.
+      const bare = await createFixtureDir("push-safety-bare-");
+      fixtureGit(bare, ["init", "--bare", "-b", "main"]);
+      const work = join(await createFixtureDir("push-safety-backslash-"), "has\\backslash");
+      await fs.mkdir(work);
+      fixtureGit(work, ["init", "-b", "main"]);
+      fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
+      fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);
+      await fs.writeFile(join(work, "a.txt"), "hello\n");
+      fixtureGit(work, ["add", "-A"]);
+      fixtureGit(work, ["commit", "-m", "test: seed"]);
+      fixtureGit(work, ["remote", "add", "origin", bare]);
+
+      expect((await installPrePushHook(work)).status).toBe("installed");
+      expect((await readHooksPath(work))?.value).toBe(join(work, ARCANE_HOOKS_DIR));
+      expect(await isHookEnforced(work)).toBe(true);
+      expect(tryPush(work).ok).toBe(false);
+    },
+  );
 });
 
 describe("hooks in git's DEFAULT directory are a collision too (R7)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
