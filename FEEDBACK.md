@@ -154,3 +154,19 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-12-symlink-realpath-compare.md`, lessons "A commit message cited an unmerged commit by SHA", "`spell-create-pull-request`'s body file cannot be written from a Claude Code worktree", "`spell-commit-work`'s authority table has two rows for a repo with no roster".
+
+## Feedback — spell-create-pull-request (2026-10-12)
+
+**Session:** `scripts/` and `test/` type-checked, and the opening drift check's fixes — [PR #365](https://github.com/codemagicianhq/arcane/pull/365) and [PR #367](https://github.com/codemagicianhq/arcane/pull/367) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- `spell-create-pull-request` Step 0 pushes a never-pushed branch (item 3) before the mandatory rebase on the target (item 6). When the target has moved, the branch reaches the remote stale, the pre-push suite runs on it, and the rebase then needs a `--force-with-lease` push and a second suite run. This session rebased first and pushed once, and said so in its report.
+
+### Improvement Items
+- [ ] In `spell-create-pull-request` Step 0, run item 6's fetch and rebase before item 3's first push, so a never-pushed branch reaches the remote once, already rebased, and `--force-with-lease` is needed only for a branch that was on the remote before the rebase. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-12-typecheck-scripts-tests.md`, lesson "`spell-create-pull-request` pushes before it rebases".
+> A data point for the 2026-10-12 symlink session's body-file item above: in this session's Claude Code linked worktree, the body file was written to `<git-dir>/arcane-pr-body.md` from the shell without any refusal, for both PR #365 and PR #367.
