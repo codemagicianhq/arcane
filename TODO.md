@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-12
+last_updated: 2026-10-18
 ---
 
 # TODO
@@ -14,7 +14,7 @@ last_updated: 2026-10-12
 
 ### Operator follow-ups
 
-- [ ] **Operator-machine follow-ups from the 2026-10-09 and 2026-10-12 handoffs; the agent cannot reach them from its checkout.** Type: `todo`; domain: `repo-hygiene`. (1) ~~Check the high-severity Dependabot alert on the default branch: https://github.com/codemagicianhq/arcane/security/dependabot/22.~~ Done: GitHub shows it fixed (checked 2026-10-12). (2) On the Windows machine, remove the linked worktree `arcane-wt-branch-naming` (`git worktree remove <its path>`, then `git fetch --prune origin`). (3) Decide land-or-abandon for the five local `backup/*` snapshots. Done when each is checked and recorded here. Registered 2026-10-13 by `spell-close-session` step 4b. <!-- status: new -->
+- [ ] **Operator-machine follow-ups from the 2026-10-09 and 2026-10-12 handoffs; the agent cannot reach them from its checkout.** Type: `todo`; domain: `repo-hygiene`. (1) ~~Check the high-severity Dependabot alert on the default branch: https://github.com/codemagicianhq/arcane/security/dependabot/22.~~ Done: GitHub shows it fixed (checked 2026-10-12). ~~(2) On the Windows machine, remove the linked worktree `arcane-wt-branch-naming` (`git worktree remove <its path>`, then `git fetch --prune origin`).~~ Done: on the Windows machine, `git worktree list` shows only the primary checkout, no `arcane-wt-branch-naming` directory remains beside it, and `git fetch --prune origin` ran (checked 2026-10-18 by `spell-open-session`). (3) Decide land-or-abandon for the five local `backup/*` snapshots. Still present on the Windows machine (checked 2026-10-18): none is ancestry-merged into `main` (`git branch --merged main` lists none), and `git cherry main <branch>` finds unmatched commits on every one (3, 4, 3, 1 and 3; the `pr31` and `spell-compiler` snapshots also carry 1 and 6 patch-id matches), so the Content-Verified Branch Deletion procedure in `.arcane/governance/git-conventions.md` must run before any deletion. Done when each is checked and recorded here. Registered 2026-10-13 by `spell-close-session` step 4b. <!-- status: new -->
 
 
 ### Bugs
