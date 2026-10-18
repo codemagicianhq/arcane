@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.12.1] - 2026-10-18
+
+A patch release carrying two fixes merged after 1.12.0: paths are compared with git by their real path, and push-safety folds backslashes only on Windows.
+
+### Fixed
+
+- **Symlinked paths are compared with git by their real path** ([#364](https://github.com/codemagicianhq/arcane/pull/364)). Git prints paths with symlinks resolved, so two checks that compared such a path with one spelled as given never matched through a symlink (macOS's `/var` to `/private/var`, a linked projects folder). ARC-041's guard against reading a local org-token file from inside the repository failed open when the file was named through a symlinked directory; it now refuses it. `isArcaneHooksPath` judged an absolute `core.hooksPath` spelled through a symlink foreign, so a working hook was reported as not enforced, `installHook` refused the path and `removeHook` left it in place; it now recognises its own hooks path however it is spelled, while a foreign directory that `.arcane/hooks` itself links to is still refused. The new `resolveRealPath` (`src/modules/real-path.ts`) resolves a path as far as it exists and re-appends the rest, so a file not created yet is placed instead of failing.
+- **Push-safety folds backslashes on Windows only** ([#368](https://github.com/codemagicianhq/arcane/pull/368)). On macOS and Linux a backslash is an ordinary file-name character, but push-safety folded it to a slash after resolving a hooks path. A foreign directory literally named `.arcane\hooks` passed as Arcane's own, and in a repository whose own path contains a backslash Arcane wrote a `core.hooksPath` git could not find, so the push-block hook never ran while `isHookEnforced` reported it enforced. Both folds are Windows-only now.
+
+### Changed
+
+- **The governance documents describe the pre-commit hook as it is.** `git-conventions.md` and `testing-standards.md` said `.husky/pre-commit` runs only lint and typecheck; it runs the staged org-token scan, `lint`, `typecheck`, `typecheck:all` and `doctor:leaks`. What they conclude is unchanged: the hook runs no tests and validates no commit message.
+- **`scripts/` and `test/` are type-checked.** `npm run typecheck:all` (`tsconfig.all.json`) covers `src`, `scripts`, `test` and the root config files, and runs in CI and in the pre-commit hook ([#365](https://github.com/codemagicianhq/arcane/pull/365)).
+
 ## [1.12.0] - 2026-10-12
 
 A browser sign-in now ends on the Arcane Gate: one page per result, lit by a short sequence, with nothing loaded from outside the page (ARC-055). `spell login`, `spell logout` and `spell whoami` first shipped in 1.11.4 without a minor bump (see that entry); this is the minor release that carries them.
