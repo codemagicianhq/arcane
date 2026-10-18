@@ -15,7 +15,7 @@ How to structure commits, branches, and pull requests for this repository.
 
 - This repo uses Conventional Commits format for all commit messages — industry standard, tool-portable, human-readable.
 - Trunk-based development with short-lived feature branches keeps history clean and reduces merge conflicts.
-- No custom git hooks — conventions work on any machine without setup, no fragile tooling dependencies. **Enforcement: explicitly advisory prose (ARC-023) — inaccurate as currently written: this repository's own `.husky/pre-commit` (`npm run lint && npm run typecheck`) and `.husky/pre-push` (`npm test`, plus a PR-state check) are custom git hooks that exist today. Neither validates commit message format or branch naming, so the Conventional Commits and branch-naming conventions this document describes remain hook-independent — but the bullet's literal claim of no custom git hooks in this repository does not hold.**
+- No custom git hooks — conventions work on any machine without setup, no fragile tooling dependencies. **Enforcement: explicitly advisory prose (ARC-023) — inaccurate as currently written: this repository's own `.husky/pre-commit` (the staged org-token scan, `lint`, `typecheck`, `typecheck:all` and `doctor:leaks`) and `.husky/pre-push` (`npm test`, plus a PR-state check) are custom git hooks that exist today. Neither validates commit message format or branch naming, so the Conventional Commits and branch-naming conventions this document describes remain hook-independent — but the bullet's literal claim of no custom git hooks in this repository does not hold.**
 - Use `spell-commit-work` prompt during sessions to automate commit message generation in the correct format.
 
 ---
@@ -817,7 +817,7 @@ If committing manually, use this mental checklist:
 
 ### Validating Format
 
-Quick regex to check format (optional — not enforced by hooks): **Enforcement: explicitly advisory prose (ARC-023) — confirmed: no `commitlint` (or equivalent) dependency exists in `package.json`, and no `.husky/commit-msg` hook exists; `.husky/pre-commit` runs only `npm run lint && npm run typecheck`, and `.husky/pre-push` runs only `npm test` plus a PR-state check — neither validates commit message format.**
+Quick regex to check format (optional — not enforced by hooks): **Enforcement: explicitly advisory prose (ARC-023) — confirmed: no `commitlint` (or equivalent) dependency exists in `package.json`, and no `.husky/commit-msg` hook exists; `.husky/pre-commit` runs the staged org-token scan, `lint`, `typecheck`, `typecheck:all` and `doctor:leaks`, and `.husky/pre-push` runs only `npm test` plus a PR-state check — neither validates commit message format.**
 
 ```bash
 # Valid: type(scope): description
