@@ -101,7 +101,7 @@ Every PR must include:
 
 ### Unit Tests (Required)
 
-**Enforcement: executable check (ARC-023) — ci.yml's build-test job's Test step runs `npm test` (`vitest run`), which fails the job on any failing unit test; `.husky/pre-commit` runs only `lint` and `typecheck`, not tests, so the "every commit" portion of this rule is not locally enforced.**
+**Enforcement: executable check (ARC-023) — ci.yml's build-test job's Test step runs `npm test` (`vitest run`), which fails the job on any failing unit test; `.husky/pre-commit` runs the staged org-token scan, `lint`, `typecheck`, `typecheck:all` and `doctor:leaks`, not tests, so the "every commit" portion of this rule is not locally enforced.**
 
 - Test individual functions/methods in isolation
 - Mock external dependencies (DB, API, hardware)
