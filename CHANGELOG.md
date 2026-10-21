@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.12.2] - 2026-10-20
+
+Three defects in `spell update` that left a consumer repository silently wrong, from issue wave 2026-10-20 ([#357](https://github.com/codemagicianhq/arcane/issues/357), [#358](https://github.com/codemagicianhq/arcane/issues/358), [#359](https://github.com/codemagicianhq/arcane/issues/359)).
+
+### Fixed
+
+- **Managed files are written as regular files, never through a symlink** (#357). `spell update`, `spell init` and `spell add` unlink a symlinked destination before writing. On a `core.symlinks=false` checkout, where a path the index tracks as a symlink (mode `120000`) holds a regular file, the entry is rewritten and re-recorded as `100644`, because git keeps the symlink mode of an existing entry there and would commit the new shim text as a link target; the update stages that typechange and says so. A symlinked shim, or one whose whole body is a single relative path, is no longer kept as a "customized" client file. The summary lists every conversion, and `spell doctor` gains **Managed files are regular files (#357)**, a blocking check that names each managed path tracked as `120000` and each client shim whose body is only a path, with the fix.
+- **`spell update --prune` can remove an orphan with no recorded hash** (#358). Where a component was installed before Arcane recorded content hashes, git stands in for the hash: a file that is tracked, clean, and touched by exactly one commit is pruned; anything less is reported with the manual route (`git rm` the file, then drop the component's entry from `.arcane.json`), as is a directory that is not a git repository. A retired component's entry lists only the files still on the orphan path, and disappears once all of them are gone. An edit made before the file's first commit is invisible to this evidence, and the message says what the evidence is.
+- **A `spell_scope: "user"` repository refuses to update without its user tier** (#359). On a machine with no readable `~/.arcane` manifest, `spell update` exits 1 before writing anything, naming `spell init --user` and the `spell_scope` alternative; a dry run refuses too. It used to warn and succeed, leaving `CLAUDE.md` and `AGENTS.md` routing to spells that resolved to nothing.
+
+### Changed
+
+- **The routing block tells agents in a user-scoped repository to stop, not improvise.** For `spell_scope: "user"`, the Spell Routing section `spell agents sync` renders into `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` says that spells come from the user tier and that a spell which does not resolve means `spell init --user` is needed on this machine (#359). Run `spell agents sync` to carry it into an existing repository.
+
 ## [1.12.1] - 2026-10-18
 
 A patch release carrying two fixes merged after 1.12.0: paths are compared with git by their real path, and push-safety folds backslashes only on Windows.
