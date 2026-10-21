@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi, t
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { runGit as fixtureGit, createFixtureDir } from "./helpers/git-fixture.js";
+import { runGit as fixtureGit, createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import type { ArcaneManifest, PushPolicy } from "../src/types.js";
 
@@ -27,27 +27,45 @@ const { runUpdate } = await import("../src/commands/update.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
 const savedEnv: Record<string, string | undefined> = {};
+let scopesDir: string;
 
 beforeAll(async () => {
-  const dir = await createFixtureDir("up02-a-update-scopes-");
-  await fs.writeFile(join(dir, "global"), "");
-  await fs.writeFile(join(dir, "system"), "");
+  scopesDir = await createFixtureDir("up02-a-update-scopes-");
+  await fs.writeFile(join(scopesDir, "global"), "");
+  await fs.writeFile(join(scopesDir, "system"), "");
   for (const key of ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"]) savedEnv[key] = process.env[key];
-  process.env["GIT_CONFIG_GLOBAL"] = join(dir, "global");
-  process.env["GIT_CONFIG_SYSTEM"] = join(dir, "system");
+  process.env["GIT_CONFIG_GLOBAL"] = join(scopesDir, "global");
+  process.env["GIT_CONFIG_SYSTEM"] = join(scopesDir, "system");
 });
 
-afterAll(() => {
+afterAll(async () => {
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
+  await removeFixtureDir(scopesDir);
+});
+
+/**
+ * Every fixture directory a test creates, removed after it. The guard in
+ * test/helpers/fixture-dir.ts fails the file if one is left behind.
+ */
+const fixtures: string[] = [];
+
+async function fixtureDir(prefix: string): Promise<string> {
+  const dir = await createFixtureDir(prefix);
+  fixtures.push(dir);
+  return dir;
+}
+
+afterEach(async () => {
+  await Promise.all(fixtures.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 async function repoPredatingPushPolicy(extra: Partial<ArcaneManifest> = {}): Promise<{ work: string; bare: string }> {
-  const bare = await createFixtureDir("up02-a-update-bare-");
+  const bare = await fixtureDir("up02-a-update-bare-");
   fixtureGit(bare, ["init", "--bare", "-b", "main"]);
-  const work = await createFixtureDir("up02-a-update-work-");
+  const work = await fixtureDir("up02-a-update-work-");
   fixtureGit(work, ["init", "-b", "main"]);
   fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
   fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);

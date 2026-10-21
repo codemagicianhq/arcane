@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -37,10 +37,26 @@ afterAll(async () => {
   await removeFixtureDir(scopes);
 });
 
+/**
+ * Every fixture directory a test creates, removed after it. The guard in
+ * test/helpers/fixture-dir.ts fails the file if one is left behind.
+ */
+const fixtures: string[] = [];
+
+async function fixtureDir(prefix: string): Promise<string> {
+  const dir = await createFixtureDir(prefix);
+  fixtures.push(dir);
+  return dir;
+}
+
+afterEach(async () => {
+  await Promise.all(fixtures.splice(0).map((dir) => removeFixtureDir(dir)));
+});
+
 async function freshRepo(): Promise<string> {
-  const bare = await createFixtureDir("up02-fixes-bare-");
+  const bare = await fixtureDir("up02-fixes-bare-");
   fixtureGit(bare, ["init", "--bare", "-b", "main"]);
-  const work = await createFixtureDir("up02-fixes-work-");
+  const work = await fixtureDir("up02-fixes-work-");
   fixtureGit(work, ["init", "-b", "main"]);
   fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
   fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);

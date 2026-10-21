@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import { dirname, join } from "node:path";
-import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
+import { createFixtureDir, removeFixtureDir, sweepLeakedFixtureDirs } from "./helpers/fixture-dir.js";
 
 describe("fixture-dir helpers (LH-03)", () => {
     it("createFixtureDir returns a real, existing directory", async () => {
@@ -69,5 +69,26 @@ describe("fixture-dir helpers (LH-03)", () => {
             retryDelay: 200,
         });
         rmSpy.mockRestore();
+    });
+});
+
+describe("fixture leak guard", () => {
+    it("sweeps a directory that was created and never removed, and names it once", async () => {
+        const dir = await createFixtureDir("fixture-dir-leaked");
+        expect(await sweepLeakedFixtureDirs()).toEqual([dir]);
+        await expect(fs.stat(dir)).rejects.toThrow();
+        expect(await sweepLeakedFixtureDirs()).toEqual([]);
+    });
+
+    it("reports nothing for a directory removed through removeFixtureDir", async () => {
+        const dir = await createFixtureDir("fixture-dir-paired");
+        await removeFixtureDir(dir);
+        expect(await sweepLeakedFixtureDirs()).toEqual([]);
+    });
+
+    it("reports nothing for a directory removed by other means", async () => {
+        const dir = await createFixtureDir("fixture-dir-removed-elsewhere");
+        await fs.rmdir(dir);
+        expect(await sweepLeakedFixtureDirs()).toEqual([]);
     });
 });
