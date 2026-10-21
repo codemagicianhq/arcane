@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { checkManagedFileModes } from "../src/commands/doctor.js";
 import { writeManifest } from "../src/modules/manifest.js";
 import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // #357, the doctor half: a managed path the index tracks as a symlink (mode
 // 120000), or a client shim whose whole body is one relative path (a symlink
@@ -59,7 +60,8 @@ afterEach(async () => {
   await removeFixtureDir(aux);
 });
 
-describe("checkManagedFileModes (#357)", () => {
+// Real git fixtures: the suite's heavy budget, not the 5 s default.
+describe("checkManagedFileModes (#357)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("passes when every managed path is a regular file with real content", async () => {
     await writeRegular(SHIM, "---\ndescription: shim\n---\nBody\n");
     await writeRegular(PROMPT, "---\ndescription: prompt\n---\nBody\n");
