@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -46,14 +46,15 @@ import {
  * also lets the tests below STAGE a global or system value on purpose, which is
  * how the global-scope regression is exercised for real.
  */
+let scopesDir: string;
 let globalConfig: string;
 let systemConfig: string;
 const savedEnv: Record<string, string | undefined> = {};
 
 beforeAll(async () => {
-  const dir = await createFixtureDir("push-safety-scopes-");
-  globalConfig = join(dir, "gitconfig-global");
-  systemConfig = join(dir, "gitconfig-system");
+  scopesDir = await createFixtureDir("push-safety-scopes-");
+  globalConfig = join(scopesDir, "gitconfig-global");
+  systemConfig = join(scopesDir, "gitconfig-system");
   await fs.writeFile(globalConfig, "");
   await fs.writeFile(systemConfig, "");
   for (const key of ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"]) savedEnv[key] = process.env[key];
@@ -61,11 +62,28 @@ beforeAll(async () => {
   process.env["GIT_CONFIG_SYSTEM"] = systemConfig;
 });
 
-afterAll(() => {
+afterAll(async () => {
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
+  await removeFixtureDir(scopesDir);
+});
+
+/**
+ * Every fixture directory a test creates, removed after it. The guard in
+ * test/helpers/fixture-dir.ts fails the file if one is left behind.
+ */
+const fixtures: string[] = [];
+
+async function fixtureDir(prefix: string): Promise<string> {
+  const dir = await createFixtureDir(prefix);
+  fixtures.push(dir);
+  return dir;
+}
+
+afterEach(async () => {
+  await Promise.all(fixtures.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 /** Writes a value into the staged global/system config file. */
@@ -92,10 +110,10 @@ function configValues(dir: string, key: string): string[] {
 }
 
 async function repoWithRemote(): Promise<{ work: string; bare: string }> {
-  const bare = await createFixtureDir("push-safety-bare-");
+  const bare = await fixtureDir("push-safety-bare-");
   fixtureGit(bare, ["init", "--bare", "-b", "main"]);
 
-  const work = await createFixtureDir("push-safety-work-");
+  const work = await fixtureDir("push-safety-work-");
   fixtureGit(work, ["init", "-b", "main"]);
   fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
   fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);
@@ -162,7 +180,7 @@ describe("push blocking (R2, R3) — against a real remote", { timeout: HEAVY_TE
     // A repository commonly has an upstream or a backup too. Protecting only
     // `origin` protects nothing in particular.
     const { work } = await repoWithRemote();
-    const second = await createFixtureDir("push-safety-bare2-");
+    const second = await fixtureDir("push-safety-bare2-");
     fixtureGit(second, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "add", "backup", second]);
 
@@ -231,7 +249,7 @@ describe("enforcement is verified, not assumed", { timeout: HEAVY_TEST_TIMEOUT }
     await disablePushUrls(work);
     expect(await undisabledRemotes(work)).toEqual([]);
 
-    const later = await createFixtureDir("push-safety-late-");
+    const later = await fixtureDir("push-safety-late-");
     fixtureGit(later, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "add", "later", later]);
 
@@ -322,7 +340,7 @@ describe("hook-manager collision guard (R7)", { timeout: HEAVY_TEST_TIMEOUT }, (
   // never spell one, so these make the link explicitly: a junction, which
   // Windows creates without privilege (the type is ignored elsewhere).
   async function linkTo(target: string): Promise<string> {
-    const link = join(await createFixtureDir("push-safety-link-"), "link");
+    const link = join(await fixtureDir("push-safety-link-"), "link");
     await fs.symlink(target, link, "junction");
     return link;
   }
@@ -357,7 +375,7 @@ describe("hook-manager collision guard (R7)", { timeout: HEAVY_TEST_TIMEOUT }, (
     // would compare equal, and installing would overwrite the org's own
     // pre-push hook through the link.
     const { work } = await repoWithRemote();
-    const orgHooks = await createFixtureDir("push-safety-org-hooks-");
+    const orgHooks = await fixtureDir("push-safety-org-hooks-");
     const orgHook = "#!/bin/sh\necho org pre-push\n";
     await fs.writeFile(join(orgHooks, "pre-push"), orgHook);
     await fs.mkdir(join(work, ".arcane"));
@@ -562,10 +580,10 @@ describe("awkward but legal remote configurations", { timeout: HEAVY_TEST_TIMEOU
     // out of the loop and left EVERY remote after it live — in a repository the
     // operator had just been told was blocked.
     const { work } = await repoWithRemote();
-    const second = await createFixtureDir("push-safety-odd-");
+    const second = await fixtureDir("push-safety-odd-");
     fixtureGit(second, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "add", "my_remote", second]);
-    const third = await createFixtureDir("push-safety-odd2-");
+    const third = await fixtureDir("push-safety-odd2-");
     fixtureGit(third, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "add", "team.backup", third]);
 
@@ -584,7 +602,7 @@ describe("awkward but legal remote configurations", { timeout: HEAVY_TEST_TIMEOU
     // the two originals and restore pointed a remote at the OTHER remote's URL —
     // the wrong-remote push this whole feature exists to prevent.
     const { work, bare } = await repoWithRemote();
-    const upper = await createFixtureDir("push-safety-upper-");
+    const upper = await fixtureDir("push-safety-upper-");
     fixtureGit(upper, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "add", "Origin", upper]);
 
@@ -605,7 +623,7 @@ describe("awkward but legal remote configurations", { timeout: HEAVY_TEST_TIMEOU
     // ("has multiple values"), which used to abort the run with both mirrors
     // still pushable.
     const { work, bare } = await repoWithRemote();
-    const mirror = await createFixtureDir("push-safety-mirror-");
+    const mirror = await fixtureDir("push-safety-mirror-");
     fixtureGit(mirror, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "set-url", "--push", "--add", "origin", bare]);
     fixtureGit(work, ["remote", "set-url", "--push", "--add", "origin", mirror]);
@@ -705,7 +723,7 @@ describe("records left by the released 0.20.0", { timeout: HEAVY_TEST_TIMEOUT },
     // the wrong-remote push this release exists to fix, handed to exactly the
     // population the release note tells to upgrade.
     const { work } = await repoWithRemote();
-    const upper = await createFixtureDir("push-safety-legacy-upper-");
+    const upper = await fixtureDir("push-safety-legacy-upper-");
     fixtureGit(upper, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "add", "Origin", upper]);
 
@@ -731,7 +749,7 @@ describe("records left by the released 0.20.0", { timeout: HEAVY_TEST_TIMEOUT },
     // OLD target — silently sending history somewhere the operator moved away
     // from.
     const { work } = await repoWithRemote();
-    const elsewhere = await createFixtureDir("push-safety-legacy-new-");
+    const elsewhere = await fixtureDir("push-safety-legacy-new-");
     fixtureGit(elsewhere, ["init", "--bare", "-b", "main"]);
     fixtureGit(work, ["remote", "remove", "origin"]);
     fixtureGit(work, ["remote", "add", "origin", elsewhere]);
@@ -769,7 +787,7 @@ describe("a neutered hook is not enforcement", { timeout: HEAVY_TEST_TIMEOUT }, 
 
     expect(await isHookEnforced(work)).toBe(false);
     // And prove the consequence: this hook lets a push straight to a URL through.
-    const elsewhere = await createFixtureDir("push-safety-elsewhere-");
+    const elsewhere = await fixtureDir("push-safety-elsewhere-");
     fixtureGit(elsewhere, ["init", "--bare", "-b", "main"]);
     expect(tryPush(work, [elsewhere, "main"]).ok).toBe(true);
   });
@@ -803,7 +821,7 @@ describe("a neutered hook is not enforcement", { timeout: HEAVY_TEST_TIMEOUT }, 
 
 describe("no remote configured", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("reports nothing to disable rather than failing", async () => {
-    const dir = await createFixtureDir("push-safety-noremote-");
+    const dir = await fixtureDir("push-safety-noremote-");
     fixtureGit(dir, ["init", "-b", "main"]);
 
     expect(await listRemotes(dir)).toEqual([]);
@@ -829,7 +847,7 @@ describe("the hook must exist where git actually looks", { timeout: HEAVY_TEST_T
     const { work, bare } = await repoWithRemote();
     await installPrePushHook(work);
 
-    const worktree = await createFixtureDir("push-safety-linked-");
+    const worktree = await fixtureDir("push-safety-linked-");
     await removeFixtureDir(worktree);
     fixtureGit(work, ["worktree", "add", worktree, "-b", "topic/x"]);
 
@@ -871,9 +889,9 @@ describe("the hook must exist where git actually looks", { timeout: HEAVY_TEST_T
       // core.hooksPath was written with that backslash folded to a slash, naming
       // a directory that does not exist: the hook never ran, while the check
       // folded both sides the same way and reported it enforced.
-      const bare = await createFixtureDir("push-safety-bare-");
+      const bare = await fixtureDir("push-safety-bare-");
       fixtureGit(bare, ["init", "--bare", "-b", "main"]);
-      const work = join(await createFixtureDir("push-safety-backslash-"), "has\\backslash");
+      const work = join(await fixtureDir("push-safety-backslash-"), "has\\backslash");
       await fs.mkdir(work);
       fixtureGit(work, ["init", "-b", "main"]);
       fixtureGit(work, ["config", "user.name", "Arcane Tests"]);

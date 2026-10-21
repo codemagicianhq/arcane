@@ -27,15 +27,16 @@ const { runUpdate } = await import("../src/commands/update.js");
 const ASSETS_DIR = join(process.cwd(), "src/assets");
 const savedEnv: Record<string, string | undefined> = {};
 let home: string;
+let scopesDir: string;
 
 beforeAll(async () => {
-  const dir = await createFixtureDir("up02-a-ado-scopes-");
-  await fs.writeFile(join(dir, "global"), "");
-  await fs.writeFile(join(dir, "system"), "");
+  scopesDir = await createFixtureDir("up02-a-ado-scopes-");
+  await fs.writeFile(join(scopesDir, "global"), "");
+  await fs.writeFile(join(scopesDir, "system"), "");
   home = await createFixtureDir("up02-a-ado-home-");
   for (const key of ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "HOME", "USERPROFILE"]) savedEnv[key] = process.env[key];
-  process.env["GIT_CONFIG_GLOBAL"] = join(dir, "global");
-  process.env["GIT_CONFIG_SYSTEM"] = join(dir, "system");
+  process.env["GIT_CONFIG_GLOBAL"] = join(scopesDir, "global");
+  process.env["GIT_CONFIG_SYSTEM"] = join(scopesDir, "system");
   process.env["HOME"] = home;
   process.env["USERPROFILE"] = home;
 });
@@ -46,10 +47,27 @@ afterAll(async () => {
     else process.env[key] = value;
   }
   await removeFixtureDir(home);
+  await removeFixtureDir(scopesDir);
+});
+
+/**
+ * Every fixture directory a test creates, removed after it. The guard in
+ * test/helpers/fixture-dir.ts fails the file if one is left behind.
+ */
+const fixtures: string[] = [];
+
+async function fixtureDir(prefix: string): Promise<string> {
+  const dir = await createFixtureDir(prefix);
+  fixtures.push(dir);
+  return dir;
+}
+
+afterEach(async () => {
+  await Promise.all(fixtures.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 async function repo(remotes: Record<string, string>): Promise<string> {
-  const work = await createFixtureDir("up02-a-ado-work-");
+  const work = await fixtureDir("up02-a-ado-work-");
   fixtureGit(work, ["init", "-b", "main"]);
   fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
   fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);
@@ -110,7 +128,7 @@ describe("detectAdoContext (real repositories)", () => {
   it("false with a GitHub remote, with no remote, and outside a repository", async () => {
     expect(await detectAdoContext(await repo({ origin: GITHUB_HTTPS }))).toBe(false);
     expect(await detectAdoContext(await repo({}))).toBe(false);
-    expect(await detectAdoContext(await createFixtureDir("up02-a-ado-plain-"))).toBe(false);
+    expect(await detectAdoContext(await fixtureDir("up02-a-ado-plain-"))).toBe(false);
   });
 });
 

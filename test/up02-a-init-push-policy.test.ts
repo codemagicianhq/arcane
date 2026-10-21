@@ -28,16 +28,17 @@ const ASSETS_DIR = join(process.cwd(), "src/assets");
 const saved: Record<string, string | undefined> = {};
 let globalConfig: string;
 let home: string;
+let scopesDir: string;
 
 beforeAll(async () => {
-  const dir = await createFixtureDir("up02-a-init-scopes-");
-  globalConfig = join(dir, "gitconfig-global");
+  scopesDir = await createFixtureDir("up02-a-init-scopes-");
+  globalConfig = join(scopesDir, "gitconfig-global");
   await fs.writeFile(globalConfig, "");
-  await fs.writeFile(join(dir, "gitconfig-system"), "");
+  await fs.writeFile(join(scopesDir, "gitconfig-system"), "");
   home = await createFixtureDir("up02-a-init-home-");
   for (const key of ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM", "HOME", "USERPROFILE"]) saved[key] = process.env[key];
   process.env["GIT_CONFIG_GLOBAL"] = globalConfig;
-  process.env["GIT_CONFIG_SYSTEM"] = join(dir, "gitconfig-system");
+  process.env["GIT_CONFIG_SYSTEM"] = join(scopesDir, "gitconfig-system");
   process.env["HOME"] = home;
   process.env["USERPROFILE"] = home;
 });
@@ -48,6 +49,23 @@ afterAll(async () => {
     else process.env[key] = value;
   }
   await removeFixtureDir(home);
+  await removeFixtureDir(scopesDir);
+});
+
+/**
+ * Every fixture directory a test creates, removed after it. The guard in
+ * test/helpers/fixture-dir.ts fails the file if one is left behind.
+ */
+const fixtures: string[] = [];
+
+async function fixtureDir(prefix: string): Promise<string> {
+  const dir = await createFixtureDir(prefix);
+  fixtures.push(dir);
+  return dir;
+}
+
+afterEach(async () => {
+  await Promise.all(fixtures.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 function answer(pushPolicy: "open" | "guarded" | "blocked") {
@@ -68,9 +86,9 @@ function answer(pushPolicy: "open" | "guarded" | "blocked") {
 }
 
 async function repoWithRemote(): Promise<{ work: string; bare: string }> {
-  const bare = await createFixtureDir("up02-a-init-bare-");
+  const bare = await fixtureDir("up02-a-init-bare-");
   fixtureGit(bare, ["init", "--bare", "-b", "main"]);
-  const work = await createFixtureDir("up02-a-init-work-");
+  const work = await fixtureDir("up02-a-init-work-");
   fixtureGit(work, ["init", "-b", "main"]);
   fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
   fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);
