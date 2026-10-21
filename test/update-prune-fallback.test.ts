@@ -63,6 +63,23 @@ describe("isUneditedTrackedFile — git evidence for a hash-less orphan", () => 
     expect((await isUneditedTrackedFile(repo, FILE)).verdict).toBe("untracked");
   });
 
+  // Review F3: a shallow clone shows every file with one reachable commit, so
+  // the count alone would call an edited file unedited.
+  it("is unknown in a shallow clone, whose history is truncated", async () => {
+    await writeTracked("installed content\n", "install component");
+    await writeTracked("installed content\nOPERATOR EDIT\n", "edit it");
+    const parent = await createFixtureDir("prune-fallback-shallow");
+    try {
+      const url = "file:///" + repo.replace(/\\/g, "/").replace(/^\//, "");
+      runGit(parent, ["clone", "-q", "--depth", "1", url, join(parent, "clone")]);
+      const result = await isUneditedTrackedFile(join(parent, "clone"), FILE);
+      expect(result.verdict).toBe("unknown");
+      expect(result.detail).toContain("shallow");
+    } finally {
+      await removeFixtureDir(parent);
+    }
+  });
+
   it("is unknown outside a git repository", async () => {
     const plain = await createFixtureDir("prune-fallback-plain");
     try {

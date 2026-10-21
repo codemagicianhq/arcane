@@ -455,7 +455,12 @@ export async function listSymlinkTrackedPaths(cwd: string): Promise<Set<string>>
  */
 export async function recordRegularFileInIndex(cwd: string, relativePath: string): Promise<void> {
   const { stdout } = await runGit(cwd, ["hash-object", "-w", "--", relativePath]);
-  await runGit(cwd, ["update-index", "--add", "--cacheinfo", `100644,${stdout.trim()},${relativePath}`]);
+  // --cacheinfo takes a path from the repository root, while every other
+  // pathspec here is relative to cwd. A target directory below the root would
+  // otherwise gain a phantom root entry and keep its 120000 one (review F1).
+  const { stdout: prefix } = await runGit(cwd, ["rev-parse", "--show-prefix"]);
+  const rootRelative = `${prefix.trim()}${relativePath.replace(/\\/g, "/")}`;
+  await runGit(cwd, ["update-index", "--add", "--cacheinfo", `100644,${stdout.trim()},${rootRelative}`]);
 }
 
 export type TrackedFileVerdict = "unedited" | "edited" | "untracked" | "unknown";
@@ -464,9 +469,10 @@ export type TrackedFileVerdict = "unedited" | "edited" | "untracked" | "unknown"
  * Whether git can vouch that `relativePath` was never edited since it was
  * added: tracked, no working-tree or index change, and exactly one commit in
  * its history. Stands in for a recorded content hash when none exists (#358).
- * `unknown` when `cwd` is not a repository or git is unavailable. An edit made
- * before the file's first commit is invisible here, so callers report the
- * evidence by name rather than claiming certainty.
+ * `unknown` when `cwd` is not a repository, git is unavailable, or the clone
+ * is shallow. An edit made before the file's first commit, or a rename and
+ * edit in one commit, is invisible here, so callers report the evidence by
+ * name rather than claiming certainty.
  */
 export async function isUneditedTrackedFile(
   cwd: string,
@@ -480,6 +486,16 @@ export async function isUneditedTrackedFile(
   }
   if (status.startsWith("??")) return { verdict: "untracked", detail: "git does not track it" };
   if (status.length > 0) return { verdict: "edited", detail: "it has uncommitted changes" };
+  // A shallow clone shows every file with one reachable commit, so the count
+  // below would call an edited file unedited (review F3).
+  try {
+    const { stdout: shallow } = await runGit(cwd, ["rev-parse", "--is-shallow-repository"]);
+    if (shallow.trim() === "true") {
+      return { verdict: "unknown", detail: "this is a shallow clone, so the history is truncated" };
+    }
+  } catch {
+    // A git too old for the flag: the count below is the best evidence left.
+  }
   let log: string;
   try {
     ({ stdout: log } = await runGit(cwd, ["log", "--format=%H", "--", relativePath]));

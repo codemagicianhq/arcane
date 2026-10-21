@@ -121,6 +121,53 @@ describe("spell update converts symlinked managed files (#357)", () => {
     },
     VERY_HEAVY_TEST_TIMEOUT,
   );
+
+  // Review F2: a link written out as text (a regular, 100644 file) is a
+  // broken shim and is rewritten and reported; a shim an operator trimmed to
+  // its one-line include is a customization and keeps ARC-038's protection.
+  it(
+    "rewrites a shim whose body is only a link target and reports it",
+    async () => {
+      await runInit({ profile: "lite" }, dir, ASSETS_DIR, OLD_VERSION);
+      const shims = (await fs.readdir(join(dir, ".claude/commands"))).filter((f) => f.startsWith("spell-"));
+      const shim = `.claude/commands/${shims[0]}`;
+      const linkText = `../../.github/prompts/${shims[0].replace(/\.md$/, ".prompt.md")}\n`;
+      await fs.writeFile(join(dir, shim), linkText);
+      commitAll("a link written out as text");
+      expect(indexMode(shim)).toBe("100644");
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = log.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain("Converted 1 symlinked managed file(s) to regular files");
+      expect(output).toContain(`${shim} — its body was only a link target`);
+      expect(output).not.toContain("Kept customized");
+      expect(await fs.readFile(join(dir, shim), "utf8")).not.toBe(linkText);
+    },
+    VERY_HEAVY_TEST_TIMEOUT,
+  );
+
+  it(
+    "keeps a shim an operator trimmed to its one-line include as customized (ARC-038)",
+    async () => {
+      await runInit({ profile: "lite" }, dir, ASSETS_DIR, OLD_VERSION);
+      const shims = (await fs.readdir(join(dir, ".claude/commands"))).filter((f) => f.startsWith("spell-"));
+      const shim = `.claude/commands/${shims[0]}`;
+      const include = `@.arcane/spells/${shims[0]}\n`;
+      await fs.writeFile(join(dir, shim), include);
+      commitAll("trim the shim to its include line");
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
+
+      const output = log.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(output).toContain(`Kept customized (not merged): ${shim}`);
+      expect(output).not.toContain("Converted");
+      expect(await fs.readFile(join(dir, shim), "utf8")).toBe(include);
+    },
+    VERY_HEAVY_TEST_TIMEOUT,
+  );
 });
 
 describe("spell update --prune and a retired component with no recorded hashes (#358)", () => {
@@ -162,7 +209,9 @@ describe("spell update --prune and a retired component with no recorded hashes (
     expect(entry?.files).toEqual([FILES[0]]);
     const output = log.mock.calls.map((c) => String(c[0])).join("\n");
     expect(output).toContain("2 commits touched it");
-    expect(output).toContain(`git rm -- ${FILES[0]}`);
+    expect(output).toContain(`Orphaned, not pruned: ${FILES[0]}`);
+    expect(output).toContain("git rm -- <path>");
+    expect(output).toContain("spell update --prune again");
   }, VERY_HEAVY_TEST_TIMEOUT);
 });
 

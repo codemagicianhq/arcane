@@ -3,8 +3,8 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import {
   copyFile,
-  isSymlinkedManagedPath,
   looksLikeBarePath,
+  managedPathLinkShape,
   type SymlinkConversion,
 } from "../src/modules/copier.js";
 import { listSymlinkTrackedPaths } from "../src/modules/git.js";
@@ -108,10 +108,10 @@ describe("#357 — managed writes replace symlinked destinations", () => {
   });
 
   // A directory junction needs no privilege on Windows, and lstat reports it
-  // as a symlink, so the working-tree-link branch runs on every OS here. On
-  // Windows a directory link is a reparse point `unlink` refuses; the
-  // replacement falls back to `rmdir`, which removes the link and not the
-  // directory it points at.
+  // as a symlink, so the working-tree-link branch runs on every OS here.
+  // `unlink` removes the junction on the Node versions tested; where a
+  // platform refuses a directory link, the replacement falls back to `rmdir`,
+  // which removes the link and not the directory it points at.
   it("replaces a junction at the destination with a regular file and leaves the junction's target alone", async () => {
     await fs.mkdir(join(repo, ".claude/commands"), { recursive: true });
     const target = join(src, "target-dir");
@@ -128,42 +128,70 @@ describe("#357 — managed writes replace symlinked destinations", () => {
     expect(conversions).toEqual([{ file: SHIM, shape: "symlink" }]);
     expect(await fs.readFile(join(target, "inside.txt"), "utf8")).toBe("kept");
   });
+
+  // Review F1: `update-index --cacheinfo` takes a root-relative path while the
+  // other pathspecs are relative to the target directory. A target below the
+  // repository root must re-record its own entry, not add a phantom root one.
+  it("re-records the entry under its root-relative path when the target directory is below the repository root", async () => {
+    const sub = join(repo, "sub");
+    const file = `sub/${SHIM}`;
+    await fs.mkdir(join(sub, ".claude/commands"), { recursive: true });
+    await fs.writeFile(join(repo, file), LINK_TEXT);
+    await fs.writeFile(join(src, "link-text"), LINK_TEXT);
+    const blob = runGit(repo, ["hash-object", "-w", "--", join(src, "link-text")]).trim();
+    runGit(repo, ["update-index", "--add", "--cacheinfo", `120000,${blob},${file}`]);
+    const linkTracked = await listSymlinkTrackedPaths(sub);
+    expect([...linkTracked]).toEqual([SHIM]);
+
+    const conversions: SymlinkConversion[] = [];
+    await copyFile(join(src, "shim.md"), sub, SHIM, { force: true, linkTracked, conversions });
+
+    expect(indexMode(file)).toBe("100644");
+    expect(runGit(repo, ["ls-files", "-s"]).trim().split("\n")).toHaveLength(1);
+    expect(conversions).toEqual([{ file: SHIM, shape: "index-symlink" }]);
+  });
 });
 
-describe("isSymlinkedManagedPath and looksLikeBarePath (#357)", () => {
-  it("is false for an absent path", async () => {
-    expect(await isSymlinkedManagedPath(repo, SHIM, undefined, true)).toBe(false);
+describe("managedPathLinkShape and looksLikeBarePath (#357)", () => {
+  it("is null for an absent path", async () => {
+    expect(await managedPathLinkShape(repo, SHIM, undefined, true)).toBeNull();
   });
 
-  it("is true for a link at the path, by junction", async () => {
+  it("names a link at the path, by junction", async () => {
     await fs.mkdir(join(repo, ".claude/commands"), { recursive: true });
     await fs.mkdir(join(src, "target-dir"));
     await fs.symlink(join(src, "target-dir"), join(repo, SHIM), "junction");
-    expect(await isSymlinkedManagedPath(repo, SHIM, undefined, false)).toBe(true);
+    expect(await managedPathLinkShape(repo, SHIM, undefined, false)).toBe("symlink");
   });
 
-  it("is true for a path the index tracks as a symlink", async () => {
+  it("names a path the index tracks as a symlink", async () => {
     await trackAsSymlink(SHIM);
-    expect(await isSymlinkedManagedPath(repo, SHIM, new Set([SHIM]), false)).toBe(true);
-    expect(await isSymlinkedManagedPath(repo, SHIM, new Set(), false)).toBe(false);
+    expect(await managedPathLinkShape(repo, SHIM, new Set([SHIM]), false)).toBe("index-symlink");
+    expect(await managedPathLinkShape(repo, SHIM, new Set(), false)).toBeNull();
   });
 
-  it("judges a body that is only a link target as a link, and only when asked to", async () => {
+  it("names a body that is only a link target, and only when asked to", async () => {
     await fs.mkdir(join(repo, ".claude/commands"), { recursive: true });
     await fs.writeFile(join(repo, SHIM), `${LINK_TEXT}\n`);
-    expect(await isSymlinkedManagedPath(repo, SHIM, undefined, true)).toBe(true);
-    expect(await isSymlinkedManagedPath(repo, SHIM, undefined, false)).toBe(false);
+    expect(await managedPathLinkShape(repo, SHIM, undefined, true)).toBe("path-body");
+    expect(await managedPathLinkShape(repo, SHIM, undefined, false)).toBeNull();
   });
 
-  it("is false for a real shim body and for a path whose body cannot be read", async () => {
+  it("is null for a real shim body, for a shim trimmed to its include line, and for a path whose body cannot be read", async () => {
     await fs.mkdir(join(repo, ".claude/commands/dir-at-path"), { recursive: true });
     await fs.writeFile(join(repo, SHIM), "---\ndescription: shim\n---\nBody\n");
-    expect(await isSymlinkedManagedPath(repo, SHIM, undefined, true)).toBe(false);
-    expect(await isSymlinkedManagedPath(repo, ".claude/commands/dir-at-path", undefined, true)).toBe(false);
+    expect(await managedPathLinkShape(repo, SHIM, undefined, true)).toBeNull();
+    // Review F2: an operator's one-line customization is not a link.
+    await fs.writeFile(join(repo, SHIM), "@.arcane/spells/spell-example.md\n");
+    expect(await managedPathLinkShape(repo, SHIM, undefined, true)).toBeNull();
+    expect(await managedPathLinkShape(repo, ".claude/commands/dir-at-path", undefined, true)).toBeNull();
   });
 
-  it("looksLikeBarePath accepts one relative path and rejects prose, front matter, headings and the empty body", () => {
+  it("looksLikeBarePath accepts one relative path and rejects includes, URLs, prose, front matter, headings and the empty body", () => {
     expect(looksLikeBarePath("../../.github/prompts/spell-x.prompt.md\n")).toBe(true);
+    expect(looksLikeBarePath("./spell-x.md")).toBe(true);
+    expect(looksLikeBarePath("@.arcane/spells/spell-bug.md\n")).toBe(false);
+    expect(looksLikeBarePath("https://example.com/spell-x.md")).toBe(false);
     expect(looksLikeBarePath("---\ndescription: x\n---\n")).toBe(false);
     expect(looksLikeBarePath("# Heading\n")).toBe(false);
     expect(looksLikeBarePath("two words/here\n")).toBe(false);
