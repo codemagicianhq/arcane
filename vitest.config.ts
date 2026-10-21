@@ -1,3 +1,4 @@
+import { availableParallelism } from "node:os";
 import { defaultExclude, defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -15,6 +16,17 @@ export default defineConfig({
     // `src/assets/.claude/` is tracked, distributable content, and a blanket
     // exclusion would silently skip any test fixture added there later.
     exclude: [...defaultExclude, "**/.claude/worktrees/**"],
+    // A cap on the worker pool, not a floor: a machine with five or fewer
+    // CPUs keeps vitest's own default (availableParallelism() - 1), so CI's
+    // 4-vCPU runners still use 3. Measured 2026-10-21 on the operator's
+    // Windows machine (8 cores, 16 logical CPUs, 2319 tests): the default 15
+    // workers timed out 23 tests, 12 workers 13, 10 workers 12, 8 workers 1
+    // and 3, 6 workers 1, 4 workers 0 and 0, while the suite took 192-243 s
+    // at every count -- the git-heavy tests wait on process creation, not
+    // CPU, so workers past 4 add contention and no speed. The cap is per
+    // run: two sessions running the suite at once still contend.
+    // VITEST_MAX_WORKERS and --maxWorkers override it for an experiment.
+    maxWorkers: Math.min(Math.max(availableParallelism() - 1, 1), 4),
     passWithNoTests: true,
     reporters: ["default", "junit"],
     outputFile: {
