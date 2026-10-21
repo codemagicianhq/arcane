@@ -18,7 +18,7 @@
       "priority": 1,
       "passes": true,
       "assignedTo": "claude-code",
-      "testEvidence": "test/copier-symlinks.test.ts (index-120000 shape, junction and POSIX link shapes, the no-conversion case) and test/update-issue-wave-2026-10-20.test.ts AC-357-3: red before the edit (missing exports; the shim fell into the 'Kept customized' branch), green after. Full suite 2344 passed, 0 failed; copier.ts 97.9% lines (2026-10-20)."
+      "testEvidence": "test/copier-symlinks.test.ts (index-120000 shape, junction and POSIX link shapes, the no-conversion case) and test/update-issue-wave-2026-10-20.test.ts AC-357-3: red before the edit (missing exports; the shim fell into the 'Kept customized' branch), green after. Full suite 2350 passed, 0 failed after the review fixes; copier.ts 99.0% lines, 100% branches (2026-10-20)."
     },
     {
       "id": "IW-357-doctor",
