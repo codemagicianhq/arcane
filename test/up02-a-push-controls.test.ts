@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { runGit as fixtureGit, createFixtureDir } from "./helpers/git-fixture.js";
+import { runGit as fixtureGit, createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import {
   applyBlockedPushControls,
@@ -19,14 +19,15 @@ import {
  * test/push-safety.test.ts proves the underlying controls.
  */
 
+let scopesDir: string;
 let globalConfig: string;
 let systemConfig: string;
 const savedEnv: Record<string, string | undefined> = {};
 
 beforeAll(async () => {
-  const dir = await createFixtureDir("up02-a-controls-scopes-");
-  globalConfig = join(dir, "gitconfig-global");
-  systemConfig = join(dir, "gitconfig-system");
+  scopesDir = await createFixtureDir("up02-a-controls-scopes-");
+  globalConfig = join(scopesDir, "gitconfig-global");
+  systemConfig = join(scopesDir, "gitconfig-system");
   await fs.writeFile(globalConfig, "");
   await fs.writeFile(systemConfig, "");
   for (const key of ["GIT_CONFIG_GLOBAL", "GIT_CONFIG_SYSTEM"]) savedEnv[key] = process.env[key];
@@ -34,17 +35,34 @@ beforeAll(async () => {
   process.env["GIT_CONFIG_SYSTEM"] = systemConfig;
 });
 
-afterAll(() => {
+afterAll(async () => {
   for (const [key, value] of Object.entries(savedEnv)) {
     if (value === undefined) delete process.env[key];
     else process.env[key] = value;
   }
+  await removeFixtureDir(scopesDir);
+});
+
+/**
+ * Every fixture directory a test creates, removed after it. The guard in
+ * test/helpers/fixture-dir.ts fails the file if one is left behind.
+ */
+const fixtures: string[] = [];
+
+async function fixtureDir(prefix: string): Promise<string> {
+  const dir = await createFixtureDir(prefix);
+  fixtures.push(dir);
+  return dir;
+}
+
+afterEach(async () => {
+  await Promise.all(fixtures.splice(0).map((dir) => removeFixtureDir(dir)));
 });
 
 async function repoWithRemote(): Promise<{ work: string; bare: string }> {
-  const bare = await createFixtureDir("up02-a-controls-bare-");
+  const bare = await fixtureDir("up02-a-controls-bare-");
   fixtureGit(bare, ["init", "--bare", "-b", "main"]);
-  const work = await createFixtureDir("up02-a-controls-work-");
+  const work = await fixtureDir("up02-a-controls-work-");
   fixtureGit(work, ["init", "-b", "main"]);
   fixtureGit(work, ["config", "user.name", "Arcane Tests"]);
   fixtureGit(work, ["config", "user.email", "arcane-tests@example.invalid"]);
@@ -177,7 +195,7 @@ describe("applyBlockedPushControls", () => {
   }, HEAVY_TEST_TIMEOUT);
 
   it("with no remote, warns that only the hook is active", async () => {
-    const work = await createFixtureDir("up02-a-controls-noremote-");
+    const work = await fixtureDir("up02-a-controls-noremote-");
     fixtureGit(work, ["init", "-b", "main"]);
 
     const outcome = await applyBlockedPushControls(work);
