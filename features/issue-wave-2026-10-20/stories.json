@@ -1,0 +1,65 @@
+{
+  "feature": "Issue Wave 2026-10-20 (#357, #358, #359)",
+  "branchName": "sessions/2026-10-20-issue-wave-357-359",
+  "assignedAgent": "claude-code",
+  "trackingMode": "internal",
+  "externalProvider": null,
+  "adoWorkItemId": null,
+  "stories": [
+    {
+      "id": "IW-357-write",
+      "title": "copier/update: managed writes replace symlinks and re-record 120000 entries",
+      "description": "Closes #357 (write path). copyFile lstat-unlinks a symlinked destination; callers pass the set of index-tracked symlinks collected once per run; a 120000 entry is rewritten and re-recorded as 100644; conversions are reported in the update summary.",
+      "acceptanceCriteria": [
+        "AC-357-1",
+        "AC-357-2",
+        "AC-357-3"
+      ],
+      "priority": 1,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/copier-symlinks.test.ts (index-120000 shape, junction and POSIX link shapes, the no-conversion case) and test/update-issue-wave-2026-10-20.test.ts AC-357-3: red before the edit (missing exports; the shim fell into the 'Kept customized' branch), green after. Full suite 2344 passed, 0 failed; copier.ts 97.9% lines (2026-10-20)."
+    },
+    {
+      "id": "IW-357-doctor",
+      "title": "doctor: flag managed paths tracked as symlinks and shims whose body is a path",
+      "description": "Closes #357 (doctor half). checkManagedFileModes fails naming each 120000-tracked managed path and each client shim whose whole body is a single relative path, with the fix; skipped outside a git repository or without a manifest.",
+      "acceptanceCriteria": [
+        "AC-357-4"
+      ],
+      "priority": 2,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/doctor-managed-file-modes.test.ts, 6 tests: red before the edit (checkManagedFileModes missing), green after. Full suite green (2026-10-20)."
+    },
+    {
+      "id": "IW-358",
+      "title": "update --prune: git-verified fallback for orphans with no recorded hash",
+      "description": "Closes #358. resolveOrphan prunes a hash-less orphan only when git shows it tracked, clean and touched by exactly one commit; otherwise reports it with the manual route (git rm, then drop the component from .arcane.json). The retired component's entry is dropped once every file is gone.",
+      "acceptanceCriteria": [
+        "AC-358-1",
+        "AC-358-2",
+        "AC-358-3",
+        "AC-358-4"
+      ],
+      "priority": 3,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/update-prune-fallback.test.ts (11 tests against real git fixtures) and AC-358-4 in test/update-issue-wave-2026-10-20.test.ts: red before the edit (isUneditedTrackedFile missing; the retained entry still listed pruned files), green after. Full suite green (2026-10-20)."
+    },
+    {
+      "id": "IW-359",
+      "title": "update: refuse without the user tier; routing block tells agents to stop",
+      "description": "Closes #359. A spell_scope user repository whose machine has no readable ~/.arcane manifest makes spell update exit 1 before any write, dry-run included; renderSpellRoutingSection appends the stop rule when spellScope is user.",
+      "acceptanceCriteria": [
+        "AC-359-1",
+        "AC-359-2",
+        "AC-359-3"
+      ],
+      "priority": 4,
+      "passes": true,
+      "assignedTo": "claude-code",
+      "testEvidence": "test/agent-generator-routing.test.ts (red: renderSpellRoutingSection not exported) and test/update-issue-wave-2026-10-20.test.ts AC-359-1 (refusal in a real run and a dry run; proceeds once the tier exists); missingTierWarning's five existing tests unchanged. Full suite green (2026-10-20)."
+    }
+  ]
+}
