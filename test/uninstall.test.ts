@@ -99,7 +99,7 @@ describe("spell uninstall — handler", () => {
     await runUninstall({}, tmpDir);
 
     expect(vi.mocked(inquirer.confirm)).toHaveBeenCalledOnce();
-    const callArg = vi.mocked(inquirer.confirm).mock.calls[0]![0] as { message: string; default: boolean };
+    const callArg = vi.mocked(inquirer.confirm).mock.calls[0][0] as { message: string; default: boolean };
     expect(callArg.message).toContain("Continue?");
     expect(callArg.default).toBe(false);
   });
@@ -398,7 +398,7 @@ describe("spell uninstall — handler", () => {
 
       await runUninstall({ user: true }, storeRoot);
 
-      const callArg = vi.mocked(inquirer.confirm).mock.calls[0]![0] as { message: string };
+      const callArg = vi.mocked(inquirer.confirm).mock.calls[0][0] as { message: string };
       expect(callArg.message).toContain(`user tier at ${storeRoot}`);
       expect(await fileExists(join(home, codexFile))).toBe(false);
       expect(await fileExists(join(home, ".agents/skills/spell-status"))).toBe(false);

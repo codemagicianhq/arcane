@@ -98,7 +98,7 @@ describe("runWard: substring-hazard exclusions", () => {
       exclusions: [{ rule: "ward-term-1", context: "provision clause", reason: "known legal boilerplate" }],
     });
     expect(withExclusion.findings).toHaveLength(1);
-    expect(withExclusion.findings[0]!.line).toBe(2);
+    expect(withExclusion.findings[0].line).toBe(2);
   });
 });
 

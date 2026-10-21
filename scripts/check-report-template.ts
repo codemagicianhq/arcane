@@ -31,7 +31,7 @@ interface Finding {
 
 /** Every tag the template asks for, section/inverted/variable/triple alike. */
 function templateTags(template: string): string[] {
-  return [...new Set([...template.matchAll(/\{\{\{?[#^]?([a-zA-Z][\w.]*)\}?\}\}/g)].map((m) => m[1]!))];
+  return [...new Set([...template.matchAll(/\{\{\{?[#^]?([a-zA-Z][\w.]*)\}?\}\}/g)].map((m) => m[1]))];
 }
 
 /**
@@ -107,7 +107,7 @@ function buildLookupScope(view: Record<string, unknown>): Record<string, unknown
 
 function resolves(scope: Record<string, unknown>, tag: string): boolean {
   const [head, ...rest] = tag.split(".");
-  let current: unknown = scope[head!];
+  let current: unknown = scope[head];
   if (current === undefined) return false;
   for (const key of rest) {
     if (current === null || typeof current !== "object") return false;

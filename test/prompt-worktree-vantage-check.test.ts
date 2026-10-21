@@ -416,7 +416,7 @@ describe("no distributed instruction checks out trunk unconditionally (ARC-028 R
     // A negative test that cannot fail is worse than none — it reports safety
     // it never checked. Prove the matcher fires on the exact shape it hunts.
     const bait = "0. Sync workspace:\n   git checkout main && git pull --ff-only\n";
-    const line = bait.split("\n")[1]!;
+    const line = bait.split("\n")[1];
     expect(TRUNK_CHECKOUT.test(line)).toBe(true);
     expect(SCOPING.some((phrase) => bait.includes(phrase))).toBe(false);
   });

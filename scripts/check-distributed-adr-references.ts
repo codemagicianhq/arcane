@@ -64,7 +64,7 @@ export async function checkDistributedAdrReferences(
 ): Promise<AdrReferenceFinding[]> {
     const reference = await readFile(join(assetsDir, REFERENCE_PATH), "utf8");
     const declared = new Set(
-        [...reference.matchAll(/^## (ADR-\d{3})\b/gm)].map((match) => match[1]!),
+        [...reference.matchAll(/^## (ADR-\d{3})\b/gm)].map((match) => match[1]),
     );
     const findings: AdrReferenceFinding[] = [];
 
@@ -75,7 +75,7 @@ export async function checkDistributedAdrReferences(
             for (const [index, line] of lines.entries()) {
                 for (const match of line.matchAll(/\bADR-(\d+)\b/g)) {
                     const referenceId = match[0];
-                    const reason = match[1]!.length === 3 ? "missing" : "malformed";
+                    const reason = match[1].length === 3 ? "missing" : "malformed";
                     if (reason === "missing" && declared.has(referenceId)) continue;
                     findings.push({ file, line: index + 1, reference: referenceId, reason });
                 }
@@ -84,7 +84,7 @@ export async function checkDistributedAdrReferences(
                         findings.push({
                             file,
                             line: index + 1,
-                            reference: match[1]!,
+                            reference: match[1],
                             reason: "cross-repo-hazard",
                         });
                     }

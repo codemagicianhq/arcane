@@ -120,13 +120,13 @@ export async function printWelcome(version: string, cwd: string): Promise<void> 
     // 1. Fade in from dark — the mark materializes.
     const fade = [0.1, 0.22, 0.36, 0.52, 0.68, 0.84, 1];
     for (let i = 0; i < fade.length; i++) {
-      draw(lockupLines(fade[i]!), i > 0);
+      draw(lockupLines(fade[i]), i > 0);
       await sleep(90);
     }
     // 2. One gentle settling pulse — a single slow breath of brightness.
     const pulse = [1, 0.9, 0.82, 0.9, 1];
     for (let i = 0; i < pulse.length; i++) {
-      draw(lockupLines(pulse[i]!), true);
+      draw(lockupLines(pulse[i]), true);
       await sleep(140);
     }
   } else {

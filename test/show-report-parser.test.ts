@@ -63,14 +63,14 @@ describe("show-report plan-parser: parseEpics", () => {
       wave: "Wave 1 — Setup",
       prLinks: ["https://github.com/codemagicianhq/arcane/pull/172"],
     });
-    expect(epics[0]!.report).toEqual({
+    expect(epics[0].report).toEqual({
       description: "Landed the plan itself, activating the standing autonomy grant.",
       category: "process",
       titleOverride: undefined,
     });
     // The emoji must not leak into any parsed field -- the 47 Report lines
     // authored before ARC-043 all still carry one.
-    expect(JSON.stringify(epics[0]!.report)).not.toContain("📜");
+    expect(JSON.stringify(epics[0].report)).not.toContain("📜");
   });
 
   it("parses a Report line that ends at `category:`, the post-ARC-043 shape", () => {
@@ -82,7 +82,7 @@ describe("show-report plan-parser: parseEpics", () => {
       "## Parked — Needs Operator",
     ].join("\n");
 
-    expect(parseEpics(content)[0]!.report).toEqual({
+    expect(parseEpics(content)[0].report).toEqual({
       description: "Gave the generated report a real page.",
       category: "feature",
       titleOverride: undefined,
@@ -99,10 +99,10 @@ describe("show-report plan-parser: parseEpics", () => {
 
     const epics = parseEpics(content);
     expect(epics).toHaveLength(2);
-    expect(epics[0]!.block).toContain("More detail for BC-01");
-    expect(epics[0]!.block).not.toContain("BC-02");
-    expect(epics[1]!.block).toContain("More detail for BC-02");
-    expect(epics[1]!.block).not.toContain("BC-01");
+    expect(epics[0].block).toContain("More detail for BC-01");
+    expect(epics[0].block).not.toContain("BC-02");
+    expect(epics[1].block).toContain("More detail for BC-02");
+    expect(epics[1].block).not.toContain("BC-01");
   });
 
   it("closes an open epic block at the next `## ` heading, not just at the next epic bullet", () => {
@@ -116,7 +116,7 @@ describe("show-report plan-parser: parseEpics", () => {
 
     const epics = parseEpics(content);
     expect(epics).toHaveLength(1);
-    expect(epics[0]!.block).not.toContain("appendix");
+    expect(epics[0].block).not.toContain("appendix");
   });
 
   it("attaches the nearest preceding `### Wave` heading to each epic, resetting on `## `", () => {
@@ -130,8 +130,8 @@ describe("show-report plan-parser: parseEpics", () => {
     ].join("\n");
 
     const epics = parseEpics(content);
-    expect(epics[0]!.wave).toBe("Wave 1 — Platform");
-    expect(epics[1]!.wave).toBe("Wave 2 — Docs");
+    expect(epics[0].wave).toBe("Wave 1 — Platform");
+    expect(epics[1].wave).toBe("Wave 2 — Docs");
   });
 
   it("dedupes repeated PR links and treats `[ ]` as not done", () => {
@@ -142,8 +142,8 @@ describe("show-report plan-parser: parseEpics", () => {
     ].join("\n");
 
     const epics = parseEpics(content);
-    expect(epics[0]!.done).toBe(false);
-    expect(epics[0]!.prLinks).toEqual([
+    expect(epics[0].done).toBe(false);
+    expect(epics[0].prLinks).toEqual([
       "https://github.com/codemagicianhq/arcane/pull/10",
       "https://github.com/codemagicianhq/arcane/pull/11",
     ]);
@@ -158,7 +158,7 @@ describe("show-report plan-parser: parseEpics", () => {
     ].join("\n");
 
     const epics = parseEpics(content);
-    expect(epics[0]!.report?.titleOverride).toBe("Review-Round Merge Gate");
+    expect(epics[0].report?.titleOverride).toBe("Review-Round Merge Gate");
   });
 
   it("parses an epic whose bold title wraps onto a second line before the closing **, real LH-11 shape", () => {
@@ -170,17 +170,17 @@ describe("show-report plan-parser: parseEpics", () => {
 
     const epics = parseEpics(content);
     expect(epics).toHaveLength(2);
-    expect(epics[0]!.id).toBe("LH-11");
-    expect(epics[0]!.title).toBe(
+    expect(epics[0].id).toBe("LH-11");
+    expect(epics[0].title).toBe(
       "ADR ARC-041: a local supply channel for the ARC-031 privacy denylist (amends decision 3)",
     );
-    expect(epics[1]!.id).toBe("LH-12");
+    expect(epics[1].id).toBe("LH-12");
   });
 
   it("returns report: null for an epic with no Report line yet (unwritten)", () => {
     const content = "- [x] **BC-09 — No report yet.** Just detail, nothing else.";
     const epics = parseEpics(content);
-    expect(epics[0]!.report).toBeNull();
+    expect(epics[0].report).toBeNull();
   });
 });
 
@@ -318,7 +318,7 @@ describe("show-report queue-parser: parseOperatorQueue", () => {
 
   it("extracts an href from the first link found in a done entry's status line", () => {
     const entries = parseOperatorQueue(content);
-    expect(entries[1]!.href).toBe("https://example.invalid/DECISIONS.md#arc-042");
+    expect(entries[1].href).toBe("https://example.invalid/DECISIONS.md#arc-042");
   });
 
   it("defaults to not-done and no Why/href when a section is missing those fields entirely", () => {

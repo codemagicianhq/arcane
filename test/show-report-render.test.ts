@@ -87,7 +87,7 @@ describe("show-report render: buildShowReportView", () => {
       compiledAtDate: string;
       legend: { key: string; label: string }[];
     };
-    const row = view.sections[0]!.rows[0]!;
+    const row = view.sections[0].rows[0];
     expect(row.categoryLabel).toBe("New Feature");
     expect(row.descriptionHtml).toBe(
       'Shipped <code>code</code> and a <a href="https://example.invalid/x">link</a>.',
@@ -98,7 +98,7 @@ describe("show-report render: buildShowReportView", () => {
     expect(view.hasParked).toBe(false);
     expect(view.needsYouCount).toBe(0);
     // Mustache cannot count a list, so counts a template needs are precomputed.
-    expect(view.sections[0]!.rowCount).toBe(1);
+    expect(view.sections[0].rowCount).toBe(1);
     expect(view.parkedCount).toBe(0);
     expect(view.compiledAtDate).toBe("2026-09-02");
     expect(view.legend.map((l) => l.key)).toEqual([
@@ -160,8 +160,8 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
   it("renders an unwritten description visibly as 'unwritten', never as a faked sentence", async () => {
     const template = await readFile(TEMPLATE_PATH, "utf8");
     const model = minimalModel();
-    model.sections[0]!.rows[0]!.description = null;
-    model.sections[0]!.rows[0]!.descriptionState = "unwritten";
+    model.sections[0].rows[0].description = null;
+    model.sections[0].rows[0].descriptionState = "unwritten";
     const html = renderShowReport(model, template);
     expect(html).toContain('<span class="unwritten">unwritten</span>');
   });
@@ -182,7 +182,7 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
         { title: "FEEDBACK.md", reason: "not created, out of scope." },
       ],
     });
-    model.sections[0]!.rows.push({
+    model.sections[0].rows.push({
       id: "TP-02",
       title: "Second epic",
       description: null,
@@ -195,7 +195,7 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
       parkedCount: number;
       hasParked: boolean;
     };
-    expect(view.sections[0]!.rowCount).toBe(2);
+    expect(view.sections[0].rowCount).toBe(2);
     expect(view.parkedCount).toBe(2);
     expect(view.hasParked).toBe(true);
   });
@@ -211,7 +211,7 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
       }),
     ) as { parkedIsSingular: boolean; cast: { isSingular: boolean }[] };
     expect(many.parkedIsSingular).toBe(false);
-    expect(many.cast[0]!.isSingular).toBe(false);
+    expect(many.cast[0].isSingular).toBe(false);
 
     const one = buildShowReportView(
       minimalModel({
@@ -220,7 +220,7 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
       }),
     ) as { parkedIsSingular: boolean; cast: { isSingular: boolean }[] };
     expect(one.parkedIsSingular).toBe(true);
-    expect(one.cast[0]!.isSingular).toBe(true);
+    expect(one.cast[0].isSingular).toBe(true);
 
     // Zero is not singular -- "0 items" is correct English, "0 item" is not.
     const none = buildShowReportView(minimalModel()) as { parkedIsSingular: boolean };

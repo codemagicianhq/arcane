@@ -30,7 +30,7 @@ describe("canonical prompt document paths", () => {
         for (const name of promptNames) {
             const content = await fs.readFile(join(PROMPTS, name), "utf8");
             for (const match of content.matchAll(/\.\.\/\.\.\/\.arcane\/governance\/([a-z0-9-]+\.md)/g)) {
-                const relativePath = join(".arcane", "governance", match[1]!);
+                const relativePath = join(".arcane", "governance", match[1]);
                 try {
                     await fs.access(join(ASSETS, relativePath));
                 } catch {

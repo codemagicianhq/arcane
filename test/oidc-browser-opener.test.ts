@@ -38,7 +38,7 @@ describe("default browser opener", () => {
     const url = "https://example.test/authorize?state=a%26b";
     await expect(openInDefaultBrowser(url)).resolves.toBe(true);
     expect(opener).toHaveBeenCalledOnce();
-    const args = opener.mock.calls[0]!;
+    const args = opener.mock.calls[0];
     expect(args[0]).toBe(command);
     expect(args[1]).toEqual(prefix ? [prefix, url] : [url]);
     expect(args[2]).toMatchObject({ windowsHide: true });

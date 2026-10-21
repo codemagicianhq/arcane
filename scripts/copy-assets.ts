@@ -75,7 +75,7 @@ function scanForSecrets(filePath: string, content: string): ScanViolation[] {
   const violations: ScanViolation[] = [];
   const lines = content.split("\n");
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i];
     for (const pattern of SECRETS_PATTERNS) {
       if (pattern.test(line)) {
         violations.push({

@@ -76,9 +76,9 @@ describe("universal-agent-rules.md: its push-safety reference resolves", () => {
             universalRules.slice(universalRules.indexOf("push-safety controls")),
         );
         expect(match).not.toBeNull();
-        const anchor = match![1]!;
+        const anchor = match![1];
         expect(anchor).toBe("push-safety");
-        const headings = [...gitConventions.matchAll(/^#{1,6}\s+(.+)$/gm)].map((m) => slugify(m[1]!.trim()));
+        const headings = [...gitConventions.matchAll(/^#{1,6}\s+(.+)$/gm)].map((m) => slugify(m[1].trim()));
         expect(headings).toContain(anchor);
     });
 });

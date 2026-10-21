@@ -171,8 +171,8 @@ describe("UP03-A-02 — newly available, not installed (TODO: update never surfa
     await removeFixtureDir(join(tmpDir, "TODO.md"));
     const partial = await findNewlyAvailable(tmpDir, "lite", components, "repo");
     expect(partial.map((c) => c.name)).toEqual(["session-continuity"]);
-    expect(partial[0]!.alreadyPresent).toContain("README.md");
-    expect(partial[0]!.alreadyPresent).not.toContain("TODO.md");
+    expect(partial[0].alreadyPresent).toContain("README.md");
+    expect(partial[0].alreadyPresent).not.toContain("TODO.md");
   });
 
   it("counts a legacy spell-prompts entry as the spells-* components that replaced it", async () => {

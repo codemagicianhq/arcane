@@ -54,8 +54,8 @@ describe("checkStaleClaims Class A -- ADR status claims (LH-08)", () => {
 
         const { classA } = await checkStaleClaims(dir);
         expect(classA).toHaveLength(1);
-        expect(classA[0]!.reason).toContain('claims "Proposed"');
-        expect(classA[0]!.reason).toContain('says "Accepted"');
+        expect(classA[0].reason).toContain('claims "Proposed"');
+        expect(classA[0].reason).toContain('says "Accepted"');
     });
 
     it("flags a claim for an ARC number with no matching section in DECISIONS.md at all", async () => {
@@ -65,7 +65,7 @@ describe("checkStaleClaims Class A -- ADR status claims (LH-08)", () => {
 
         const { classA } = await checkStaleClaims(dir);
         expect(classA).toHaveLength(1);
-        expect(classA[0]!.reason).toContain("no matching");
+        expect(classA[0].reason).toContain("no matching");
     });
 
     it("correctly attributes Status fields when DECISIONS.md has multiple ADR sections back to back", async () => {
@@ -158,9 +158,9 @@ describe("checkStaleClaims duplicate decision IDs (ARC-050 decision 4)", () => {
 
         const { duplicateIds } = await checkStaleClaims(dir);
         expect(duplicateIds).toHaveLength(1);
-        expect(duplicateIds[0]!.line).toBe(9);
-        expect(duplicateIds[0]!.reason).toContain('line 5 "## ARC-050 — From branch one"');
-        expect(duplicateIds[0]!.reason).toContain('line 9 "## ARC-050 — From branch two"');
+        expect(duplicateIds[0].line).toBe(9);
+        expect(duplicateIds[0].reason).toContain('line 5 "## ARC-050 — From branch one"');
+        expect(duplicateIds[0].reason).toContain('line 9 "## ARC-050 — From branch two"');
 
         const output: string[] = [];
         const code = await runStaleClaims("check", dir, (l) => output.push(l));
@@ -192,8 +192,8 @@ describe("checkStaleClaims duplicate decision IDs (ARC-050 decision 4)", () => {
     it("matches the heading pattern, not this repository's ARC prefix", () => {
         const findings = findDuplicateDecisionIds("## ADR-012: One\n\n## ADR-012: Two\n\n## ADR-013: Three\n");
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain('"## ADR-012: One"');
-        expect(findings[0]!.reason).toContain('"## ADR-012: Two"');
+        expect(findings[0].reason).toContain('"## ADR-012: One"');
+        expect(findings[0].reason).toContain('"## ADR-012: Two"');
     });
 
     it("treats different prefixes with the same number as different IDs", () => {

@@ -49,7 +49,7 @@ async function scanFileAllRules(
 
   const lines = content.split("\n");
   for (let index = 0; index < lines.length; index++) {
-    const searchable = lines[index]!.replace(/\{[A-Z][A-Z0-9_]*\}/g, "");
+    const searchable = lines[index].replace(/\{[A-Z][A-Z0-9_]*\}/g, "");
     for (const rule of rules) {
       if (rule.pattern.test(searchable)) {
         findings.push({ file: displayPath, line: index + 1, rule: rule.label });

@@ -74,7 +74,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain("bare path:NNN");
+        expect(findings[0].reason).toContain("bare path:NNN");
     });
 
     it("still matches a path that contains directory separators -- the character class takes `/` unescaped", async () => {
@@ -89,8 +89,8 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.citation).toBe("`docs/notes/IDEAS.md:5`");
-        expect(findings[0]!.reason).toContain("bare path:NNN");
+        expect(findings[0].citation).toBe("`docs/notes/IDEAS.md:5`");
+        expect(findings[0].reason).toContain("bare path:NNN");
     });
 
     it("does not flag a bare path:NNN,MMM comma-list -- regression for the gap LH-07's own first pass missed", async () => {
@@ -100,7 +100,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.citation).toBe("`IDEAS.md:5,7`");
+        expect(findings[0].citation).toBe("`IDEAS.md:5,7`");
     });
 
     it("accepts a path#anchor citation when the anchor slugifies to a real heading", async () => {
@@ -119,7 +119,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain("does not slugify-match");
+        expect(findings[0].reason).toContain("does not slugify-match");
     });
 
     it('accepts a path ("phrase") citation when the phrase occurs exactly once', async () => {
@@ -138,7 +138,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain("occurs 0 time(s)");
+        expect(findings[0].reason).toContain("occurs 0 time(s)");
     });
 
     it('flags a path ("phrase") citation when the phrase occurs more than once', async () => {
@@ -148,7 +148,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain("occurs 2 time(s)");
+        expect(findings[0].reason).toContain("occurs 2 time(s)");
     });
 
     it("flags a citation whose path does not resolve to a real file", async () => {
@@ -157,7 +157,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain("does not resolve to a real file");
+        expect(findings[0].reason).toContain("does not resolve to a real file");
     });
 
     it("flags a line number beyond the target file's current length even when paired with a valid anchor", async () => {
@@ -167,7 +167,7 @@ describe("checkCitations (LH-07)", () => {
 
         const findings = await checkCitations(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.reason).toContain("is beyond");
+        expect(findings[0].reason).toContain("is beyond");
     });
 
     it("resolves a bare filename against .arcane/governance/, .arcane/spells/, .github/prompts/, and .github/instructions/ conventions", async () => {

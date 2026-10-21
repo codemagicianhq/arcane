@@ -191,12 +191,12 @@ describe.each(Object.keys(CHOSEN))("%s carries the needs-you block (UP04-B-02)",
     });
 
     it("places the span where the spell describes its final output", () => {
-        const anchor = content.indexOf(CHOSEN[id]!);
+        const anchor = content.indexOf(CHOSEN[id]);
         expect(anchor).toBeGreaterThan(-1);
         expect(content.indexOf(START)).toBeGreaterThan(anchor);
         // Upper bound: the span stays inside the anchor's own section, before
         // the next level-2 heading (e.g. `## Rules`), not anywhere later.
-        const after = anchor + CHOSEN[id]!.length;
+        const after = anchor + CHOSEN[id].length;
         const nextHeading = content.slice(after).search(/^## /m);
         if (nextHeading !== -1) expect(content.indexOf(START)).toBeLessThan(after + nextHeading);
     });

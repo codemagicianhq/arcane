@@ -39,8 +39,8 @@ function computeLcsDiff(base: string[], other: string[]): DiffOp[] {
   const dp: Uint32Array[] = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
   for (let i = n - 1; i >= 0; i--) {
     for (let j = m - 1; j >= 0; j--) {
-      dp[i]![j] =
-        base[i] === other[j] ? dp[i + 1]![j + 1]! + 1 : Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!);
+      dp[i][j] =
+        base[i] === other[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }
 
@@ -74,7 +74,7 @@ function computeLcsDiff(base: string[], other: string[]): DiffOp[] {
       ops.push({ type: "equal", baseStart: eqBaseStart, baseEnd: i, otherStart: eqOtherStart, otherEnd: j });
       pendingBaseStart = i;
       pendingOtherStart = j;
-    } else if (dp[i + 1]![j]! >= dp[i]![j + 1]!) {
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
       i++;
     } else {
       j++;

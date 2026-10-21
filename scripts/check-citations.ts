@@ -59,7 +59,7 @@ async function readOptional(path: string): Promise<string | null> {
 }
 
 function headingsOf(content: string): string[] {
-    return [...content.matchAll(/^#{1,6}\s+(.+)$/gm)].map((m) => m[1]!.trim());
+    return [...content.matchAll(/^#{1,6}\s+(.+)$/gm)].map((m) => m[1].trim());
 }
 
 function countOccurrences(content: string, phrase: string): number {
@@ -108,12 +108,12 @@ export async function checkCitations(rootDir: string): Promise<CitationFinding[]
         const lines = content.split("\n");
 
         for (let lineNo = 0; lineNo < lines.length; lineNo += 1) {
-            const line = lines[lineNo]!;
+            const line = lines[lineNo];
             CITATION_PATTERN.lastIndex = 0;
             let match: RegExpExecArray | null;
             while ((match = CITATION_PATTERN.exec(line)) !== null) {
                 const [, citedPath, anchor, phrase, lineNumRaw] = match;
-                const citation = match[0]!;
+                const citation = match[0];
                 const hasAnchor = Boolean(anchor);
                 const hasPhrase = Boolean(phrase);
                 const hasLineNum = Boolean(lineNumRaw);
@@ -141,7 +141,7 @@ export async function checkCitations(rootDir: string): Promise<CitationFinding[]
                     continue;
                 }
 
-                const targetPath = await resolveCitedPath(rootDir, citedPath!);
+                const targetPath = await resolveCitedPath(rootDir, citedPath);
                 if (targetPath === null) {
                     findings.push({
                         file: relPath,
@@ -154,7 +154,7 @@ export async function checkCitations(rootDir: string): Promise<CitationFinding[]
                 const targetContent = (await readOptional(targetPath))!;
 
                 if (hasAnchor) {
-                    const wantedSlug = anchor!.slice(1);
+                    const wantedSlug = anchor.slice(1);
                     const realSlugs = headingsOf(targetContent).map(slugify);
                     if (!realSlugs.includes(wantedSlug)) {
                         findings.push({
@@ -167,7 +167,7 @@ export async function checkCitations(rootDir: string): Promise<CitationFinding[]
                 }
 
                 if (hasPhrase) {
-                    const count = countOccurrences(targetContent, phrase!);
+                    const count = countOccurrences(targetContent, phrase);
                     if (count !== 1) {
                         findings.push({
                             file: relPath,
@@ -182,7 +182,7 @@ export async function checkCitations(rootDir: string): Promise<CitationFinding[]
                     // A range or comma-list (`12-15`, `7,115`) is checked by its
                     // highest number -- the one most likely to have drifted
                     // beyond the file's current length.
-                    const cited = Math.max(...lineNumRaw!.split(/[-,]/).map(Number));
+                    const cited = Math.max(...lineNumRaw.split(/[-,]/).map(Number));
                     const targetLineCount = targetContent.split("\n").length;
                     if (cited > targetLineCount) {
                         findings.push({

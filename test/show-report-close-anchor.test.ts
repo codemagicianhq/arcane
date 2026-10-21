@@ -77,7 +77,7 @@ describe("show-report close anchor (R-CLOSE)", () => {
       commit(dir, "docs: regenerate report", "2026-09-02", "2026-09-02", true);
 
       expect((await runReportCheck("check", dir)).drifted).toEqual([]);
-      const json = JSON.parse(await fs.readFile(join(dir, OUTPUTS[0] as string), "utf8")) as {
+      const json = JSON.parse(await fs.readFile(join(dir, OUTPUTS[0]), "utf8")) as {
         cast: { name: string; commits: number }[];
       };
       // One content commit carried the trailer; the regeneration is not the cast's second.
@@ -92,7 +92,7 @@ describe("show-report close anchor (R-CLOSE)", () => {
       const dir = await newRepo("close-anchor-exclude");
       await write(dir, "a.txt", "1\n");
       commit(dir, "feat: real work", "2026-09-02", "2026-09-02");
-      await write(dir, OUTPUTS[0] as string, "{}\n");
+      await write(dir, OUTPUTS[0], "{}\n");
       commit(dir, "docs: regenerate report", "2026-09-02", "2026-09-02");
 
       expect(subjectOf(dir, await getCloseCommit(dir, "2026-09-02", OUTPUTS))).toBe("feat: real work");

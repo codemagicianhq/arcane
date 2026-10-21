@@ -69,7 +69,7 @@ describe("checkUserTier (ARC-045 / CS-04)", () => {
   it("warns, non-blocking, when a recorded client file is missing", async () => {
     const { record } = await installTier("1.1.0");
     const [victim] = Object.keys(record);
-    await removeFixtureDir(join(home, victim!));
+    await removeFixtureDir(join(home, victim));
     const result = await checkUserTier(home, "1.1.0");
     expect(result.passed).toBe(false);
     expect(result.blocking).toBe(false);
@@ -80,7 +80,7 @@ describe("checkUserTier (ARC-045 / CS-04)", () => {
   it("reports an edited client file in the pass message rather than warning: keeping it is the design", async () => {
     const { record } = await installTier("1.1.0");
     const [edited] = Object.keys(record);
-    await fs.appendFile(join(home, edited!), "\nEDIT\n");
+    await fs.appendFile(join(home, edited), "\nEDIT\n");
     const result = await checkUserTier(home, "1.1.0");
     expect(result.passed).toBe(true);
     expect(result.message).toContain("1 customized");
@@ -105,8 +105,8 @@ describe("checkUserTier (ARC-045 / CS-04)", () => {
   it("counts a recorded path that is now a directory as customized instead of throwing (review F2)", async () => {
     const { record } = await installTier("1.1.0");
     const [victim] = Object.keys(record);
-    await removeFixtureDir(join(home, victim!));
-    await fs.mkdir(join(home, victim!), { recursive: true });
+    await removeFixtureDir(join(home, victim));
+    await fs.mkdir(join(home, victim), { recursive: true });
     const result = await checkUserTier(home, "1.1.0");
     expect(result.passed).toBe(true);
     expect(result.message).toContain("1 customized");

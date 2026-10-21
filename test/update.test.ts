@@ -595,7 +595,7 @@ describe("spell update — handler", () => {
     await runUpdate({}, tmpDir, await isolatedAssetsDir("vendor v2\nline two"), "0.2.0");
 
     const manifest = await readManifestFile(tmpDir);
-    expect(manifest.components[0]!.fileHashes![managedFile]).toBe(recordedHash);
+    expect(manifest.components[0].fileHashes![managedFile]).toBe(recordedHash);
     await expect(fs.readFile(join(tmpDir, managedFile), "utf8")).resolves.toBe("OPERATOR VERSION\nline two");
   });
 
@@ -727,7 +727,7 @@ describe("spell update — handler", () => {
     const restored = await fs.readFile(join(tmpDir, file), "utf8");
     expect(restored).toBe(await fs.readFile(join(ASSETS_DIR, file), "utf8"));
     const manifest = await readManifestFile(tmpDir);
-    expect(manifest.components[0]!.fileHashes![file]).toBe(await hashFile(join(tmpDir, file)));
+    expect(manifest.components[0].fileHashes![file]).toBe(await hashFile(join(tmpDir, file)));
   });
 
   it("a same-version run restores only what is tracked, absent and vendor-owned; present files keep their recorded state and untracked registry files are not created", async () => {
@@ -1069,7 +1069,7 @@ describe("spell update — handler", () => {
       expect(fetchPublishedFileMock).not.toHaveBeenCalled();
       const manifest = await readManifestFile(tmpDir);
       // Re-recorded in the normalized form going forward.
-      expect(manifest.components[0]!.fileHashes![file]).toBe(hashContent(asset));
+      expect(manifest.components[0].fileHashes![file]).toBe(hashContent(asset));
     });
 
     it("a genuine edit inside a CRLF file is still an edit", async () => {
@@ -1124,7 +1124,7 @@ describe("spell update — handler", () => {
       // remedy this very run prints -- find nothing on the next invocation,
       // and left a file Arcane wrote untracked for `spell uninstall`.
       const manifest = await readManifestFile(tmpDir);
-      expect(manifest.components[0]!.files).toContain(orphanFile);
+      expect(manifest.components[0].files).toContain(orphanFile);
 
       // ...and it is reported again, every run, until it is resolved.
       consoleSpy.mockClear();
@@ -1287,7 +1287,7 @@ describe("spell update — handler", () => {
       // Gone from disk, so gone from the manifest: a tracked orphan is kept
       // only while it is still there to prune (CS-05).
       const manifest = await readManifestFile(tmpDir);
-      expect(manifest.components[0]!.files).not.toContain(orphanFile);
+      expect(manifest.components[0].files).not.toContain(orphanFile);
     });
 
     it("--prune reports but does not delete an orphaned file with no recorded hash", async () => {

@@ -204,13 +204,13 @@ describe("ChunkedSecretStore", () => {
 
     it("a missing chunk", () => {
       const { backend, store, chunkNames } = saved();
-      backend.entries.delete(chunkNames[1]!);
+      backend.entries.delete(chunkNames[1]);
       expect(store.load()).toMatchObject({ state: "corrupt" });
     });
 
     it("a tampered chunk", () => {
       const { backend, store, chunkNames } = saved();
-      backend.entries.set(chunkNames[0]!, "x".repeat(1000));
+      backend.entries.set(chunkNames[0], "x".repeat(1000));
       expect(store.load()).toMatchObject({ state: "corrupt" });
     });
 

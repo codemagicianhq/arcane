@@ -55,7 +55,7 @@ async function readOptional(path: string): Promise<string | null> {
 
 /** `baseline: b0992c1 (main)` -> `b0992c1`. */
 function extractSha(baselineField: string): string {
-  return baselineField.trim().split(/\s+/)[0]!;
+  return baselineField.trim().split(/\s+/)[0];
 }
 
 function epicToRow(epic: ParsedEpic): ShowReportRow {

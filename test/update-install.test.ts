@@ -82,7 +82,7 @@ function logged(spy: { mock: { calls: unknown[][] } }): string {
 }
 
 function names(out: string, marker: string): string[] {
-  return [...out.matchAll(new RegExp(`${marker}: ([a-z0-9-]+) `, "g"))].map((m) => m[1]!);
+  return [...out.matchAll(new RegExp(`${marker}: ([a-z0-9-]+) `, "g"))].map((m) => m[1]);
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -133,7 +133,7 @@ describe("spell update installs (ARC-052)", () => {
         expect(STANDARDS).toHaveLength(4);
         for (const name of STANDARDS) {
           expect(out).toContain(`Installed: ${name} (prerequisite of spells-build)`);
-          expect(await exists(join(tmpDir, getComponent(name).files[0]!))).toBe(true);
+          expect(await exists(join(tmpDir, getComponent(name).files[0]))).toBe(true);
         }
         expect(out).not.toContain("Missing prerequisites");
 
@@ -227,7 +227,7 @@ describe("spell update installs (ARC-052)", () => {
       expect(plan.items).toEqual([]);
       expect(plan.leftAlone).toHaveLength(1);
       expect(plan.leftAlone[0]).toMatchObject({ name: "line-ending-baseline", kind: "prerequisite" });
-      expect(plan.leftAlone[0]!.reason).toContain("initOnly");
+      expect(plan.leftAlone[0].reason).toContain("initOnly");
     });
   });
 
@@ -296,7 +296,7 @@ describe("spell update installs (ARC-052)", () => {
       }
 
       expect(checkboxMock).toHaveBeenCalledTimes(1);
-      const offered = (checkboxMock.mock.calls[0]![0] as { choices: Array<{ value: string }> }).choices.map((c) => c.value);
+      const offered = (checkboxMock.mock.calls[0][0] as { choices: Array<{ value: string }> }).choices.map((c) => c.value);
       expect(offered).toEqual(["compliance-standards"]);
       expect(await exists(join(tmpDir, ".arcane/governance/compliance-standards.md"))).toBe(true);
       expect((await readManifestFile(tmpDir)).components.map((c) => c.name)).toContain("compliance-standards");
@@ -390,22 +390,22 @@ describe("spell update installs (ARC-052)", () => {
   describe("review regressions — a directory at a prerequisite destination", () => {
     it("is left alone and reported, without a crash", async () => {
       await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
-      const target = getComponent(STANDARDS[0]!).files[0]!;
+      const target = getComponent(STANDARDS[0]).files[0];
       await fs.mkdir(join(tmpDir, target), { recursive: true });
       const spy = vi.spyOn(console, "log");
 
       await runUpdate({}, tmpDir, ASSETS_DIR, NEW_VERSION);
 
       expect((await fs.stat(join(tmpDir, target))).isDirectory()).toBe(true);
-      expect(logged(spy)).not.toContain(`Installed: ${STANDARDS[0]!} `);
+      expect(logged(spy)).not.toContain(`Installed: ${STANDARDS[0]} `);
       const recorded = (await readManifestFile(tmpDir)).components.map((c) => c.name);
-      expect(recorded).not.toContain(STANDARDS[0]!);
+      expect(recorded).not.toContain(STANDARDS[0]);
       for (const name of STANDARDS.slice(1)) expect(recorded).toContain(name);
     });
 
     it("adopts a prerequisite whose unrecorded file is identical to the packaged one, instead of leaving it alone", async () => {
       await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
-      const target = getComponent("compliance-standards").files[0]!;
+      const target = getComponent("compliance-standards").files[0];
       await fs.mkdir(join(tmpDir, target, ".."), { recursive: true });
       await fs.copyFile(join(ASSETS_DIR, target), join(tmpDir, target));
       const spy = vi.spyOn(console, "log");
@@ -421,7 +421,7 @@ describe("spell update installs (ARC-052)", () => {
 
     it("names a directory at a prerequisite destination as a directory in the reason", async () => {
       await writeManifest(tmpDir, { profile: "full", components: [entry("spells-build")] });
-      const target = getComponent(STANDARDS[0]!).files[0]!;
+      const target = getComponent(STANDARDS[0]).files[0];
       await fs.mkdir(join(tmpDir, target), { recursive: true });
       const spy = vi.spyOn(console, "log");
 

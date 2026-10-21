@@ -119,7 +119,7 @@ export function applyRandomNames(roleIds: string[]): NamingResult[] {
   const shuffled = [...RANDOM_NAME_POOL].sort(() => Math.random() - 0.5);
   return roleIds.map((id, i) => ({
     definition: id,
-    name: shuffled[i % shuffled.length]!,
+    name: shuffled[i % shuffled.length],
   }));
 }
 
