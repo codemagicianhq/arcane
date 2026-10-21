@@ -36,16 +36,32 @@ afterEach(async () => {
 });
 
 describe("removeLink fallback (#357, review F6)", () => {
-  it("falls back to rmdir when unlink refuses the directory link with EPERM", async () => {
-    unlinkMock.mockRejectedValue(Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" }));
+  // Windows only: rmdir removes a junction there. On POSIX rmdir cannot
+  // remove a link (ENOTDIR), so the fallback does not exist there.
+  it.runIf(process.platform === "win32")(
+    "falls back to rmdir when unlink refuses the directory link with EPERM (Windows)",
+    async () => {
+      unlinkMock.mockRejectedValue(Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" }));
 
-    await copyFile(join(src, "shim.md"), repo, SHIM, { force: true });
+      await copyFile(join(src, "shim.md"), repo, SHIM, { force: true });
 
-    expect(unlinkMock).toHaveBeenCalledTimes(1);
-    expect((await fs.lstat(join(repo, SHIM))).isSymbolicLink()).toBe(false);
-    expect(await fs.readFile(join(repo, SHIM), "utf8")).toBe("rendered\n");
-    await expect(fs.stat(join(src, "target-dir"))).resolves.toBeTruthy();
-  });
+      expect(unlinkMock).toHaveBeenCalledTimes(1);
+      expect((await fs.lstat(join(repo, SHIM))).isSymbolicLink()).toBe(false);
+      expect(await fs.readFile(join(repo, SHIM), "utf8")).toBe("rendered\n");
+      await expect(fs.stat(join(src, "target-dir"))).resolves.toBeTruthy();
+    },
+  );
+
+  it.skipIf(process.platform === "win32")(
+    "surfaces an EPERM from unlink on POSIX instead of trying rmdir on a link",
+    async () => {
+      unlinkMock.mockRejectedValue(Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" }));
+
+      await expect(copyFile(join(src, "shim.md"), repo, SHIM, { force: true })).rejects.toThrow(/EPERM/);
+
+      expect((await fs.lstat(join(repo, SHIM))).isSymbolicLink()).toBe(true);
+    },
+  );
 
   it("surfaces any other unlink failure and leaves the link in place", async () => {
     unlinkMock.mockRejectedValue(Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" }));

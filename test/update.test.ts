@@ -16,6 +16,7 @@ import { hashContent, hashFile } from "../src/modules/copier.js";
 import { USER_FANOUT_PATHS, storeSpellPath, userTierRoot } from "../src/modules/user-tier.js";
 import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { removeFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { installFakeUserTier } from "./helpers/user-tier-home.js";
 import { resolveBuiltCli, BUILT_CLI_SKIP_REASON } from "./helpers/resolve-cli.js";
 
 const {
@@ -1238,20 +1239,26 @@ describe("spell update — handler", () => {
       it(
         "leaves nothing half-deleted in a repository that takes spells from the user tier",
         async () => {
-          await seedLegacyInstall({ spell_scope: "user" });
+          // #359: the update refuses without a user tier, so point it at one.
+          const restoreHome = await installFakeUserTier("0.2.0");
+          try {
+            await seedLegacyInstall({ spell_scope: "user" });
 
-          await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, "0.2.0");
+            await runUpdate({ prune: true }, tmpDir, ASSETS_DIR, "0.2.0");
 
-          // Opted out: no spell file is managed here, so every one of them is
-          // an orphan -- pruned if untouched, never silently forgotten.
-          const manifest = await readManifestFile(tmpDir);
-          const tracked = manifest.components.flatMap((c) => c.files);
-          for (const file of [RETIRED, RETIRED_COMMAND, LIVE]) {
-            const onDisk = await fs
-              .access(join(tmpDir, file))
-              .then(() => true)
-              .catch(() => false);
-            expect(onDisk).toBe(tracked.includes(file));
+            // Opted out: no spell file is managed here, so every one of them is
+            // an orphan -- pruned if untouched, never silently forgotten.
+            const manifest = await readManifestFile(tmpDir);
+            const tracked = manifest.components.flatMap((c) => c.files);
+            for (const file of [RETIRED, RETIRED_COMMAND, LIVE]) {
+              const onDisk = await fs
+                .access(join(tmpDir, file))
+                .then(() => true)
+                .catch(() => false);
+              expect(onDisk).toBe(tracked.includes(file));
+            }
+          } finally {
+            await restoreHome();
           }
         },
         VERY_HEAVY_TEST_TIMEOUT,
@@ -1585,29 +1592,16 @@ describe("spell update — handler", () => {
     // no user tier. These tests exercise the opt-out itself, so they point
     // the tier at a temp home holding a store manifest; before this they
     // depended on whether the machine running them had a real ~/.arcane.
-    let savedHome: { HOME: string | undefined; USERPROFILE: string | undefined };
-    let fakeHome: string;
+    let restoreHome: () => Promise<void>;
 
     beforeEach(async () => {
-      savedHome = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };
-      fakeHome = await fs.mkdtemp(join(tmpdir(), "update-spell-scope-home-"));
-      await fs.mkdir(join(fakeHome, ".arcane"), { recursive: true });
-      await fs.writeFile(
-        join(fakeHome, ".arcane", ".arcane.json"),
-        JSON.stringify({ version: PACKAGE_VERSION, profile: "full", installedAt: "2026-10-20T00:00:00.000Z", components: [], scope: "user" }),
-      );
-      process.env.HOME = fakeHome;
-      process.env.USERPROFILE = fakeHome;
+      restoreHome = await installFakeUserTier(PACKAGE_VERSION);
       await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
       vi.mocked(console.log).mockClear?.();
     });
 
     afterEach(async () => {
-      if (savedHome.HOME === undefined) delete process.env.HOME;
-      else process.env.HOME = savedHome.HOME;
-      if (savedHome.USERPROFILE === undefined) delete process.env.USERPROFILE;
-      else process.env.USERPROFILE = savedHome.USERPROFILE;
-      await removeFixtureDir(fakeHome);
+      await restoreHome();
     });
 
     it("reports every spell file as unmanaged on the very next same-version update, and deletes none", async () => {
