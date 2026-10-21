@@ -24,14 +24,14 @@ export function parseOperatorQueue(content: string): ParsedQueueEntry[] {
   for (const section of sections) {
     const headingMatch = /^(Q-\d+)\s*—\s*(.+?)\r?\n/.exec(section);
     if (!headingMatch) continue; // not a Q-NNN section (shouldn't occur after the split, but stay defensive)
-    const id = headingMatch[1]!;
-    const title = headingMatch[2]!.trim();
+    const id = headingMatch[1];
+    const title = headingMatch[2].trim();
 
     const statusMatch = /^-\s*\*\*Status:\*\*\s*\[([ x])\]/m.exec(section);
     const done = statusMatch ? statusMatch[1] === "x" : false;
 
     const whyMatch = /^-\s*\*\*Why:\*\*\s*([\s\S]*?)(?=\r?\n-\s*\*\*|\r?\n\r?\n|$)/m.exec(section);
-    const why = whyMatch ? whyMatch[1]!.replace(/\s+/g, " ").trim() : null;
+    const why = whyMatch ? whyMatch[1].replace(/\s+/g, " ").trim() : null;
 
     const linkMatch = LINK.exec(section);
     entries.push({ id, title, done, why, href: linkMatch ? linkMatch[1] : undefined });

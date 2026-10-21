@@ -99,7 +99,7 @@ async function addOne(
   if (plan.conflicts.length > 0) {
     const others = plan.conflicts.length - 1;
     console.error(
-      `Cannot add "${name}": "${plan.conflicts[0]!.file}" already exists${others > 0 ? ` (and ${others} more)` : ""}. Nothing was written. Use --force to overwrite.`,
+      `Cannot add "${name}": "${plan.conflicts[0].file}" already exists${others > 0 ? ` (and ${others} more)` : ""}. Nothing was written. Use --force to overwrite.`,
     );
     return "failed";
   }

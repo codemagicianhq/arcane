@@ -27,9 +27,9 @@ export function parseVerificationLedgerSection(content: string, programNameWords
     const tableRows = [...section.matchAll(/^\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|\s*$/gm)];
     for (const m of tableRows.slice(1)) {
       // first match is the header row
-      const claimCell = m[1]!.trim();
-      const resultCell = m[3]!.trim().toLowerCase();
-      const correctionCell = m[4]!.trim();
+      const claimCell = m[1].trim();
+      const resultCell = m[3].trim().toLowerCase();
+      const correctionCell = m[4].trim();
       if (claimCell === "---" || claimCell.startsWith("---")) continue;
       if (resultCell !== "confirmed" && resultCell !== "corrected" && resultCell !== "unverifiable") continue;
       rows.push({

@@ -21,7 +21,7 @@ function read(file: string): string {
 function status(content: string): string | null {
   const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
   if (!frontmatter) return null;
-  return /^status:\s*(\S+)/m.exec(frontmatter[1]!)?.[1] ?? null;
+  return /^status:\s*(\S+)/m.exec(frontmatter[1])?.[1] ?? null;
 }
 
 function listedTokens(): string[] {
@@ -31,7 +31,7 @@ function listedTokens(): string[] {
   expect(start, "runtime-placeholders:start marker").toBeGreaterThan(-1);
   expect(end, "runtime-placeholders:end marker").toBeGreaterThan(start);
   const region = content.slice(start + START.length, end);
-  return [...region.matchAll(/^- `(\{[A-Z0-9_]+\})` — \S/gm)].map((m) => m[1]!);
+  return [...region.matchAll(/^- `(\{[A-Z0-9_]+\})` — \S/gm)].map((m) => m[1]);
 }
 
 /** Every `{UPPER_SNAKE}` token in the whole file, code included: the strictest reading of the AC. */

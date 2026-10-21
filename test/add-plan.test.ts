@@ -118,7 +118,7 @@ describe("spell add — plan, refusal, skipExisting, multiple names", () => {
       const plan = await planComponentInstall(getComponent(component), tmpDir, ASSETS_DIR, {});
       expect(plan.files.length).toBeGreaterThan(1);
 
-      const last = plan.files[plan.files.length - 1]!.file;
+      const last = plan.files[plan.files.length - 1].file;
       await fs.mkdir(join(tmpDir, last, ".."), { recursive: true });
       await fs.writeFile(join(tmpDir, last), "mine\n");
       const before = await listAll(tmpDir);

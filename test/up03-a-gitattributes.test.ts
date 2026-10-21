@@ -166,7 +166,7 @@ describe("UP03-A-03 — upgrading an install from before the split", () => {
     // Recorded once, under the new component. (No hash after the run: update
     // never hash-tracks a preserved skipExisting file -- unchanged behavior.)
     expect(owners.map((c) => c.name)).toEqual(["line-ending-baseline"]);
-    expect(owners[0]!.files).toEqual([".gitattributes"]);
+    expect(owners[0].files).toEqual([".gitattributes"]);
     expect(manifest.components.find((c) => c.name === "docs-baseline")?.files).toEqual([".gitignore"]);
   });
 

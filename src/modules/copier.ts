@@ -26,7 +26,7 @@ function normalizeLineEndings(content: Buffer): Buffer {
   const out = Buffer.allocUnsafe(content.length);
   let o = 0;
   for (let i = 0; i < content.length; i++) {
-    const byte = content[i]!;
+    const byte = content[i];
     if (byte === 0x0d) {
       out[o++] = 0x0a;
       if (content[i + 1] === 0x0a) i++;

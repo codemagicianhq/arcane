@@ -30,8 +30,8 @@ const FRONTMATTER_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
 export function parseFrontmatterStatus(content: string): string | null {
   const block = FRONTMATTER_PATTERN.exec(content);
   if (!block) return null;
-  const status = /^status:[ \t]*["']?([^"'\s#]+)/m.exec(block[1]!);
-  return status ? status[1]! : null;
+  const status = /^status:[ \t]*["']?([^"'\s#]+)/m.exec(block[1]);
+  return status ? status[1] : null;
 }
 
 function stripFrontmatter(content: string): string {
@@ -51,14 +51,14 @@ function stripFencedCode(text: string): string {
   for (const line of text.split(/\r?\n/)) {
     if (fence) {
       const close = /^ {0,3}(`{3,}|~{3,})[ \t]*$/.exec(line);
-      if (close && close[1]![0] === fence.char && close[1]!.length >= fence.length) fence = null;
+      if (close && close[1][0] === fence.char && close[1].length >= fence.length) fence = null;
       kept.push("");
       continue;
     }
     const open = /^ {0,3}(`{3,}|~{3,})/.exec(line);
     // A backtick fence's info string may not itself contain a backtick.
-    if (open && !(open[1]![0] === "`" && line.slice(open[0].length).includes("`"))) {
-      fence = { char: open[1]![0]!, length: open[1]!.length };
+    if (open && !(open[1][0] === "`" && line.slice(open[0].length).includes("`"))) {
+      fence = { char: open[1][0], length: open[1].length };
       kept.push("");
       continue;
     }
@@ -124,7 +124,7 @@ function stripInlineCode(text: string): string {
 export function findPlaceholderTokens(content: string): string[] {
   const prose = stripInlineCode(stripFencedCode(stripFrontmatter(content)));
   const seen = new Set<string>();
-  for (const match of prose.matchAll(PLACEHOLDER_PATTERN)) seen.add(`{${match[1]!}}`);
+  for (const match of prose.matchAll(PLACEHOLDER_PATTERN)) seen.add(`{${match[1]}}`);
   return [...seen];
 }
 
@@ -141,7 +141,7 @@ export function parseRuntimePlaceholders(standardContent: string): Set<string> |
   const region = standardContent.slice(start + RUNTIME_PLACEHOLDERS_START.length, end);
   const tokens = new Set<string>();
   for (const match of region.matchAll(/^[ \t]*[-*][ \t]+`(\{[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*\})`/gm)) {
-    tokens.add(match[1]!);
+    tokens.add(match[1]);
   }
   return tokens;
 }

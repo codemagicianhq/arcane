@@ -66,7 +66,7 @@ describe("component install plan — review leftovers", () => {
     it("keeps a directory at a skipExisting destination, as it keeps any present file", async () => {
       const component = getComponent("line-ending-baseline");
       expect(component.skipExisting).toBe(true);
-      await fs.mkdir(join(tmpDir, component.files[0]!), { recursive: true });
+      await fs.mkdir(join(tmpDir, component.files[0]), { recursive: true });
 
       const plan = await planComponentInstall(component, tmpDir, ASSETS_DIR, {});
 

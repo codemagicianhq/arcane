@@ -19,8 +19,8 @@ export function remoteUrlHost(url: string): string | undefined {
   }
   // scp-like syntax; a Windows drive letter ("C:\repo") is a path, not a host.
   const scp = /^(?:[^@/\s]+@)?([^:/\s]+):/.exec(trimmed);
-  if (!scp || /^[a-zA-Z]$/.test(scp[1]!)) return undefined;
-  return scp[1]!.toLowerCase();
+  if (!scp || /^[a-zA-Z]$/.test(scp[1])) return undefined;
+  return scp[1].toLowerCase();
 }
 
 /**

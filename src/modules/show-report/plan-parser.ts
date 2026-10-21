@@ -48,9 +48,9 @@ export function parseFrontmatter(content: string): PlanFrontmatter {
   const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
   if (!match) return {};
   const fields: Record<string, string> = {};
-  for (const line of match[1]!.split(/\r?\n/)) {
+  for (const line of match[1].split(/\r?\n/)) {
     const kv = /^([a-zA-Z][\w-]*):\s*(.*)$/.exec(line);
-    if (kv) fields[kv[1]!] = kv[2]!.trim();
+    if (kv) fields[kv[1]] = kv[2].trim();
   }
   return fields;
 }
@@ -96,7 +96,7 @@ export function parseEpics(content: string): ParsedEpic[] {
   EPIC_START.lastIndex = 0;
   let epicMatch: RegExpExecArray | null;
   while ((epicMatch = EPIC_START.exec(content)) !== null) {
-    markers.push({ index: epicMatch.index, type: "epic", id: epicMatch[2]!, done: epicMatch[1] === "x" });
+    markers.push({ index: epicMatch.index, type: "epic", id: epicMatch[2], done: epicMatch[1] === "x" });
   }
 
   HEADING_LINE.lastIndex = 0;
@@ -105,7 +105,7 @@ export function parseEpics(content: string): ParsedEpic[] {
     if (headingMatch[1] === "##") {
       markers.push({ index: headingMatch.index, type: "h2" });
     } else {
-      markers.push({ index: headingMatch.index, type: "h3", waveTitle: headingMatch[2]!.trim() });
+      markers.push({ index: headingMatch.index, type: "h3", waveTitle: headingMatch[2].trim() });
     }
   }
 
@@ -115,7 +115,7 @@ export function parseEpics(content: string): ParsedEpic[] {
   let currentWave: string | null = null;
 
   for (let i = 0; i < markers.length; i += 1) {
-    const marker = markers[i]!;
+    const marker = markers[i];
     if (marker.type === "h2") {
       currentWave = null;
       continue;
@@ -125,12 +125,12 @@ export function parseEpics(content: string): ParsedEpic[] {
       continue;
     }
     // marker.type === "epic": block runs to the next marker of any kind, or EOF.
-    const blockEnd = i + 1 < markers.length ? markers[i + 1]!.index : content.length;
+    const blockEnd = i + 1 < markers.length ? markers[i + 1].index : content.length;
     const block = content.slice(marker.index, blockEnd);
     const titleMatch = EPIC_TITLE.exec(block);
     const reportMatch = REPORT_LINE.exec(block);
     const titleOverrideMatch = TITLE_OVERRIDE_LINE.exec(block);
-    const prLinks = [...new Set([...block.matchAll(PR_LINK)].map((m) => m[2]!))];
+    const prLinks = [...new Set([...block.matchAll(PR_LINK)].map((m) => m[2]))];
 
     epics.push({
       id: marker.id!,
@@ -138,14 +138,14 @@ export function parseEpics(content: string): ParsedEpic[] {
       // closing `.**` at all) falls back to the raw id rather than throwing --
       // an epic missing from the report is far more visible, and therefore
       // more likely to get fixed, than a crashed report generator.
-      title: titleMatch ? titleMatch[1]!.replace(/\s+/g, " ").trim() : marker.id!,
+      title: titleMatch ? titleMatch[1].replace(/\s+/g, " ").trim() : marker.id!,
       done: marker.done!,
       wave: currentWave,
       report: reportMatch
         ? {
-            description: reportMatch[1]!.replace(/\s+/g, " ").trim(),
-            category: reportMatch[2]!,
-            titleOverride: titleOverrideMatch ? titleOverrideMatch[1]!.trim() : undefined,
+            description: reportMatch[1].replace(/\s+/g, " ").trim(),
+            category: reportMatch[2],
+            titleOverride: titleOverrideMatch ? titleOverrideMatch[1].trim() : undefined,
           }
         : null,
       prLinks,
@@ -173,7 +173,7 @@ function extractSection(content: string, headingPrefix: string): string | null {
   if (startIndex === -1) return null;
   let endIndex = lines.length;
   for (let i = startIndex + 1; i < lines.length; i += 1) {
-    if (lines[i]!.startsWith("## ")) {
+    if (lines[i].startsWith("## ")) {
       endIndex = i;
       break;
     }
@@ -196,8 +196,8 @@ export function parseParkedSection(content: string): ParsedParkedItem[] {
   if (tableRows.length > 1) {
     // First matched row is the header (`| Item | Source | ... |`); skip it.
     return tableRows.slice(1).map((m) => ({
-      title: stripMarkdown(m[1]!.trim()),
-      reason: stripMarkdown(m[3]!.trim()),
+      title: stripMarkdown(m[1].trim()),
+      reason: stripMarkdown(m[3].trim()),
     }));
   }
 
@@ -215,9 +215,9 @@ export function parseParkedSection(content: string): ParsedParkedItem[] {
     // Text between the bold lead-in and the `—` belongs to the title (LH's
     // "…detectors **beyond** LH-07/LH-08's two mechanical inputs"), except a
     // parenthetical, which is a source note rather than part of the name.
-    const tail = match[2]!.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
-    const title = tail ? `${match[1]!.trim()} ${tail}` : match[1]!.trim();
-    return [{ title: stripMarkdown(title), reason: stripMarkdown(match[3]!.trim()) }];
+    const tail = match[2].replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    const title = tail ? `${match[1].trim()} ${tail}` : match[1].trim();
+    return [{ title: stripMarkdown(title), reason: stripMarkdown(match[3].trim()) }];
   });
 }
 
@@ -256,14 +256,14 @@ function unwrapBullets(body: string): string[] {
 export function computeCoverageOutcome(content: string): string | undefined {
   const body = extractSection(content, "## Coverage Map");
   if (body === null) return undefined;
-  const rows = [...body.matchAll(/^\|(.+)\|\s*$/gm)].filter((m) => !/^-+\s*\|/.test(m[1]!.trim()));
+  const rows = [...body.matchAll(/^\|(.+)\|\s*$/gm)].filter((m) => !/^-+\s*\|/.test(m[1].trim()));
   if (rows.length < 2) return undefined;
   const dataRows = rows.slice(1); // first row is the header
   // Lessons Hardening's own Coverage Map says "**Park**"; Become Current's
   // says "**Parked**" -- same disposition, two spellings across the two
   // existing programs (an instance of the exact P-something inconsistency
   // this program's own corrections inventory is full of).
-  const parkedCount = dataRows.filter((m) => /\*\*Park(?:ed)?\*\*/i.test(m[1]!)).length;
+  const parkedCount = dataRows.filter((m) => /\*\*Park(?:ed)?\*\*/i.test(m[1])).length;
   const total = dataRows.length;
   const dispositioned = total - parkedCount;
   return `${total} of ${total} items dispositioned — ${dispositioned} routed to an epic, ${parkedCount} parked`;

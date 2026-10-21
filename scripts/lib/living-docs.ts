@@ -45,8 +45,8 @@ async function readFrontmatterStatus(filePath: string): Promise<string | null> {
     }
     const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(content);
     if (!match) return null;
-    const statusMatch = /^status:\s*(\S+)/m.exec(match[1]!);
-    return statusMatch ? statusMatch[1]! : null;
+    const statusMatch = /^status:\s*(\S+)/m.exec(match[1]);
+    return statusMatch ? statusMatch[1] : null;
 }
 
 /** Every `.md` file inside a `docs/plans/<name>/` directory whose own PLAN.md has `status: active`. */

@@ -133,8 +133,8 @@ describe("spell add — handler", () => {
     // Manifest should be updated
     const manifest = await readManifestFile(tmpDir);
     expect(manifest.components).toHaveLength(1);
-    expect(manifest.components[0]!.name).toBe("testing-standards");
-    expect(manifest.components[0]!.installedVersion).toBe(PACKAGE_VERSION);
+    expect(manifest.components[0].name).toBe("testing-standards");
+    expect(manifest.components[0].installedVersion).toBe(PACKAGE_VERSION);
 
     // Success message
     expect(consoleSpy).toHaveBeenCalledWith(

@@ -66,7 +66,7 @@ export const MISSING_RESULT_PAGES_WARNING =
  */
 export function safeErrorText(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  return message.split("\n")[0]!.replace(/([?&](?:code|state|id_token|access_token|refresh_token)=)[^&\s]+/gi, "$1[redacted]");
+  return message.split("\n")[0].replace(/([?&](?:code|state|id_token|access_token|refresh_token)=)[^&\s]+/gi, "$1[redacted]");
 }
 
 export function toSessionRecord(result: TokenResult, environment: IdentityEnvironmentConfig): SessionRecord {

@@ -289,7 +289,7 @@ export async function runInit(
           description: buildProfileDescription(profileComponents, p.id),
         };
       }),
-    })) as Profile;
+    }));
   }
 
   // ── Step 2: Resolve components ─────────────────────────────────────────

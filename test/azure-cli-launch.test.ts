@@ -150,7 +150,7 @@ describe("fetchAdoMergeTypePolicies with hostile remote-derived text (R-296a, me
 
     const orgUrl = `https://dev.azure.com/${org}`;
     // The first call's echoed argv became the repository id; the second call's argv is the result.
-    const firstArgs = JSON.parse(second[second.indexOf("--repository-id") + 1] as string) as string[];
+    const firstArgs = JSON.parse(second[second.indexOf("--repository-id") + 1]) as string[];
     expect(firstArgs).toEqual([
       "repos", "show", "--repository", repo, "--org", orgUrl, "--project", project, "--query", "id", "--output", "tsv",
     ]);

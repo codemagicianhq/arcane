@@ -27,7 +27,7 @@ const HEADINGS: Record<ResultKind, string> = {
   failure: "Could not finish sign-in",
 };
 
-const policyOf = (html: string) => resultPageHeaders(html)["content-security-policy"]!;
+const policyOf = (html: string) => resultPageHeaders(html)["content-security-policy"];
 const heading = (html: string) => html.match(/<h1>([^<]*)<\/h1>/)?.[1];
 
 let dir: string;

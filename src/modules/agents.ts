@@ -249,7 +249,7 @@ export async function runAgentsInit(
               ? `\nAll 12 roles across ${allCategories.join(", ")}`
               : "\nPick individual roles from the full roster",
       })),
-    })) as AgentProfileId;
+    }));
   }
 
   // Resolve role IDs for selected profile
@@ -311,7 +311,7 @@ export async function runAgentsInit(
           description: "\nType a unique name for each role interactively",
         },
       ],
-    })) as NamingStrategy;
+    }));
   }
 
   // ── Step 3: Apply naming ─────────────────────────────────────────────────

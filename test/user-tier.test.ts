@@ -145,7 +145,7 @@ describe("componentForScope", () => {
     for (const name of USER_TIER_COMPONENTS) {
       const view = componentForScope(getComponent(name), "user");
       for (const file of view.files) {
-        await expect(fs.access(join(ASSETS_DIR, view.sourceOverrides![file]!))).resolves.toBeUndefined();
+        await expect(fs.access(join(ASSETS_DIR, view.sourceOverrides![file]))).resolves.toBeUndefined();
       }
     }
   });

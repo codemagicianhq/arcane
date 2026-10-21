@@ -177,7 +177,7 @@ describe("UP03-A-04 — reported by doctor and update", () => {
       const wouldInstall = out.split("\n").filter((l) => l.includes(`Would install: ${name} (prerequisite of spells-build)`));
       expect(wouldInstall, name).toHaveLength(1);
       expect(spy.mock.calls.filter((c: unknown[]) => c[0] === `      spell add ${name}`), name).toHaveLength(0);
-      await expect(fs.access(join(tmpDir, getComponent(name).files[0]!))).rejects.toThrow();
+      await expect(fs.access(join(tmpDir, getComponent(name).files[0]))).rejects.toThrow();
     }
   });
 });

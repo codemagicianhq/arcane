@@ -38,7 +38,7 @@ export function resultPagePath(kind: ResultKind): string {
  */
 export function styleHashes(html: string): string[] {
   return [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style\s*>/gi)].map((match) => {
-    const text = match[1]!.replace(/\r\n?/g, "\n");
+    const text = match[1].replace(/\r\n?/g, "\n");
     return `'sha256-${createHash("sha256").update(text, "utf8").digest("base64")}'`;
   });
 }
@@ -100,7 +100,7 @@ export async function loadResultPages(assetsDir: string): Promise<ResultPages | 
     const [success, denied, failure] = await Promise.all(
       RESULT_KINDS.map(async (kind) => resultPage(await readFile(join(assetsDir, resultPagePath(kind)), "utf8"))),
     );
-    return { success: success!, denied: denied!, failure: failure! };
+    return { success: success, denied: denied, failure: failure };
   } catch {
     return null;
   }

@@ -32,14 +32,14 @@ type Parsed = { status: string; fields: Record<string, string> } | null;
 function parseStatusComment(comment: string): Parsed {
   const m = /^<!--\s*(status:.*?)\s*-->$/.exec(comment.trim());
   if (!m) return null;
-  const segments = m[1]!.split(/; (?=[a-z]+: )/);
+  const segments = m[1].split(/; (?=[a-z]+: )/);
   const [first, ...rest] = segments;
   const fields: Record<string, string> = {};
   for (const seg of rest) {
     const idx = seg.indexOf(": ");
     fields[seg.slice(0, idx)] = seg.slice(idx + 2);
   }
-  return { status: first!.replace(/^status:\s*/, ""), fields };
+  return { status: first.replace(/^status:\s*/, ""), fields };
 }
 function isNew(comment: string): boolean {
   return parseStatusComment(comment)?.status === "new";

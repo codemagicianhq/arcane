@@ -32,7 +32,7 @@ export function lineContaining(text: string, needle: string): string {
     if (matches.length > 1) {
         throw new Error(`"${needle}" appears on ${matches.length} lines; test needs a unique anchor`);
     }
-    return matches[0]!;
+    return matches[0];
 }
 
 /**
@@ -54,9 +54,9 @@ export function blockContaining(text: string, needle: string): string {
     if (lines.filter((l) => l.includes(needle)).length > 1) {
         throw new Error(`"${needle}" appears more than once; test needs a unique anchor`);
     }
-    const block = [lines[start]!];
+    const block = [lines[start]];
     for (let i = start + 1; i < lines.length; i += 1) {
-        const line = lines[i]!;
+        const line = lines[i];
         if (line.trim() === "") break;
         // Stop at the next sibling bullet, so a block cannot absorb its neighbour.
         // Table rows, headings and code fences terminate it too: without them a

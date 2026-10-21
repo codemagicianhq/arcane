@@ -153,9 +153,9 @@ describe("show-report model: buildShowReportModel (end to end against a real git
     });
 
     expect(model.sections).toHaveLength(1);
-    expect(model.sections[0]!.title).toBe("Wave 1 — Setup");
-    expect(model.sections[0]!.rows).toHaveLength(2);
-    expect(model.sections[0]!.rows[0]).toMatchObject({
+    expect(model.sections[0].title).toBe("Wave 1 — Setup");
+    expect(model.sections[0].rows).toHaveLength(2);
+    expect(model.sections[0].rows[0]).toMatchObject({
       id: "TP-01",
       title: "First epic",
       description: "Shipped the first thing.",
@@ -163,8 +163,8 @@ describe("show-report model: buildShowReportModel (end to end against a real git
       category: "feature",
       href: "https://github.com/codemagicianhq/arcane/pull/10",
     });
-    expect(model.sections[0]!.rows[0]).not.toHaveProperty("glyph");
-    expect(model.sections[0]!.rows[1]).toMatchObject({
+    expect(model.sections[0].rows[0]).not.toHaveProperty("glyph");
+    expect(model.sections[0].rows[1]).toMatchObject({
       id: "TP-02",
       description: null,
       descriptionState: "unwritten",
@@ -177,7 +177,7 @@ describe("show-report model: buildShowReportModel (end to end against a real git
 
     expect(model.corrections).toMatchObject({ checked: 2, corrected: 1, unverifiable: 0 });
     expect(model.corrections!.highlights).toHaveLength(1);
-    expect(model.corrections!.highlights[0]!.description).toBe("it was not, actually.");
+    expect(model.corrections!.highlights[0].description).toBe("it was not, actually.");
 
     expect(model.cast).toEqual([{ name: "TestPersona", commits: 1, source: "commit-trailer" }]);
 

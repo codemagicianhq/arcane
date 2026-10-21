@@ -27,8 +27,8 @@ describe("escapeRegExp", () => {
 
   it("createDenylistRules uses it, so a metacharacter-bearing token matches only literally", () => {
     const rules = createDenylistRules(["a.b+c"], "test");
-    expect(rules[0]!.pattern.test("xa.b+cx")).toBe(false); // word-boundary excludes flanked-by-word-char
-    expect(rules[0]!.pattern.test("x a.b+c x")).toBe(true);
+    expect(rules[0].pattern.test("xa.b+cx")).toBe(false); // word-boundary excludes flanked-by-word-char
+    expect(rules[0].pattern.test("x a.b+c x")).toBe(true);
   });
 });
 
@@ -40,9 +40,9 @@ describe("createDenylistRules", () => {
 
   it("matches on word boundaries only", () => {
     const [rule] = createDenylistRules(["cat"], "t");
-    expect(rule!.pattern.test("the cat sat")).toBe(true);
-    expect(rule!.pattern.test("category")).toBe(false);
-    expect(rule!.pattern.test("concatenate")).toBe(false);
+    expect(rule.pattern.test("the cat sat")).toBe(true);
+    expect(rule.pattern.test("category")).toBe(false);
+    expect(rule.pattern.test("concatenate")).toBe(false);
   });
 });
 

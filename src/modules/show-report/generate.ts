@@ -45,7 +45,7 @@ export interface ReportDiscovery {
 
 /** `"Lessons Hardening — Mechanical Enforcement ..."` -> `"Lessons Hardening"`, the form ledger headings use. */
 export function programNameFromTitle(title: string): string {
-  return title.split(" — ")[0]!.trim();
+  return title.split(" — ")[0].trim();
 }
 
 /**

@@ -20,15 +20,15 @@ export function parseAdrs(decisionsContent: string): ParsedAdr[] {
   const positions: { id: string; index: number }[] = [];
   let match: RegExpExecArray | null;
   while ((match = headingPattern.exec(decisionsContent)) !== null) {
-    positions.push({ id: `ARC-${match[1]!}`, index: match.index });
+    positions.push({ id: `ARC-${match[1]}`, index: match.index });
   }
 
   return positions.map(({ id, index }, i) => {
-    const end = i + 1 < positions.length ? positions[i + 1]!.index : decisionsContent.length;
+    const end = i + 1 < positions.length ? positions[i + 1].index : decisionsContent.length;
     const section = decisionsContent.slice(index, end);
     const dateMatch = /^\*\*Date:\*\*\s*(\d{4}-\d{2}-\d{2})/m.exec(section);
     const statusMatch = /^\*\*Status:\*\*\s*(\S+)/m.exec(section);
-    return { id, date: dateMatch ? dateMatch[1]! : null, status: statusMatch ? statusMatch[1]! : null };
+    return { id, date: dateMatch ? dateMatch[1] : null, status: statusMatch ? statusMatch[1] : null };
   });
 }
 

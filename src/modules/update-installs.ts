@@ -108,7 +108,7 @@ export async function planUpdateInstalls(args: {
 }
 
 function conflictReason(plan: InstallPlan): string {
-  const first = plan.conflicts[0]!;
+  const first = plan.conflicts[0];
   if (first.state === "directory") return `${first.file} is a directory, which update does not replace`;
   const more = plan.conflicts.length > 1 ? ` (and ${plan.conflicts.length - 1} more)` : "";
   return `${first.file} already exists${more}, and update does not overwrite`;

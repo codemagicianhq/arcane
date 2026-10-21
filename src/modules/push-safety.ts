@@ -724,7 +724,7 @@ async function disableOneRemote(cwd: string, remote: string): Promise<PushUrlRes
   // "original" and make restore impossible.
   if ((await readLocalAll(cwd, key)).length === 0 && !(await hadNoPushUrl(cwd, remote))) {
     if (currentPushUrls.length > 0) {
-      await runGit(cwd, ["config", "--local", "--replace-all", key, currentPushUrls[0]!]);
+      await runGit(cwd, ["config", "--local", "--replace-all", key, currentPushUrls[0]]);
       for (const extra of currentPushUrls.slice(1)) {
         await runGit(cwd, ["config", "--local", "--add", key, extra]);
       }
@@ -844,7 +844,7 @@ async function restoreOneRemote(cwd: string, remote: string): Promise<PushUrlRes
       "--local",
       "--replace-all",
       `remote.${remote}.pushurl`,
-      recorded[0]!,
+      recorded[0],
     ]);
     for (const extra of recorded.slice(1)) {
       await runGit(cwd, ["config", "--local", "--add", `remote.${remote}.pushurl`, extra]);
@@ -950,7 +950,7 @@ async function readLegacyRecord(
 
 function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
-  return message.split("\n")[0]!.trim();
+  return message.split("\n")[0].trim();
 }
 
 export interface PushControlMessage {

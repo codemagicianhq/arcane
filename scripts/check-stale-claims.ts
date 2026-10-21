@@ -74,14 +74,14 @@ function parseRealAdrStatuses(decisionsContent: string): Map<string, string> {
     let match: RegExpExecArray | null;
     const headingPositions: { num: string; index: number }[] = [];
     while ((match = headingPattern.exec(decisionsContent)) !== null) {
-        headingPositions.push({ num: match[1]!, index: match.index });
+        headingPositions.push({ num: match[1], index: match.index });
     }
     for (let i = 0; i < headingPositions.length; i += 1) {
-        const { num, index } = headingPositions[i]!;
-        const end = i + 1 < headingPositions.length ? headingPositions[i + 1]!.index : decisionsContent.length;
+        const { num, index } = headingPositions[i];
+        const end = i + 1 < headingPositions.length ? headingPositions[i + 1].index : decisionsContent.length;
         const section = decisionsContent.slice(index, end);
         const statusMatch = /^\*\*Status:\*\*\s*(\S+)/m.exec(section);
-        if (statusMatch) statuses.set(num, statusMatch[1]!);
+        if (statusMatch) statuses.set(num, statusMatch[1]);
     }
     return statuses;
 }
@@ -97,24 +97,24 @@ async function checkAdrStatusClaims(rootDir: string, livingDocs: string[]): Prom
         if (content === null) continue;
         const lines = content.split("\n");
         for (let lineNo = 0; lineNo < lines.length; lineNo += 1) {
-            const line = lines[lineNo]!;
+            const line = lines[lineNo];
             ADR_STATUS_CLAIM.lastIndex = 0;
             let match: RegExpExecArray | null;
             while ((match = ADR_STATUS_CLAIM.exec(line)) !== null) {
                 const [, num, claimedStatus] = match;
-                const realStatus = realStatuses.get(num!);
+                const realStatus = realStatuses.get(num);
                 if (realStatus === undefined) {
                     findings.push({
                         file: relPath,
                         line: lineNo + 1,
-                        excerpt: match[0]!,
+                        excerpt: match[0],
                         reason: `ARC-${num} has no matching "## ARC-${num}" section in DECISIONS.md at all`,
                     });
                 } else if (realStatus !== claimedStatus) {
                     findings.push({
                         file: relPath,
                         line: lineNo + 1,
-                        excerpt: match[0]!,
+                        excerpt: match[0],
                         reason: `claims "${claimedStatus}" but DECISIONS.md's own Status field says "${realStatus}"`,
                     });
                 }
@@ -146,7 +146,7 @@ export function findDuplicateDecisionIds(content: string, file = "DECISIONS.md")
     let openFence: string | undefined;
     const lines = content.split("\n");
     for (let lineNo = 0; lineNo < lines.length; lineNo += 1) {
-        const line = lines[lineNo]!.replace(/\r$/, "");
+        const line = lines[lineNo].replace(/\r$/, "");
         const fence = FENCE.exec(line)?.[1];
         if (fence) {
             if (openFence === undefined) openFence = fence;
@@ -156,7 +156,7 @@ export function findDuplicateDecisionIds(content: string, file = "DECISIONS.md")
         if (openFence !== undefined) continue;
         const match = DECISION_HEADING.exec(line);
         if (!match) continue;
-        const id = `${match[1]!}-${Number(match[2]!)}`;
+        const id = `${match[1]}-${Number(match[2])}`;
         const seen = byId.get(id) ?? [];
         seen.push({ line: lineNo + 1, heading: line.trim() });
         byId.set(id, seen);
@@ -165,7 +165,7 @@ export function findDuplicateDecisionIds(content: string, file = "DECISIONS.md")
     const findings: StaleClaimFinding[] = [];
     for (const headings of byId.values()) {
         if (headings.length < 2) continue;
-        const last = headings[headings.length - 1]!;
+        const last = headings[headings.length - 1];
         const declaredBy = headings.map((h) => `line ${h.line} "${h.heading}"`).join(" and ");
         findings.push({
             file,
@@ -190,7 +190,7 @@ async function checkStalePhrases(rootDir: string, livingDocs: string[]): Promise
         if (content === null) continue;
         const lines = content.split("\n");
         for (let lineNo = 0; lineNo < lines.length; lineNo += 1) {
-            const line = lines[lineNo]!;
+            const line = lines[lineNo];
             const lower = line.toLowerCase();
             for (const phrase of STALE_PHRASES) {
                 if (lower.includes(phrase)) {

@@ -54,7 +54,7 @@ describe("checkStagedOrgTokens (ARC-041, LH-12)", () => {
 
         const findings = await checkStagedOrgTokens(dir);
         expect(findings).toHaveLength(1);
-        expect(findings[0]!.file).toBe("README.md");
+        expect(findings[0].file).toBe("README.md");
     });
 
     it("only scans STAGED files, not every file in the working tree", async () => {

@@ -68,19 +68,19 @@ describe("the push-policy-check fragment", () => {
 
 describe.each(Object.keys(PUSHING_SPELLS))("%s embeds the push-policy check", (id) => {
     it("references the fragment with one marker pair", () => {
-        const content = spells[id]!;
+        const content = spells[id];
         expect(referencesFragment(content, FRAGMENT)).toBe(true);
         expect(content.split(`<!-- fragment:${FRAGMENT}:start -->`)).toHaveLength(2);
         expect(content.split(`<!-- fragment:${FRAGMENT}:end -->`)).toHaveLength(2);
     });
 
     it("carries the fragment fully expanded (re-expanding changes nothing)", () => {
-        const content = spells[id]!;
+        const content = spells[id];
         expect(expandFragment(content, FRAGMENT, fragment)).toBe(content);
     });
 
     it("names both behaviours inside the expanded span", () => {
-        const content = spells[id]!;
+        const content = spells[id];
         const start = content.indexOf(`<!-- fragment:${FRAGMENT}:start -->`);
         const end = content.indexOf(`<!-- fragment:${FRAGMENT}:end -->`);
         const span = content.slice(start, end);
@@ -92,9 +92,9 @@ describe.each(Object.keys(PUSHING_SPELLS))("%s embeds the push-policy check", (i
     });
 
     it("runs the check before the spell's push", () => {
-        const content = spells[id]!;
+        const content = spells[id];
         const checkIndex = content.indexOf(`<!-- fragment:${FRAGMENT}:start -->`);
-        const pushIndex = content.indexOf(PUSHING_SPELLS[id]!);
+        const pushIndex = content.indexOf(PUSHING_SPELLS[id]);
         expect(checkIndex, `fragment marker not found in ${id}`).toBeGreaterThan(-1);
         expect(pushIndex, `push marker not found in ${id}`).toBeGreaterThan(-1);
         expect(checkIndex).toBeLessThan(pushIndex);

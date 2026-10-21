@@ -229,7 +229,7 @@ describe("registry", () => {
 
         for (let i = 0; i < component.files.length; i += 4) {
           const [canonical, prompt, command, skill] = component.files.slice(i, i + 4);
-          const id = canonical!.replace(/^\.arcane\/spells\//, "").replace(/\.md$/, "");
+          const id = canonical.replace(/^\.arcane\/spells\//, "").replace(/\.md$/, "");
 
           expect(id.startsWith("spell-")).toBe(true);
           expect(canonical).toBe(`.arcane/spells/${id}.md`);
