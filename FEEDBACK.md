@@ -206,3 +206,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-12-macos-fixture-realpath.md`, lessons "`spell-bug` read `tracking_mode` only from a root manifest this repository does not have" and "`spell-commit-work` had nowhere to read the tool author's domain from".
+
+## Feedback — Arcane workflow (2026-10-21)
+
+**Session:** vitest capped at 4 workers on Windows, PR [#384](https://github.com/codemagicianhq/arcane/pull/384), and this session's close (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- Four sessions worked in one repository from separate linked worktrees on one machine, and each pre-push hook ran the full suite. Their concurrent runs timed out each other's tests: this session's measurement runs failed a sibling's hook, and its own push overlapped another sibling's hook attempt. ARC-028's isolation model and `spell-open-session`'s isolation-primitive step cover file footprints, not machine load.
+- `spell-create-pull-request` Step 4 writes the description to `<git-dir>/arcane-pr-body.md`. In a linked worktree that path lies under the primary checkout's `.git/worktrees/<name>/`, where Claude Code's worktree guard refuses the Write tool, so the body went to a scratch directory instead.
+
+### Improvement Items
+- [ ] Extend ARC-028's guidance and `spell-open-session`'s isolation-primitive step to say that linked worktrees do not isolate machine load: serialize full-suite runs and pushes whose hooks run the suite across concurrent sessions on one machine, and announce heavy runs to sibling sessions before starting them. <!-- upstream: queued -->
+- [ ] In `spell-create-pull-request` Step 4 and `spell-commit-work` step 9a2, name a fallback body path for when `<git-dir>` lies outside the worktree root, such as the operating system's temp directory, keeping the first-line branch marker and the same checks. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-21-vitest-workers-windows.md`, lessons "Linked worktrees isolate files, not the machine" and "`spell-create-pull-request`'s body path sits outside a Claude Code worktree".
