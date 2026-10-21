@@ -6,6 +6,7 @@ import type { ArcaneManifest, InstalledComponent, Profile } from "../src/types.j
 import { getComponent, listProfiles } from "../src/modules/registry.js";
 import { findNewlyAvailable } from "../src/modules/registry-changes.js";
 import { removeFixtureDir } from "./helpers/git-fixture.js";
+import { installFakeUserTier } from "./helpers/user-tier-home.js";
 
 const { inspectGitRepositoryMock } = vi.hoisted(() => ({ inspectGitRepositoryMock: vi.fn() }));
 
@@ -138,9 +139,15 @@ describe("UP03-A-02 — newly available, not installed (TODO: update never surfa
       "spells-planning", "spells-build", "spells-venture", "spells-meta", "testing-standards",
     ]);
 
-    await writeManifest(tmpDir, { profile: "lite", spell_scope: "user", components });
     const spy = vi.spyOn(console, "log");
-    await runUpdate({ dryRun: true }, tmpDir, ASSETS_DIR, NEW_VERSION);
+    // #359: the update refuses without a user tier, so point it at one.
+    const restoreHome = await installFakeUserTier(NEW_VERSION);
+    try {
+      await writeManifest(tmpDir, { profile: "lite", spell_scope: "user", components });
+      await runUpdate({ dryRun: true }, tmpDir, ASSETS_DIR, NEW_VERSION);
+    } finally {
+      await restoreHome();
+    }
     const optedOut = logged(spy);
     expect(optedOut).toContain("spell add testing-standards");
     expect(optedOut).not.toMatch(/spell add spells-/);
