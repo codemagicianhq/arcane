@@ -89,10 +89,13 @@ describe("EF-34 regression: fixture git isolation from a leaked GIT_DIR", () => 
         expect(after.commitCount).toBe("1");
     });
 
-    it("throws instead of silently succeeding if a fixture init ever resolves outside its own directory", async () => {
-        // Directly exercises the tripwire: point GIT_DIR at a real repo, then call
-        // the UNPATCHED spawn pattern to prove that pattern *would* have leaked --
-        // establishing the negative case the hardened runGit() must never reach.
+    it("resolves inside its own directory even with GIT_DIR pointed at another repository", async () => {
+        // Point GIT_DIR at a real repository, then run the hardened helper the
+        // way production fixtures use it. fixtureGitEnv strips GIT_DIR before git
+        // spawns, so `init` lands in fixtureDir and git reports the fixture's own
+        // directory. This asserts only that positive guarantee; that the tripwire
+        // throws when init lands elsewhere is proved by "EF-34 tripwire under a
+        // symlinked temp root" below.
         const decoyDir = await createFixtureDir("ef34-tripwire-decoy");
         tempDirs.push(decoyDir);
         realGit(decoyDir, ["init", "-b", "main"]);
