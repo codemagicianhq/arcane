@@ -41,6 +41,35 @@ export default tseslint.config(
   { ignores: ["dist/**", "node_modules/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  // Type-aware rules, enabled 2026-10-21 (TODO.md, Test Infrastructure): exactly
+  // the eleven typed rules from tseslint.configs.recommendedTypeChecked that
+  // reported nothing on 2026-10-20, so they gate regressions without a backlog
+  // to burn down first. The project is tsconfig.all.json because tsconfig.json
+  // excludes test/ and scripts/, so projectService alone cannot serve them.
+  // The preset's other typed rules (no-unnecessary-type-assertion, require-await,
+  // the no-unsafe-* family, ...) stay off; their counts are in TODO.md.
+  {
+    files: ["**/*.ts"],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.all.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-array-delete": "error",
+      "@typescript-eslint/no-duplicate-type-constituents": "error",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-for-in-array": "error",
+      "@typescript-eslint/no-implied-eval": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-unsafe-enum-comparison": "error",
+      "@typescript-eslint/no-unsafe-unary-minus": "error",
+      "@typescript-eslint/restrict-plus-operands": "error",
+      "@typescript-eslint/unbound-method": "error",
+    },
+  },
   {
     files: ["test/**/*.ts"],
     ignores: ["test/helpers/**"],
