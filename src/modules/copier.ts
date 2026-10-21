@@ -150,7 +150,11 @@ async function replaceSymlinkedDestination(
     return null; // absent: nothing to replace
   }
   if (isLink) {
-    await removeLink(destPath);
+    // unlink removes a file link anywhere, a directory link on POSIX, and a
+    // Windows junction (exercised by the junction test on both platforms).
+    // On POSIX rmdir cannot remove a link at all, so there is no fallback;
+    // a refusal surfaces as unlink's own error.
+    await unlink(destPath);
     return "symlink";
   }
   if (opts.linkTracked?.has(relativePath.replace(/\\/g, "/"))) {
@@ -158,25 +162,6 @@ async function replaceSymlinkedDestination(
     return "index-symlink";
   }
   return null;
-}
-
-/**
- * Removes the link at `linkPath` and nothing else. `unlink` takes any link on
- * POSIX, and on the Node versions tested a Windows junction too. On Windows a
- * directory link can still be refused as a reparse point (EPERM or EISDIR,
- * older Node and some filesystems), and there `rmdir` removes exactly the
- * link, never what it points at; on POSIX `rmdir` cannot remove a link at all
- * (ENOTDIR), so the fallback is Windows-only. Any other failure is the
- * caller's to see.
- */
-async function removeLink(linkPath: string): Promise<void> {
-  try {
-    await unlink(linkPath);
-  } catch (err) {
-    const code = (err as NodeJS.ErrnoException).code;
-    if (process.platform !== "win32" || (code !== "EPERM" && code !== "EISDIR")) throw err;
-    await rmdir(linkPath);
-  }
 }
 
 /**

@@ -3,11 +3,12 @@ import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 
-// Review F6: where a platform refuses to unlink a directory link (EPERM or
-// EISDIR), replacing a symlinked destination falls back to rmdir, which
-// removes exactly the link; any other failure surfaces. Current Node removes
-// a junction with unlink, so the fallback is reached here only by making
-// unlink fail. Only unlink is replaced; every other fs call is real.
+// #357, review F6: replacing a symlinked destination removes the link with
+// unlink and nothing else; there is no rmdir fallback (on POSIX rmdir cannot
+// remove a link, and unlink removes a Windows junction on every supported
+// Node, which the junction test in copier-symlinks covers). A refusal must
+// surface as unlink's own error and leave the link in place. Only unlink is
+// replaced here; every other fs call is real.
 const unlinkMock = vi.hoisted(() => vi.fn());
 vi.mock("node:fs/promises", async (importOriginal) => {
   const real = await importOriginal<typeof import("node:fs/promises")>();
@@ -35,39 +36,14 @@ afterEach(async () => {
   await removeFixtureDir(src);
 });
 
-describe("removeLink fallback (#357, review F6)", () => {
-  // Windows only: rmdir removes a junction there. On POSIX rmdir cannot
-  // remove a link (ENOTDIR), so the fallback does not exist there.
-  it.runIf(process.platform === "win32")(
-    "falls back to rmdir when unlink refuses the directory link with EPERM (Windows)",
-    async () => {
-      unlinkMock.mockRejectedValue(Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" }));
-
-      await copyFile(join(src, "shim.md"), repo, SHIM, { force: true });
-
-      expect(unlinkMock).toHaveBeenCalledTimes(1);
-      expect((await fs.lstat(join(repo, SHIM))).isSymbolicLink()).toBe(false);
-      expect(await fs.readFile(join(repo, SHIM), "utf8")).toBe("rendered\n");
-      await expect(fs.stat(join(src, "target-dir"))).resolves.toBeTruthy();
-    },
-  );
-
-  it.skipIf(process.platform === "win32")(
-    "surfaces an EPERM from unlink on POSIX instead of trying rmdir on a link",
-    async () => {
-      unlinkMock.mockRejectedValue(Object.assign(new Error("EPERM: operation not permitted"), { code: "EPERM" }));
-
-      await expect(copyFile(join(src, "shim.md"), repo, SHIM, { force: true })).rejects.toThrow(/EPERM/);
-
-      expect((await fs.lstat(join(repo, SHIM))).isSymbolicLink()).toBe(true);
-    },
-  );
-
-  it("surfaces any other unlink failure and leaves the link in place", async () => {
+describe("replacing a symlinked destination (#357, review F6)", () => {
+  it("surfaces an unlink failure and leaves the link in place", async () => {
     unlinkMock.mockRejectedValue(Object.assign(new Error("EACCES: permission denied"), { code: "EACCES" }));
 
     await expect(copyFile(join(src, "shim.md"), repo, SHIM, { force: true })).rejects.toThrow(/EACCES/);
 
+    expect(unlinkMock).toHaveBeenCalledTimes(1);
     expect((await fs.lstat(join(repo, SHIM))).isSymbolicLink()).toBe(true);
+    await expect(fs.stat(join(src, "target-dir"))).resolves.toBeTruthy();
   });
 });
