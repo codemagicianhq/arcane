@@ -149,7 +149,20 @@ ${rules}
 `;
 }
 
-function renderSpellRoutingSection(): string {
+/**
+ * The routing block every client instruction file carries. For a repository
+ * that takes its spells from the user tier (`spell_scope: "user"`, ARC-045
+ * decision 4) it also says what to do when a spell does not resolve: stop and
+ * name `spell init --user`, never improvise (#359) -- without it, a machine
+ * with no `~/.arcane` left agents routing to spells that resolved to nothing.
+ */
+export function renderSpellRoutingSection(spellScope?: "repo" | "user"): string {
+  const userTierRule =
+    spellScope === "user"
+      ? `
+This repository takes its spells from the user tier (\`~/.arcane\`), not from files it carries. If a spell named here does not resolve for your client, stop and say that \`spell init --user\` is needed on this machine; do not improvise the workflow from general knowledge.
+`
+      : "";
   return `## Spell Routing
 
 | When you're about to... | Invoke |
@@ -163,7 +176,7 @@ function renderSpellRoutingSection(): string {
 | Review code or a PR | \`spell-review\` |
 
 If a spell exists for the workflow you are about to perform, invoke it — do not improvise the workflow from general knowledge, even when the user doesn't name the spell.
-`;
+${userTierRule}`;
 }
 
 /**
@@ -446,7 +459,7 @@ export async function syncAgents(
     // opted-out repository (ARC-045 decision 5) and is never written at the
     // user tier, which has no repository to describe.
     if (!userTier) {
-      const copilotSection = `${renderSpellRoutingSection()}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
+      const copilotSection = `${renderSpellRoutingSection(options.spellScope)}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
       const copilotMerged = await mergeIntoFile(
         targetDir,
         ".github/copilot-instructions.md",
@@ -464,7 +477,7 @@ export async function syncAgents(
 
   // ── Claude output ────────────────────────────────────────────────────────
   if (options.claude !== false) {
-    const claudeSection = `${renderSpellRoutingSection()}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
+    const claudeSection = `${renderSpellRoutingSection(options.spellScope)}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
     const claudeMerged = await mergeIntoFile(
       targetDir,
       "CLAUDE.md",
@@ -476,7 +489,7 @@ export async function syncAgents(
 
   // ── Codex output ─────────────────────────────────────────────────────────
   if (options.codex !== false) {
-    const codexSection = `${renderSpellRoutingSection()}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
+    const codexSection = `${renderSpellRoutingSection(options.spellScope)}\n${branchNaming}${renderAgentRosterSection(resolved)}`;
     const codexMerged = await mergeIntoFile(
       targetDir,
       "AGENTS.md",

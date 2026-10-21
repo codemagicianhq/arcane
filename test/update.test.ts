@@ -23,11 +23,17 @@ const {
   correctUnbornMasterDefaultMock,
   ensureLocalPullRebaseMock,
   fetchPublishedFileMock,
+  listSymlinkTrackedPathsMock,
+  recordRegularFileInIndexMock,
+  isUneditedTrackedFileMock,
 } = vi.hoisted(() => ({
   inspectGitRepositoryMock: vi.fn(),
   correctUnbornMasterDefaultMock: vi.fn(),
   ensureLocalPullRebaseMock: vi.fn(),
   fetchPublishedFileMock: vi.fn(),
+  listSymlinkTrackedPathsMock: vi.fn(),
+  recordRegularFileInIndexMock: vi.fn(),
+  isUneditedTrackedFileMock: vi.fn(),
 }));
 
 // ARC-038: never let this suite make a real network call. PACKAGE_VERSION/
@@ -57,6 +63,14 @@ vi.mock("@inquirer/prompts", () => ({
 vi.mock("../src/modules/git.js", () => ({
   inspectGitRepository: inspectGitRepositoryMock,
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
+  // #357 / #358: the symlink-conversion and prune-fallback helpers. Their
+  // defaults ("no index-tracked symlinks", "git cannot say") are re-armed in
+  // beforeEach; a test that exercises them overrides locally. Their real
+  // behaviour is covered against fixture repositories in
+  // test/copier-symlinks.test.ts and test/update-prune-fallback.test.ts.
+  listSymlinkTrackedPaths: listSymlinkTrackedPathsMock,
+  recordRegularFileInIndex: recordRegularFileInIndexMock,
+  isUneditedTrackedFile: isUneditedTrackedFileMock,
   // Two tests in this file build their fixture via a real runInit() call
   // (see the runInit(...) calls below), which now also calls these two
   // EF-05/EF-32 functions -- mocked here (and re-armed in beforeEach,
@@ -144,6 +158,9 @@ describe("spell update — handler", () => {
     correctUnbornMasterDefaultMock.mockResolvedValue({ corrected: false, to: "main" });
     ensureLocalPullRebaseMock.mockResolvedValue({ action: "already-set" });
     fetchPublishedFileMock.mockReset().mockResolvedValue(undefined);
+    listSymlinkTrackedPathsMock.mockReset().mockResolvedValue(new Set<string>());
+    recordRegularFileInIndexMock.mockReset().mockResolvedValue(undefined);
+    isUneditedTrackedFileMock.mockReset().mockResolvedValue({ verdict: "unknown", detail: "mocked: git cannot say" });
   });
 
   afterEach(async () => {
@@ -1564,9 +1581,33 @@ describe("spell update — handler", () => {
       return n;
     }
 
+    // #359: a user-scoped repository refuses to update when the machine has
+    // no user tier. These tests exercise the opt-out itself, so they point
+    // the tier at a temp home holding a store manifest; before this they
+    // depended on whether the machine running them had a real ~/.arcane.
+    let savedHome: { HOME: string | undefined; USERPROFILE: string | undefined };
+    let fakeHome: string;
+
     beforeEach(async () => {
+      savedHome = { HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE };
+      fakeHome = await fs.mkdtemp(join(tmpdir(), "update-spell-scope-home-"));
+      await fs.mkdir(join(fakeHome, ".arcane"), { recursive: true });
+      await fs.writeFile(
+        join(fakeHome, ".arcane", ".arcane.json"),
+        JSON.stringify({ version: PACKAGE_VERSION, profile: "full", installedAt: "2026-10-20T00:00:00.000Z", components: [], scope: "user" }),
+      );
+      process.env.HOME = fakeHome;
+      process.env.USERPROFILE = fakeHome;
       await runInit({ profile: "lite" }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
       vi.mocked(console.log).mockClear?.();
+    });
+
+    afterEach(async () => {
+      if (savedHome.HOME === undefined) delete process.env.HOME;
+      else process.env.HOME = savedHome.HOME;
+      if (savedHome.USERPROFILE === undefined) delete process.env.USERPROFILE;
+      else process.env.USERPROFILE = savedHome.USERPROFILE;
+      await removeFixtureDir(fakeHome);
     });
 
     it("reports every spell file as unmanaged on the very next same-version update, and deletes none", async () => {

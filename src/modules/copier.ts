@@ -1,14 +1,17 @@
 import {
   mkdir,
   access,
+  lstat,
   readdir,
   readFile,
   rm,
   rmdir,
+  unlink,
   writeFile,
 } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import path from "node:path";
+import { recordRegularFileInIndex } from "./git.js";
 
 /**
  * CRLF and lone CR -> LF, at the byte level (no decoding, so any content is
@@ -100,6 +103,149 @@ export async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
+export interface SymlinkConversion {
+  /** The managed path, relative to the target directory, forward slashes. */
+  file: string;
+  /**
+   * `symlink`: the working-tree path was a link. `index-symlink`: the index
+   * tracked it as one (mode 120000) while the file itself looked regular, the
+   * `core.symlinks=false` shape.
+   */
+  shape: "symlink" | "index-symlink";
+}
+
+export interface CopyOptions {
+  force?: boolean;
+  /**
+   * Paths the git index tracks as symlinks (mode 120000), from
+   * `listSymlinkTrackedPaths`: the `core.symlinks=false` shape, where the
+   * working-tree file looks regular and `lstat` cannot tell (#357). Collected
+   * once per run by the caller; absent means there is no index to consult.
+   */
+  linkTracked?: ReadonlySet<string>;
+  /** Receives every destination that was a symlink, by either shape, and is a regular file now. */
+  conversions?: SymlinkConversion[];
+}
+
+/**
+ * #357: a managed path must end up a regular file whatever it was. A symlink
+ * in the working tree is unlinked, so the write that follows lands at the
+ * path instead of wherever the link pointed. A path the index tracks as a
+ * symlink (the `core.symlinks=false` shape) is unlinked too and, after the
+ * write, re-recorded as 100644, because git keeps the symlink mode of an
+ * existing entry on such a checkout and would otherwise commit the new
+ * content as a link target. Returns the shape found, or null for an ordinary
+ * file or an absent path.
+ */
+async function replaceSymlinkedDestination(
+  destPath: string,
+  relativePath: string,
+  opts: CopyOptions,
+): Promise<SymlinkConversion["shape"] | null> {
+  let isLink: boolean;
+  try {
+    isLink = (await lstat(destPath)).isSymbolicLink();
+  } catch {
+    return null; // absent: nothing to replace
+  }
+  if (isLink) {
+    await removeLink(destPath);
+    return "symlink";
+  }
+  if (opts.linkTracked?.has(relativePath.replace(/\\/g, "/"))) {
+    await unlink(destPath);
+    return "index-symlink";
+  }
+  return null;
+}
+
+/**
+ * Removes the link at `linkPath` and nothing else. `unlink` takes a file link
+ * everywhere and a directory link on POSIX; on Windows a directory link or
+ * junction is a reparse point `unlink` refuses (EPERM), and `rmdir` removes
+ * exactly the link, never what it points at.
+ */
+async function removeLink(linkPath: string): Promise<void> {
+  try {
+    await unlink(linkPath);
+  } catch {
+    // A directory link or junction on Windows: unlink refuses the reparse
+    // point, and rmdir removes exactly the link. Any other failure surfaces
+    // from rmdir in its own words.
+    await rmdir(linkPath);
+  }
+}
+
+/**
+ * A body that is one non-empty line with no whitespace, containing a slash and
+ * no front matter or heading: a symlink's target written out as text, which is
+ * what a `core.symlinks=false` checkout leaves where a client shim should be
+ * (#357). Judged only for generated client shims, whose real body is never
+ * one line.
+ */
+export function looksLikeBarePath(body: string): boolean {
+  const trimmed = body.trim();
+  return (
+    trimmed.length > 0 &&
+    trimmed.length <= 512 &&
+    !/\s/.test(trimmed) &&
+    trimmed.includes("/") &&
+    !trimmed.startsWith("---") &&
+    !trimmed.startsWith("#")
+  );
+}
+
+/**
+ * #357: whether the managed path at targetDir/relativePath is a symlink by
+ * either shape -- a link in the working tree, or an index entry of mode
+ * 120000 (`linkTracked`) -- or, when `bodyHeuristic` is set (client shims
+ * only), a regular file whose whole body is a single relative path. Such a
+ * file is a broken client file, not an operator's customization, however much
+ * its content differs from the recorded hash: the update rewrites it instead
+ * of keeping or merging it.
+ */
+export async function isSymlinkedManagedPath(
+  targetDir: string,
+  relativePath: string,
+  linkTracked: ReadonlySet<string> | undefined,
+  bodyHeuristic: boolean,
+): Promise<boolean> {
+  const destPath = path.resolve(targetDir, relativePath);
+  try {
+    if ((await lstat(destPath)).isSymbolicLink()) return true;
+  } catch {
+    return false; // absent
+  }
+  if (linkTracked?.has(relativePath.replace(/\\/g, "/"))) return true;
+  if (!bodyHeuristic) return false;
+  try {
+    return looksLikeBarePath(await readFile(destPath, "utf-8"));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Writes `content` at targetDir/relativePath as a regular file, replacing a
+ * symlinked destination first (see replaceSymlinkedDestination) and recording
+ * the conversion in `opts.conversions`. Every managed-content write goes
+ * through here or through `copyFile`, which calls it.
+ */
+export async function writeManagedFile(
+  targetDir: string,
+  relativePath: string,
+  content: Buffer | string,
+  opts: CopyOptions = {},
+): Promise<void> {
+  validateTargetPath(targetDir, relativePath);
+  const destPath = path.resolve(targetDir, relativePath);
+  await ensureDir(path.dirname(destPath));
+  const shape = await replaceSymlinkedDestination(destPath, relativePath, opts);
+  await writeFile(destPath, content);
+  if (shape === "index-symlink") await recordRegularFileInIndex(targetDir, relativePath);
+  if (shape !== null) opts.conversions?.push({ file: relativePath, shape });
+}
+
 /**
  * Copies srcPath into targetDir at relativePath.
  * Validates path traversal before any I/O.
@@ -110,12 +256,13 @@ export async function fileExists(filePath: string): Promise<boolean> {
  * file twice measurably slowed a full `spell init` (~90 files) once every
  * file started being hashed, enough to push some CI/test runs over their
  * timeout under contention. One read, one write; no redundant I/O.
+ * A symlinked destination becomes a regular file (#357; see writeManagedFile).
  */
 export async function copyFile(
   srcPath: string,
   targetDir: string,
   relativePath: string,
-  opts: { force?: boolean } = {},
+  opts: CopyOptions = {},
 ): Promise<string> {
   validateTargetPath(targetDir, relativePath);
 
@@ -130,7 +277,7 @@ export async function copyFile(
 
   const content = await readFile(srcPath);
   const hash = hashContent(content);
-  await writeFile(destPath, content);
+  await writeManagedFile(targetDir, relativePath, content, opts);
   return hash;
 }
 
@@ -191,7 +338,7 @@ export async function copyDirectory(
   srcDir: string,
   targetDir: string,
   relativeDir: string,
-  opts: { force?: boolean } = {},
+  opts: CopyOptions = {},
 ): Promise<CopiedFile[]> {
   validateTargetPath(targetDir, relativeDir);
 

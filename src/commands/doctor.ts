@@ -3,7 +3,9 @@ import { join, dirname } from "node:path";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
 import type { Delegation, DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
-import { runGit } from "../modules/git.js";
+import { listSymlinkTrackedPaths, runGit } from "../modules/git.js";
+import { isClientShimPath } from "../modules/spell-compiler.js";
+import { looksLikeBarePath } from "../modules/copier.js";
 import {
   readManifest,
   resolveSecretsScanExcludePrefixes,
@@ -909,6 +911,62 @@ export async function checkPlatformBranchPolicy(targetDir: string): Promise<Chec
  * whether the tier is healthy and is always advisory; this one asks whether
  * THIS repository depends on it.
  */
+/**
+ * #357: a managed path the index tracks as a symlink (mode 120000), or a
+ * client shim whose whole body is a single relative path (a symlink
+ * materialised as text), is a spell the client silently skips or empties.
+ * Blocking, like a missing user tier: the spells are not reachable. Skipped
+ * where there is no manifest or no git repository to ask.
+ */
+export async function checkManagedFileModes(targetDir: string): Promise<CheckResult> {
+  const name = "Managed files are regular files (#357)";
+
+  let manifest;
+  try {
+    manifest = await readManifest(targetDir);
+  } catch {
+    return { name, passed: true, skipped: true, message: "no .arcane.json — nothing to check" };
+  }
+  try {
+    await runGit(targetDir, ["rev-parse", "--git-dir"]);
+  } catch {
+    return { name, passed: true, skipped: true, message: "not a git repository — the index cannot be read" };
+  }
+
+  const managed = [...new Set(manifest.components.flatMap((c) => c.files))];
+  const linkTracked = await listSymlinkTrackedPaths(targetDir);
+  const asLinks = managed.filter((file) => linkTracked.has(file));
+  const pathBodies: string[] = [];
+  for (const file of managed) {
+    if (!isClientShimPath(file) || asLinks.includes(file)) continue;
+    let body: string;
+    try {
+      body = await readFile(join(targetDir, file), "utf-8");
+    } catch {
+      continue; // missing files are the update command's business
+    }
+    if (looksLikeBarePath(body)) pathBodies.push(file);
+  }
+
+  if (asLinks.length === 0 && pathBodies.length === 0) {
+    return { name, passed: true, message: `${managed.length} managed path(s), all regular files` };
+  }
+  const parts: string[] = [];
+  if (asLinks.length > 0) {
+    parts.push(`${asLinks.length} tracked as a symlink (mode 120000): ${asLinks.join(", ")}`);
+  }
+  if (pathBodies.length > 0) {
+    parts.push(`${pathBodies.length} client shim(s) whose body is only a path: ${pathBodies.join(", ")}`);
+  }
+  return {
+    name,
+    passed: false,
+    message:
+      parts.join("; ") +
+      " — clients silently skip or empty these spells. Run `spell update` (it rewrites them as regular files and stages the typechange), then commit.",
+  };
+}
+
 export async function checkSpellScope(
   targetDir: string,
   homeDir: string = resolveHomeDir(),
@@ -1038,6 +1096,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkMcpConfig(targetDir),
     checkUserTier(resolveHomeDir(), options.packageVersion),
     checkSpellScope(targetDir),
+    checkManagedFileModes(targetDir),
     checkGovernancePlaceholders(targetDir),
     checkComponentRequires(targetDir),
     checkNewlyAvailableComponents(targetDir),

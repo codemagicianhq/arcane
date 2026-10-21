@@ -43,6 +43,13 @@ function resetSelectMock(trackingAnswer: "internal" | "external" = "internal", p
 }
 
 vi.mock("../src/modules/git.js", () => ({
+  // #357 / #358 (issue wave 2026-10-20): the update command's symlink-conversion
+  // and prune-fallback helpers, inert here; their real behaviour is covered
+  // against fixture repositories in test/copier-symlinks.test.ts and
+  // test/update-prune-fallback.test.ts.
+  listSymlinkTrackedPaths: vi.fn().mockResolvedValue(new Set<string>()),
+  recordRegularFileInIndex: vi.fn().mockResolvedValue(undefined),
+  isUneditedTrackedFile: vi.fn().mockResolvedValue({ verdict: "unknown", detail: "mocked" }),
   // Default matches these tests' real environment (plain fs.mkdtemp dirs,
   // never git-init'd); the "hub-update" describe block below overrides
   // this per-test via inspectGitRepositoryMock.mockResolvedValue(...) in
