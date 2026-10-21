@@ -52,8 +52,10 @@ and every assistant that reads a user-scoped repository's routing block.
 
 ### Must Have
 
-- **R-357 — Managed writes replace symlinks with regular files.** Every managed path `spell update`,
-  `spell init` or `spell add` writes is a regular file afterwards, whatever it was before:
+- **R-357 — Managed writes replace symlinks with regular files.** Every managed path `spell update`
+  writes is a regular file afterwards, whatever it was before (`spell init` and `spell add` replace a
+  working-tree link the same way, through the shared copy path; they do not read the index, so a
+  `120000` entry they overwrite is repaired by the next `spell update`, which does):
   1. a symlink in the working tree (`lstat`) is unlinked before the write;
   2. a path the git index tracks as a symlink (mode `120000`, the `core.symlinks=false` shape, where
      the working-tree file already looks regular) is unlinked, rewritten, and re-recorded in the index
@@ -113,7 +115,12 @@ and every assistant that reads a user-scoped repository's routing block.
   (`git update-index --add --cacheinfo 120000,<blob>,<path>` over a regular file) runs on every OS and
   is the shape the issue reported.
 - The #358 fallback cannot see an edit made before the file's first commit (install and edit in one
-  commit leave one commit in the history). Recorded here as a known limit of the chosen evidence.
+  commit leave one commit in the history), nor a rename and edit in one commit. A shallow clone, whose
+  history is truncated, is reported as unverifiable rather than counted. Recorded here as the known
+  limits of the chosen evidence; the message names the evidence instead of claiming certainty.
+- A client shim whose whole body is one relative path (`./` or `../`, no whitespace, no URL) is judged a
+  link written out as text and rewritten; a shim an operator trimmed to its one-line `@include` is a
+  customization and keeps ARC-038's protection (independent review, finding F2).
 - `spell update` does not re-render the routing block; `spell agents sync` does. The CHANGELOG entry
   says so, so a consumer knows which command carries R-359.2 into its files.
 

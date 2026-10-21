@@ -109,9 +109,10 @@ export interface SymlinkConversion {
   /**
    * `symlink`: the working-tree path was a link. `index-symlink`: the index
    * tracked it as one (mode 120000) while the file itself looked regular, the
-   * `core.symlinks=false` shape.
+   * `core.symlinks=false` shape. `path-body`: a regular file, tracked as one,
+   * whose whole body was a single relative path, a link materialised as text.
    */
-  shape: "symlink" | "index-symlink";
+  shape: "symlink" | "index-symlink" | "path-body";
 }
 
 export interface CopyOptions {
@@ -161,67 +162,62 @@ async function replaceSymlinkedDestination(
 
 /**
  * Removes the link at `linkPath` and nothing else. `unlink` takes a file link
- * everywhere and a directory link on POSIX; on Windows a directory link or
- * junction is a reparse point `unlink` refuses (EPERM), and `rmdir` removes
- * exactly the link, never what it points at.
+ * everywhere, a directory link on POSIX, and (on the Node versions tested) a
+ * Windows junction too. Where a directory link is refused as a reparse point
+ * (EPERM or EISDIR, older Node and some filesystems), `rmdir` removes exactly
+ * the link, never what it points at. Any other failure is the caller's to see.
  */
 async function removeLink(linkPath: string): Promise<void> {
   try {
     await unlink(linkPath);
-  } catch {
-    // A directory link or junction on Windows: unlink refuses the reparse
-    // point, and rmdir removes exactly the link. Any other failure surfaces
-    // from rmdir in its own words.
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== "EPERM" && code !== "EISDIR") throw err;
     await rmdir(linkPath);
   }
 }
 
 /**
- * A body that is one non-empty line with no whitespace, containing a slash and
- * no front matter or heading: a symlink's target written out as text, which is
- * what a `core.symlinks=false` checkout leaves where a client shim should be
- * (#357). Judged only for generated client shims, whose real body is never
- * one line.
+ * A body that is exactly one relative path -- `./` or `../`, no whitespace, no
+ * URL scheme: a symlink's target written out as text, which is what a
+ * `core.symlinks=false` checkout leaves where a client shim should be (#357).
+ * Deliberately narrow (review F2): a shim an operator trimmed to its one-line
+ * `@.arcane/spells/<id>.md` include is a customization, not a link, and must
+ * keep ARC-038's protection.
  */
 export function looksLikeBarePath(body: string): boolean {
   const trimmed = body.trim();
-  return (
-    trimmed.length > 0 &&
-    trimmed.length <= 512 &&
-    !/\s/.test(trimmed) &&
-    trimmed.includes("/") &&
-    !trimmed.startsWith("---") &&
-    !trimmed.startsWith("#")
-  );
+  return trimmed.length <= 512 && /^\.{1,2}\/\S+$/.test(trimmed) && !trimmed.includes("://");
 }
 
 /**
- * #357: whether the managed path at targetDir/relativePath is a symlink by
- * either shape -- a link in the working tree, or an index entry of mode
- * 120000 (`linkTracked`) -- or, when `bodyHeuristic` is set (client shims
- * only), a regular file whose whole body is a single relative path. Such a
- * file is a broken client file, not an operator's customization, however much
- * its content differs from the recorded hash: the update rewrites it instead
- * of keeping or merging it.
+ * #357: the link shape of the managed path at targetDir/relativePath, or null
+ * for an ordinary file or an absent path. `symlink`: a link in the working
+ * tree. `index-symlink`: an index entry of mode 120000 (`linkTracked`).
+ * `path-body`, judged only when `bodyHeuristic` is set (client shims): a
+ * regular file whose whole body is a single relative path. Each is a broken
+ * client file, not an operator's customization, however much its content
+ * differs from the recorded hash: the update rewrites it and reports the
+ * shape instead of keeping or merging it.
  */
-export async function isSymlinkedManagedPath(
+export async function managedPathLinkShape(
   targetDir: string,
   relativePath: string,
   linkTracked: ReadonlySet<string> | undefined,
   bodyHeuristic: boolean,
-): Promise<boolean> {
+): Promise<SymlinkConversion["shape"] | null> {
   const destPath = path.resolve(targetDir, relativePath);
   try {
-    if ((await lstat(destPath)).isSymbolicLink()) return true;
+    if ((await lstat(destPath)).isSymbolicLink()) return "symlink";
   } catch {
-    return false; // absent
+    return null; // absent
   }
-  if (linkTracked?.has(relativePath.replace(/\\/g, "/"))) return true;
-  if (!bodyHeuristic) return false;
+  if (linkTracked?.has(relativePath.replace(/\\/g, "/"))) return "index-symlink";
+  if (!bodyHeuristic) return null;
   try {
-    return looksLikeBarePath(await readFile(destPath, "utf-8"));
+    return looksLikeBarePath(await readFile(destPath, "utf-8")) ? "path-body" : null;
   } catch {
-    return false;
+    return null;
   }
 }
 

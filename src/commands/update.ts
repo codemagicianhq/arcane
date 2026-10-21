@@ -7,7 +7,7 @@ import {
   fileExists,
   fileMatchesHash,
   hashFile,
-  isSymlinkedManagedPath,
+  managedPathLinkShape,
   removeEmptyAncestors,
   removeWithin,
   validateTargetPath,
@@ -114,7 +114,7 @@ export async function missingTierWarning(
   } catch {
     return [
       "",
-      `  ! This repository takes its spells from the user tier, and ${storeRoot} is not installed.`,
+      `  ! This repository takes its spells from the user tier, and ${storeRoot} is not installed (or its manifest cannot be read).`,
       "    No client can reach a spell here: the routing block in CLAUDE.md and AGENTS.md still",
       "    names spells that resolve to nothing, so an agent improvises the workflow instead of",
       "    failing. Fix it with one of:",
@@ -341,7 +341,7 @@ export async function resolveOrphan(
     const evidence = await isUneditedTrackedFile(targetDir, file);
     if (evidence.verdict !== "unedited") {
       console.log(
-        `  ! Orphaned, not pruned (no recorded hash, and git cannot confirm it is untouched: ${evidence.detail}) — remove it by hand with \`git rm -- ${file}\`, then drop the component's entry from .arcane.json: ${file}`,
+        `  ! Orphaned, not pruned: ${file} — no recorded hash, and git cannot confirm it is untouched (${evidence.detail}). Delete it yourself (git rm -- <path> if git tracks it), then run spell update --prune again to drop it from .arcane.json.`,
       );
       return "reported";
     }
@@ -969,8 +969,9 @@ export async function runUpdate(
       // from the recorded hash by construction, so without this it would be
       // kept as "customized" or merged, and the link would survive the update.
       // It falls through to the rewrite below instead.
-      const symlinked =
-        targetExists && (await isSymlinkedManagedPath(targetDir, file, linkTracked, isClientShimPath(file)));
+      const linkShape = targetExists
+        ? await managedPathLinkShape(targetDir, file, linkTracked, isClientShimPath(file))
+        : null;
 
       // ARC-038 decision 1: on-disk content that no longer matches what
       // Arcane last wrote means the operator edited this file, and that edit
@@ -979,7 +980,7 @@ export async function runUpdate(
         recordedHash !== undefined &&
         targetExists &&
         !preserveExisting &&
-        !symlinked &&
+        linkShape === null &&
         !(await fileMatchesHash(join(targetDir, file), recordedHash));
 
       if (preserveExisting) {
@@ -1006,7 +1007,9 @@ export async function runUpdate(
           `  ${options.dryRun ? "[dry-run] Would keep" : "Kept"} customized (not merged): ${file}`,
         );
       } else if (options.dryRun) {
-        console.log(`  [dry-run] Would ${sameVersionRestore ? "restore missing" : "update"}: ${file}`);
+        console.log(
+          `  [dry-run] Would ${linkShape !== null ? "convert to a regular file (it is a symlink, or a link written out as text)" : sameVersionRestore ? "restore missing" : "update"}: ${file}`,
+        );
         fileCount++;
       } else {
         let handled = false;
@@ -1055,6 +1058,9 @@ export async function runUpdate(
 
         if (!handled) {
           fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: true, linkTracked, conversions });
+          // copyFile records the two link shapes it replaces; a link written
+          // out as text is an ordinary file to it, so it is recorded here.
+          if (linkShape === "path-body") conversions.push({ file, shape: "path-body" });
           if (sameVersionRestore) console.log(`  Restored missing: ${file}`);
         }
         fileCount++;
@@ -1167,16 +1173,17 @@ export async function runUpdate(
   // #357: every managed path that was a symlink and is a regular file now.
   if (conversions.length > 0) {
     console.log(`\n  Converted ${conversions.length} symlinked managed file(s) to regular files (#357):`);
-    for (const c of conversions) {
+    const describe: Record<SymlinkConversion["shape"], string> = {
+      "index-symlink": "the index tracked it as a symlink (mode 120000); rewritten and staged as a regular file",
+      symlink: "was a symlink in the working tree; now a regular file (stage the typechange with git add)",
+      "path-body": "its body was only a link target, a symlink written out as text; rewritten as a real file",
+    };
+    for (const c of conversions) console.log(`    ${c.file} — ${describe[c.shape]}`);
+    if (conversions.some((c) => c.shape === "index-symlink")) {
       console.log(
-        c.shape === "index-symlink"
-          ? `    ${c.file} — the index tracked it as a symlink (mode 120000); rewritten and staged as a regular file`
-          : `    ${c.file} — was a symlink in the working tree; now a regular file (the typechange is unstaged)`,
+        "  Commit the staged typechange, or every other checkout keeps reading a link whose target is the file's own text.",
       );
     }
-    console.log(
-      "  Commit the typechange, or every other checkout keeps reading a link whose target is the file's own text.",
-    );
   }
 
   printRegistryChanges();
