@@ -1,6 +1,14 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { copyFile, fileExists, hashFile, listDirectoryFiles, removeEmptyAncestors, removeWithin } from "./copier.js";
+import {
+  type CopyOptions,
+  copyFile,
+  fileExists,
+  hashFile,
+  listDirectoryFiles,
+  removeEmptyAncestors,
+  removeWithin,
+} from "./copier.js";
 import type { RegistryComponent } from "../types.js";
 
 export type DestinationState = "missing" | "identical" | "differs" | "directory";
@@ -76,14 +84,18 @@ export interface InstalledFiles {
  * removed, an overwritten one gets its previous content back) before the
  * error is rethrown, so nothing is half-installed and unrecorded.
  */
-export async function executeInstallPlan(plan: InstallPlan, targetDir: string): Promise<InstalledFiles> {
+export async function executeInstallPlan(
+  plan: InstallPlan,
+  targetDir: string,
+  opts: Pick<CopyOptions, "linkTracked" | "conversions"> = {},
+): Promise<InstalledFiles> {
   const files: string[] = [];
   const fileHashes: Record<string, string> = {};
   const written: { file: string; previous: Buffer | null }[] = [];
   try {
     for (const { file, src, state } of plan.toCopy) {
       const previous = state === "missing" ? null : await readFile(join(targetDir, file));
-      fileHashes[file] = await copyFile(src, targetDir, file, { force: true });
+      fileHashes[file] = await copyFile(src, targetDir, file, { force: true, ...opts });
       written.push({ file, previous });
       files.push(file);
     }

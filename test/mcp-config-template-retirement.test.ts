@@ -17,6 +17,13 @@ vi.mock("@inquirer/prompts", () => ({
   select: vi.fn().mockResolvedValue("internal"),
 }));
 vi.mock("../src/modules/git.js", () => ({
+  // #357 / #358 (issue wave 2026-10-20): the update command's symlink-conversion
+  // and prune-fallback helpers, inert here; their real behaviour is covered
+  // against fixture repositories in test/copier-symlinks.test.ts and
+  // test/update-prune-fallback.test.ts.
+  listSymlinkTrackedPaths: vi.fn().mockResolvedValue(new Set<string>()),
+  recordRegularFileInIndex: vi.fn().mockResolvedValue(undefined),
+  isUneditedTrackedFile: vi.fn().mockResolvedValue({ verdict: "unknown", detail: "mocked" }),
   inspectGitRepository: inspectGitRepositoryMock,
   countUncommittedChanges: vi.fn().mockResolvedValue(0),
   correctUnbornMasterDefault: vi.fn().mockResolvedValue({ corrected: false, to: "main" }),

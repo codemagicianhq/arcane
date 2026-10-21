@@ -1,21 +1,24 @@
 import { dirname, join } from "node:path";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import {
+  type SymlinkConversion,
   copyFile,
   copyDirectory,
   fileExists,
   fileMatchesHash,
   hashFile,
+  isSymlinkedManagedPath,
   removeEmptyAncestors,
   removeWithin,
   validateTargetPath,
+  writeManagedFile,
 } from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
-import { inspectGitRepository } from "../modules/git.js";
+import { inspectGitRepository, isUneditedTrackedFile, listSymlinkTrackedPaths } from "../modules/git.js";
 import {
   getComponent,
   ComponentNotFoundError,
@@ -308,8 +311,9 @@ export type OrphanStatus = "pruned" | "reported" | "not-found";
  * here as it is in the main update loop (ARC-038 decision 1's "do not
  * silently discard the edit" applies to deleting a file, not only
  * overwriting one). A file with no recorded hash (predates ARC-038, or was
- * never hashed) is reported but never auto-pruned -- there is nothing to
- * verify it against, and guessing is not this feature's job.
+ * never hashed) is pruned only when git vouches for it -- tracked, clean, and
+ * added by its only commit (#358) -- and is otherwise reported with the manual
+ * route, so a legacy install can still be cleaned up.
  */
 export async function resolveOrphan(
   targetDir: string,
@@ -331,8 +335,20 @@ export async function resolveOrphan(
   if (!prune) return "reported";
 
   if (recordedHash === undefined) {
-    console.log(`  ! Orphaned, not pruned (no recorded hash to verify it's untouched): ${file}`);
-    return "reported";
+    // #358: a component installed before ARC-038 recorded hashes. Git stands
+    // in for the hash: tracked, clean, and added by its only commit means
+    // nobody edited it since. Anything less is reported with the manual route.
+    const evidence = await isUneditedTrackedFile(targetDir, file);
+    if (evidence.verdict !== "unedited") {
+      console.log(
+        `  ! Orphaned, not pruned (no recorded hash, and git cannot confirm it is untouched: ${evidence.detail}) — remove it by hand with \`git rm -- ${file}\`, then drop the component's entry from .arcane.json: ${file}`,
+      );
+      return "reported";
+    }
+    await removeWithin(targetDir, file);
+    await removeEmptyAncestors(targetDir, file);
+    console.log(`  Pruned orphaned file (no recorded hash; git shows it ${evidence.detail}): ${file}`);
+    return "pruned";
   }
   if (!(await fileMatchesHash(filePath, recordedHash))) {
     console.log(`  ! Orphaned but edited since install — not pruning: ${file}`);
@@ -601,7 +617,19 @@ export async function runUpdate(
   // findReadoptedSpellComponents. Empty in every other case.
   const readopted = findReadoptedSpellComponents(manifest.components, scope, spellScope);
   const homeDir = dirname(targetDir);
-  for (const line of await missingTierWarning(scope, spellScope)) console.log(line);
+  // #359: a repository that takes its spells from a user tier this machine
+  // does not have is not updated. The warning this used to print let the run
+  // succeed, and that success is what left consumers with a routing block
+  // naming spells that resolve to nothing. A dry run refuses too.
+  const tierGate = await missingTierWarning(scope, spellScope);
+  if (tierGate.length > 0) {
+    for (const line of tierGate) console.error(line);
+    console.error(
+      "  ✗ Update refused: nothing was written. Install the tier or change spell_scope, then run `spell update` again.",
+    );
+    process.exit(1);
+    return;
+  }
 
   if (scope === "repo") {
     console.warn(
@@ -634,6 +662,13 @@ export async function runUpdate(
       return;
     }
   }
+
+  // #357: the paths the index tracks as symlinks, read once. Every managed
+  // write below turns such a path into a regular file and reports it. A
+  // repository only: the user tier's store is a plain directory.
+  const linkTracked: ReadonlySet<string> =
+    scope === "repo" ? await listSymlinkTrackedPaths(targetDir) : new Set<string>();
+  const conversions: SymlinkConversion[] = [];
 
   // PRD D-15, computed before anything is written. Retirements read the
   // manifest as it was, before migration renames a legacy entry away. The
@@ -686,7 +721,10 @@ export async function runUpdate(
       for (const line of describeInstallPlan(installPlan)) console.log(line);
       return [];
     }
-    const { installed, lines } = await executeUpdateInstalls(installPlan, targetDir, packageVersion);
+    const { installed, lines } = await executeUpdateInstalls(installPlan, targetDir, packageVersion, {
+      linkTracked,
+      conversions,
+    });
     for (const line of lines) console.log(line);
     return installed;
   };
@@ -866,7 +904,19 @@ export async function runUpdate(
         ) {
           continue;
         }
-        updatedComponents.push(installed);
+        // Keep only the files still on the orphan path: a file this run pruned,
+        // or found gone, must not stay listed as if Arcane still tracked it
+        // (#358; the user-owned branch above already does this).
+        const keptHashes: Record<string, string> = {};
+        for (const file of stillTracked) {
+          const hash = installed.fileHashes?.[file];
+          if (hash !== undefined) keptHashes[file] = hash;
+        }
+        updatedComponents.push({
+          ...installed,
+          files: stillTracked,
+          ...(installed.fileHashes ? { fileHashes: keptHashes } : {}),
+        });
         continue;
       }
       throw err;
@@ -913,6 +963,15 @@ export async function runUpdate(
         }
       }
 
+      // #357: a symlinked path (a link in the working tree, or an index entry
+      // of mode 120000) or a client shim whose whole body is a link target is
+      // a broken client file, not an operator's edit. Its content differs
+      // from the recorded hash by construction, so without this it would be
+      // kept as "customized" or merged, and the link would survive the update.
+      // It falls through to the rewrite below instead.
+      const symlinked =
+        targetExists && (await isSymlinkedManagedPath(targetDir, file, linkTracked, isClientShimPath(file)));
+
       // ARC-038 decision 1: on-disk content that no longer matches what
       // Arcane last wrote means the operator edited this file, and that edit
       // must never be silently discarded.
@@ -920,6 +979,7 @@ export async function runUpdate(
         recordedHash !== undefined &&
         targetExists &&
         !preserveExisting &&
+        !symlinked &&
         !(await fileMatchesHash(join(targetDir, file), recordedHash));
 
       if (preserveExisting) {
@@ -975,7 +1035,7 @@ export async function runUpdate(
               readFile(srcPath, "utf-8"),
             ]);
             const result = merge3(oldVendorContent, currentContent, newContent);
-            await writeFile(join(targetDir, file), result.content, "utf-8");
+            await writeManagedFile(targetDir, file, result.content, { linkTracked, conversions });
             // Record the VENDOR content's hash, not the merged file's. The
             // recorded hash means "what a clean install of this version
             // wrote"; recording the merged content made the next update read
@@ -994,7 +1054,7 @@ export async function runUpdate(
         }
 
         if (!handled) {
-          fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: true });
+          fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: true, linkTracked, conversions });
           if (sameVersionRestore) console.log(`  Restored missing: ${file}`);
         }
         fileCount++;
@@ -1019,7 +1079,7 @@ export async function runUpdate(
         // Directory-tracked files are always freshly generated content
         // (agent rosters, etc.), never hand-edited in place -- unconditional
         // overwrite, same as before ARC-038, is still correct here.
-        const copied = await copyDirectory(srcDirPath, targetDir, dir, { force: true });
+        const copied = await copyDirectory(srcDirPath, targetDir, dir, { force: true, linkTracked, conversions });
         for (const { path: copiedPath, hash } of copied) {
           updatedFiles.push(copiedPath);
           fileHashes[copiedPath] = hash;
@@ -1102,6 +1162,21 @@ export async function runUpdate(
     if (!options.prune) {
       console.log("  Run `spell update --prune` to remove the ones that are safe to delete.");
     }
+  }
+
+  // #357: every managed path that was a symlink and is a regular file now.
+  if (conversions.length > 0) {
+    console.log(`\n  Converted ${conversions.length} symlinked managed file(s) to regular files (#357):`);
+    for (const c of conversions) {
+      console.log(
+        c.shape === "index-symlink"
+          ? `    ${c.file} — the index tracked it as a symlink (mode 120000); rewritten and staged as a regular file`
+          : `    ${c.file} — was a symlink in the working tree; now a regular file (the typechange is unstaged)`,
+      );
+    }
+    console.log(
+      "  Commit the typechange, or every other checkout keeps reading a link whose target is the file's own text.",
+    );
   }
 
   printRegistryChanges();

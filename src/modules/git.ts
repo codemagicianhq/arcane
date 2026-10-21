@@ -417,3 +417,77 @@ export async function ensureLocalPullRebase(cwd: string): Promise<PullRebaseResu
     return { action: "already-set" };
   }
 }
+
+// ─── #357 / #358: index evidence for managed files ───────────────────────────
+
+/**
+ * Every path the index tracks as a symlink (mode 120000), relative to `cwd`
+ * with forward slashes. On a `core.symlinks=false` checkout the working-tree
+ * file at such a path looks regular, so this is the only way to tell that git
+ * will commit whatever is written there as a link TARGET (#357). Empty when
+ * `cwd` is not a repository or git is unavailable: the callers then have
+ * nothing to convert, which is also the right answer for a plain directory.
+ */
+export async function listSymlinkTrackedPaths(cwd: string): Promise<Set<string>> {
+  const paths = new Set<string>();
+  let stdout: string;
+  try {
+    ({ stdout } = await runGit(cwd, ["ls-files", "-s", "-z"]));
+  } catch {
+    return paths;
+  }
+  for (const entry of stdout.split("\0")) {
+    const tab = entry.indexOf("\t");
+    if (tab < 0) continue;
+    const [mode] = entry.slice(0, tab).split(" ");
+    if (mode === "120000") paths.add(entry.slice(tab + 1));
+  }
+  return paths;
+}
+
+/**
+ * Re-records `relativePath` in the index as a regular file (100644) holding
+ * the working tree's current content. Needed after rewriting a path the index
+ * tracked as a symlink on a `core.symlinks=false` checkout: git keeps the
+ * symlink mode of an existing entry there (`ce_mode_from_stat`), so a plain
+ * write changes the content and not what git records. The typechange is
+ * staged by this call; the caller says so in its report.
+ */
+export async function recordRegularFileInIndex(cwd: string, relativePath: string): Promise<void> {
+  const { stdout } = await runGit(cwd, ["hash-object", "-w", "--", relativePath]);
+  await runGit(cwd, ["update-index", "--add", "--cacheinfo", `100644,${stdout.trim()},${relativePath}`]);
+}
+
+export type TrackedFileVerdict = "unedited" | "edited" | "untracked" | "unknown";
+
+/**
+ * Whether git can vouch that `relativePath` was never edited since it was
+ * added: tracked, no working-tree or index change, and exactly one commit in
+ * its history. Stands in for a recorded content hash when none exists (#358).
+ * `unknown` when `cwd` is not a repository or git is unavailable. An edit made
+ * before the file's first commit is invisible here, so callers report the
+ * evidence by name rather than claiming certainty.
+ */
+export async function isUneditedTrackedFile(
+  cwd: string,
+  relativePath: string,
+): Promise<{ verdict: TrackedFileVerdict; detail: string }> {
+  let status: string;
+  try {
+    ({ stdout: status } = await runGit(cwd, ["status", "--porcelain", "-z", "--", relativePath]));
+  } catch {
+    return { verdict: "unknown", detail: "not a git repository, or git is unavailable" };
+  }
+  if (status.startsWith("??")) return { verdict: "untracked", detail: "git does not track it" };
+  if (status.length > 0) return { verdict: "edited", detail: "it has uncommitted changes" };
+  let log: string;
+  try {
+    ({ stdout: log } = await runGit(cwd, ["log", "--format=%H", "--", relativePath]));
+  } catch {
+    return { verdict: "unknown", detail: "git log could not read its history" };
+  }
+  const commits = log.split("\n").filter(Boolean).length;
+  if (commits === 0) return { verdict: "untracked", detail: "no commit contains it" };
+  if (commits > 1) return { verdict: "edited", detail: `${commits} commits touched it` };
+  return { verdict: "unedited", detail: "tracked, clean, and added by its only commit" };
+}

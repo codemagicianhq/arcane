@@ -6,6 +6,7 @@ import {
   planComponentInstall,
   type InstallPlan,
 } from "./component-install.js";
+import type { CopyOptions } from "./copier.js";
 import type { MissingRequirement, NewlyAvailableComponent } from "./registry-changes.js";
 import type { InstallScope, InstalledComponent } from "../types.js";
 
@@ -134,11 +135,12 @@ export async function executeUpdateInstalls(
   plan: UpdateInstallPlan,
   targetDir: string,
   packageVersion: string,
+  copyOpts: Pick<CopyOptions, "linkTracked" | "conversions"> = {},
 ): Promise<{ installed: InstalledComponent[]; lines: string[] }> {
   const installed: InstalledComponent[] = [];
   const lines: string[] = [];
   for (const item of plan.items) {
-    const { files, fileHashes } = await executeInstallPlan(item.plan, targetDir);
+    const { files, fileHashes } = await executeInstallPlan(item.plan, targetDir, copyOpts);
     installed.push({
       name: item.plan.component.name,
       files,
