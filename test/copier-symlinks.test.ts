@@ -9,6 +9,7 @@ import {
 } from "../src/modules/copier.js";
 import { listSymlinkTrackedPaths } from "../src/modules/git.js";
 import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // #357: `spell update` wrote managed content THROUGH a symlinked shim. Two
 // shapes exist. On a machine with symlinks, the working-tree path is a link
@@ -49,7 +50,8 @@ function indexMode(file: string): string {
   return runGit(repo, ["ls-files", "-s", "--", file]).trim().split(" ")[0];
 }
 
-describe("#357 — managed writes replace symlinked destinations", () => {
+// Real git fixtures: the suite's heavy budget, not the 5 s default.
+describe("#357 — managed writes replace symlinked destinations", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("rewrites a path the index tracks as a symlink (core.symlinks=false shape) and re-records it as 100644", async () => {
     await trackAsSymlink(SHIM);
     expect(indexMode(SHIM)).toBe("120000");
@@ -152,7 +154,7 @@ describe("#357 — managed writes replace symlinked destinations", () => {
   });
 });
 
-describe("managedPathLinkShape and looksLikeBarePath (#357)", () => {
+describe("managedPathLinkShape and looksLikeBarePath (#357)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("is null for an absent path", async () => {
     expect(await managedPathLinkShape(repo, SHIM, undefined, true)).toBeNull();
   });

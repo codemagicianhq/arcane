@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { resolveOrphan } from "../src/commands/update.js";
 import { isUneditedTrackedFile } from "../src/modules/git.js";
 import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
+import { HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 
 // #358: an orphan with no recorded hash (a component installed before
 // ARC-038 recorded hashes) could never be pruned, and the message named no
@@ -37,7 +38,9 @@ afterEach(async () => {
   await removeFixtureDir(repo);
 });
 
-describe("isUneditedTrackedFile — git evidence for a hash-less orphan", () => {
+// Every test here spawns three to six git processes against a real fixture, so
+// they carry the suite's heavy budget rather than the 5 s default.
+describe("isUneditedTrackedFile — git evidence for a hash-less orphan", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("is unedited when the file is tracked, clean, and one commit touched it", async () => {
     await writeTracked("installed content\n", "install component");
     expect((await isUneditedTrackedFile(repo, FILE)).verdict).toBe("unedited");
@@ -91,7 +94,7 @@ describe("isUneditedTrackedFile — git evidence for a hash-less orphan", () => 
   });
 });
 
-describe("resolveOrphan with no recorded hash (#358)", () => {
+describe("resolveOrphan with no recorded hash (#358)", { timeout: HEAVY_TEST_TIMEOUT }, () => {
   it("prunes a tracked, clean orphan whose history has one commit (AC-358-1)", async () => {
     await writeTracked("installed content\n", "install component");
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
