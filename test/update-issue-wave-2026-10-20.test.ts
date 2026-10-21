@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { ArcaneManifest } from "../src/types.js";
-import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
+import { hashContent } from "../src/modules/copier.js";
+import { getAllComponents } from "../src/modules/registry.js";
+import { HEAVY_TEST_TIMEOUT, VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { createFixtureDir, removeFixtureDir, runGit } from "./helpers/git-fixture.js";
 
 // Handler-level coverage for issue wave 2026-10-20 (#357, #358, #359), against
@@ -20,7 +22,6 @@ vi.mock("../src/modules/npm-registry.js", () => ({
 }));
 
 const { runUpdate } = await import("../src/commands/update.js");
-const { runInit } = await import("../src/commands/init.js");
 
 const ASSETS_DIR = join(process.cwd(), "src/assets");
 const PACKAGE_VERSION = "0.1.0";
@@ -89,85 +90,78 @@ afterEach(async () => {
 });
 
 describe("spell update converts symlinked managed files (#357)", () => {
-  it(
-    "rewrites a shim the index tracks as a symlink, re-records it as 100644, and names it in the summary (AC-357-3)",
-    async () => {
-      await runInit({ profile: "lite" }, dir, ASSETS_DIR, OLD_VERSION);
-      const shims = (await fs.readdir(join(dir, ".claude/commands"))).filter((f) => f.startsWith("spell-"));
-      expect(shims.length).toBeGreaterThan(0);
-      const shim = `.claude/commands/${shims[0]}`;
-      commitAll("install");
-      // The consumer's own refactor: the shim becomes a link to the prompt,
-      // committed from a machine without symlinks.
-      const linkText = `../../.github/prompts/${shims[0].replace(/\.md$/, ".prompt.md")}`;
-      await fs.writeFile(join(dir, shim), linkText);
-      await fs.writeFile(join(home, "link-text"), linkText);
-      const blob = runGit(dir, ["hash-object", "-w", "--", join(home, "link-text")]).trim();
-      runGit(dir, ["update-index", "--add", "--cacheinfo", `120000,${blob},${shim}`]);
-      runGit(dir, [...IDENTITY, "commit", "-q", "--no-gpg-sign", "-m", "symlink the shim"]);
-      expect(indexMode(shim)).toBe("120000");
-      expect(runGit(dir, ["status", "--porcelain"]).trim()).toBe("");
-      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  // The component that ships Claude Code shims, named from the registry, and
+  // one of its shims. A one-component manifest stands in for a full install:
+  // the behaviour under test is the same, at a fraction of the suite's load.
+  const SHIM_PATTERN = /^\.claude\/commands\/spell-[a-z0-9-]+\.md$/;
+  const component = getAllComponents().find((c) => c.files.some((f) => SHIM_PATTERN.test(f)))!;
+  const shim = component.files.find((f) => SHIM_PATTERN.test(f))!;
+  const shimName = shim.split("/").pop()!;
+  const linkText = `../../.github/prompts/${shimName.replace(/\.md$/, ".prompt.md")}`;
 
-      await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
+  /** The shim as Arcane wrote it: its recorded hash is the packaged content's. */
+  async function seedShim(body: string): Promise<void> {
+    const vendor = await fs.readFile(join(ASSETS_DIR, component.sourceOverrides?.[shim] ?? shim));
+    await writeManifest({
+      components: [{ name: component.name, files: [shim], installedVersion: OLD_VERSION, fileHashes: { [shim]: hashContent(vendor) } }],
+    });
+    await fs.mkdir(join(dir, ".claude/commands"), { recursive: true });
+    await fs.writeFile(join(dir, shim), body);
+  }
 
-      const output = log.mock.calls.map((c) => String(c[0])).join("\n");
-      expect(output).toContain("Converted 1 symlinked managed file(s) to regular files");
-      expect(output).toContain(`${shim} — the index tracked it as a symlink (mode 120000)`);
-      expect(indexMode(shim)).toBe("100644");
-      const body = await fs.readFile(join(dir, shim), "utf8");
-      expect(body).not.toBe(linkText);
-      expect(body.length).toBeGreaterThan(linkText.length);
-    },
-    VERY_HEAVY_TEST_TIMEOUT,
-  );
+  it("rewrites a shim the index tracks as a symlink, re-records it as 100644, and names it in the summary (AC-357-3)", async () => {
+    await seedShim(linkText);
+    // The consumer's own refactor: the shim became a link to the prompt,
+    // committed from a machine without symlinks.
+    runGit(dir, ["add", "-A"]);
+    await fs.writeFile(join(home, "link-text"), linkText);
+    const blob = runGit(dir, ["hash-object", "-w", "--", join(home, "link-text")]).trim();
+    runGit(dir, ["update-index", "--add", "--cacheinfo", `120000,${blob},${shim}`]);
+    runGit(dir, [...IDENTITY, "commit", "-q", "--no-gpg-sign", "-m", "symlinked shim"]);
+    expect(indexMode(shim)).toBe("120000");
+    expect(runGit(dir, ["status", "--porcelain"]).trim()).toBe("");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
+
+    const output = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(output).toContain("Converted 1 symlinked managed file(s) to regular files");
+    expect(output).toContain(`${shim} — the index tracked it as a symlink (mode 120000)`);
+    expect(indexMode(shim)).toBe("100644");
+    expect(await fs.readFile(join(dir, shim), "utf8")).not.toBe(linkText);
+  }, HEAVY_TEST_TIMEOUT);
 
   // Review F2: a link written out as text (a regular, 100644 file) is a
   // broken shim and is rewritten and reported; a shim an operator trimmed to
   // its one-line include is a customization and keeps ARC-038's protection.
-  it(
-    "rewrites a shim whose body is only a link target and reports it",
-    async () => {
-      await runInit({ profile: "lite" }, dir, ASSETS_DIR, OLD_VERSION);
-      const shims = (await fs.readdir(join(dir, ".claude/commands"))).filter((f) => f.startsWith("spell-"));
-      const shim = `.claude/commands/${shims[0]}`;
-      const linkText = `../../.github/prompts/${shims[0].replace(/\.md$/, ".prompt.md")}\n`;
-      await fs.writeFile(join(dir, shim), linkText);
-      commitAll("a link written out as text");
-      expect(indexMode(shim)).toBe("100644");
-      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  it("rewrites a shim whose body is only a link target and reports it", async () => {
+    await seedShim(`${linkText}\n`);
+    commitAll("a link written out as text");
+    expect(indexMode(shim)).toBe("100644");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
-      await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
+    await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
 
-      const output = log.mock.calls.map((c) => String(c[0])).join("\n");
-      expect(output).toContain("Converted 1 symlinked managed file(s) to regular files");
-      expect(output).toContain(`${shim} — its body was only a link target`);
-      expect(output).not.toContain("Kept customized");
-      expect(await fs.readFile(join(dir, shim), "utf8")).not.toBe(linkText);
-    },
-    VERY_HEAVY_TEST_TIMEOUT,
-  );
+    const output = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(output).toContain("Converted 1 symlinked managed file(s) to regular files");
+    expect(output).toContain(`${shim} — its body was only a link target`);
+    expect(output).not.toContain("Kept customized");
+    expect(await fs.readFile(join(dir, shim), "utf8")).not.toBe(`${linkText}\n`);
+  }, HEAVY_TEST_TIMEOUT);
 
-  it(
-    "keeps a shim an operator trimmed to its one-line include as customized (ARC-038)",
-    async () => {
-      await runInit({ profile: "lite" }, dir, ASSETS_DIR, OLD_VERSION);
-      const shims = (await fs.readdir(join(dir, ".claude/commands"))).filter((f) => f.startsWith("spell-"));
-      const shim = `.claude/commands/${shims[0]}`;
-      const include = `@.arcane/spells/${shims[0]}\n`;
-      await fs.writeFile(join(dir, shim), include);
-      commitAll("trim the shim to its include line");
-      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  it("keeps a shim an operator trimmed to its one-line include as customized (ARC-038)", async () => {
+    const include = `@.arcane/spells/${shimName}\n`;
+    await seedShim(include);
+    commitAll("trim the shim to its include line");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
 
-      await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
+    await runUpdate({}, dir, ASSETS_DIR, PACKAGE_VERSION);
 
-      const output = log.mock.calls.map((c) => String(c[0])).join("\n");
-      expect(output).toContain(`Kept customized (not merged): ${shim}`);
-      expect(output).not.toContain("Converted");
-      expect(await fs.readFile(join(dir, shim), "utf8")).toBe(include);
-    },
-    VERY_HEAVY_TEST_TIMEOUT,
-  );
+    const output = log.mock.calls.map((c) => String(c[0])).join("\n");
+    expect(output).toContain(`Kept customized (not merged): ${shim}`);
+    expect(output).not.toContain("Converted");
+    expect(await fs.readFile(join(dir, shim), "utf8")).toBe(include);
+  }, HEAVY_TEST_TIMEOUT);
 });
 
 describe("spell update --prune and a retired component with no recorded hashes (#358)", () => {
