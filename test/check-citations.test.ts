@@ -77,6 +77,22 @@ describe("checkCitations (LH-07)", () => {
         expect(findings[0]!.reason).toContain("bare path:NNN");
     });
 
+    it("still matches a path that contains directory separators -- the character class takes `/` unescaped", async () => {
+        // CITATION_PATTERN's path class once read `[A-Za-z0-9_.\/-]`; the escape
+        // was useless (no-useless-escape) and is gone. Inside a character class
+        // `\/` and `/` name the same character, so this pins the behaviour that
+        // must not have moved: a nested path parses as one citation, resolves
+        // literally against the root, and is reported whole.
+        dir = await createFixtureDir("citations-nested-path");
+        await writeFile(dir, "TODO.md", "See `docs/notes/IDEAS.md#my-heading` and `docs/notes/IDEAS.md:5` for context.\n");
+        await writeFile(dir, "docs/notes/IDEAS.md", "# Intro\n\n## My Heading\n\nBody.\n");
+
+        const findings = await checkCitations(dir);
+        expect(findings).toHaveLength(1);
+        expect(findings[0]!.citation).toBe("`docs/notes/IDEAS.md:5`");
+        expect(findings[0]!.reason).toContain("bare path:NNN");
+    });
+
     it("does not flag a bare path:NNN,MMM comma-list -- regression for the gap LH-07's own first pass missed", async () => {
         dir = await createFixtureDir("citations-comma-list");
         await writeFile(dir, "TODO.md", "See `IDEAS.md:5,7` for context.\n");
