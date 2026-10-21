@@ -38,7 +38,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src test",
+    "lint": "eslint src test scripts",
     "typecheck": "tsc --noEmit",
     "typecheck:all": "tsc -p tsconfig.all.json",
     "check:self-host-parity": "tsx scripts/self-host-parity.ts --check",

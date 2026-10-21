@@ -40,7 +40,7 @@ export interface CitationFinding {
 // missed `check-version-bump.ts:7,115` on the first run because the original
 // pattern only matched a single number or a single range, not a list).
 const CITATION_PATTERN =
-    /`([A-Za-z0-9_.\/-]+\.(?:md|ts|tsx|js|jsx|yml|yaml|json))((?:#[a-z0-9-]+)?)(?:\s*\("([^"]+)"\))?(?::(\d+(?:[-,]\d+)*))?`/g;
+    /`([A-Za-z0-9_./-]+\.(?:md|ts|tsx|js|jsx|yml|yaml|json))((?:#[a-z0-9-]+)?)(?:\s*\("([^"]+)"\))?(?::(\d+(?:[-,]\d+)*))?`/g;
 
 function slugify(heading: string): string {
     return heading
