@@ -66,10 +66,12 @@ export async function sweepLeakedFixtureDirs(): Promise<string[]> {
 // fixture directory has it without opting in, and so it runs after the file's
 // own hooks: vitest runs after-hooks in reverse registration order
 // (`sequence.hooks`, default "stack"). A directory still present when the
-// file is done was never paired with removeFixtureDir. It is removed, so the
-// temp folder stops growing, and the file fails, so the missing pairing gets
-// fixed instead of quietly tolerated. Before this guard eight files left about
-// 250 fixture repositories behind per full run (TODO.md, Test Infrastructure).
+// file is done was never paired with removeFixtureDir, or belonged to a test
+// that timed out and kept running past its own cleanup (seen under full-suite
+// load on Windows). It is removed, so the temp folder stops growing, and the
+// file fails, so the cause gets fixed instead of quietly tolerated. Before
+// this guard eight files left about 250 fixture repositories behind per full
+// run (TODO.md, Test Infrastructure).
 afterAll(async () => {
     const leaked = await sweepLeakedFixtureDirs();
     if (leaked.length === 0) return;
@@ -77,6 +79,8 @@ afterAll(async () => {
     throw new Error(
         `${leaked.length} fixture ${noun} created with createFixtureDir and never removed ` +
             `(removed now): ${leaked.map((dir) => basename(dir)).join(", ")}. ` +
-            `Pair every createFixtureDir with removeFixtureDir in afterEach or afterAll.`,
+            `Either a createFixtureDir call has no removeFixtureDir in afterEach or afterAll, ` +
+            `or a test that timed out kept running past its own cleanup; ` +
+            `the file's other failures say which.`,
     );
 });
