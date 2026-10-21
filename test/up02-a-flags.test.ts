@@ -125,6 +125,35 @@ function localConfig(dir: string): string {
   return spawnSync("git", ["config", "--local", "--list"], { cwd: dir, encoding: "utf-8" }).stdout;
 }
 
+/**
+ * A test that times out is abandoned by vitest, not cancelled: its body keeps
+ * running, and the `runInit`/`runUpdate` it starts or is still inside then
+ * calls `process.exit`, the console and the prompt mocks through the spies
+ * the NEXT test has installed. Under full-suite load on Windows (2026-10-20)
+ * "tightening to blocked" failed that way whenever an earlier test in this
+ * file had timed out: `expected "Mock" to not be called at all`, called 1 to
+ * 3 times by the abandoned tests' `process.exit(1)`. Alone, the file passed.
+ *
+ * So the two describes that run the commands in-process register each test
+ * body here, and their `afterEach` waits for every registered body before it
+ * restores the mocks: a test's side effects land on its own spies whatever its
+ * outcome. The whole body is registered, not just the command call, because
+ * a body abandoned during its fixture setup only reaches `runUpdate` later.
+ * Reproduced 2026-10-21 by forcing the preceding test's timeout to 1 ms:
+ * "tightening to blocked" failed before this drain and passes with it.
+ */
+const inFlight: Promise<unknown>[] = [];
+function tracked(body: () => Promise<void>): () => Promise<void> {
+  return () => {
+    const run = body();
+    inFlight.push(run.catch(() => undefined));
+    return run;
+  };
+}
+async function drainInFlight(): Promise<void> {
+  await Promise.allSettled(inFlight.splice(0));
+}
+
 describe("resolveManifestFlags", () => {
   const path = "/repo/.arcane.json";
   const resolve = (flags: ManifestFlags, current: Partial<ArcaneManifest> = {}) =>
@@ -217,9 +246,12 @@ describe("spell init — manifest flags", () => {
     errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
   });
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(async () => {
+    await drainInFlight();
+    vi.restoreAllMocks();
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
-  it("--profile lite with flags records every flagged answer and asks nothing", async () => {
+  it("--profile lite with flags records every flagged answer and asks nothing", tracked(async () => {
     const { work } = await freshRepo();
 
     await runInit(
@@ -241,9 +273,9 @@ describe("spell init — manifest flags", () => {
     expect(selectMock).not.toHaveBeenCalled();
     expect(confirmMock).not.toHaveBeenCalled();
     expect(out()).not.toContain("Some setup questions were left unanswered");
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 
-  it("--profile with only some flags names the exact line for the rest", async () => {
+  it("--profile with only some flags names the exact line for the rest", tracked(async () => {
     const { work } = await freshRepo();
 
     await runInit({ profile: "lite", manifestFlags: { trackingMode: "internal", pushPolicy: "guarded" } }, work, ASSETS_DIR, "0.1.0");
@@ -252,9 +284,9 @@ describe("spell init — manifest flags", () => {
     const manifest = await recorded(work);
     expect(manifest.role).toBeUndefined();
     expect(manifest.content_sensitivity).toBeUndefined();
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 
-  it("an invalid flag exits 1 before anything is written", async () => {
+  it("an invalid flag exits 1 before anything is written", tracked(async () => {
     const { work } = await freshRepo();
 
     await runInit({ profile: "lite", manifestFlags: { contentSensitivity: "secret" } }, work, ASSETS_DIR, "0.1.0");
@@ -262,15 +294,15 @@ describe("spell init — manifest flags", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(out()).toContain('unsupported value for "content_sensitivity": "secret"');
     await expect(fs.access(join(work, ".arcane.json"))).rejects.toThrow();
-  });
+  }), HEAVY_TEST_TIMEOUT);
 
-  it("--subject-root answers the docs question", async () => {
+  it("--subject-root answers the docs question", tracked(async () => {
     const { work } = await freshRepo();
 
     await runInit({ profile: "docs", manifestFlags: { subjectRoot: "records" } }, work, ASSETS_DIR, "0.1.0");
 
     expect((await recorded(work)).subject_root).toBe("records");
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe("spell update — manifest flags", () => {
@@ -289,12 +321,13 @@ describe("spell update — manifest flags", () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
   });
-  afterEach(() => {
+  afterEach(async () => {
+    await drainInFlight();
     process.stdin.isTTY = realIsTTY as boolean;
     vi.restoreAllMocks();
-  });
+  }, VERY_HEAVY_TEST_TIMEOUT);
 
-  it("without a TTY or flags, prints the exact flag line and records nothing", async () => {
+  it("without a TTY or flags, prints the exact flag line and records nothing", tracked(async () => {
     const { work } = await installedRepo();
 
     await runUpdate({}, work, ASSETS_DIR, "0.1.0");
@@ -303,9 +336,9 @@ describe("spell update — manifest flags", () => {
       "spell update --role <hub|consumer> --tracking-mode <internal|external> --content-sensitivity <standard|sensitive> --push-policy <open|guarded|blocked>",
     );
     expect((await recorded(work)).role).toBeUndefined();
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 
-  it("without a TTY, flags answer their questions and only the rest are listed", async () => {
+  it("without a TTY, flags answer their questions and only the rest are listed", tracked(async () => {
     const { work } = await installedRepo();
 
     await runUpdate(
@@ -319,9 +352,9 @@ describe("spell update — manifest flags", () => {
     expect(manifest).toMatchObject({ role: "consumer", tracking_mode: "external", external_provider: "github", version: "0.1.0" });
     expect(out()).toContain("spell update --content-sensitivity <standard|sensitive> --push-policy <open|guarded|blocked>");
     expect(out()).toContain('role: "consumer"');
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 
-  it("--push-policy open on a blocked repository exits 1 naming spell unblock-push, and changes nothing", async () => {
+  it("--push-policy open on a blocked repository exits 1 naming spell unblock-push, and changes nothing", tracked(async () => {
     const { work } = await installedRepo({ push_policy: "blocked" });
     const before = await fs.readFile(join(work, ".arcane.json"), "utf-8");
 
@@ -330,27 +363,27 @@ describe("spell update — manifest flags", () => {
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(out()).toContain("spell unblock-push");
     expect(await fs.readFile(join(work, ".arcane.json"), "utf-8")).toBe(before);
-  });
+  }), HEAVY_TEST_TIMEOUT);
 
-  it("a flag contradicting a recorded answer exits 1 naming the current value", async () => {
+  it("a flag contradicting a recorded answer exits 1 naming the current value", tracked(async () => {
     const { work } = await installedRepo({ tracking_mode: "internal", external_provider: null });
 
     await runUpdate({ manifestFlags: { trackingMode: "external", externalProvider: "ado" } }, work, ASSETS_DIR, "0.1.0");
 
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(out()).toContain('recorded tracking_mode: "internal"');
-  });
+  }), HEAVY_TEST_TIMEOUT);
 
-  it("an invalid value exits 1 with the validator's message", async () => {
+  it("an invalid value exits 1 with the validator's message", tracked(async () => {
     const { work } = await installedRepo();
 
     await runUpdate({ manifestFlags: { pushPolicy: "sideways" } }, work, ASSETS_DIR, "0.1.0");
 
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(out()).toContain('unsupported value for "push_policy": "sideways"');
-  });
+  }), HEAVY_TEST_TIMEOUT);
 
-  it("tightening to blocked records it, prints the ARC-049 notice, and installs nothing", async () => {
+  it("tightening to blocked records it, prints the ARC-049 notice, and installs nothing", tracked(async () => {
     const { work } = await installedRepo({ push_policy: "guarded" });
     const configBefore = localConfig(work);
 
@@ -362,9 +395,9 @@ describe("spell update — manifest flags", () => {
     expect(out()).toContain("NOT enforced");
     expect(localConfig(work)).toBe(configBefore);
     expect(await isHookEnforced(work)).toBe(false);
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 
-  it("on an already-current install, a flag is still recorded", async () => {
+  it("on an already-current install, a flag is still recorded", tracked(async () => {
     const { work } = await installedRepo({ version: "0.1.0" });
     const tracked = ".arcane/governance/testing-standards.md";
     await fs.mkdir(join(work, ".arcane", "governance"), { recursive: true });
@@ -377,9 +410,9 @@ describe("spell update — manifest flags", () => {
     expect(out()).toContain("Already up to date.");
     expect((await recorded(work)).push_policy).toBe("guarded");
     expect(out()).toContain('recorded as "guarded"');
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 
-  it("--dry-run validates and reports, but writes nothing", async () => {
+  it("--dry-run validates and reports, but writes nothing", tracked(async () => {
     const { work } = await installedRepo();
     const before = await fs.readFile(join(work, ".arcane.json"), "utf-8");
 
@@ -387,7 +420,7 @@ describe("spell update — manifest flags", () => {
 
     expect(out()).toContain("[dry-run] Would record from flags:");
     expect(await fs.readFile(join(work, ".arcane.json"), "utf-8")).toBe(before);
-  }, VERY_HEAVY_TEST_TIMEOUT);
+  }), VERY_HEAVY_TEST_TIMEOUT);
 });
 
 describe.skipIf(!BIN)("manifest flags — built CLI, no TTY", () => {
