@@ -9,7 +9,7 @@
 
 **Cast spells to ship software** — the methodology layer for AI-assisted development.
 
-AI agents can write your code; Arcane gives them the discipline to *plan it, govern it, test it, review it, and **ship** it.*
+AI agents can write your code; the Arcane framework gives them the discipline to *plan it, govern it, test it, review it, and **ship** it.*
 
 [![npm version](https://img.shields.io/npm/v/arcane-cli?style=flat-square&color=6f9fd8&label=npm)](https://www.npmjs.com/package/arcane-cli)
 [![npm downloads](https://img.shields.io/npm/dm/arcane-cli?style=flat-square&color=6f9fd8)](https://www.npmjs.com/package/arcane-cli)
@@ -30,7 +30,7 @@ npm install -g arcane-cli   #  then:  spell init
 
 <div align="center">
 
-**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 <!--count:spells-->41<!--/count:spells--> spells** &nbsp;·&nbsp; **🤖 <!--count:agents-->12<!--/count:agents--> agents** &nbsp;·&nbsp; **⚖️ <!--count:governance-->25<!--/count:governance--> governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 any AI client / tracker**
+**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 <!--count:spells-->41<!--/count:spells--> spells** &nbsp;·&nbsp; **🤖 <!--count:agents-->12<!--/count:agents--> agents** &nbsp;·&nbsp; **⚖️ <!--count:governance-->25<!--/count:governance--> governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 tested with Claude Code, GitHub Copilot and Codex · GitHub or Azure DevOps**
 
 </div>
 
@@ -87,7 +87,7 @@ AI coding agents are great at *generating code*. They're terrible at *shipping s
 
 Ask one to "build a feature" and you get a pile of plausible code with no plan, no tests you trust, no review, no governance, and no repeatable path from idea to a merged, deployed change. The gap isn't code generation — it's **methodology**.
 
-**Arcane is that missing layer.** It's a structured, opinionated lifecycle — the **Spell Loop** — plus the governance, agent roles, and templates that make AI-driven development reproducible instead of chaotic. You stay in the driver's seat and cast `spell`s; the framework keeps the work on rails.
+**The Arcane framework is that missing layer.** It's a structured, opinionated lifecycle — the **Spell Loop** — plus the governance, agent roles, and templates that make AI-driven development reproducible instead of chaotic. You stay in the driver's seat and cast `spell`s; the framework keeps the work on rails.
 
 ---
 
@@ -109,7 +109,7 @@ Plus session and operational spells — `/spell-open-session`, `/spell-close-ses
 
 ## What's in the box
 
-Arcane isn't a prompt snippet — it's a full framework. Everything installs into your repo as plain, reviewable markdown. Each spell is authored once, in `.arcane/spells/`, and reaches Copilot, Claude Code and Codex through thin generated shims — one source of truth, no per-client copies to drift apart.
+It isn't a prompt snippet — it's a full framework. Everything installs into your repo as plain, reviewable markdown. Each spell is authored once, in `.arcane/spells/`, and reaches Copilot, Claude Code and Codex through thin generated shims — one source of truth, no per-client copies to drift apart.
 
 | Layer | What you get |
 | --- | --- |
@@ -143,6 +143,40 @@ Arcane isn't a prompt snippet — it's a full framework. Everything installs int
 
 </details>
 <!-- arcane:governance:end -->
+
+---
+
+## What the framework does
+
+Every line says how it holds, because a rule nobody checks should not read like one that is checked. *CLI:* the `spell` command, or a hook it installs, does it. *Spell step:* your AI client does it when the work runs through the spells. *Convention:* the standards ask for it; nothing checks it.
+
+**The memory lives in your repository.**
+- One command installs your standards into any repository: governance documents, spell prompts and agent definitions, with a manifest that records a hash of every file it placed. *CLI*
+- Every session opens by rebuilding context from the repository and closes by writing a dated journal entry and a handoff the next session reads first. *Spell step*
+- Drift is caught at session open, from decision ids that skip a number to installed files that differ from the framework's copies; high-severity drift stops the session until you decide. *Spell step*
+
+**Your edits survive updates.**
+- A file you edited is three-way merged with the new version, with conflict markers where the two disagree. Leftover files are reported, and removed only when you ask and only when a recorded hash, or for older installs git history, shows them untouched. *CLI*
+- Updates refuse to run over uncommitted changes or outside a git repository. *CLI*
+
+**Done means checked.**
+- At close, every piece of background work is classified succeeded, failed, pending, dispatched or unverifiable; only "succeeded" may be called done. *Spell step*
+- After a merge, the spell checks that each closed issue's change is actually in the merged diff. *Spell step*
+
+**Gates that block, and gates that ask.**
+- No commit without your approval in an interactive session: the spell shows the diff and the message, fingerprints that exact pair, and re-checks it right before committing. *Spell step*
+- Blocked means blocked: a pre-push hook refuses, and every remote's push URL is pointed at a sentinel, so `--no-verify` does not help. A remote added later stays live until you re-apply the block; `spell doctor` names it. *CLI*
+
+**Agents earn trust.**
+- Define your agents once; the CLI writes them where Claude Code, GitHub Copilot and Codex each expect them. *CLI*
+- Six trust levels per agent per repository, from spectator to archmage. From level four an agent may commit and merge on its own; below that, it queues a pull request for a person. *Spell step · Convention*
+- Every agent commit made through the spells names its agent, model, model source and provider in trailers, and the approving person is the committer. *Spell step*
+
+**What it does not do.**
+- It does not run your agents or call an AI model. The spells are instructions your AI client follows; the CLI installs them, keeps them current and checks the repository.
+- It does not intercept raw git. A commit you type by hand skips the spells' approval and test gates.
+- The credential scan looks for known patterns: it can find a leak, never prove a commit is clean.
+- The push controls stop an accidental push, not a determined operator.
 
 ---
 
@@ -328,7 +362,7 @@ If a repository that opted in ever lands on a machine with no tier, `spell updat
 
 ## Philosophy
 
-- **Opinionated about *how*, pluggable about *which*.** Arcane is strict about the lifecycle, governance, and commit discipline — and adapter-friendly about your tools (any AI client, any tracker, GitHub or Azure DevOps).
+- **Opinionated about *how*, pluggable about *which*.** The framework is strict about the lifecycle, governance, and commit discipline — and adapter-friendly about your tools (tested with Claude Code, GitHub Copilot and Codex; GitHub or Azure DevOps).
 - **Markdown is the source of truth.** Everything is plain, reviewable, version-controlled text. No lock-in, no opaque state.
 - **Reproducible by design.** Spinning up a new project should mean running `spell init`, not redoing months of process work.
 
@@ -336,7 +370,7 @@ If a repository that opted in ever lands on a machine with no tier, `spell updat
 
 ## Built in public
 
-Arcane is built *with Arcane*. From this repo's first commit forward, development happens in the open — planned, implemented, reviewed, and shipped using its own spells, with each session logged. Want to see how the methodology actually works? Watch the commit history.
+The Arcane framework is built *with itself*. From this repo's first commit forward, development happens in the open — planned, implemented, reviewed, and shipped using its own spells, with each session logged. Want to see how the methodology actually works? Watch the commit history.
 
 ---
 
@@ -364,5 +398,5 @@ npm run typecheck:all  # type-check src/, scripts/, test/ and the root configs
 > The *Arcane* name, logo, and agent art are brand assets of Code Magician LLC; the source code is MIT-licensed.
 
 <div align="center">
-<sub>Built by <a href="https://github.com/codemagicianhq">Code Magician</a> · <code>spell</code> your way to shipped.</sub>
+<sub>Built by <a href="https://codemagician.ai">Code Magician</a> · <code>spell</code> your way to shipped.</sub>
 </div>
