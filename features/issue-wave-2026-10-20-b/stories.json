@@ -1,0 +1,62 @@
+{
+  "feature": "Issue Wave 2026-10-20 B (#375, #376)",
+  "branchName": "sessions/2026-10-22-issue-wave-375-376",
+  "assignedAgent": "claude-code",
+  "trackingMode": "internal",
+  "externalProvider": null,
+  "adoWorkItemId": null,
+  "stories": [
+    {
+      "id": "IW-376-gates",
+      "title": "mobile-release-standards: MR-15 runtime audit and MR-16 toolchain guard as release gates",
+      "description": "Part of #376. Two rules in a new Release gates section, worded so they hold whatever tool built the binary or ships its updates: MR-15 (every store version still in use needs an update path, inventoried from the store releases and audited before each store release as it will stand once the release ships) and MR-16 (the Xcode of any build machine where it can change between builds is pinned, the build fails on a mismatch, and DTXcode and DTSDKName are compared before reading code). Each with its rule-index row, heading, Rule line and ARC-023 enforcement line.",
+      "acceptanceCriteria": [
+        "AC-376-5"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "claude-code",
+      "testEvidence": null
+    },
+    {
+      "id": "IW-376-lifecycle",
+      "title": "spell-eas-store-deploy: EAS Update lifecycle section in four parts",
+      "description": "Closes #376. A new section after the Shared EAS Preamble: (1) OTA lifecycle and stranded runtimes, with the runtime audit citing MR-15 (inventoried from the store builds, the first step of both stores' repeat deployments, its result in the release report), the crash-loop first aid and the backport recipe; (2) the store update prompt pattern; (3) toolchain pinning for any machine running eas build --local whose Xcode can change, with the guard step and its read citing MR-16; (4) when to set latest, and the minimum. The #298 read-back uses update:view --json. The consumer session's specifics in one dated observations block; the {XCODE_VERSION} placeholder; the scope line names EAS Update.",
+      "acceptanceCriteria": [
+        "AC-376-1",
+        "AC-376-2",
+        "AC-376-3",
+        "AC-376-4",
+        "AC-376-6"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "claude-code",
+      "testEvidence": null
+    },
+    {
+      "id": "IW-375",
+      "title": "spell-test: visual verification for HTML and UI deliverables (step 4a)",
+      "description": "Closes #375. Step 4a between the acceptance-criteria and evidence steps: local HTTP with production's headers, never file://, and the declared-charset check; headless captures at 1440, 390 and 320 px in dark and light with and without reduced motion, after animations settle; a console read for script and CSP errors; a like-with-like before/after comparison; the differing captures kept in the design record, never one with a secret, none in a sensitive repository; the NOT RUN outcome. A Visual Verification block in the evidence template and a Rules line. The routine is run once against src/assets/sign-in/*.html before it ships.",
+      "acceptanceCriteria": [
+        "AC-375"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "claude-code",
+      "testEvidence": null
+    },
+    {
+      "id": "IW-integration",
+      "title": "Release 1.12.3: parity, version bump, changelog, full suite and CI",
+      "description": "Regenerate the root copies and shims, bump 1.12.2 to 1.12.3 (a patch: no new distributable file), add the CHANGELOG entry, run the full suite and every check the CI runs.",
+      "acceptanceCriteria": [
+        "AC-ALL"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "claude-code",
+      "testEvidence": null
+    }
+  ]
+}
