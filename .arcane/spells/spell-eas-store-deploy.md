@@ -14,10 +14,15 @@ agent: agent
 - Roughly 80% of the material (credentials, `eas.json` profile shape, build-number handling, OTA rules)
   is shared between the two stores; only the store-console work genuinely diverges. Covered once in a
   shared preamble, then two store-specific sections.
-- **Deliberately scoped to EAS Build + EAS Submit** — no local Xcode, Xcode Cloud, or Fastlane coverage.
-  That scope is what keeps every step concrete and copy-pasteable.
-- Every lesson here was hit for real across two dogfooding runs (a first-ever App Store submission, then
-  a from-zero Google Play listing to a live production release) — none is general knowledge restated.
+- **Deliberately scoped to EAS Build, EAS Submit and EAS Update** — no local Xcode, Xcode Cloud, or Fastlane coverage.
+  That scope is what keeps every step concrete and copy-pasteable. The only local toolchain it touches is
+  a build machine running `eas build --local`, and only to pin it (EAS Update lifecycle, part 3).
+- An **EAS Update lifecycle** section covers what a store release leaves behind and what surrounds it: the
+  runtimes older store versions keep running, an in-app store update prompt, toolchain pinning for
+  machines running `eas build --local`, and when to announce a version as the latest.
+- Every lesson here was hit for real, across two dogfooding runs (a first-ever App Store submission, then
+  a from-zero Google Play listing to a live production release) and a later consumer store release (the
+  EAS Update lifecycle) — none is general knowledge restated.
 - Durable, store-specific platform facts are documented once in
   [`mobile-release-standards.md`](../../.arcane/governance/mobile-release-standards.md) and cited here
   by `MR-nn` ID; verification discipline is documented once in
@@ -42,6 +47,7 @@ account, not a local mistake.
 | `{EAS_PROJECT_SLUG}` | The EAS project ID/slug. | Resolve from `app.json`'s `expo.extra.eas.projectId` or `eas init` output; if unset, ask. |
 | `{ANDROID_PACKAGE}` | The Android application ID / package name. | Resolve from `app.json`'s `expo.android.package`; if unset, ask. |
 | `{ORG_NAME}` | The Expo/EAS organization name, if the project belongs to one. | Resolve from `eas.json` or the EAS dashboard; if not applicable, omit. |
+| `{XCODE_VERSION}` | The Xcode version a build machine running `eas build --local` is pinned to, as `xcodebuild -version` prints it (for example `26.2`). | Use the Xcode of the EAS build image the build profile selects (`build.<profile>.ios.image`, or the default image for the project's SDK): read `DTXcode` from an IPA EAS built with that profile (`2620` is Xcode 26.2), never one older than App Store Connect accepts for uploads; if no EAS-built IPA exists yet, ask. |
 
 ## Context files
 
@@ -111,8 +117,9 @@ This section is common setup both stores' deployments depend on. Do it once.
   pipeline, run the update job against that commit (for example with a `--commit-id <sha>` argument,
   where the pipeline takes one); from the CLI, run `eas update` from a checkout of that commit. Read
   `eas update`'s `Commit`, `Runtime version` and `Platform` lines, then prove the alignment by reading
-  the published update back (`eas update:view <group-id>`), never from pipeline status or the publish
-  step's own output alone (`EV-01`, `EV-02`).
+  the published update back (`eas update:view <group-id> --json`, whose `gitCommitHash` and
+  `runtimeVersion` name that commit and runtime; the human-readable view prints no commit), never from
+  pipeline status or the publish step's own output alone (`EV-01`, `EV-02`).
 - **🔴 Bundler transform caches do not key on `EXPO_PUBLIC_*` env vars.** On a persistent (self-hosted)
   build runner, the cache survives between runs, so an update published to one channel can ship
   another channel's inlined config — for example, a production build silently pointing at a development
@@ -144,6 +151,177 @@ expired App Store Connect session shows as a redirect carrying `authResult=FAILE
 
 ---
 
+## EAS Update lifecycle (both stores)
+
+A store release changes which phones an update can reach. This section covers what each release leaves
+behind and what surrounds it, in four parts: the runtimes older store versions keep running (part 1, a
+step of every store release), an in-app prompt that moves phones to the store (part 2, built into the app
+once), the toolchain of a machine running `eas build --local` (part 3, set up once per machine and
+checked before every store build), and when to announce a version as the latest (part 4, after the store
+offers it).
+
+### 1. OTA lifecycle and stranded runtimes
+
+- **Audit the live runtimes before every store build (`MR-15`).** With `runtimeVersion.policy:
+  appVersion`, every store version is its own runtime, and an update reaches only phones whose binary has
+  the same runtime version: a phone that never installs the next store version receives nothing new,
+  forever, with no error anywhere. List the store versions from each store console's release history (or
+  the release tags, where every store release is tagged), then read, for each, its runtime and commit, how
+  many phones it still has, and the last update it receives:
+
+  ```bash
+  eas channel:view <channel>
+  # the EAS branch the store channel points to
+  eas build:list --platform <ios|android> --app-version <version> --distribution store --status finished --json
+  # one store version's builds, with runtime.version and gitCommitHash
+  eas channel:insights --channel <channel> --runtime-version <runtime> --days 30
+  # the phones on one runtime, running its embedded bundle or an update (eas-cli 18.8.0 or later)
+  eas update:list --branch <eas-branch> --runtime-version <runtime> --limit 1 --json
+  # the latest update group that runtime receives, if any
+  ```
+
+  A runtime that never received an update has no update group, `eas update:list` shows only the most
+  recent groups (25 unless `--limit` says otherwise), and `eas build:list` returns at most 50 builds per
+  page, newest first, with TestFlight and other test builds among them, so neither the update list nor a
+  page of the newest builds can be the inventory. A binary built with `eas build --local` has no EAS build
+  record: its commit comes from the pipeline run or tag that produced it. Judge each runtime as it will
+  stand once this release ships: the version it replaces still receives updates today and stops receiving
+  updates the moment the release is out. For each runtime that will still have phones and no update path,
+  choose its route before the release ships: the backport recipe below, the store update prompt (part 2,
+  backported the same way), or the operator's decision to leave it stranded, written into the release
+  report.
+- **Never publish to an old runtime from a checkout whose native dependencies differ from that binary.**
+  This is the OTA/native alignment rule above (Cross-platform lessons), applied to a runtime that is no
+  longer current. When it is broken, the publish succeeds and the phones on that runtime download an
+  update that calls native code their binary does not have. expo-updates rolls an update back by itself
+  only when it crashes before its content first appears, and then does not launch it again on that
+  device; a crash after that point, such as a screen calling the missing module, comes back every time
+  that screen is reached, until a corrected update is published to that runtime.
+- **When a runtime is already crashing on a bad update, stop the damage first**, with the operator's
+  go-ahead, since each command publishes to phones in production: republish that runtime's last good
+  update group (`eas update:republish --group <last-good-group-id>`), or send the runtime back to the
+  bundle embedded in its binary
+  (`eas update:roll-back-to-embedded --channel <channel> --runtime-version <runtime>`). Then backport the
+  fix.
+- **The backport recipe for a stranded runtime:**
+  1. Find the commit that runtime actually runs. The audit's `eas update:list` line names its latest update
+     group, and `eas update:view <group-id> --json` gives that group's `gitCommitHash` (the human-readable
+     view prints no commit). A runtime that never received an update runs the bundle embedded in its store
+     build: take the `gitCommitHash` of that build's `eas build:list` entry, or, for a binary built with
+     `eas build --local`, the commit of the pipeline run or release tag that produced it.
+  2. Create a git branch from that commit and add only the files the fix needs, using only primitives that
+     binary has: no new native module, and no API from a newer SDK or a newer native dependency.
+  3. Build the workspace libraries first (in a monorepo, the packages the app imports), then typecheck
+     against that tree, not the trunk's.
+  4. With the operator's go-ahead (this publishes to phones in production), commit, then publish from that
+     git branch to the store channel:
+     `eas update --channel <channel> --environment <environment> --message "<what it fixes>"`, with the
+     store build's environment (usually `production`): the flag loads that environment's server-side
+     variables, which the publish otherwise leaves out, and clears the bundler cache. Never use `--auto`,
+     which names the EAS branch after the git branch, a branch no channel points to. The `Commit` line
+     `eas update` prints must not end in `*`, which marks an uncommitted tree.
+  5. Prove it by reading the update back: `eas update:view <new-group-id> --json` must show the stranded
+     runtime's `runtimeVersion`, the git branch's `gitCommitHash`, and the `branch` that
+     `eas channel:view <channel>` names. The pipeline's "succeeded" is not evidence (`EV-02`).
+  6. Mark the git branch publish-only (its name and its first commit say so) and never merge it: it exists
+     to publish from, and a merge would bring that old tree back into the trunk.
+
+### 2. A store update prompt
+
+Built into the app and its API once; it moves phones off old store versions instead of waiting for them.
+
+- **The server holds the versions:** a "latest version" and a "minimum version" per platform, editable by
+  an operator (an admin screen), empty by default. The client sends its platform and version, and the
+  server answers `ok`, `update` (an invitation with "not now", snoozed for a few days) or `required` (a
+  screen with only an update button, which cannot be closed).
+- **Clients identify themselves on every request.** From the release that introduces it, the client sends
+  its platform and version as request headers, and the API answers `426 Upgrade Required` to anything
+  below the minimum version, except the version-check endpoint itself. Older clients that send no headers
+  pass. This is the emergency brake for a breaking API change, and it answers "which app versions still
+  call this route?" before any `/v2` is needed.
+- **Mount the prompt outside the app's error boundary.** A 426 can make a screen throw, and an error
+  boundary whose fallback replaces the whole tree replaces the update screen with it.
+- **Word the mandatory screen as something new, not something broken:** "there is a new version", not
+  "this version no longer works".
+- **Backport the prompt to every stranded runtime** (part 1): for those phones it is the only way to the
+  store.
+
+### 3. Toolchain pinning for self-hosted build agents
+
+Applies when `eas build --local` runs on a machine whose Xcode can change between builds: a Mac you
+manage, or a hosted CI runner whose default Xcode moves with its image. EAS's own build servers run the
+image the build profile selects.
+
+- **Pin the Xcode per build (`MR-16`).** Install the pinned version beside any newer one as
+  `/Applications/Xcode-{XCODE_VERSION}.app` (on a hosted runner, point `DEVELOPER_DIR` at that version
+  among the image's preinstalled Xcodes instead), set `DEVELOPER_DIR` to its `Contents/Developer` for the
+  whole build job so that every step uses it, the build included, and add a bash guard step that fails
+  the run when the path is missing or `xcodebuild -version` reports another version:
+
+  ```bash
+  set -euo pipefail
+  expected="Xcode {XCODE_VERSION}"
+  if [ ! -d "${DEVELOPER_DIR:?DEVELOPER_DIR is not set}" ]; then
+    echo "Pinned Xcode is not installed: $DEVELOPER_DIR" >&2
+    exit 1
+  fi
+  version_output="$(xcodebuild -version)"   # captured whole, never piped into head
+  read -r first_line <<< "$version_output"
+  if [ "$first_line" != "$expected" ]; then
+    echo "Expected $expected, xcodebuild reports: $first_line" >&2
+    exit 1
+  fi
+  ```
+
+  Avoid `xcodebuild -version | head -1` under `pipefail`: `head` can exit before `xcodebuild` has finished
+  writing, the SIGPIPE that ends `xcodebuild` fails the pipeline, and the step dies (exit 141).
+- **Before a store build on such a machine, read the guard's result in that build's own run.** Confirm that
+  the job ran the guard step and that it passed; stop the release if the step is missing or failed.
+- **Move the pin only with the EAS build image the build profile selects** (`build.<profile>.ios.image`,
+  or the default image for the project's SDK). An IPA that EAS built with that profile records the Xcode
+  it used as `DTXcode` in its `Info.plist` (`2620` is Xcode 26.2); pin that version, and never one older
+  than App Store Connect accepts for uploads.
+- **When a store build crashes at launch but the same JavaScript runs fine via OTA**, compare `DTXcode` and
+  `DTSDKName` in the working and the crashing IPA's `Info.plist` (unzip each IPA, then
+  `plutil -p Payload/<App>.app/Info.plist` on macOS) before reading any code, and build the same commit in
+  the EAS cloud: if that build works, the toolchain is the difference, not the code (`MR-16`).
+
+### 4. When to set "latest"
+
+- **Set the server-side "latest version" for a platform only when that store's listing actually offers
+  the version.** Set early, it sends users to a store page that still offers the old build.
+- **Raise the "minimum version" only to a version every user can install now:** on the App Store once the
+  lookup below reports it, on Google Play once the production rollout reaches 100%. A minimum above that
+  leaves users on a screen that cannot be closed, whose only button opens a store page that still offers
+  the old build, while the API refuses their every request with 426. A version that raises the iOS
+  deployment target or Android's `minSdkVersion` never installs on devices below it, so a minimum at that
+  version locks those devices out for good, unless the client also sends its OS version and the server
+  exempts them.
+- **App Store:** the public lookup, `https://itunes.apple.com/lookup?bundleId={IOS_BUNDLE_ID}`, returns the
+  listed version as `results[0].version`. Show it beside the admin field as a reference, with a warning
+  when the typed version is newer. It reads one storefront, the United States unless `&country=<cc>` names
+  another (`resultCount: 0` means the app is not listed there), and it answers from a cache (a `max-age`
+  of about 2 to 14 hours in checks on 2026-10-22), so a version released in the last several hours can
+  still read as the old one: treat the warning as a reason to check the listing by hand.
+- **Google Play publishes no equivalent lookup**, so Play is a manual check of the listing before either
+  field is set, and a staged rollout counts only at 100%: until then, some users are still offered the
+  previous build.
+
+**Observed in one consumer session (reported 2026-10-18), not re-verified since** — re-check before relying
+on any of them: phones on five earlier store versions had received no update for weeks before anyone
+noticed; one runtime crash-looped on an update published from a checkout with a different native SDK, and
+the session described expo-updates rolling back to the previous update on every launch while the latest
+update on the channel kept breaking it (compare the documented behavior in part 1); two production iOS
+binaries crashed at launch after the build Mac's Xcode updated itself, while the same JavaScript ran fine
+via OTA; and a 426 made the app's feed crash, so the error boundary's fallback replaced the update screen
+until the prompt was mounted above the boundary.
+
+Enforcement: parts 1 and 3 are structured spell gates through `MR-15` and `MR-16` (ARC-023); parts 2 and
+4 are explicitly advisory prose (ARC-023) — the prompt and the server-side fields are the app's own code,
+which no step of this spell can read.
+
+---
+
 ## Apple App Store
 
 ### Initial one-time setup
@@ -161,6 +339,8 @@ expired App Store Connect session shows as a redirect carrying `authResult=FAILE
    page instead of retrying the automated sync.
 
 ### Repeat deployments
+
+Start with the runtime audit (EAS Update lifecycle, part 1; `MR-15`), then build and submit:
 
 ```bash
 eas build --platform ios --profile production
@@ -217,6 +397,8 @@ each require one independently.
 
 ### Repeat deployments
 
+Start with the runtime audit (EAS Update lifecycle, part 1; `MR-15`), then build and submit:
+
 ```bash
 eas build --platform android --profile production
 eas submit --platform android --profile production --latest
@@ -269,7 +451,8 @@ console error stating otherwise (`EV-06`).
 
 ### Reporting the release
 
-End every release run with a short report. The store-console steps the agent cannot reach — sending
+End every release run with a short report that includes the runtime audit's result (each runtime still on
+phones and the route chosen for it). The store-console steps the agent cannot reach — sending
 staged Google Play changes for review, answering an App Store review question, confirming a manual
 release — are required operator actions:
 
