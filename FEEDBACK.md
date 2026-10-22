@@ -242,3 +242,18 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-21-typed-lint-silent-rules.md`, lessons "Auto-fix resolves conflicts by merging; this repository lands pull requests by rebase", "A model switch mid-session needs a provenance line in the commit" and "The pull request title's majority-type rule picks `docs` for a config and code change".
+
+## Feedback — spell-close-session (2026-10-21)
+
+**Session:** 1.12.1, issue wave 2026-10-20 (1.12.2) and its sub-sessions (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- Five sessions closed on 2026-10-21, and each `spell-close-session` run replaced the single `## Next Session Handoff` block. The spell has no rule for concurrent closes, so the parent session was sequenced last by hand, and every close carried the others' open items forward by reading the block on `main` first.
+
+### Improvement Items
+- [ ] Give `spell-close-session` step 5b a rule for concurrent sessions: re-read the handoff on `<remote>/<trunk>` immediately before writing, carry forward every item in it that this session cannot confirm resolved, and name the block it supersedes; and have `spell-open-session` say that the handoff it reads may come from any of several concurrent sessions. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-21-issue-wave-357-359.md`, lesson "Concurrent closes rewrite one handoff block".
