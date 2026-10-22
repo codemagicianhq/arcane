@@ -13,7 +13,8 @@ Durable facts about how the Apple App Store and Google Play review consoles and 
 actually behave — true regardless of which build tool produced the binary. These are platform
 properties, not Expo/EAS-specific tooling behavior; the EAS-specific workflow that consumes these rules
 lives in `spell-eas-store-deploy`. Sourced from two real dogfooding runs (a first-ever App Store
-submission, then a from-zero Google Play listing to a live production release) — every rule here was hit
+submission, then a from-zero Google Play listing to a live production release) and, for the two release
+gates (MR-15, MR-16), a consumer's later store release reported on 2026-10-18 — every rule here was hit
 for real, not derived from documentation alone.
 
 ## Executive Summary
@@ -30,6 +31,10 @@ for real, not derived from documentation alone.
 - Two platform-specific binary/UI constraints (notification icon requirements, a native dialog's button
   cap) have no equivalent on the other platform and are easy to carry over incorrectly from iOS-first
   development.
+- Two release gates hold across releases rather than within one: every store version still on phones
+  keeps an update path (MR-15), and every build machine whose Xcode can change is pinned to one (MR-16).
+  Both failures are silent: older binaries simply stop receiving updates, or a binary built from
+  unchanged code crashes at launch.
 
 ---
 
@@ -51,6 +56,8 @@ for real, not derived from documentation alone.
 | MR-12 | Audit the permissions the built artifact actually declares, not what the source code appears to use. |
 | MR-13 | Android push-notification icons need a dedicated monochrome asset shipped in a native build; there is no OTA path for this. |
 | MR-14 | Android's native `AlertDialog` silently caps at three buttons; a menu built on `Alert.alert` past that cap loses the overflow, typically the dismiss action. |
+| MR-15 | Every store version still in use needs an update path; audit the binary versions still on phones before each store release. |
+| MR-16 | Pin the Xcode on any build machine where it can change between builds; fail the build when another version is active. |
 
 ---
 
@@ -214,6 +221,40 @@ the *Cancel* row, leaving a dialog with no way to dismiss it. iOS has no equival
 (`ActionSheetIOS` supports an arbitrary option count).
 
 **Rule (MR-14): For any Android menu that could exceed three options, use a real bottom sheet dismissible at least three ways (an explicit cancel row, a scrim tap, and the hardware back gesture) instead of `Alert.alert`. Enforcement: explicitly advisory prose (ARC-023) — spell-eas-store-deploy's Known Pitfalls list cites this rule for awareness, but the fix is a UI code change with no console or platform state for the deploy workflow to check before proceeding; catching it depends on code review, not this spell.**
+
+---
+
+## Release gates
+
+### MR-15: Every store version still in use needs an update path
+
+A store release does not retire the binaries before it. Phones keep running an older store version for
+weeks or months (automatic updates are off, the device is short of storage, the user ignores the store),
+and nothing in either store moves them. An over-the-air update system delivers a new JavaScript bundle
+only to binaries whose native compatibility version matches the one the update was published for
+(expo-updates calls it the runtime version), and a project that derives that version from the app
+version gives every store version its own. So once a new store version ships, updates published from
+current code reach only the new binary. Every older binary receives nothing new, and nothing reports it:
+not the device, not the store console, not the publish step. A fix shipped as an update never reaches
+those phones, and a breaking server change can leave them failing with no way forward short of the store.
+An inventory taken from the published updates misses exactly the versions at risk: one that never
+received an update leaves no trace there. And the version a release replaces still receives updates
+until the moment the release ships.
+
+**Rule (MR-15): Before each store release, list every binary version still in use, from the store releases, not from the updates published to them, and confirm each has an update path, judging each as it will stand once the release ships. An update path is either updates still published for the version's native compatibility version or an in-app prompt that sends it to the store; a version with phones on it and neither is stranded. Before the release ships, give each stranded version one (a backported update, which can carry the prompt) or record the operator's decision to leave it. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's runtime audit is the first step of every repeat deployment, and the release report names each stranded runtime with the route chosen for it; no executable check reads the audit's result.**
+
+### MR-16: Pin the Xcode wherever it can change between builds
+
+Xcode stamps its toolchain into every iOS binary it builds (`DTXcode` and `DTSDKName` in the app's
+`Info.plist`), and the toolchain is part of what ships: a binary built with an Xcode the project's
+dependencies were not built for can crash at launch while the same JavaScript runs fine as an
+over-the-air update on a binary built earlier. A build service that selects a versioned image for each
+build pins the toolchain with it. A self-hosted build Mac pins nothing unless told to, and neither does a
+hosted CI runner whose default Xcode moves with its image: when the Xcode changes, the next build of an
+unchanged commit uses a different toolchain and no step fails. The crash then looks like a code defect,
+and reading the code first is the slow way to learn that it is not one.
+
+**Rule (MR-16): On any build machine whose Xcode can change between builds (a self-hosted Mac, or a hosted CI runner whose default Xcode moves with its image), pin the Xcode per build (installed side by side and selected with `DEVELOPER_DIR`), fail the build when the pinned toolchain is missing or another version is active, and move the pin only on purpose, never through an automatic update. When a store build crashes at launch but the same code runs elsewhere, compare `DTXcode` and `DTSDKName` of the working and the crashing binary before reading any code. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's toolchain step has the build job carry a guard step that fails the run on a missing or mismatched Xcode, and reads that guard's result in the build's own run before a store build continues; the guard itself is an executable check in the consuming project's own pipeline, and no Arcane tooling verifies that it exists.**
 
 ## Related
 
