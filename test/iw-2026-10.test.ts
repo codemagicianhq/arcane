@@ -76,7 +76,8 @@ describe("#298 spell-eas-store-deploy: OTA/native alignment and console verifica
         expectProseToContain(rule, "`eas update`'s `Commit`, `Runtime version` and `Platform` lines");
         expectProseToContain(rule, "**Bump the app version in the same PR as any native dependency change**");
         expectProseToContain(rule, "(`package.json`, the lockfile and the app config's plugins)");
-        expectProseToContain(rule, "reading the published update back (`eas update:view <group-id>`)");
+        // --json since 2026-10-22: the human-readable view prints no commit (wave 2026-10-20 B, review R2).
+        expectProseToContain(rule, "reading the published update back (`eas update:view <group-id> --json`, whose `gitCommitHash` and `runtimeVersion` name that commit and runtime");
         expectNotNegated(rule);
     });
 
