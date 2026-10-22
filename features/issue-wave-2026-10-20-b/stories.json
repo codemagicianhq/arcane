@@ -14,9 +14,9 @@
         "AC-376-5"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude-code",
-      "testEvidence": null
+      "testEvidence": "test/iw-2026-10-20-b.test.ts describe(\"#376 mobile-release-standards: ...\"), 5 tests: red against the unchanged document (5 of 5 failed), green after the edit; the review fixes (R1, R4, R5, R16) were asserted red first and green after. test/eas-store-deploy.test.ts (rule-index and body consistency, 13 tests) and test/up02-d-runtime-placeholders.test.ts (6) pass with MR-15 and MR-16 in place; the spell cites both IDs (asserted in the lifecycle block). Full suite green (2026-10-22)."
     },
     {
       "id": "IW-376-lifecycle",
@@ -30,9 +30,9 @@
         "AC-376-6"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude-code",
-      "testEvidence": null
+      "testEvidence": "test/iw-2026-10-20-b.test.ts describe(\"#376 spell-eas-store-deploy: the EAS Update lifecycle\"), 11 tests: red against the unchanged spell (10 of 10 in the first pass), green after the edit; the review fixes (R1 to R5, R7, R10 to R12, R16 to R18, the scope line; second pass N1 to N4 and N6) were asserted red first and green after. test/iw-2026-10.test.ts keeps its anchors, its #298 read-back assertion updated for R2. Commands and fields checked against the eas-cli source and changelog, the expo-updates error-recovery documentation and the App Store lookup on 2026-10-22 (architecture, Evidence). Full suite green (2026-10-22)."
     },
     {
       "id": "IW-375",
@@ -42,9 +42,9 @@
         "AC-375"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude-code",
-      "testEvidence": null
+      "testEvidence": "test/iw-2026-10-20-b.test.ts describe(\"#375 spell-test: ...\"), 8 tests: red against the unchanged spell (7 of 7 in the first pass), green after the edit; the review fixes (R6, R8, R9, R13 to R15, R17; second pass N5) were asserted red first and green after. The step was run once on src/assets/sign-in/*.html with Playwright 1.63 and the production headers: 36 captures (3 pages x 3 widths x 2 schemes x 2 motion settings), 0 console errors or warnings. Controls: a blocking policy over HTTP produced 1 console error naming the directive; the same page from file:// produced none; a UTF-8 page with no declared charset decoded as UTF-8 from file:// and as windows-1252 over HTTP text/html without a charset (3 variants); two captures of one cell were byte-identical across launches, and the review reproduced all 36 byte for byte. Not exercised: the color-scheme half of the matrix, because these pages are dark-only (all 9 dark/light pairs identical). Captures were kept outside the repository: no page changed in this wave. Full suite green (2026-10-22)."
     },
     {
       "id": "IW-integration",
@@ -54,9 +54,9 @@
         "AC-ALL"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude-code",
-      "testEvidence": null
+      "testEvidence": "1.12.2 -> 1.12.3 (patch), CHANGELOG [1.12.3]. Local, after the review fixes: check:version-bump, check:self-host-parity (351 items), check:adr-references, check:spell-catalog, check:report-template, check:citations, check:stale-claims, check:followups, lint, typecheck and typecheck:all pass; build passes (before the fixes; Markdown-only since). npm test at default budgets (the pre-push suite): 147 files, 2377 passed, 10 skipped, 0 failed, 143 s. npm run test:coverage -- --testTimeout=20000 --retry=1 before the fixes: 2375 passed, coverage 92.08% statements, 87.07% branches, 93.97% functions, 93.27% lines; the fixes changed no source code. One earlier default-budget run under load timed out four pre-existing real-git tests, which passed alone. CI on the pull request is the confirming run."
     }
   ]
 }
