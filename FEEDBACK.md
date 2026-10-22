@@ -223,3 +223,22 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-21-vitest-workers-windows.md`, lessons "Linked worktrees isolate files, not the machine" and "`spell-create-pull-request`'s body path sits outside a Claude Code worktree".
+
+## Feedback — Arcane workflow (2026-10-21)
+
+**Session:** Typed lint, silent rules first, PR [#386](https://github.com/codemagicianhq/arcane/pull/386), and this session's close (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- An Auto-fix conflict event from the desktop app asked for `main` to be merged into the pull request's branch and said never to rebase or force-push, while `git-conventions.md` requires a rebase on the latest `origin/<target>` before pushing and this repository lands pull requests by rebase-and-fast-forward. Neither `spell-sync-pull-request` nor `git-conventions.md` says which wins when a host tool prescribes its own conflict resolution.
+- The session's model changed twice mid-task, and the harness's attribution line changed with it. The Agent Attribution Model in `git-conventions.md` assumes one model per session, so it says nothing about a commit whose content an earlier model wrote.
+- `spell-create-pull-request` Step 3 takes the title's type from the majority commit type, which gave `docs` (two `docs(todo)` commits of four) for a pull request whose substance is a lint configuration and 60 source files.
+
+### Improvement Items
+- [ ] In `spell-sync-pull-request` Step 2 and `git-conventions.md`'s pre-PR guard, say that the declared merge-strategy ladder wins over a host tool's conflict default, such as an auto-fix that merges the target into the branch, and that the spell's rebase path applies to those events too. <!-- upstream: queued -->
+- [ ] Extend the Agent Attribution Model in `git-conventions.md` to a session whose model changes mid-task: `Model:` names the model making the commit, and the body names the part an earlier model wrote. <!-- upstream: queued -->
+- [ ] In `spell-create-pull-request` Step 3, take the title's type from what the pull request changes, weighing code and configuration over session documents, rather than from a count of commit types. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-10-21-typed-lint-silent-rules.md`, lessons "Auto-fix resolves conflicts by merging; this repository lands pull requests by rebase", "A model switch mid-session needs a provenance line in the commit" and "The pull request title's majority-type rule picks `docs` for a config and code change".
