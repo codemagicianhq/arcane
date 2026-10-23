@@ -222,8 +222,10 @@
         "accept-an-adr",
         "anything-in-agent-policies-prohibited-list (MCP/security config, etc.)"
       ],
-      "status": "active",
-      "revocation": "Edit or remove this entry and commit. Granted in-session on 2026-10-22, when the operator chose a scoped delegation over per-commit approval for Wave B. It covers this one wave only: the session that confirms the wave PR merged or closed sets status to \"revoked\" (spell doctor reports every \"active\" entry until then)."
+      "status": "revoked",
+      "revocation": "Edit or remove this entry and commit. Granted in-session on 2026-10-22, when the operator chose a scoped delegation over per-commit approval for Wave B. It covers this one wave only: the session that confirms the wave PR merged or closed sets status to \"revoked\" (spell doctor reports every \"active\" entry until then).",
+      "revokedAt": "2026-10-22",
+      "revocationReason": "Wave complete: PR #392 merged by the operator on 2026-10-22 (2026-10-23T00:55Z); issues #375 and #376 confirmed closed; 1.12.3 published (npm latest, gitHead ef254a7)."
     }
   ]
 }
