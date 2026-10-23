@@ -28,6 +28,7 @@ import type {
   AgentSyncOptions,
 } from "../types.js";
 import { mergeIntoFile } from "./merger.js";
+import { validateRealTargetDirectory, validateRealTargetPath } from "./copier.js";
 import { loadAgentDefinition, projectAgentsDir } from "./agent-loader.js";
 import { userAgentFanoutPath, type FanoutFile } from "./user-tier.js";
 
@@ -392,6 +393,9 @@ export async function syncAgents(
 
     const generatedDir = join(targetDir, ".arcane", "generated");
     if (!options.dryRun) {
+      // Checked before the mkdir, which would create the directory wherever
+      // a linked .arcane points (TODO.md, decided 2026-10-22).
+      validateRealTargetDirectory(targetDir, ".arcane/generated");
       await mkdir(generatedDir, { recursive: true });
       await writeFile(
         join(generatedDir, "openclaw-roster.json"),
@@ -414,6 +418,9 @@ export async function syncAgents(
     // copilot-instructions merge below writes into it and used to rely on
     // this mkdir creating the parent as a side effect.
     if (!options.dryRun && !userTier) {
+      // Checked before the mkdir, which would create the directory wherever
+      // a linked .github points (TODO.md, decided 2026-10-22).
+      validateRealTargetDirectory(targetDir, repoOptedOut ? ".github" : ".github/agents");
       await mkdir(repoOptedOut ? join(targetDir, ".github") : agentsDir, { recursive: true });
     }
 
@@ -443,6 +450,9 @@ export async function syncAgents(
       if (repoOptedOut) continue;
 
       if (!options.dryRun) {
+        // The file name comes from the roster, which is repository content:
+        // a name that walks out of the repository is refused here too.
+        validateRealTargetPath(targetDir, `.github/agents/${fileName}`);
         await writeFile(join(agentsDir, fileName), content, "utf8");
       } else {
         console.log(`  [dry-run] Would write: .github/agents/${fileName}`);

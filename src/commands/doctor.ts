@@ -1,11 +1,11 @@
 import { access, readdir, readFile, mkdir, copyFile as fsCopyFile } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
 import type { Delegation, DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { listSymlinkTrackedPaths, runGit } from "../modules/git.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
-import { looksLikeBarePath } from "../modules/copier.js";
+import { findLinkedEscape, looksLikeBarePath } from "../modules/copier.js";
 import {
   readManifest,
   resolveSecretsScanExcludePrefixes,
@@ -328,6 +328,15 @@ export async function fixSessionContinuity(targetDir: string, assetsDir: string)
       await access(destPath);
       // File exists — skip
     } catch {
+      // Never created through a directory link that leaves the repository;
+      // the others still are (TODO.md, decided 2026-10-22).
+      const escape = findLinkedEscape(targetDir, dirname(file));
+      if (escape !== null) {
+        console.log(
+          `    ! Not created: ${file} — it is under "${escape.link}", a link to "${escape.resolvesTo}" outside "${resolve(targetDir)}".`,
+        );
+        continue;
+      }
       // File missing — create from template
       const srcPath = join(assetsDir, file);
       await mkdir(dirname(destPath), { recursive: true });
@@ -1142,10 +1151,17 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
   if (options.fix && hasMissingSession && assetsDir) {
     console.log("  🔧 Fixing missing session continuity files...\n");
     const created = await fixSessionContinuity(targetDir, assetsDir);
-    if (created.length > 0) {
-      for (const file of created) {
-        console.log(`    ✓ Created: ${file}`);
-      }
+    for (const file of created) {
+      console.log(`    ✓ Created: ${file}`);
+    }
+    // Re-checked rather than inferred: a file refused under a linked
+    // directory is still missing (TODO.md, decided 2026-10-22).
+    const stillMissing = (await checkSessionContinuity(targetDir)).filter((r) => !r.passed).length;
+    if (stillMissing > 0) {
+      console.log(
+        `\n  ${created.length} file(s) created; ${stillMissing} still missing (named above). Repo is not close-session-ready yet.\n`,
+      );
+    } else if (created.length > 0) {
       console.log(`\n  ${created.length} file(s) created. Repo is now close-session-ready.\n`);
     } else {
       console.log("    No files needed creation (all present).\n");

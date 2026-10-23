@@ -138,7 +138,8 @@ export async function runUnblockPush(targetDir: string): Promise<void> {
   if (hookStillOn) {
     printWarning(
       "The pre-push hook is still in force. Arcane did not remove it because `core.hooksPath` is " +
-        "not one it owns, or could not be read. Check `git config --show-scope --get core.hooksPath`.",
+        "not one it owns, could not be read, or names a directory that a link takes outside this " +
+        "repository. Check `git config --show-scope --get core.hooksPath`.",
     );
   }
   if (failed.length > 0) {

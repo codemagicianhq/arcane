@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import {
   readManifest,
   writeManifest,
@@ -25,9 +26,20 @@ function directoryConflict(plan: InstallPlan): PlannedFile | undefined {
   return plan.conflicts.find((f) => f.state === "directory");
 }
 
-function printDryRun(name: string, plan: InstallPlan, options: SpellAddOptions): void {
+/** A file under a link that leaves the repository (TODO.md, decided 2026-10-22). */
+function linkedConflict(plan: InstallPlan): PlannedFile | undefined {
+  return plan.conflicts.find((f) => f.state === "linked");
+}
+
+function describeLink(f: PlannedFile, targetDir: string): string {
+  return `under "${f.escape?.link}", a link to "${f.escape?.resolvesTo}" outside "${resolve(targetDir)}"`;
+}
+
+function printDryRun(name: string, plan: InstallPlan, options: SpellAddOptions, targetDir: string): void {
   for (const f of plan.files) {
-    if (f.state === "missing") {
+    if (f.state === "linked") {
+      console.log(`  [dry-run] Would refuse: ${f.file} (${describeLink(f, targetDir)})`);
+    } else if (f.state === "missing") {
       console.log(`  [dry-run] Would copy: ${f.file}`);
     } else if (f.state === "directory" && !(plan.component.skipExisting && !options.force)) {
       console.log(`  [dry-run] Would refuse: ${f.file} (exists, is a directory) — remove it first`);
@@ -40,6 +52,11 @@ function printDryRun(name: string, plan: InstallPlan, options: SpellAddOptions):
     } else {
       console.log(`  [dry-run] Would refuse: ${f.file} (exists, ${describeExisting(f)}) — needs --force`);
     }
+  }
+  const linked = linkedConflict(plan);
+  if (linked) {
+    console.log(`\n[dry-run] Would refuse component "${name}": "${linked.file}" is ${describeLink(linked, targetDir)}. Replace the link with a directory first.`);
+    return;
   }
   const dir = directoryConflict(plan);
   if (dir) {
@@ -85,10 +102,17 @@ async function addOne(
   const plan = await planComponentInstall(component, targetDir, assetsDir, { force: options.force });
 
   if (options.dryRun) {
-    printDryRun(name, plan, options);
+    printDryRun(name, plan, options, targetDir);
     return plan.conflicts.length > 0 ? "failed" : "added";
   }
 
+  const linked = linkedConflict(plan);
+  if (linked) {
+    console.error(
+      `Cannot add "${name}": "${linked.file}" is ${describeLink(linked, targetDir)}. Nothing was written. Replace the link with a directory, then run spell add again.`,
+    );
+    return "failed";
+  }
   const dir = directoryConflict(plan);
   if (dir) {
     console.error(

@@ -310,6 +310,32 @@ describe("spell init — handler", () => {
     ).resolves.not.toThrow();
   });
 
+  // TODO.md, decided 2026-10-22: a directory that a link takes outside the
+  // repository refuses the whole install before any file is written, here or
+  // where the link points. A junction, so this runs on Windows too.
+  it.each([{ dryRun: false }, { dryRun: true }])(
+    "refuses, writing no file, when a managed directory is a link out of the repository (dry run: $dryRun)",
+    async ({ dryRun }) => {
+      const outside = await fs.mkdtemp(join(tmpdir(), "init-linked-outside-"));
+      try {
+        await fs.symlink(outside, join(tmpDir, ".arcane"), "junction");
+        const exit = vi.spyOn(process, "exit").mockImplementation((() => {}) as never);
+        const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+        await runInit({ profile: "governance-only", dryRun }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+
+        const output = error.mock.calls.map((c) => String(c[0])).join("\n");
+        expect(output).toContain('".arcane" is a link to');
+        expect(output).toContain("Init refused: nothing was installed.");
+        expect(exit).toHaveBeenCalledWith(1);
+        expect(await fs.readdir(outside)).toEqual([]);
+        expect(await fs.readdir(tmpDir)).toEqual([".arcane"]);
+      } finally {
+        await removeFixtureDir(outside);
+      }
+    },
+  );
+
   // ─── --user: the per-user tier (ARC-045 decision 3 / CS-04) ────────────────
   // tmpDir stands in for the home directory; the store is its `.arcane`
   // child, exactly as userTierRoot() derives it. The command receives the

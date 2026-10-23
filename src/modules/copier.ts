@@ -1,3 +1,4 @@
+import { lstatSync } from "node:fs";
 import {
   mkdir,
   access,
@@ -12,6 +13,7 @@ import {
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { recordRegularFileInIndex } from "./git.js";
+import { resolveRealPath } from "./real-path.js";
 
 /**
  * CRLF and lone CR -> LF, at the byte level (no decoding, so any content is
@@ -87,6 +89,151 @@ export function validateTargetPath(
   }
 }
 
+/** A directory link that takes a managed path outside its target directory. */
+export interface LinkedEscape {
+  /** The link, relative to the target directory, with forward slashes. */
+  link: string;
+  /** Where the link resolves, every link followed. */
+  resolvesTo: string;
+}
+
+/**
+ * Raised for a managed path whose directory a symlink or junction takes
+ * outside the target directory. `validateTargetPath` compares lexical paths
+ * and #357 replaces a link only at the leaf, so a linked parent (a cloned
+ * repository can carry one) took every write and delete below it to wherever
+ * it pointed. Decided 2026-10-22 (TODO.md, "a managed path under a symlinked
+ * parent directory"): a repository refuses such a path outright -- neither
+ * its contents nor git can tell a deliberate link from a planted one -- and
+ * the user tier keeps following links (`followDirectoryLinks`).
+ */
+export class LinkedDirectoryError extends Error {
+  constructor(
+    readonly relativePath: string,
+    readonly escape: LinkedEscape,
+    targetDir: string,
+  ) {
+    super(
+      `Linked directory: "${relativePath}" ${escape.link === relativePath ? "is" : `is under "${escape.link}",`} ` +
+        `a link to "${escape.resolvesTo}" outside target directory "${targetDir}". Arcane writes and ` +
+        "deletes managed files only inside the target directory: replace the link with a directory, " +
+        "then run the command again.",
+    );
+    this.name = "LinkedDirectoryError";
+  }
+}
+
+function isWithin(base: string, candidate: string): boolean {
+  return candidate === base || candidate.startsWith(base.endsWith(path.sep) ? base : base + path.sep);
+}
+
+/**
+ * The link that takes `relativeDir`, a directory under targetDir, outside
+ * targetDir once every link is followed, or null when it stays inside. Both
+ * sides are real paths, so a target directory reached through a link of its
+ * own is not an escape, and a link that stays inside the target is followed.
+ * A directory not created yet is judged by its nearest existing ancestor:
+ * exactly where `mkdir -p` would create it. A lexically escaping path is
+ * `validateTargetPath`'s to refuse, not this function's.
+ */
+export function findLinkedEscape(targetDir: string, relativeDir: string): LinkedEscape | null {
+  const base = path.resolve(targetDir);
+  const dir = path.resolve(base, relativeDir);
+  if (!isWithin(base, dir) || dir === base) return null;
+  const realBase = resolveRealPath(base);
+  const realDir = resolveRealPath(dir);
+  if (isWithin(realBase, realDir)) return null;
+  // Name the link: the first component, walking down, that resolves outside.
+  const parts = path.relative(base, dir).split(path.sep);
+  let current = base;
+  for (let i = 0; i < parts.length; i++) {
+    current = path.join(current, parts[i]);
+    let isLink: boolean;
+    try {
+      isLink = lstatSync(current).isSymbolicLink();
+    } catch {
+      break;
+    }
+    if (!isLink) continue;
+    const resolvesTo = resolveRealPath(current);
+    if (!isWithin(realBase, resolvesTo)) return { link: parts.slice(0, i + 1).join("/"), resolvesTo };
+  }
+  return { link: parts.join("/"), resolvesTo: realDir };
+}
+
+/**
+ * `validateTargetPath`, then the same boundary by real path for the
+ * directory that holds relativePath: throws LinkedDirectoryError when a link
+ * takes it outside targetDir. A link at relativePath itself is not followed
+ * here; #357's replacement handles the leaf.
+ */
+export function validateRealTargetPath(targetDir: string, relativePath: string): void {
+  validateTargetPath(targetDir, relativePath);
+  const escape = findLinkedEscape(targetDir, path.dirname(relativePath));
+  if (escape !== null) throw new LinkedDirectoryError(relativePath, escape, targetDir);
+}
+
+/**
+ * `validateRealTargetPath` for a directory a writer is about to create and
+ * fill (`mkdir -p` follows every link in the path): relativeDir itself must
+ * resolve inside targetDir.
+ */
+export function validateRealTargetDirectory(targetDir: string, relativeDir: string): void {
+  validateTargetPath(targetDir, relativeDir);
+  const escape = findLinkedEscape(targetDir, relativeDir);
+  if (escape !== null) throw new LinkedDirectoryError(relativeDir, escape, targetDir);
+}
+
+/**
+ * Each link that takes one of `files` (paths relative to targetDir) outside
+ * it, once, with how many of the files are under it -- for a command that
+ * checks every path it may write before writing any.
+ */
+export function findLinkedEscapes(
+  targetDir: string,
+  files: readonly string[],
+): Array<LinkedEscape & { count: number }> {
+  const byDirectory = new Map<string, LinkedEscape | null>();
+  const byLink = new Map<string, LinkedEscape & { count: number }>();
+  for (const file of files) {
+    const dir = path.dirname(file);
+    if (!byDirectory.has(dir)) byDirectory.set(dir, findLinkedEscape(targetDir, dir));
+    const escape = byDirectory.get(dir);
+    if (escape == null) continue;
+    const seen = byLink.get(escape.link);
+    if (seen === undefined) byLink.set(escape.link, { ...escape, count: 1 });
+    else seen.count++;
+  }
+  return [...byLink.values()];
+}
+
+/**
+ * One line per link `findLinkedEscapes` found, for a refusal that writes
+ * nothing. The boundary named is the target directory, not the git
+ * repository: in a monorepo sub-package, a link to another part of the same
+ * repository is refused too (decided 2026-10-22).
+ */
+export function describeLinkedEscapes(
+  targetDir: string,
+  escapes: ReadonlyArray<LinkedEscape & { count: number }>,
+): string[] {
+  return escapes.map(
+    (e) =>
+      `  ✗ "${e.link}" is a link to "${e.resolvesTo}", outside "${path.resolve(targetDir)}": ` +
+      `${e.count} managed path${e.count === 1 ? "" : "s"} under it.`,
+  );
+}
+
+/** The lexical check alone when the caller follows links (the user tier), both checks otherwise. */
+function validateManagedPath(
+  targetDir: string,
+  relativePath: string,
+  opts: Pick<CopyOptions, "followDirectoryLinks">,
+): void {
+  if (opts.followDirectoryLinks) validateTargetPath(targetDir, relativePath);
+  else validateRealTargetPath(targetDir, relativePath);
+}
+
 /**
  * Creates a directory and all parent directories if they don't exist.
  */
@@ -126,6 +273,13 @@ export interface CopyOptions {
   linkTracked?: ReadonlySet<string>;
   /** Receives every destination that was a symlink, by either shape, and is a regular file now. */
   conversions?: SymlinkConversion[];
+  /**
+   * Follow a directory link that leaves the target instead of refusing the
+   * path (LinkedDirectoryError). Only the user tier sets it: a link in a home
+   * directory is the operator's own, often a dotfile manager's, and no clone
+   * can plant one there (decided 2026-10-22).
+   */
+  followDirectoryLinks?: boolean;
 }
 
 /**
@@ -212,7 +366,9 @@ export async function managedPathLinkShape(
  * Writes `content` at targetDir/relativePath as a regular file, replacing a
  * symlinked destination first (see replaceSymlinkedDestination) and recording
  * the conversion in `opts.conversions`. Every managed-content write goes
- * through here or through `copyFile`, which calls it.
+ * through here or through `copyFile`, which calls it. A destination whose
+ * directory a link takes outside targetDir is refused before anything is
+ * created (LinkedDirectoryError), unless `opts.followDirectoryLinks`.
  */
 export async function writeManagedFile(
   targetDir: string,
@@ -220,7 +376,7 @@ export async function writeManagedFile(
   content: Buffer | string,
   opts: CopyOptions = {},
 ): Promise<void> {
-  validateTargetPath(targetDir, relativePath);
+  validateManagedPath(targetDir, relativePath, opts);
   const destPath = path.resolve(targetDir, relativePath);
   await ensureDir(path.dirname(destPath));
   const shape = await replaceSymlinkedDestination(destPath, relativePath, opts);
@@ -239,7 +395,8 @@ export async function writeManagedFile(
  * file twice measurably slowed a full `spell init` (~90 files) once every
  * file started being hashed, enough to push some CI/test runs over their
  * timeout under contention. One read, one write; no redundant I/O.
- * A symlinked destination becomes a regular file (#357; see writeManagedFile).
+ * A symlinked destination becomes a regular file (#357; see writeManagedFile),
+ * and a linked parent directory is refused before the directory is created.
  */
 export async function copyFile(
   srcPath: string,
@@ -247,7 +404,7 @@ export async function copyFile(
   relativePath: string,
   opts: CopyOptions = {},
 ): Promise<string> {
-  validateTargetPath(targetDir, relativePath);
+  validateManagedPath(targetDir, relativePath, opts);
 
   const destPath = path.resolve(targetDir, relativePath);
   await ensureDir(path.dirname(destPath));
@@ -271,10 +428,16 @@ export async function copyFile(
  * content, so a manifest edited -- or generated by a hostile tool -- to track
  * `../../something` must never reach `rm` (TODO.md, "two delete paths apply
  * manifest-controlled paths without the traversal guard"). Missing files are
- * fine (`force`); nothing is ever removed recursively here.
+ * fine (`force`); nothing is ever removed recursively here. A path whose
+ * directory a link takes outside targetDir is refused the same way a write
+ * is, so a prune never deletes where the link points.
  */
-export async function removeWithin(targetDir: string, relativePath: string): Promise<void> {
-  validateTargetPath(targetDir, relativePath);
+export async function removeWithin(
+  targetDir: string,
+  relativePath: string,
+  opts: Pick<CopyOptions, "followDirectoryLinks"> = {},
+): Promise<void> {
+  validateManagedPath(targetDir, relativePath, opts);
   await rm(path.resolve(targetDir, relativePath), { force: true });
 }
 
@@ -291,8 +454,12 @@ export async function removeWithin(targetDir: string, relativePath: string): Pro
  * client folders above them, which git does not track and nothing else
  * cleans up.
  */
-export async function removeEmptyAncestors(targetDir: string, relativePath: string): Promise<void> {
-  validateTargetPath(targetDir, relativePath);
+export async function removeEmptyAncestors(
+  targetDir: string,
+  relativePath: string,
+  opts: Pick<CopyOptions, "followDirectoryLinks"> = {},
+): Promise<void> {
+  validateManagedPath(targetDir, relativePath, opts);
   const base = path.resolve(targetDir);
   let dir = path.dirname(path.resolve(targetDir, relativePath));
   while (dir !== base && dir.startsWith(base + path.sep)) {

@@ -28,7 +28,7 @@
 import { mkdir, readFile, writeFile, chmod, access, rm, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join, resolve, dirname, basename } from "node:path";
-import { fileExists } from "./copier.js";
+import { fileExists, findLinkedEscape, validateRealTargetDirectory } from "./copier.js";
 import { runGit } from "./git.js";
 import { resolveRealPath } from "./real-path.js";
 
@@ -340,6 +340,10 @@ export async function installHook(cwd: string, hookName: string, body: string): 
     return { status: "already-ours" };
   }
 
+  // Checked before the mkdir, which would create the hooks directory wherever
+  // a linked .arcane points and aim core.hooksPath there (TODO.md, decided
+  // 2026-10-22).
+  validateRealTargetDirectory(root, ARCANE_HOOKS_DIR);
   await mkdir(join(root, ARCANE_HOOKS_DIR), { recursive: true });
   await writeFile(hookPath, body, "utf-8");
   // Git requires the hook be executable on POSIX. chmod is a no-op for the
@@ -487,6 +491,11 @@ export async function removeHook(cwd: string, hookName: string): Promise<void> {
   const root = await repositoryRoot(cwd);
   if (!isArcaneHooksPath(root, existing.value)) return;
   if (existing.scope !== "local" && existing.scope !== "worktree") return;
+  // A hooks directory that a link takes outside the repository is not
+  // Arcane's to delete from: declined like a foreign core.hooksPath, so the
+  // hook stays in force and `spell unblock-push` reports it (TODO.md,
+  // decided 2026-10-22).
+  if (findLinkedEscape(root, ARCANE_HOOKS_DIR) !== null) return;
 
   // Remove the hook file first. Leaving it behind means a later `spell init`
   // that re-points core.hooksPath silently re-arms a block the operator

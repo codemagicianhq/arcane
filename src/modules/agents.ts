@@ -34,6 +34,7 @@ import {
   AgentRosterNotFoundError,
 } from "./agent-loader.js";
 import { syncAgents } from "./agent-generator.js";
+import { validateRealTargetDirectory, validateRealTargetPath } from "./copier.js";
 import { printStep, printSuccess } from "./banner.js";
 import { readManifest, writeManifest } from "./manifest.js";
 import {
@@ -339,6 +340,15 @@ export async function runAgentsInit(
   // ── Step 5: Write .arcane/agents.yaml ────────────────────────────────────
   const arcaneDir = join(baseDir, "agents");
   if (!options.dryRun) {
+    // A repository's roster is never written through a linked .arcane; the
+    // user tier's store follows its links (TODO.md, decided 2026-10-22).
+    // agents.yaml sits one level above agents/, so each is checked: with
+    // .arcane linked to the parent of a repository named "agents", agents/
+    // resolves back inside while agents.yaml does not.
+    if (scope === "repo") {
+      validateRealTargetDirectory(targetDir, ".arcane/agents");
+      validateRealTargetPath(targetDir, ".arcane/agents.yaml");
+    }
     await mkdir(arcaneDir, { recursive: true });
     await writeFile(join(baseDir, "agents.yaml"), stringify(roster), "utf8");
   } else {

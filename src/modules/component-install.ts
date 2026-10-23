@@ -1,9 +1,11 @@
 import { readFile, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import {
   type CopyOptions,
+  type LinkedEscape,
   copyFile,
   fileExists,
+  findLinkedEscape,
   hashFile,
   listDirectoryFiles,
   removeEmptyAncestors,
@@ -11,7 +13,12 @@ import {
 } from "./copier.js";
 import type { RegistryComponent } from "../types.js";
 
-export type DestinationState = "missing" | "identical" | "differs" | "directory";
+/**
+ * `linked`: a symlink or junction takes the file's directory outside the
+ * repository, so the file is never written there, `--force` or not
+ * (TODO.md, decided 2026-10-22).
+ */
+export type DestinationState = "missing" | "identical" | "differs" | "directory" | "linked";
 
 export interface PlannedFile {
   /** Installed path, relative to the repository root. */
@@ -19,6 +26,8 @@ export interface PlannedFile {
   /** Absolute path of the packaged file it is copied from. */
   src: string;
   state: DestinationState;
+  /** The link, for a `linked` file. */
+  escape?: LinkedEscape;
 }
 
 /**
@@ -34,7 +43,10 @@ export interface InstallPlan {
   toCopy: PlannedFile[];
   /** Present and user-owned (`skipExisting`): left alone, and not recorded. */
   kept: PlannedFile[];
-  /** Present and not user-owned: refuse unless the caller forces. A directory is always refused. */
+  /**
+   * Present and not user-owned: refuse unless the caller forces. A directory,
+   * or a file under a link that leaves the repository, is always refused.
+   */
   conflicts: PlannedFile[];
 }
 
@@ -46,6 +58,8 @@ export async function planComponentInstall(
 ): Promise<InstallPlan> {
   const files: PlannedFile[] = [];
   const stateOf = async (file: string, src: string): Promise<PlannedFile> => {
+    const escape = findLinkedEscape(targetDir, dirname(file));
+    if (escape !== null) return { file, src, state: "linked", escape };
     const dest = join(targetDir, file);
     if (!(await fileExists(dest))) return { file, src, state: "missing" };
     if ((await stat(dest)).isDirectory()) return { file, src, state: "directory" };
@@ -64,13 +78,14 @@ export async function planComponentInstall(
 
   const of = (...states: DestinationState[]) => files.filter((f) => states.includes(f.state));
   // --force overwrites a file's content; it never deletes a tree, so a directory stays a conflict.
+  // Nothing is written under a link that leaves the repository, user-owned or forced.
   if (opts.force) {
-    return { component, files, toCopy: of("missing", "identical", "differs"), kept: [], conflicts: of("directory") };
+    return { component, files, toCopy: of("missing", "identical", "differs"), kept: [], conflicts: of("directory", "linked") };
   }
   if (component.skipExisting) {
-    return { component, files, toCopy: of("missing"), kept: of("identical", "differs", "directory"), conflicts: [] };
+    return { component, files, toCopy: of("missing"), kept: of("identical", "differs", "directory"), conflicts: of("linked") };
   }
-  return { component, files, toCopy: of("missing", "identical"), kept: [], conflicts: of("differs", "directory") };
+  return { component, files, toCopy: of("missing", "identical"), kept: [], conflicts: of("differs", "directory", "linked") };
 }
 
 export interface InstalledFiles {
