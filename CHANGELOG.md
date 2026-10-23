@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.12.4] - 2026-10-23
+
+A security fix: a directory link inside a repository no longer takes Arcane's writes and deletes outside it.
+
+### Fixed
+
+- **Managed files are written and deleted only inside the repository, whatever its directories link to.** When a directory such as `.claude`, `.github` or `.arcane` was itself a symlink or a Windows junction (a cloned repository can carry a symlink), `spell init`, `spell update` and `spell add` wrote managed files wherever it pointed, `spell update --prune` deleted there, and `spell uninstall` removed `.arcane/agents` and `.github/agents` recursively there: path checks compared paths as spelled, and the #357 handling looked only at the last component. Each path's directory is now resolved by real path, every link followed, before anything is created. `spell update` and `spell init` check every path they will write before writing any and refuse the whole run, naming each link and how many managed paths sit under it; a dry run refuses too, `spell update` refuses before it asks about newly available components, and an up-to-date `spell update`, which writes nothing, is not refused. `spell add` refuses the component ("Nothing was written"), `--force` included. `--prune` reports such an orphan instead of deleting it. `spell uninstall` and `spell doctor --fix` skip such a path and name it; `spell agents init`, `spell agents sync` and the git hook installers refuse it; removing a hook through such a link is declined, and `spell unblock-push` reports the hook as still in force. A link that stays inside is still followed, and a repository reached through a link of its own is unaffected. The boundary is the directory Arcane is installed in, so in a monorepo sub-package a link to another part of the same repository is refused too; each message names that directory. **A run that used to succeed can now be refused:** a deliberate link that leaves the repository has to become a real directory, and a repository that wants machine-wide spells sets `spell_scope: "user"` instead.
+- **A roster name can no longer write an agent file outside the repository.** `spell agents sync` uses each name in `.arcane/agents.yaml` as a file name under `.github/agents/`, so a name such as `../../../x` wrote a file beside the repository; the same check refuses it.
+
+### Notes
+
+- **The user tier is unchanged.** `spell init --user`, `spell update --user`, `spell uninstall --user` and `spell agents init|sync --user` still write through a linked `~/.arcane`, `~/.claude` or `~/.agents`: only the operator can make a link in a home directory, and dotfile managers commonly do.
+
 ## [1.12.3] - 2026-10-22
 
 Two lessons from consumer work move into the spells, issue wave 2026-10-20 B ([#375](https://github.com/codemagicianhq/arcane/issues/375), [#376](https://github.com/codemagicianhq/arcane/issues/376)). Text-only: no CLI behavior changes.
