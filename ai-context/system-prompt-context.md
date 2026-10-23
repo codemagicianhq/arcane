@@ -68,3 +68,5 @@
   3. Resolve conflicts on this repository's pull requests by rebase, per `git-conventions.md`, not by the merge an Auto-fix event asks for (operator, 2026-10-21).
   4. The operator's global CLI read 1.12.2 while npm served 1.12.3. Observed 2026-10-22 — re-verify with `spell --version` and `npm view arcane-cli version`; `spell update --user` follows an upgrade.
   5. From a linked worktree in the Claude desktop app, write a pull-request body to the session scratchpad, not to `<git-dir>`, which the app refuses: `TODO.md` ("the pull-request body file has no fallback location when `<git-dir>` cannot be written").
+
+> ✓ Consumed: 2026-10-22
