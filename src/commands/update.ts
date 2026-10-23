@@ -4,9 +4,13 @@ import {
   type SymlinkConversion,
   copyFile,
   copyDirectory,
+  describeLinkedEscapes,
   fileExists,
   fileMatchesHash,
+  findLinkedEscape,
+  findLinkedEscapes,
   hashFile,
+  listDirectoryFiles,
   managedPathLinkShape,
   removeEmptyAncestors,
   removeWithin,
@@ -301,6 +305,39 @@ export function moveComponentFiles(
   return out;
 }
 
+/**
+ * Every path a repository update may write for the installed components: the
+ * registry's current files and directory contents of each, resolved as the
+ * main loop resolves them. A component the registry no longer has writes
+ * nothing; its files go to the orphan sweep, which refuses a linked one
+ * itself (resolveOrphan).
+ */
+async function plannedUpdateWrites(
+  installed: InstalledComponent[],
+  scope: InstallScope,
+  spellScope: InstallScope,
+  assetsDir: string,
+): Promise<string[]> {
+  const files: string[] = [];
+  for (const entry of migrateLegacyComponents(installed).components) {
+    let component;
+    try {
+      component = componentForSpellScope(
+        componentForScope(getComponent(entry.name), scope),
+        scope === "repo" ? spellScope : "repo",
+      );
+    } catch (err) {
+      if (err instanceof ComponentNotFoundError) continue;
+      throw err;
+    }
+    files.push(...component.files);
+    for (const dir of component.directories ?? []) {
+      files.push(...(await listDirectoryFiles(join(assetsDir, dir), dir)));
+    }
+  }
+  return files;
+}
+
 export type OrphanStatus = "pruned" | "reported" | "not-found";
 
 /**
@@ -313,13 +350,16 @@ export type OrphanStatus = "pruned" | "reported" | "not-found";
  * overwriting one). A file with no recorded hash (predates ARC-038, or was
  * never hashed) is pruned only when git vouches for it -- tracked, clean, and
  * added by its only commit (#358) -- and is otherwise reported with the manual
- * route, so a legacy install can still be cleaned up.
+ * route, so a legacy install can still be cleaned up. A file whose directory a
+ * link takes outside the target is reported, not deleted (TODO.md, decided
+ * 2026-10-22), unless `followDirectoryLinks` (the user tier).
  */
 export async function resolveOrphan(
   targetDir: string,
   file: string,
   recordedHash: string | undefined,
   prune: boolean,
+  followDirectoryLinks = false,
 ): Promise<OrphanStatus> {
   // A manifest path is repository content: one that resolves outside the
   // target directory is never read, hashed or deleted -- the same guard every
@@ -328,6 +368,13 @@ export async function resolveOrphan(
     validateTargetPath(targetDir, file);
   } catch {
     console.log(`  ! Refused (path escapes the target directory): ${file}`);
+    return "reported";
+  }
+  const escape = followDirectoryLinks ? null : findLinkedEscape(targetDir, dirname(file));
+  if (escape !== null) {
+    console.log(
+      `  ! Refused (under "${escape.link}", a link to "${escape.resolvesTo}" outside the target directory): ${file}`,
+    );
     return "reported";
   }
   const filePath = join(targetDir, file);
@@ -345,8 +392,8 @@ export async function resolveOrphan(
       );
       return "reported";
     }
-    await removeWithin(targetDir, file);
-    await removeEmptyAncestors(targetDir, file);
+    await removeWithin(targetDir, file, { followDirectoryLinks });
+    await removeEmptyAncestors(targetDir, file, { followDirectoryLinks });
     console.log(`  Pruned orphaned file (no recorded hash; git shows it ${evidence.detail}): ${file}`);
     return "pruned";
   }
@@ -354,11 +401,11 @@ export async function resolveOrphan(
     console.log(`  ! Orphaned but edited since install — not pruning: ${file}`);
     return "reported";
   }
-  await removeWithin(targetDir, file);
+  await removeWithin(targetDir, file, { followDirectoryLinks });
   // A component's files often sit in a directory of their own
   // (.agents/skills/<id>/SKILL.md); leaving 41 empty directories behind is
   // not "pruned".
-  await removeEmptyAncestors(targetDir, file);
+  await removeEmptyAncestors(targetDir, file, { followDirectoryLinks });
   console.log(`  Pruned orphaned file: ${file}`);
   return "pruned";
 }
@@ -669,6 +716,33 @@ export async function runUpdate(
   const linkTracked: ReadonlySet<string> =
     scope === "repo" ? await listSymlinkTrackedPaths(targetDir) : new Set<string>();
   const conversions: SymlinkConversion[] = [];
+  // A directory link that leaves the target refuses the path in a repository
+  // and is followed in the user tier's store, whose links only the operator
+  // can make (TODO.md, decided 2026-10-22).
+  const followDirectoryLinks = scope === "user";
+
+  // TODO.md, decided 2026-10-22: every path this run may write is checked by
+  // real path before any is written. A directory that a symlink or junction
+  // takes outside the target directory refuses the whole run, each link named
+  // once, and a dry run refuses too; the per-write check in copier.ts is the
+  // backstop. A version change is refused here, before anything is asked; a
+  // same-version restore just before it is announced; an up-to-date run,
+  // which writes nothing, is not refused.
+  const linkedEscapes =
+    followDirectoryLinks || manifest.components.length === 0
+      ? []
+      : findLinkedEscapes(targetDir, await plannedUpdateWrites(manifest.components, scope, spellScope, assetsDir));
+  const refusedForLinks = (): boolean => {
+    if (linkedEscapes.length === 0) return false;
+    for (const line of describeLinkedEscapes(targetDir, linkedEscapes)) console.error(line);
+    console.error(
+      "  ✗ Update refused: nothing was written. Arcane writes and deletes managed files only inside its " +
+        "target directory: replace each link named above with a directory, then run `spell update` again.",
+    );
+    process.exit(1);
+    return true;
+  };
+  if (manifest.version !== packageVersion && refusedForLinks()) return;
 
   // PRD D-15, computed before anything is written. Retirements read the
   // manifest as it was, before migration renames a legacy entry away. The
@@ -775,6 +849,7 @@ export async function runUpdate(
       }
       return;
     }
+    if (refusedForLinks()) return;
     sameVersionRestore = true;
     const prefix = options.dryRun ? "[dry-run] " : "";
     if (missing.length > 0) {
@@ -879,6 +954,7 @@ export async function runUpdate(
             file,
             recordedHash,
             Boolean(options.prune) && !options.dryRun,
+            followDirectoryLinks,
           );
           orphanReport.push({ file, status });
           if (status === "reported") stillTracked.push(file);
@@ -1038,7 +1114,7 @@ export async function runUpdate(
               readFile(srcPath, "utf-8"),
             ]);
             const result = merge3(oldVendorContent, currentContent, newContent);
-            await writeManagedFile(targetDir, file, result.content, { linkTracked, conversions });
+            await writeManagedFile(targetDir, file, result.content, { linkTracked, conversions, followDirectoryLinks });
             // Record the VENDOR content's hash, not the merged file's. The
             // recorded hash means "what a clean install of this version
             // wrote"; recording the merged content made the next update read
@@ -1057,7 +1133,12 @@ export async function runUpdate(
         }
 
         if (!handled) {
-          fileHashes[file] = await copyFile(srcPath, targetDir, file, { force: true, linkTracked, conversions });
+          fileHashes[file] = await copyFile(srcPath, targetDir, file, {
+            force: true,
+            linkTracked,
+            conversions,
+            followDirectoryLinks,
+          });
           // copyFile records the two link shapes it replaces; a link written
           // out as text is an ordinary file to it, so it is recorded here.
           if (linkShape === "path-body") conversions.push({ file, shape: "path-body" });
@@ -1085,7 +1166,12 @@ export async function runUpdate(
         // Directory-tracked files are always freshly generated content
         // (agent rosters, etc.), never hand-edited in place -- unconditional
         // overwrite, same as before ARC-038, is still correct here.
-        const copied = await copyDirectory(srcDirPath, targetDir, dir, { force: true, linkTracked, conversions });
+        const copied = await copyDirectory(srcDirPath, targetDir, dir, {
+          force: true,
+          linkTracked,
+          conversions,
+          followDirectoryLinks,
+        });
         for (const { path: copiedPath, hash } of copied) {
           updatedFiles.push(copiedPath);
           fileHashes[copiedPath] = hash;
@@ -1133,6 +1219,7 @@ export async function runUpdate(
       file,
       recordedHash,
       Boolean(options.prune) && !options.dryRun,
+      followDirectoryLinks,
     );
     orphanReport.push({ file, status });
     if (status !== "reported") continue;

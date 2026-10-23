@@ -1,7 +1,14 @@
 import { select, confirm, input } from "@inquirer/prompts";
 import { dirname, join } from "node:path";
 import chalk from "chalk";
-import { copyFile, copyDirectory, fileExists } from "../modules/copier.js";
+import {
+  copyFile,
+  copyDirectory,
+  describeLinkedEscapes,
+  fileExists,
+  findLinkedEscapes,
+  listDirectoryFiles,
+} from "../modules/copier.js";
 import {
   readManifest,
   writeManifest,
@@ -336,6 +343,32 @@ export async function runInit(
   const components = profileComponents.map((component) =>
     componentForSpellScope(component, spell_scope ?? "repo"),
   );
+
+  // ── Step 2c: Linked directories (TODO.md, decided 2026-10-22) ──────────
+  // Every file this profile installs, checked by real path before any is
+  // written: a directory that a symlink or junction takes outside the target
+  // directory refuses the whole install, each link named once, dry run
+  // included. The per-write check in copier.ts is the backstop. The git-state
+  // step above may already have set pull.rebase or repointed an unborn
+  // branch, so the refusal says nothing was installed, not that nothing was
+  // written.
+  const plannedFiles: string[] = [];
+  for (const component of components) {
+    plannedFiles.push(...component.files);
+    for (const dir of component.directories ?? []) {
+      plannedFiles.push(...(await listDirectoryFiles(join(assetsDir, dir), dir)));
+    }
+  }
+  const escapes = findLinkedEscapes(targetDir, plannedFiles);
+  if (escapes.length > 0) {
+    for (const line of describeLinkedEscapes(targetDir, escapes)) console.error(line);
+    console.error(
+      "  ✗ Init refused: nothing was installed. Arcane writes managed files only inside its target " +
+        "directory: replace each link named above with a directory, then run `spell init` again.",
+    );
+    process.exit(1);
+    return;
+  }
 
   // ── Step 3: Preview what will be installed ─────────────────────────────
   const groups = categorizeComponents(components);
@@ -834,7 +867,9 @@ async function runInitUser(
     const fileHashes: Record<string, string> = {};
     for (const file of component.files) {
       const srcPath = join(assetsDir, component.sourceOverrides?.[file] ?? file);
-      fileHashes[file] = await copyFile(srcPath, storeRoot, file, { force: options.force });
+      // The store follows its directory links: only the operator can make
+      // one in a home directory (TODO.md, decided 2026-10-22).
+      fileHashes[file] = await copyFile(srcPath, storeRoot, file, { force: options.force, followDirectoryLinks: true });
       installedFiles.push(file);
       fileCount++;
     }

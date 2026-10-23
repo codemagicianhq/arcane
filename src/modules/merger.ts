@@ -1,6 +1,6 @@
 import { readFile, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { validateTargetPath } from "./copier.js";
+import { validateRealTargetPath } from "./copier.js";
 
 export const MARKER_START = "<!-- arcane:start -->";
 export const MARKER_END = "<!-- arcane:end -->";
@@ -22,6 +22,8 @@ export class MalformedMarkersError extends Error {
  * - If only one marker is present: throws MalformedMarkersError.
  * - If file doesn't exist and `force` is true: creates the file with markers.
  * - If file doesn't exist and `force` is false: no-op, returns false.
+ * - If a link takes the file's directory outside targetDir: throws
+ *   LinkedDirectoryError, dry run or not (TODO.md, decided 2026-10-22).
  *
  * @returns true if the file was modified (or would be on dry-run), false if untouched.
  */
@@ -31,7 +33,7 @@ export async function mergeIntoFile(
   content: string,
   opts: { force?: boolean; dryRun?: boolean } = {},
 ): Promise<boolean> {
-  validateTargetPath(targetDir, relativePath);
+  validateRealTargetPath(targetDir, relativePath);
 
   const destPath = path.resolve(targetDir, relativePath);
 
@@ -105,6 +107,8 @@ export async function mergeIntoFile(
  * - If the file has no markers, returns false (no-op).
  * - If the file is empty (or whitespace-only) after stripping, deletes the file.
  * - Otherwise rewrites the file without the marker block.
+ * - If the path escapes targetDir, lexically or through a directory link:
+ *   throws, before the file is read.
  *
  * @returns true if the file was modified or deleted, false if untouched.
  */
@@ -113,6 +117,7 @@ export async function stripMarkerSection(
   relativePath: string,
   opts: { dryRun?: boolean } = {},
 ): Promise<boolean> {
+  validateRealTargetPath(targetDir, relativePath);
   const destPath = path.resolve(targetDir, relativePath);
 
   let existing: string;

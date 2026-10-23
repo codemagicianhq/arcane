@@ -1,7 +1,7 @@
 import { rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { confirm } from "@inquirer/prompts";
-import { removeWithin } from "../modules/copier.js";
+import { LinkedDirectoryError, fileExists, removeWithin, validateRealTargetPath } from "../modules/copier.js";
 import {
   readManifest,
   ManifestNotFoundError,
@@ -141,15 +141,18 @@ export async function runUninstall(
   // guard every write path has: a manifest entry that resolves outside the
   // repository is named and skipped, never deleted.
   let removed = 0;
+  let leftBehindLinks = 0;
+  const skip = (path: string, err: unknown): void => {
+    if (err instanceof LinkedDirectoryError) leftBehindLinks++;
+    console.log(`  ! Skipped ${path}: ${skipReason(err, targetDir)}`);
+  };
   for (const component of manifest.components) {
     for (const file of component.files) {
       try {
         await removeWithin(targetDir, file);
         removed++;
       } catch (err) {
-        console.log(
-          `  ! Skipped ${file}: ${err instanceof Error ? err.message : String(err)}`,
-        );
+        skip(file, err);
       }
     }
   }
@@ -158,17 +161,26 @@ export async function runUninstall(
   await rm(join(targetDir, ".arcane.json"), { force: true });
 
   // ── Clean up agent sync outputs (not tracked in manifest) ──────────────
-  // Directories created by agent init/sync
-  const agentDirs = [
+  // Directories created by agent init/sync, and the roster file. The
+  // directories go recursively, so each is checked first: under a linked
+  // .arcane or .github, `rm -r` empties the directory the link points at
+  // (TODO.md, decided 2026-10-22). Skipped and named only when something is
+  // there to delete.
+  const agentOutputs = [
     ".github/agents",
     ".arcane/agents",
     ".arcane/generated",
+    ".arcane/agents.yaml",
   ];
-  for (const dir of agentDirs) {
-    await rm(join(targetDir, dir), { recursive: true, force: true });
+  for (const output of agentOutputs) {
+    try {
+      validateRealTargetPath(targetDir, output);
+    } catch (err) {
+      if (await fileExists(join(targetDir, output))) skip(output, err);
+      continue;
+    }
+    await rm(join(targetDir, output), { recursive: true, force: true });
   }
-  // Roster file
-  await rm(join(targetDir, ".arcane/agents.yaml"), { force: true });
 
   // Strip arcane marker sections from merged files (keeps user content intact)
   const markerFiles = [
@@ -177,7 +189,11 @@ export async function runUninstall(
     ".github/copilot-instructions.md",
   ];
   for (const file of markerFiles) {
-    await stripMarkerSection(targetDir, file, { dryRun: false });
+    try {
+      await stripMarkerSection(targetDir, file, { dryRun: false });
+    } catch (err) {
+      skip(file, err);
+    }
   }
 
   // Secrets pre-commit hook (ARC-037): installed unconditionally by `spell
@@ -196,6 +212,25 @@ export async function runUninstall(
   }
 
   console.log(`\n✓ Uninstalled — ${removed} files removed.`);
+  if (leftBehindLinks > 0) {
+    console.log(
+      `  ! Left ${leftBehindLinks} path(s) where a link outside "${resolve(targetDir)}" points (named above): ` +
+        "Arcane deletes nothing outside it.",
+    );
+  }
+}
+
+/**
+ * Why uninstall skipped a path. A path under a link that leaves the target
+ * directory is named without the refusal's advice to run the command again:
+ * uninstall still finishes, and what the link points at is never deleted
+ * (TODO.md, decided 2026-10-22).
+ */
+function skipReason(err: unknown, targetDir: string): string {
+  if (err instanceof LinkedDirectoryError) {
+    return `it is under "${err.escape.link}", a link to "${err.escape.resolvesTo}" outside "${resolve(targetDir)}"; nothing there is deleted.`;
+  }
+  return err instanceof Error ? err.message : String(err);
 }
 
 // ─── spell uninstall --user ───────────────────────────────────────────────────
@@ -256,7 +291,9 @@ async function uninstallUserTier(
   let removed = 0;
   for (const file of storeFiles) {
     try {
-      await removeWithin(storeRoot, file);
+      // The store follows its directory links: only the operator can make
+      // one in a home directory (TODO.md, decided 2026-10-22).
+      await removeWithin(storeRoot, file, { followDirectoryLinks: true });
       removed++;
     } catch (err) {
       console.log(`  ! Skipped ${file}: ${err instanceof Error ? err.message : String(err)}`);

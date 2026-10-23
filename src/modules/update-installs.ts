@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { checkbox } from "@inquirer/prompts";
 import { getComponent } from "./registry.js";
 import { componentForSpellScope } from "./user-tier.js";
@@ -87,7 +88,7 @@ export async function planUpdateInstalls(args: {
     if (component.files.length === 0) continue;
     const plan = await planComponentInstall(component, args.targetDir, args.assetsDir, {});
     if (plan.conflicts.length > 0) {
-      leftAlone.push({ name, kind: "prerequisite", reason: conflictReason(plan) });
+      leftAlone.push({ name, kind: "prerequisite", reason: conflictReason(plan, args.targetDir) });
       continue;
     }
     items.push({ plan, kind: "prerequisite", requiredBy });
@@ -98,7 +99,7 @@ export async function planUpdateInstalls(args: {
     if (component.initOnly || component.files.length === 0) continue;
     const plan = await planComponentInstall(component, args.targetDir, args.assetsDir, {});
     if (plan.conflicts.length > 0) {
-      leftAlone.push({ name: candidate.name, kind: "new", reason: conflictReason(plan) });
+      leftAlone.push({ name: candidate.name, kind: "new", reason: conflictReason(plan, args.targetDir) });
       continue;
     }
     items.push({ plan, kind: "new", requiredBy: [] });
@@ -107,7 +108,11 @@ export async function planUpdateInstalls(args: {
   return { items, leftAlone };
 }
 
-function conflictReason(plan: InstallPlan): string {
+function conflictReason(plan: InstallPlan, targetDir: string): string {
+  const linked = plan.conflicts.find((f) => f.state === "linked");
+  if (linked) {
+    return `${linked.file} is under "${linked.escape?.link}", a link to "${linked.escape?.resolvesTo}" outside "${resolve(targetDir)}", and update writes nothing there`;
+  }
   const first = plan.conflicts[0];
   if (first.state === "directory") return `${first.file} is a directory, which update does not replace`;
   const more = plan.conflicts.length > 1 ? ` (and ${plan.conflicts.length - 1} more)` : "";
