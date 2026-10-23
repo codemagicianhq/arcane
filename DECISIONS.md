@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-10-12
+last_updated: 2026-10-23
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -87,6 +87,8 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-053](#arc-053--branch-naming-one-rule-per-actor-written-once) | Branch Naming: One Rule per Actor, Written Once | 2026-10-06 | Accepted |
 | [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) | Sign-In from the CLI: Standard OpenID Client, Keychain-First Storage, Split Session Token | 2026-10-05 | Accepted |
 | [ARC-055](#arc-055--sign-in-result-pages-vendored-gate-pages-inlined-art-and-fonts-hash-only-policy) | Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy | 2026-10-12 | Accepted |
+| [ARC-056](#arc-056--the-macos-fixture-job-is-a-required-check) | The macOS Fixture Job Is a Required Check | 2026-10-12 | Accepted |
+| [ARC-057](#arc-057--managed-paths-stay-inside-the-target-directory-by-real-path) | Managed Paths Stay Inside the Target Directory by Real Path | 2026-10-22 | Accepted |
 
 ---
 
@@ -3539,5 +3541,40 @@ The two lists differ in kind. A newly available component is a preference: nothi
 - **Keep the job advisory:** a red check that can be merged over guards nothing at the moment it matters.
 - **A monitor that reacts to failures (the desktop app's Auto-fix):** it acts after a failure lands on a pull request; the operator asked for prevention at the root rather than repair after the fact.
 - **The full suite on macOS instead:** broader, but it lengthens every pull request, and its macOS-only flakiness is unmeasured; the six files cover the failure that was seen.
+
+---
+
+## ARC-057 — Managed Paths Stay Inside the Target Directory by Real Path
+
+**Date:** 2026-10-22
+**Status:** Accepted — operator, 2026-10-22 (refuse outright, the user tier unchanged) and 2026-10-23 (the target directory, not the git repository, is the boundary; the leaf case in a pull request of its own). Shipped in 1.12.4 ([PR #394](https://github.com/codemagicianhq/arcane/pull/394)). Recorded at the session's close.
+**Related:** [ARC-038](#arc-038--content-preserving-updates-and-vendor-neutral-governance-content) (the managed-file rules this narrows), [ARC-045](#arc-045--one-spell-source-thin-client-shims-and-a-user-level-install-tier) (the user tier, and `spell_scope: "user"`)
+**Intake:** `TODO.md` ("a managed path under a symlinked parent directory is written outside the repository"), found by the independent review of issue wave 2026-10-20 ([journal](journal/2026-10-23-symlinked-parent-writes.md))
+
+**Context:**
+
+- `validateTargetPath` compared paths as spelled, and #357 replaced a symlink only at the last component, so a directory such as `.claude`, `.github` or `.arcane` that was itself a symlink or a Windows junction took every managed write and delete below it to wherever it pointed. Seen on Windows: 1.12.2's `spell update` restored 40 files through a junctioned `.claude`, and `spell uninstall` emptied the directory a junctioned `.arcane` pointed at.
+- A cloned repository can carry a symlink. Neither the repository's contents nor git can tell a link the operator made from one planted for them: `.arcane.json` arrives with the clone, a committed link and a cloned one are the same index entry, and Git for Windows walks a junction as a plain directory.
+- The user tier writes into the operator's home, where no clone can plant a link and where dotfile managers commonly link `~/.claude` and `~/.agents`.
+
+**Decision:**
+
+1. In a repository, a managed write or delete whose directory resolves outside the target directory by real path, every link followed, is refused and names the link. There is no override. `spell init` and `spell update` check every path they will write and refuse the run before writing any; `spell add` plans such a file as a conflict that `--force` does not override; deletes report the path instead of acting on it.
+2. The boundary is the target directory, the root Arcane is installed in, not the git repository: in a monorepo sub-package, a link to another part of the same repository is refused too.
+3. A link that stays inside the target directory is followed, and a target directory reached through a link of its own is unaffected.
+4. The user tier keeps following links: its store and fan-out writes pass `followDirectoryLinks`.
+5. A link at the destination file itself is brought under the same rule by a pull request of its own (`TODO.md`, the HIGH item on writers outside `copier.ts`); `writeManagedFile` already replaces such a link (#357).
+
+**Consequences:**
+
+- A run that used to succeed can now be refused. A deliberate link that leaves the repository has to become a real directory, and a repository that wants machine-wide spells sets `spell_scope: "user"` instead of linking a client folder.
+- A writer into a repository calls `validateRealTargetPath` or `validateRealTargetDirectory` (`src/modules/copier.ts`) before it creates anything; a writer that builds its own path without them reopens the gap.
+- On Windows the rule is tested with junctions, which need no privilege; file-symlink cases run only on CI's Linux and macOS runners.
+
+**Rejected alternatives:**
+
+- **Follow a link git does not track:** an extracted archive or a non-git directory has no index, so every link there counts as untracked, and Git for Windows commits files through a junction.
+- **Refuse by default, allow with a run-time flag:** new CLI surface, a minor release, for a setup that `spell_scope: "user"` already serves.
+- **The git repository as the boundary:** puts a git call in every write path, and a target that is not a repository falls back to the target directory anyway.
 
 ---
