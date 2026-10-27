@@ -370,9 +370,14 @@ const COMPONENTS: RegistryComponent[] = [
       ".github/prompts/spell-compliance.prompt.md",
       ".claude/commands/spell-compliance.md",
       ".agents/skills/spell-compliance/SKILL.md",
+      ".arcane/spells/spell-app-store-accounts.md",
+      ".github/prompts/spell-app-store-accounts.prompt.md",
+      ".claude/commands/spell-app-store-accounts.md",
+      ".agents/skills/spell-app-store-accounts/SKILL.md",
     ],
     // spell-make-discoverable cites the first two for every EV-/WD- rationale;
-    // spell-eas-store-deploy and spell-compliance consume the last two.
+    // spell-eas-store-deploy and spell-compliance consume the last two
+    // (spell-app-store-accounts cites mobile-release-standards' MR-11 as well).
     requires: [
       "external-verification-standards",
       "web-discoverability-standards",
