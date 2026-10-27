@@ -174,7 +174,7 @@ Every line says how it holds, because a rule nobody checks should not read like 
 
 **What it does not do.**
 - It does not run your agents or call an AI model. The spells are instructions your AI client follows; the CLI installs them, keeps them current and checks the repository.
-- It does not intercept raw git. A commit you type by hand skips the spells' approval and test gates.
+- It does not intercept raw git. A commit you type by hand skips the spells' approval and test gates; any hook it installed still runs.
 - The credential scan looks for known patterns: it can find a leak, never prove a commit is clean.
 - The push controls stop an accidental push, not a determined operator.
 
