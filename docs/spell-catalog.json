@@ -1,5 +1,5 @@
 {
-  "totalSpells": 41,
+  "totalSpells": 42,
   "totalAgents": 12,
   "totalGovernanceDocs": 25,
   "governanceDocs": [
@@ -315,6 +315,13 @@
           "name": "Spell — Compliance",
           "description": "Run a regulatory compliance self-assessment against this repo (GDPR, CCPA, SOC 2, HIPAA) and produce a prioritized remediation checklist. Read-only — never drafts policies or fixes gaps automatically.",
           "tagline": "GDPR/CCPA/SOC 2/HIPAA, before you need it"
+        },
+        {
+          "id": "spell-app-store-accounts",
+          "shortName": "app-store-accounts",
+          "name": "Spell — App Store Accounts",
+          "description": "Enroll a new business or product in the Apple Developer Program and Google Play Console — Organization vs Individual, the D-U-N-S prerequisite, verification documents, fees, realistic timelines, and post-approval hardening. Stops at approved, hardened accounts; shipping builds is spell-eas-store-deploy's job.",
+          "tagline": "Open Apple and Google Play developer accounts"
         }
       ]
     },
@@ -959,6 +966,23 @@
       ]
     },
     {
+      "id": "spell-app-store-accounts",
+      "shortName": "app-store-accounts",
+      "name": "Spell — App Store Accounts",
+      "description": "Enroll a new business or product in the Apple Developer Program and Google Play Console — Organization vs Individual, the D-U-N-S prerequisite, verification documents, fees, realistic timelines, and post-approval hardening. Stops at approved, hardened accounts; shipping builds is spell-eas-store-deploy's job.",
+      "tagline": "Open Apple and Google Play developer accounts",
+      "claudeDescription": "Use PROACTIVELY when a new venture or product needs an Apple Developer Program or Google Play Console developer account created, before any app can be built for the stores.",
+      "argumentHint": "Which store(s) to enroll in (apple, google, or both), who is enrolling (a legal entity or an individual), and any deadline by which the accounts must be active",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell takes a founder from \"we need store accounts\" to **two approved, hardened developer accounts** — one in the Apple Developer Program, one in Google Play Console — for a new business or product. It is written at the level of *what you need, why it exists, and how long to budget*, not as a click-by-click walkthrough: the consoles change their screens often; the requirements rarely.",
+        "**Account creation only.** It ends when both accounts are approved, paid for, and hardened. Creating an app record, certificates, builds, listings, and submissions belongs to `spell-eas-store-deploy`.",
+        "**The two stores are independent enrollments.** Different accounts, different verifiers, different fees, different timelines. Track them as two separate checklists from day one; never let one store's \"approved\" stand in for the other's.",
+        "**Timeline is the point.** An Organization enrollment with Apple routinely takes two to four weeks end to end because an external party (Dun & Bradstreet) sits in the critical path and Apple's verification does not always announce its next step. Google is usually faster but has its own verification tasks and deadlines. Start both well before any launch date.",
+        "**Privacy rail.** This process handles government ID, formation documents, ownership percentages and revenue figures. Those are entered by the operator, directly into the store's or Dun & Bradstreet's own forms — never pasted into an AI session, a repository, or a shared document."
+      ]
+    },
+    {
       "id": "spell-adopt-docs",
       "shortName": "adopt-docs",
       "name": "Spell — Adopt Docs",
@@ -1419,6 +1443,7 @@
         "spell-scry",
         "spell-eas-store-deploy",
         "spell-compliance",
+        "spell-app-store-accounts",
         "spell-adopt-docs",
         "spell-summon-venture",
         "spell-manifest",
@@ -1502,6 +1527,7 @@
         "spell-scry",
         "spell-eas-store-deploy",
         "spell-compliance",
+        "spell-app-store-accounts",
         "spell-summon-venture",
         "spell-manifest",
         "spell-present-arcane",
@@ -1559,6 +1585,7 @@
         "spell-scry",
         "spell-eas-store-deploy",
         "spell-compliance",
+        "spell-app-store-accounts",
         "spell-summon-venture",
         "spell-manifest",
         "spell-present-arcane",

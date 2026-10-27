@@ -155,6 +155,7 @@ const CHOSEN: Record<string, string> = {
     "spell-adopt-docs": "## Phase 4 — Report",
     "spell-make-discoverable": "## Phase 6 — Report",
     "spell-eas-store-deploy": "### Reporting the release",
+    "spell-app-store-accounts": "### Reporting",
 };
 
 /** Evaluated and left out on purpose (reasons recorded in UP04-B-02's testEvidence). */

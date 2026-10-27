@@ -325,8 +325,10 @@ describe("backwards compatibility of the split", () => {
   // 39: spell-compliance joined spells-build (BC-26, GDPR/CCPA/SOC 2/HIPAA self-assessment).
   // 40: spell-verification-ledger joined spells-capture (BC-27c, I7 -- extracts a structured
   //     checked-claim record separate from spell-close-session's narrative).
+  // 41: spell-app-store-accounts joined spells-build (2026-10-27, Apple Developer Program +
+  //     Google Play Console account enrollment; the account-creation prelude to spell-eas-store-deploy).
   it.each(["lite", "methodology"] as const)(
-    "%s still ships the 40 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in every format",
+    "%s still ships the 41 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in every format",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
       // LH-05: deliberately NOT derived from the registry -- see the comment
@@ -337,13 +339,13 @@ describe("backwards compatibility of the split", () => {
       // cases apart -- a registry-derived count cannot, since both look
       // identical from the registry's own point of view.
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(40);
+      expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(41);
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(40);
+      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(41);
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(40);
+      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(41);
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".agents/skills/"))).toHaveLength(40);
+      expect(files.filter((f) => f.startsWith(".agents/skills/"))).toHaveLength(41);
     },
   );
 

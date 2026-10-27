@@ -9,6 +9,10 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+### Added
+
+- **`spell-app-store-accounts` walks a founder through opening Apple Developer Program and Google Play Console accounts.** Organization or Individual for each store, the D-U-N-S Number prerequisite, the verification documents each store asks for, the fees, a realistic timeline with a buffer, and post-approval hardening (two-factor authentication, team roles, signing-key governance). It stops at approved, hardened accounts; building and submitting apps stays with `spell-eas-store-deploy`. The store facts carry a "last verified" date and link to each store's own help pages. The spell joins the `spells-build` component, so the catalog and README now count 42 spells.
+
 ### Changed
 
 - **A release needs its changelog entry.** `release-drift.yml` refuses to cut a GitHub Release, and so never starts the npm publish, when `CHANGELOG.md` has no `## [x.y.z] - YYYY-MM-DD` heading for the version `package.json` carries; the message names the heading to add and how to start the workflow again by hand. The same rule runs in CI as `npm run check:changelog` (`scripts/check-changelog.ts`), so the pull request that bumps the version fails before it merges, and the check also holds every release heading to that form and every section heading to the standard set: Added, Changed, Fixed, Removed, Notes. Three one-off section headings in older entries were renamed to fit (`Migration` and `What this deliberately does not claim` to `Notes`; `Documentation` folded into `Changed`); no entry text changed.

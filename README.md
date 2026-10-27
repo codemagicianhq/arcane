@@ -30,7 +30,7 @@ npm install -g arcane-cli   #  then:  spell init
 
 <div align="center">
 
-**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 <!--count:spells-->41<!--/count:spells--> spells** &nbsp;·&nbsp; **🤖 <!--count:agents-->12<!--/count:agents--> agents** &nbsp;·&nbsp; **⚖️ <!--count:governance-->25<!--/count:governance--> governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 tested with Claude Code, GitHub Copilot and Codex · GitHub or Azure DevOps**
+**🔁 opinionated lifecycle** &nbsp;·&nbsp; **📜 <!--count:spells-->42<!--/count:spells--> spells** &nbsp;·&nbsp; **🤖 <!--count:agents-->12<!--/count:agents--> agents** &nbsp;·&nbsp; **⚖️ <!--count:governance-->25<!--/count:governance--> governance standards** &nbsp;·&nbsp; **📝 markdown-native** &nbsp;·&nbsp; **🔌 tested with Claude Code, GitHub Copilot and Codex · GitHub or Azure DevOps**
 
 </div>
 
@@ -113,21 +113,21 @@ It isn't a prompt snippet — it's a full framework. Everything installs into yo
 
 | Layer | What you get |
 | --- | --- |
-| 📜 **Spells** | **<!--count:spells-->41<!--/count:spells-->** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
+| 📜 **Spells** | **<!--count:spells-->42<!--/count:spells-->** prompt-driven workflows spanning the entire lifecycle — planning, architecture, implementation, testing, review, shipping, session management, and ops. |
 | ⚖️ **Governance** | **<!--count:governance-->25<!--/count:governance-->** battle-tested standards as drop-in templates: git conventions, testing standards, CI/CD, threat model, ADR format, naming, security hardening, and more. |
 | 🤖 **Agents** | **<!--count:agents-->12<!--/count:agents-->** ready-made agent personas with roles, clusters, and a gamified autonomy model — assign work and power levels per repo. |
 | 🛠️ **CLI** | `spell init / add / update / status / uninstall` — install by profile or à la carte, and keep everything in sync as new versions ship. `spell report` turns a program's `PLAN.md` into a Show Report — a generated completion page — offline. |
 
 <!-- arcane:start -->
 <details>
-<summary><b>📜 The full spell catalogue (41)</b></summary>
+<summary><b>📜 The full spell catalogue (42)</b></summary>
 
 **Session** — `open-session` · `close-session` · `commit-work` · `status` · `arcane-version`
 **Capture** — `save-idea` · `todo` · `feedback` · `suggest-feature` · `document` · `verification-ledger` · `brainstorm` · `explain-concept`
 **Delivery** — `create-pull-request` · `sync-pull-request` · `address-review`
 **Review** — `review` · `review-batch`
 **Planning** — `plan` · `architect` · `scope` · `product-review`
-**Build** — `implement` · `test` · `full-cycle` · `bug` · `bump` · `dotnet-expert` · `security-review` · `ship` · `enchant` · `generate-bot-icons` · `make-discoverable` · `scry` · `eas-store-deploy` · `compliance`
+**Build** — `implement` · `test` · `full-cycle` · `bug` · `bump` · `dotnet-expert` · `security-review` · `ship` · `enchant` · `generate-bot-icons` · `make-discoverable` · `scry` · `eas-store-deploy` · `compliance` · `app-store-accounts`
 **Docs** — `adopt-docs`
 **Venture** — `summon-venture` · `manifest`
 **Meta** — `present-arcane` · `check-drift`
