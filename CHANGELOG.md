@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.13.1] - 2026-10-29
+
+The published catalog now describes the whole framework as data: governance documents, profiles, agents and a flat spell list join the spell groups. No CLI behavior changes.
+
+### Added
+
+- **`docs/spell-catalog.json` gains four top-level keys.** `spells[]` is the flat view of every spell with `id`, `shortName`, `name`, `description`, `tagline`, `claudeDescription`, `argumentHint`, `group` (its `spells-*` component) and `executiveSummary[]`, the bullets of the spell's Executive Summary with wrapped lines folded. `governance[]` carries each distributed governance document's `slug`, `title`, `tagline`, `status`, `audience` and `tags`. `profiles[]` expands `src/config/profiles.ts` into `id`, `displayName`, `description`, `spellIds[]`, `governanceSlugs[]` and `extras[]` (the profile's other components, such as templates and baselines). `agents[]` joins `src/config/agent-roles.ts` with the framework's own naming strategy: `id`, `role`, `category`, `codename`, `epithet`. `groups[]`, `governanceDocs[]` and the three totals are unchanged.
+- **`npm run check:spell-catalog` covers the new fields.** It fails when a spell has no `argument-hint`, when a governance document lacks `status`, `audience` or a `tags` list, when a role in `agent-roles.ts` has no definition file or no codename, or when a definition file has no role; and the committed catalog must match what the generator produces, so a stale field of any kind is drift.
+
 ## [1.13.0] - 2026-10-29
 
 Every spell and governance document now carries a `tagline`, and the published catalog carries it too.
