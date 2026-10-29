@@ -9,6 +9,10 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-10-29
+
+A new spell for opening the Apple and Google Play developer accounts an app needs before it can ship, and a release now refuses to go out without its changelog entry.
+
 ### Added
 
 - **`spell-app-store-accounts` walks a founder through opening Apple Developer Program and Google Play Console accounts.** Organization or Individual for each store, the D-U-N-S Number prerequisite, the verification documents each store asks for, the fees, a realistic timeline with a buffer, and post-approval hardening (two-factor authentication, team roles, signing-key governance). It stops at approved, hardened accounts; building and submitting apps stays with `spell-eas-store-deploy`. The store facts carry a "last verified" date and link to each store's own help pages. The spell joins the `spells-build` component, so the catalog and README now count 42 spells.
