@@ -371,5 +371,1384 @@
         }
       ]
     }
+  ],
+  "spells": [
+    {
+      "id": "spell-open-session",
+      "shortName": "open-session",
+      "name": "Spell — Open Session",
+      "description": "Open an Arcane session in a new chat by rebuilding context, identifying highest-priority unfinished work, and proposing concrete next actions.",
+      "tagline": "Start a logged working session",
+      "claudeDescription": "Use PROACTIVELY at the start of any new session, even if the user just says 'let's start' or asks 'what's next'.",
+      "argumentHint": "Optional focus area (e.g., security hardening, a specific feature, infrastructure setup)",
+      "group": "spells-session",
+      "executiveSummary": [
+        "This prompt opens a new session after chat reset by reading core docs and identifying unfinished work.",
+        "It produces a state snapshot, top priorities, and concrete next actions to minimize startup friction.",
+        "Use this when opening work in a new chat session to avoid re-reading full context manually.",
+        "Optional focus argument narrows scope to a specific domain (security, business, infrastructure)."
+      ]
+    },
+    {
+      "id": "spell-close-session",
+      "shortName": "close-session",
+      "name": "Spell — Close Session",
+      "description": "End a work session by logging outcomes in today's journal and pruning completed TODO items with verifiable evidence.",
+      "tagline": "Wrap up; journal the session",
+      "claudeDescription": "Use PROACTIVELY at the end of any significant work session, even if the user just says 'wrap up' or 'done for now'.",
+      "argumentHint": "Optional session focus (e.g., a config change, a fix, infrastructure setup)",
+      "group": "spells-session",
+      "executiveSummary": [
+        "This prompt formally closes a session by capturing work done, decisions made, and lessons learned in the journal.",
+        "It updates TODO.md, DECISIONS.md, and ai-context/system-prompt-context.md to reflect current state.",
+        "Use this at the end of every significant work session to preserve continuity and maintain documentation hygiene.",
+        "The structured workflow ensures nothing is lost between sessions and handoff state is clean."
+      ]
+    },
+    {
+      "id": "spell-commit-work",
+      "shortName": "commit-work",
+      "name": "Spell — Commit Work",
+      "description": "Generate Conventional Commits message with agent attribution and commit current work during an active session",
+      "tagline": "Conventional commits, written for you",
+      "claudeDescription": "Use PROACTIVELY whenever committing work during a session, even if the user just says 'commit this'.",
+      "argumentHint": "Optional focus (e.g., security, prompts, agents, infrastructure)",
+      "group": "spells-session",
+      "executiveSummary": [
+        "This prompt commits work-in-progress during an active session before moving to the next task.",
+        "It generates Conventional Commits format messages with proper type, scope, and agent attribution trailers.",
+        "Use this when you've completed a discrete chunk of work and want to checkpoint before continuing.",
+        "Enables clean commits without waiting for session-close (which handles journal/session docs separately)."
+      ]
+    },
+    {
+      "id": "spell-status",
+      "shortName": "status",
+      "name": "Spell — Status",
+      "description": "Show a fast, read-only snapshot of the current session — branch, git working state, open TODO count, decision count, and last journal date. Text or JSON.",
+      "tagline": "Where the work stands, at a glance",
+      "claudeDescription": "Use PROACTIVELY when asked for a quick snapshot of session/repo state — branch, TODOs, decisions, last journal.",
+      "argumentHint": "Optional flags — e.g., --verbose --format json",
+      "group": "spells-session",
+      "executiveSummary": [
+        "This spell prints a quick state snapshot for the current repo. It never modifies files.",
+        "It reads local git state plus arcane session files (`TODO.md`, `DECISIONS.md`, `journal/`).",
+        "Use it any time mid-session to re-orient without running the full `spell-open-session` pass."
+      ]
+    },
+    {
+      "id": "spell-arcane-version",
+      "shortName": "arcane-version",
+      "name": "Spell — Arcane Version",
+      "description": "Report the version of Arcane installed in this repository, the active profile, installed components, and whether an update is available.",
+      "tagline": "What is installed, what is current",
+      "claudeDescription": "Use PROACTIVELY when asked about the installed Arcane version, profile, or whether an update is available.",
+      "argumentHint": "Optional flag — pass \"components\" to list all installed components in full detail",
+      "group": "spells-session",
+      "executiveSummary": [
+        "This prompt reads `.arcane.json` and reports the installed Arcane version for this repository.",
+        "It surfaces the install date, profile, and component count.",
+        "Optionally lists every installed component when the \"components\" argument is passed.",
+        "Use this any time you need to know which Arcane version a repo is running."
+      ]
+    },
+    {
+      "id": "spell-save-idea",
+      "shortName": "save-idea",
+      "name": "Spell — Save Idea",
+      "description": "Quickly capture a fleeting idea into the repo's idea inbox so it is not lost. Low ceremony, no approval gate, optimized for voice and speed. In a hub repo, optionally target a venture's own idea book.",
+      "tagline": "Bank an idea before it evaporates",
+      "claudeDescription": "Use PROACTIVELY to capture a fleeting idea immediately, even if the user just says 'note that' or 'don't forget'.",
+      "argumentHint": "The idea itself — a sentence to a couple of paragraphs (e.g., \"add a dark-mode toggle to the settings page\"), optionally \"for <venture>\" (hub only, e.g. \"save this idea for ordo — …\")",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This spell saves a short idea into `IDEAS.md` at the repo root with a timestamp, so a good thought is not lost between sessions.",
+        "It is deliberately fast and low-friction: no approval gate, no multi-step proposal — capture and confirm.",
+        "Use it the moment an idea occurs to you. Triage later with `spell-todo` or `spell-suggest-feature`; in a hub, promote with `spell-manifest`.",
+        "This is the lightweight counterpart to `spell-document` (which formalizes a whole conversation into polished docs).",
+        "**In a hub repo:** \"save this idea for &lt;venture&gt;\" targets that venture's own `IDEAS.md` book instead of the hub root — private by default, including for ventures whose own repo is public."
+      ]
+    },
+    {
+      "id": "spell-todo",
+      "shortName": "todo",
+      "name": "Spell — Todo",
+      "description": "Elaborate a raw idea into one or more well-scoped TODO items and place them in the right document(s). In a hub repo, optionally target a venture's own TODO book, or sweep every book's open-item counts.",
+      "tagline": "Capture and track loose ends",
+      "claudeDescription": "Use PROACTIVELY whenever a raw idea needs to become one or more well-scoped TODO items, even if the user just says 'add a todo'.",
+      "argumentHint": "The raw idea to elaborate (e.g., \"add spending limits doc\", \"automate ADR numbering\", \"build a dashboard for {AGENT_NAME}\"), optionally \"for <venture>\" (hub only). `{AGENT_NAME}` resolves from `.arcane.json` / frontmatter; ask if unset. Use `--sweep` instead to report open-item counts across every book.",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This prompt turns a vague idea into a concrete, well-scoped TODO item placed in the correct file and section.",
+        "It reads the current TODO landscape and repo structure to avoid duplicates and pick the right home.",
+        "Use this any time you have an idea mid-session and don't want to lose it or park it in the wrong place.",
+        "If the idea is ADR-worthy or journal-worthy, it flags that and routes accordingly.",
+        "`--prune` removes checked items from a TODO book — report first, outcome recorded or migrated before anything is deleted, one fingerprinted batch approval, and unchecked items are never touched.",
+        "**In a hub repo:** \"add a todo for &lt;venture&gt;\" targets that venture's own `TODO.md` book instead of the hub root. `--sweep` skips elaboration entirely and reports new/open counts across every book (hub root + every venture)."
+      ]
+    },
+    {
+      "id": "spell-feedback",
+      "shortName": "feedback",
+      "name": "Spell — Feedback",
+      "description": "Collect structured feedback on AI-assistance quality and workflow friction, and append it to FEEDBACK.md for continuous improvement. Framework-shaped items can route upstream to arcane's public GitHub issues.",
+      "tagline": "Send feedback upstream to Arcane",
+      "claudeDescription": "Use PROACTIVELY when the user reports friction with AI assistance or the workflow itself, not the product being built.",
+      "argumentHint": "Optional focus area — e.g., \"spell-implement loop\", \"review quality\", \"session handoff\". Use `--flush` instead to re-offer any previously queued upstream items.",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This spell captures post-session feedback on how well the spells and AI assistance worked.",
+        "It structures the feedback into actionable improvement items and appends them to `FEEDBACK.md` at the repo root.",
+        "Use it after any session where assistance felt notably effective or notably off — the record feeds `spell-enchant`.",
+        "**Framework-shaped items** (about a spell, template, governance doc, playbook, or CLI behavior — not this repo's own content) can additionally route upstream as a GitHub issue on `{ARCANE_UPSTREAM_REPO}` — the same public intake path any arcane user would use, genericized first and gated by an explicit disclosure confirm. This is the whole consumer→arcane feedback loop: arcane is the one thing every consumer repo may reference without violating sibling isolation, because it's the installed, publicly-homed dependency, not a sibling venture."
+      ]
+    },
+    {
+      "id": "spell-suggest-feature",
+      "shortName": "suggest-feature",
+      "name": "Spell — Suggest Feature",
+      "description": "Capture a feature suggestion from smoke testing or usage — assesses impact, files a tracker item (provider-aware), and adds to backlog",
+      "tagline": "Propose the next thing worth building",
+      "claudeDescription": "Use PROACTIVELY when smoke testing or usage surfaces a feature gap worth tracking.",
+      "argumentHint": "Feature idea (e.g., \"Settings page to change instance name and gateway URL\")",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This prompt captures feature suggestions discovered during smoke testing or regular use.",
+        "It creates a structured user story, assesses impact, and files a tracker item using whatever provider the repo is configured for (respects `tracking_mode`; ADO is one option, not an assumption).",
+        "Output is a tracked backlog item ready for future `spell-plan` invocation (or `spell-scope` for large, multi-feature suggestions).",
+        "See [[.arcane/governance/development-methodology|Development Methodology]] for the full Spell Loop reference and tracker-provider specifics."
+      ]
+    },
+    {
+      "id": "spell-document",
+      "shortName": "document",
+      "name": "Spell — Document",
+      "description": "Formalize valuable insights, analysis, or decisions from the current conversation into polished, permanent reference documents.",
+      "tagline": "Write the docs that match the code",
+      "claudeDescription": "Use PROACTIVELY when conversation content (an analysis, a decision, an investigation) should become a permanent reference doc.",
+      "argumentHint": "Topics and output paths (e.g., \"capability inventory → docs/capabilities.md\")",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This spell extracts substantive analysis from the current conversation and structures it into formal, durable documents.",
+        "It bridges ephemeral chat context and lasting project documentation.",
+        "Use it when a session produces reference material that deserves a proper home (inventories, comparisons, rationale, guides).",
+        "For a quick one-line idea instead, use `spell-save-idea`. For session continuity, use `spell-close-session`."
+      ]
+    },
+    {
+      "id": "spell-verification-ledger",
+      "shortName": "verification-ledger",
+      "name": "Spell — Verification Ledger",
+      "description": "Extract a structured record of claims that were checked this session and what the check showed — especially the ones that didn't survive. Separate from spell-close-session; run on demand, not every session.",
+      "tagline": "Record what a session actually verified",
+      "claudeDescription": "Use PROACTIVELY when a session had real verification events worth a structured record — especially a claim that didn't survive a check.",
+      "argumentHint": "Optional focus (e.g., \"just the corrections\", \"since the last commit\")",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "The highest-value output of a working session is often the corrections — claims that were checked and did not survive. `spell-close-session` captures what happened and sanitized lessons learned; it does not capture what was asserted, what was checked, what the check showed, or what changed as a result. This spell extracts exactly that, separately.",
+        "**Run on demand, not every session.** Most sessions have nothing worth a ledger entry; this spell says so plainly and stops rather than manufacturing content to fill one (same discipline as `spell-document`).",
+        "**A `corrected` result is the point, not a failure to hide.** A ledger showing three confirmed claims and one correction is more valuable than one showing four confirmed claims and nothing else — the correction is evidence the verification step actually did something, not theater.",
+        "Appends to a single running file, [`docs/verification-ledger.md`](../../docs/verification-ledger.md), so a calibration rate (how often a checked claim survives) is computable across sessions without reading scattered journal entries."
+      ]
+    },
+    {
+      "id": "spell-brainstorm",
+      "shortName": "brainstorm",
+      "name": "Spell — Brainstorm",
+      "description": "Divergent ideation — explore multiple solutions to a problem space before committing to a plan",
+      "tagline": "Structured divergent thinking",
+      "claudeDescription": "Use PROACTIVELY when exploring multiple solutions to a problem before committing to one.",
+      "argumentHint": "Problem space or opportunity (e.g., 'How should we handle multi-tenant billing?')",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This spell generates multiple solution options for a problem space before narrowing to a plan.",
+        "It produces divergent ideas, evaluates trade-offs, and surfaces hidden constraints — without committing to implementation.",
+        "Use this BEFORE `spell-plan` when you're unsure which direction to take, or when the problem is ambiguous.",
+        "Output: structured options with trade-off matrix, recommended path, and open questions."
+      ]
+    },
+    {
+      "id": "spell-explain-concept",
+      "shortName": "explain-concept",
+      "name": "Spell — Explain Concept",
+      "description": "Explain a technical concept, architecture, or system behavior in a balanced way: enough technical depth to be accurate, enough plain language to be accessible. Use when: confused about how something works, need to understand a system before making decisions, want a 'teach me' breakdown.",
+      "tagline": "Explain any concept, in context",
+      "claudeDescription": "Use PROACTIVELY when the user needs a concept, architecture, or system behavior explained before deciding or building.",
+      "argumentHint": "Concept or question to explain (e.g., 'how does our auth middleware inject tokens?', 'what is OAuth2 PKCE flow?', 'why can't {AGENT_NAME} see the config?')",
+      "group": "spells-capture",
+      "executiveSummary": [
+        "This prompt produces clear, structured explanations of technical concepts, architectures, or system behaviors.",
+        "It balances technical accuracy with accessibility — no dumbing down, no jargon walls.",
+        "Use this when you need to understand something before making a decision or planning implementation."
+      ]
+    },
+    {
+      "id": "spell-create-pull-request",
+      "shortName": "create-pull-request",
+      "name": "Spell — Create Pull Request",
+      "description": "Open a pull request for the current branch with an auto-generated title and description from commit history. Provider-agnostic (GitHub or Azure DevOps).",
+      "tagline": "Open a PR with full context",
+      "claudeDescription": "Use PROACTIVELY whenever opening a pull request for the current branch, even if the user just says 'open a PR'.",
+      "argumentHint": "[--draft] [--reviewers <name,...>] [--target <branch>] [--docs-only]",
+      "group": "spells-delivery",
+      "executiveSummary": [
+        "This spell creates a pull request for the current feature branch — no manual title/description writing.",
+        "It auto-generates a Conventional-Commits title and a structured description from the commit log.",
+        "It is provider-agnostic: it detects GitHub vs Azure DevOps from the git remote and uses the right CLI.",
+        "The PR is the only path to `main` (direct pushes are blocked by policy). See `.arcane/governance/git-conventions.md`."
+      ]
+    },
+    {
+      "id": "spell-sync-pull-request",
+      "shortName": "sync-pull-request",
+      "name": "Spell — Sync Pull Request",
+      "description": "Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical / regenerable / ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points.",
+      "tagline": "Rebase a stale PR, resolve conflicts safely",
+      "claudeDescription": "Use PROACTIVELY whenever an open PR has fallen behind its target branch and needs a safe rebase/sync, or when spell-create-pull-request/spell-ship stop on a conflict they route here.",
+      "argumentHint": "[PR number or branch name]",
+      "group": "spells-delivery",
+      "executiveSummary": [
+        "This spell safely syncs an open PR's branch with its target branch once the target has moved ahead.",
+        "It is the recovery path `spell-create-pull-request` and `spell-ship` route to when they detect a conflict they deliberately don't try to resolve themselves.",
+        "It draws a hard line between conflicts safe to resolve mechanically (identical changes on both sides) and conflicts that need a human — it never guesses on the ambiguous side of that line. A third class, a script-regenerable artifact, is neither merged nor handed off: it is regenerated against the rebased tree and verified by its own check.",
+        "Every history-rewriting step is preceded by a recoverable ref, and every push uses `--force-with-lease`, never bare `--force`."
+      ]
+    },
+    {
+      "id": "spell-address-review",
+      "shortName": "address-review",
+      "name": "Spell — Address Review",
+      "description": "Respond to code-review feedback on a pull request — fetch comment threads, triage each, implement fixes or reply with rationale, and resolve every thread.",
+      "tagline": "Resolve reviewer feedback systematically",
+      "claudeDescription": "Use PROACTIVELY whenever responding to PR review comments — fetch threads, triage, fix or reply, resolve.",
+      "argumentHint": "--pr <number> (required) [--fix-all] — the PR to address; --fix-all treats all suggestions/nitpicks as fix-now",
+      "group": "spells-delivery",
+      "executiveSummary": [
+        "This spell handles inbound code-review feedback: read comments, act on them, and resolve the threads.",
+        "Each comment is triaged — must-fix / suggestion / question / nitpick — and given a disposition.",
+        "Must-fix items are implemented, committed, and pushed; others are implemented or answered with rationale.",
+        "Every thread is resolved at the end (many providers require all threads resolved before merge).",
+        "This is the author-side counterpart to `spell-review` (the reviewer side). Provider-agnostic."
+      ]
+    },
+    {
+      "id": "spell-review",
+      "shortName": "review",
+      "name": "Spell — Review",
+      "description": "Adversarial code review — must find issues, validate architecture compliance, and check security",
+      "tagline": "Adversarial review before merge",
+      "claudeDescription": "Use PROACTIVELY before merging any nontrivial change, even if the user doesn't explicitly ask for review.",
+      "argumentHint": "PR number, branch name, or file paths to review",
+      "group": "spells-review",
+      "executiveSummary": [
+        "This prompt performs an adversarial code review — \"looks good\" is not acceptable.",
+        "The reviewer must explicitly cover every lens — correctness, security, performance, tests, naming/clarity, architecture — and state \"no issues\" for any lens that is clean. There is no finding quota: zero findings is a valid outcome on a clean or small diff.",
+        "Checks architecture compliance, test coverage, security, and coding standards.",
+        "See [[.arcane/governance/development-methodology|Development Methodology]] for the adversarial review pattern."
+      ]
+    },
+    {
+      "id": "spell-review-batch",
+      "shortName": "review-batch",
+      "name": "Spell — Review Batch",
+      "description": "Adversarially review many pull requests in one run and emit per-PR verdicts plus a consolidated go/no-go readiness gate report. Provider-agnostic.",
+      "tagline": "Review a stack of changes at once",
+      "claudeDescription": "Use PROACTIVELY when multiple open PRs need an adversarial review pass and a consolidated go/no-go verdict.",
+      "argumentHint": "--prs <n,n,…> | --pr <n> | --file <path> | --query <q>  [--repos <r,…>] [--html] [--title <t>]",
+      "group": "spells-review",
+      "executiveSummary": [
+        "This spell runs the `spell-review` engine across a batch of pull requests and rolls the results into one report.",
+        "It produces a per-PR verdict (approve / request-changes) plus an overall **go / no-go** gate for the batch — useful for a release-readiness or UAT gate.",
+        "It is provider-agnostic: GitHub (`gh`) and Azure DevOps (`az repos`), detected from the git remote.",
+        "This is the reviewer-side, many-PR counterpart to `spell-review` (single diff). The author-side spell is `spell-address-review`; PRs are typically opened with `spell-create-pull-request`."
+      ]
+    },
+    {
+      "id": "spell-plan",
+      "shortName": "plan",
+      "name": "Spell — Plan",
+      "description": "Generate a Product Requirements Document (PRD) from a feature description using structured planning",
+      "tagline": "Turn intent into a reviewable PRD",
+      "claudeDescription": "Use PROACTIVELY when a feature description needs to become a PRD before architecture or implementation.",
+      "argumentHint": "Feature or initiative to plan (e.g., \"user authentication for a mobile app\")",
+      "group": "spells-planning",
+      "executiveSummary": [
+        "This prompt generates a PRD.md from a feature description or TODO item.",
+        "It follows a structured analysis pattern — requirements, acceptance criteria, and constraints.",
+        "Output feeds directly into `spell-architect` as the next phase of the Spell Loop.",
+        "See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference."
+      ]
+    },
+    {
+      "id": "spell-architect",
+      "shortName": "architect",
+      "name": "Spell — Architect",
+      "description": "Generate architecture decisions and story breakdown from a PRD, producing architecture.md and stories.json",
+      "tagline": "Break the plan into stories + criteria",
+      "claudeDescription": "Use PROACTIVELY once a PRD exists and needs architecture decisions and a story breakdown before implementation starts.",
+      "argumentHint": "Path to PRD.md or paste the PRD content",
+      "group": "spells-planning",
+      "executiveSummary": [
+        "This prompt takes a PRD and produces architecture decisions plus an implementable story breakdown.",
+        "It follows a structured solutioning pattern — progressive context chain from requirements to implementation plan.",
+        "Outputs `architecture.md` and `stories.json` that feed into `spell-implement`.",
+        "See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference."
+      ]
+    },
+    {
+      "id": "spell-scope",
+      "shortName": "scope",
+      "name": "Spell — Scope",
+      "description": "Analyze a large PRD — scope it, split into epics, check architecture and security implications, estimate effort, and produce an execution plan with agent assignments",
+      "tagline": "Cut the work down to shippable size",
+      "claudeDescription": "Use PROACTIVELY when a PRD is too large for one Spell Loop cycle and needs epic-splitting before architecture.",
+      "argumentHint": "Path to PRD or paste PRD content (e.g., 'Analyze PRD.md for {BUSINESS_NAME} mobile app')",
+      "group": "spells-planning",
+      "executiveSummary": [
+        "This spell takes a PRD of any size and produces an actionable execution plan.",
+        "It assesses scope, splits into sprint-sized epics, identifies architecture/security decisions needed, and maps agents to work.",
+        "Use this before `spell-architect` when the PRD is too large for a single Spell Loop cycle. (Formerly `spell-assess`.)",
+        "Output: `execution-plan.md` — ordered epics with dependency graph, risk flags, ADR candidates, and agent assignments."
+      ]
+    },
+    {
+      "id": "spell-product-review",
+      "shortName": "product-review",
+      "name": "Spell — Product Review",
+      "description": "Build/Measure/Analyze/Decide cycle — evaluate feature performance and recommend next actions",
+      "tagline": "Judge the product, not the diff",
+      "claudeDescription": "Use PROACTIVELY when evaluating a shipped feature's real-world performance and deciding next actions.",
+      "argumentHint": "Feature or product area to review (e.g., \"{BUSINESS_NAME} storefront performance\", \"{BUSINESS_NAME} beta feedback\")",
+      "group": "spells-planning",
+      "executiveSummary": [
+        "This prompt runs a Build/Measure/Analyze/Decide product review cycle.",
+        "Used after a feature ships to evaluate its impact and decide what's next.",
+        "Combines analytics data, user feedback, and business metrics into an actionable recommendation.",
+        "Feeds back into `spell-plan` for the next iteration of the product."
+      ]
+    },
+    {
+      "id": "spell-implement",
+      "shortName": "implement",
+      "name": "Spell — Implement",
+      "description": "Autonomous implementation loop — pick a story from stories.json, build it, test it, commit it, repeat until all stories pass",
+      "tagline": "Build against stories, never freestyle",
+      "claudeDescription": "Use PROACTIVELY to work through stories.json autonomously once architecture and stories exist.",
+      "argumentHint": "Path to stories.json or paste story context (optional - uses current directory stories.json by default)",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This is the core autonomous loop of the Spell Loop methodology.",
+        "Each iteration: pick a story → implement → run tests → commit if passing → update stories.json → loop.",
+        "Uses fresh context per iteration — only stories.json, progress.txt, and git history carry forward.",
+        "See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference."
+      ]
+    },
+    {
+      "id": "spell-test",
+      "shortName": "test",
+      "name": "Spell — Test",
+      "description": "Run tests, validate coverage thresholds, and generate test evidence for a completed story or feature",
+      "tagline": "Prove it works; enforce thresholds",
+      "claudeDescription": "Use PROACTIVELY to validate a completed story or feature against coverage thresholds before marking it done.",
+      "argumentHint": "Story ID or test scope (e.g., \"STORY-003\" or \"all\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This prompt runs tests, validates coverage against thresholds, and generates evidence artifacts.",
+        "Used after `spell-implement` to verify quality before `spell-review`.",
+        "Enforces the testing standards from ADR-050 (80% line / 95% critical path coverage).",
+        "For anything a browser renders, step 4a adds a check in a real browser (captures at three widths, in both color schemes and with reduced motion, plus a console read), because a passing suite cannot see a page that renders blank.",
+        "See [[.arcane/governance/testing-standards|Testing Standards]] for framework details."
+      ]
+    },
+    {
+      "id": "spell-full-cycle",
+      "shortName": "full-cycle",
+      "name": "Spell — Full Cycle",
+      "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time",
+      "tagline": "Run the whole loop end-to-end",
+      "claudeDescription": "Use PROACTIVELY for an end-to-end feature request that should chain plan, architect, implement, test, review, and ship.",
+      "argumentHint": "Feature description, optional work item ID, target repo (e.g., 'Add user auth to the mobile app, #507, {REPO_ORG}/{REPO_NAME}')",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This prompt chains all Spell Loop phases into a single autonomous pipeline.",
+        "Includes optional PRD enchantment (spell-enchant) between Plan and Architect for quality enhancement.",
+        "Only one human touchpoint: approving the PR at ship time.",
+        "Delegates each phase to the appropriate specialized agent role (research, architecture, build, QA, marketing review) — **in practice, a single agent switches hats per phase** unless a real per-tool subagent registry is configured (e.g. `.claude/agents/` for Claude Code); this framework ships no such registry by default, so \"delegates\" names the intended role model, not a literal handoff between separately running agents (2026-07-22 dogfooding finding). Resolve concrete personas from [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); if neither is present, proceed with role names directly.",
+        "If any phase fails, the pipeline halts and reports the blocker — no silent failures."
+      ]
+    },
+    {
+      "id": "spell-bug",
+      "shortName": "bug",
+      "name": "Spell — Bug",
+      "description": "Document, diagnose, and fix a bug — files a tracker work item (per tracking_mode), traces root cause, implements fix, verifies, and commits",
+      "tagline": "File a reproducible bug report",
+      "claudeDescription": "Use PROACTIVELY whenever diagnosing and fixing a bug, even if the user just describes broken behavior.",
+      "argumentHint": "Bug description (e.g., \"Session detail dialog shows 404 when clicking a mock session\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This prompt handles the full bug lifecycle: document → track → diagnose → fix → verify → close.",
+        "It records the bug in your configured tracker (external provider) or `TODO.md` (internal mode) and links the fix commit to it.",
+        "Output is a working fix with tests, committed using Conventional Commits format.",
+        "**When to use:** you have a concrete defect — wrong/broken behavior versus expected. If the report is actually a request for *new* behavior, route to `spell-suggest-feature` instead. For small non-blocking cleanups discovered along the way, capture them with `spell-todo`.",
+        "See [[.arcane/governance/development-methodology|Development Methodology]] for full Spell Loop reference."
+      ]
+    },
+    {
+      "id": "spell-bump",
+      "shortName": "bump",
+      "name": "Spell — Bump Version",
+      "description": "Determine the correct semver bump type for the current change and apply it to package.json",
+      "tagline": "Version bump + changelog entry",
+      "claudeDescription": "Use PROACTIVELY before shipping any change that touches distributable content, to determine and apply the correct version bump.",
+      "argumentHint": "Optional context about the change (e.g., \"new component\", \"bug fix\", \"breaking API change\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell determines whether a version bump is required and applies the correct semver type.",
+        "Use it whenever you've changed `src/assets/`, `registry.ts`, or `profiles.ts` in the arcane repo.",
+        "It enforces the rule from `project.md` → Constraints → Self-hosting: \"Anything touching `src/assets/` requires a version bump.\" (Corrected 2026-08-31, BC-06 — this previously cited CLAUDE.md, which now carries only the working protocol; the rule's live prose home moved to `project.md (\"requires a version bump\"):56-58`.)"
+      ]
+    },
+    {
+      "id": "spell-dotnet-expert",
+      "shortName": "dotnet-expert",
+      "name": "Spell — .NET Expert",
+      "description": "Load .NET best practices and patterns for any development agent working on .NET projects",
+      "tagline": "Summon deep .NET expertise",
+      "claudeDescription": "Use PROACTIVELY when working on a .NET project and best-practice guidance is needed.",
+      "argumentHint": "Specific .NET topic or question (e.g., \"Azure Functions isolated worker\", \"EF Core migrations\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This prompt loads .NET expertise into any agent's context — no dedicated .NET agent needed, per your org's decision/security log if one exists.",
+        "Covers .NET 10, ASP.NET Core, Azure Functions (isolated worker), Entity Framework Core, and xUnit testing.",
+        "Use this when any dev agent is working on `{BUSINESS_NAME}` or other .NET projects. (`{BUSINESS_NAME}`: resolve from `.arcane.json` / the feature or PRD frontmatter; ask if unset.) For the dev-agent roster, reference [[agent-policies]] / [[naming-conventions]] rather than assuming specific personas.",
+        "Combines with `spell-implement` for .NET-specific autonomous development loops."
+      ]
+    },
+    {
+      "id": "spell-security-review",
+      "shortName": "security-review",
+      "name": "Spell — Security Review",
+      "description": "OWASP Top 10 and AI/agent (LLM) security audit plus dependency vulnerability check for any project",
+      "tagline": "Threat-model the change",
+      "claudeDescription": "Use PROACTIVELY before shipping any change that introduces new attack surface, handles sensitive data, or changes trust boundaries.",
+      "argumentHint": "Project path, PR, or specific security concern (e.g., \"auth flow in the API\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This prompt runs a security-focused review against OWASP Top 10 and dependency vulnerabilities.",
+        "No dedicated security agent needed — any agent loads this spell for security context (ADR-049).",
+        "Covers code-level vulnerabilities, dependency audit, secrets detection, and infrastructure security.",
+        "Includes an AI/agent (LLM) security pass — prompt injection, excessive agency, and secrets-in-context — since Arcane drives AI agents.",
+        "See [[security/threat-model|Threat Model]] for the project's security baseline."
+      ]
+    },
+    {
+      "id": "spell-ship",
+      "shortName": "ship",
+      "name": "Spell — Ship",
+      "description": "Pre-deploy checklist, merge approval workflow, and deployment gate verification",
+      "tagline": "Merge, version, release",
+      "claudeDescription": "Use PROACTIVELY before any deploy, even if the user just says 'ship it'.",
+      "argumentHint": "Branch name or PR number to ship",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This prompt runs the pre-deploy checklist and manages the merge/deploy approval workflow.",
+        "It verifies all Spell Loop phases are complete before allowing a merge.",
+        "Enforces deployment gates from governance/cicd-standards.md.",
+        "Final gate is always human approval — agents cannot autonomously ship to production."
+      ]
+    },
+    {
+      "id": "spell-enchant",
+      "shortName": "enchant",
+      "name": "Spell — Enchant",
+      "description": "Enchant a PRD from functional to exceptional — proactively enhance features, UX, accessibility, security, and performance using a research lens and a marketing/brand lens",
+      "tagline": "Harden a PRD — tighter scope, security, edge cases",
+      "claudeDescription": "Use PROACTIVELY when a PRD should be enhanced — UX, accessibility, security, performance — before implementation.",
+      "argumentHint": "Path to PRD, pasted PRD content, or tracker work item ID (e.g., 'Enchant PRD.md for {BUSINESS_NAME} <feature> dashboard')",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell takes an existing PRD and enchants it to production-grade quality.",
+        "It proactively identifies missing features, UX gaps, accessibility issues, performance targets, and security requirements that the original PRD didn't specify.",
+        "Applies two analytical lenses: a **research lens** (competitive analysis, industry standards) and a **marketing/brand lens** (brand, UX, first-impression review). In the default Arcane roster these map to the Alexander and Circe personas; other orgs map their own — see [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md).",
+        "Output: Enhanced PRD with `[ENCHANTED]`-tagged additions, before/after quality scorecard, and research summaries.",
+        "Use this between `spell-plan` and `spell-architect` (or `spell-scope` for large PRDs). It **consumes** a drafted PRD and **feeds** an architecture/scoping spell; it does not author a PRD from scratch (that is `spell-plan`) nor implement one (`spell-implement`)."
+      ]
+    },
+    {
+      "id": "spell-generate-bot-icons",
+      "shortName": "generate-bot-icons",
+      "name": "Spell — Generate Bot Icons",
+      "description": "Generate a bot avatar concept with an image-capable agent, then normalize it into Teams-ready color and outline icons.",
+      "tagline": "Generate avatars for your roster",
+      "claudeDescription": "Use PROACTIVELY when a bot/agent needs a Teams-ready avatar and icon set generated.",
+      "argumentHint": "Bot concept (e.g., \"{AGENT_NAME} for ecommerce ops, powerful + modern, flat vector\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell standardizes bot icon creation for Teams deployments.",
+        "It separates creative generation (image-capable agent) from deterministic packaging (local script).",
+        "Output is always Teams-ready: `color.png` (192x192) + `outline.png` (32x32 transparent, white glyph).",
+        "Use this **after** agent setup (the agent's identity/role is defined) and **before** packaging `manifest.json` in the Teams setup flow."
+      ]
+    },
+    {
+      "id": "spell-make-discoverable",
+      "shortName": "make-discoverable",
+      "name": "Spell — Make Discoverable",
+      "description": "Audit and fix a web property's search and AI-assistant discoverability — per-route share metadata, robots and sitemap policy, non-production noindexing, and search-engine registration. Read-only by default.",
+      "tagline": "Audit a site's search/AI-assistant discoverability",
+      "claudeDescription": "Use PROACTIVELY when auditing a web property's search/AI-assistant discoverability (metadata, robots, sitemap, indexing).",
+      "argumentHint": "Optional path or origin of the property to audit (defaults to the repository root). Add --apply only after reviewing a dry run.",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell audits a web property's discoverability to search engines and, by extension, to the AI assistants that retrieve from those engines' indexes — per-route share metadata, robots/sitemap policy, non-production noindexing, and search-engine registration — then proposes fixes.",
+        "**The default run changes nothing.** It produces an audit and a proposed change set, and stops at an explicit approval gate. Nothing is written without `--apply` *and* that approval.",
+        "**It never performs an outward-facing action on its own** — a DNS write, a console submission, a crawl-notification ping. Every such action is confirmed individually, with the current live state printed first, never batched and never assumed from a prior run.",
+        "**It verifies by content, never by confirmation.** Every claimed fix is checked by re-fetching the actual served response or re-reading the actual external state, per `EV-01`/`EV-02`.",
+        "**This spell audits a property that is already live.** It does not deploy one — run it after your team's own deploy/ship workflow has put something live at `{SITE_ORIGIN}`, not instead of it."
+      ]
+    },
+    {
+      "id": "spell-scry",
+      "shortName": "scry",
+      "name": "Spell — Scry",
+      "description": "Clear a candidate name before it ships — four outward checks (who coined it, estate still trading, same-audience giants, first-association salience) plus a mandatory inward repo-local collision pass. Use when naming anything new (a spell, a field, a product, an internal concept) before committing to it.",
+      "tagline": "Clear a name before you commit to it",
+      "claudeDescription": "Use PROACTIVELY when naming anything new (a spell, a field, a product, an internal concept) before committing to it — clears a candidate name against both the outside world and this repository itself.",
+      "argumentHint": "<candidate name or term>",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell clears a candidate name before it ships, checking both the outside world and this repository itself.",
+        "The inward pass runs first and is mandatory, not optional — a real naming decision (ARC-028's `workspace`) was nearly settled on a clean external read alone, until a single `grep -ri` found the word already load-bearing inside the repository in two other senses.",
+        "Both passes classify hits with the same taxonomy (same-space / adjacent / out-of-space) and combine into one verdict: pass / pass-with-disclosure / kill.",
+        "`spell ward` is the opposite direction of this same concern — it finds what leaked **in**; this spell clears what's about to go **out**. They do not call each other; ward's denylist scanning and scry's single-candidate classification are different operations on the same underlying grep primitive."
+      ]
+    },
+    {
+      "id": "spell-eas-store-deploy",
+      "shortName": "eas-store-deploy",
+      "name": "Spell — EAS Store Deploy",
+      "description": "Deploy an Expo app to the Apple App Store and Google Play via EAS Build + EAS Submit — one-time setup, repeat deployments, and the known pitfalls hit dogfooding both flows for real.",
+      "tagline": "Ship an Expo app to the App Store or Play",
+      "claudeDescription": "Use PROACTIVELY when deploying an Expo app to the App Store or Google Play via EAS.",
+      "argumentHint": "Which store(s) to deploy to (ios, android, or both) and whether this is initial setup or a repeat deployment",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell documents the **EAS Build + EAS Submit** pipeline end to end for both the Apple App Store and Google Play — initial one-time setup, repeat deployments, and known pitfalls, in that order, for each store.",
+        "Roughly 80% of the material (credentials, `eas.json` profile shape, build-number handling, OTA rules) is shared between the two stores; only the store-console work genuinely diverges. Covered once in a shared preamble, then two store-specific sections.",
+        "**Deliberately scoped to EAS Build, EAS Submit and EAS Update** — no local Xcode, Xcode Cloud, or Fastlane coverage. That scope is what keeps every step concrete and copy-pasteable. The only local toolchain it touches is a build machine running `eas build --local`, and only to pin it (EAS Update lifecycle, part 3).",
+        "An **EAS Update lifecycle** section covers what a store release leaves behind and what surrounds it: the runtimes older store versions keep running, an in-app store update prompt, toolchain pinning for machines running `eas build --local`, and when to announce a version as the latest.",
+        "Every lesson here was hit for real, across two dogfooding runs (a first-ever App Store submission, then a from-zero Google Play listing to a live production release) and a later consumer store release (the EAS Update lifecycle) — none is general knowledge restated.",
+        "Durable, store-specific platform facts are documented once in [`mobile-release-standards.md`](../../.arcane/governance/mobile-release-standards.md) and cited here by `MR-nn` ID; verification discipline is documented once in [`external-verification-standards.md`](../../.arcane/governance/external-verification-standards.md) and cited by `EV-nn` ID. This spell does not restate either."
+      ]
+    },
+    {
+      "id": "spell-compliance",
+      "shortName": "compliance",
+      "name": "Spell — Compliance",
+      "description": "Run a regulatory compliance self-assessment against this repo (GDPR, CCPA, SOC 2, HIPAA) and produce a prioritized remediation checklist. Read-only — never drafts policies or fixes gaps automatically.",
+      "tagline": "GDPR/CCPA/SOC 2/HIPAA, before you need it",
+      "claudeDescription": "Use PROACTIVELY before a launch, an enterprise sales cycle, or a security questionnaire that raises GDPR/CCPA/SOC 2/HIPAA questions.",
+      "argumentHint": "Optional focus (e.g., \"GDPR only\", \"pre-launch check\", \"SOC 2 readiness\")",
+      "group": "spells-build",
+      "executiveSummary": [
+        "This spell self-assesses a repo's compliance posture against GDPR, CCPA, SOC 2, and HIPAA, and produces a prioritized remediation checklist.",
+        "**It is read-only.** It never drafts a privacy policy, invents a retention period, or fixes a gap on its own — every finding is a checklist item for a human (often with legal input) to act on.",
+        "**This is not legal advice**, and the report says so explicitly. It is a starting self-assessment against established, uncontroversial obligations — not a substitute for a qualified lawyer's analysis of this specific business's specific facts.",
+        "Findings cite `CS-nn` rule IDs from [`compliance-standards.md`](../../.arcane/governance/compliance-standards.md) — the rationale for each obligation lives there, not restated here."
+      ]
+    },
+    {
+      "id": "spell-adopt-docs",
+      "shortName": "adopt-docs",
+      "name": "Spell — Adopt Docs",
+      "description": "Bring an existing document tree under Arcane governance without moving anything first — inventory, propose a mapping, get approval, then apply in reversible steps. Dry-run by default.",
+      "tagline": "Bring an existing doc tree under governance",
+      "claudeDescription": "Use PROACTIVELY when bringing an existing, ungoverned doc tree under Arcane governance.",
+      "argumentHint": "Optional path to the tree to adopt (defaults to the repository root). Add `--apply` only after reviewing a dry run.",
+      "group": "spells-docs",
+      "executiveSummary": [
+        "This spell adopts a folder of documents that already exists, rather than scaffolding a new one.",
+        "It **never moves, renames, or deletes anything until you approve a specific written mapping** — the default run is read-only.",
+        "It works with `subject_root: \".\"`, so a tree that already lives at the repository root is adopted where it is. Restructuring is offered, never required.",
+        "Every mutating phase states its rollback before it runs.",
+        "In a repository marked `content_sensitivity: sensitive`, the inventory records paths and shapes, never document contents."
+      ]
+    },
+    {
+      "id": "spell-summon-venture",
+      "shortName": "summon-venture",
+      "name": "Spell — Summon Venture",
+      "description": "Create a new venture in a hub repo — folder, overview/config/legal docs, idea and todo books, and a registry entry — in one hub-gated move.",
+      "tagline": "Stand up a new venture from zero",
+      "claudeDescription": "Use PROACTIVELY in a hub repo when creating a new venture from scratch.",
+      "argumentHint": "Venture Name | Venture Type | One-line description",
+      "group": "spells-venture",
+      "executiveSummary": [
+        "This prompt creates a new venture in a **hub** repo: the venture folder, its starter docs, its two idea/todo books, and its registry entry — one operation instead of several manual steps.",
+        "**Hub-gated:** requires `role: \"hub\"` in `.arcane.json`. Refuses cleanly in a consumer repo, pointing at the right place to capture the idea instead.",
+        "Use this when starting a new venture (business, product, or personal project) that the hub should track.",
+        "Input format is: `Venture Name | Venture Type | Description` — prompt will ask for missing fields.",
+        "Renamed from `spell-bootstrap-business` — venture books and the registry didn't exist when that spell was named. Clean rename, no compatibility alias, per ARC-008's precedent (cited as plain text, not linked — this file ships; see `agent-output.instructions.md` → Doc-ID Link Format)."
+      ]
+    },
+    {
+      "id": "spell-manifest",
+      "shortName": "manifest",
+      "name": "Spell — Manifest",
+      "description": "Hub-gated interactive triage that promotes idea-book and todo-book entries downstream — to a consumer repo, a PRD scaffold, a tracker item, public disclosure, or another venture's book.",
+      "tagline": "Triage idea and todo books across ventures",
+      "claudeDescription": "Use PROACTIVELY in a hub repo to triage idea-book/todo-book entries downstream.",
+      "argumentHint": "Optional --venture <slug> to restrict triage to one venture's books",
+      "group": "spells-venture",
+      "executiveSummary": [
+        "This prompt is the promotion step of the idea lifecycle: it takes `status: new` entries out of hub-side `IDEAS.md`/`TODO.md` books and lands them where they actually get built — a consumer repo, a tracker, a PRD, or (deliberately, never by accident) a public disclosure.",
+        "**Hub-gated:** requires `role: \"hub\"` in `.arcane.json`. Refuses cleanly in a consumer repo.",
+        "Batch-capable: list entries once, select by number/range, route each (or all identically), execute with one final confirmation — except disclosure, which is never covered by a batch confirmation and always requires its own literal answer.",
+        "Every downstream write is leak-scanned first: no sibling venture names, no hub paths, no machine names ever land in a consumer artifact.",
+        "Idempotent: promoted entries are marked in place, so re-running never double-lands the same idea."
+      ]
+    },
+    {
+      "id": "spell-present-arcane",
+      "shortName": "present-arcane",
+      "name": "Spell — Present Arcane",
+      "description": "Present Arcane in one of three modes — a full 1-hour talk (default), a live-state executive summary document, or a deck-builder meta-prompt sized to a slide count or duration.",
+      "tagline": "Pitch Arcane to your team",
+      "claudeDescription": "Use PROACTIVELY when asked to present, demo, or explain Arcane itself to an audience.",
+      "argumentHint": "[summary|deck] + optional audience/size — e.g., \"for investors\", \"summary exec\", \"deck 10m\", \"deck 20 slides\"",
+      "group": "spells-meta",
+      "executiveSummary": []
+    },
+    {
+      "id": "spell-check-drift",
+      "shortName": "check-drift",
+      "name": "Spell — Check Doc Drift",
+      "description": "Detect contradictions and stale statements across core Arcane docs and report severity-graded findings (report-only by default; opt-in --fix applies safe mechanical fixes).",
+      "tagline": "Detect divergence from the plan",
+      "claudeDescription": "Use PROACTIVELY to detect contradictions and stale statements across core docs, periodically or after major changes.",
+      "argumentHint": "Optional scope selector --scope all|journal|todos|decisions|git (default all); free-text hints also accepted. Add --fix to apply safe mechanical fixes.",
+      "group": "spells-meta",
+      "executiveSummary": [
+        "This prompt identifies documentation contradictions, stale dates, and inconsistencies across the repo.",
+        "It cross-references core docs to find drift between ADRs, journals, configuration files, and operational guides.",
+        "Use this periodically (weekly/monthly) or after major changes to maintain documentation accuracy.",
+        "**Report-only by default** (non-destructive): output is severity-graded findings with exact fix recommendations. Pass `--fix` to also apply safe, mechanical, unambiguous fixes."
+      ]
+    }
+  ],
+  "governance": [
+    {
+      "slug": "git-conventions",
+      "title": "Git Conventions — Commit Format and Branching Model",
+      "tagline": "Branch names, commit format, merge rules",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "git",
+        "conventional-commits",
+        "workflow",
+        "standards",
+        "attribution"
+      ]
+    },
+    {
+      "slug": "testing-standards",
+      "title": "Testing Standards",
+      "tagline": "Coverage thresholds and what counts as tested",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "testing",
+        "qa",
+        "coverage",
+        "standards",
+        "lince"
+      ]
+    },
+    {
+      "slug": "framework-decisions",
+      "title": "Legacy Framework Decision Reference",
+      "tagline": "Offline reference for legacy ADR citations",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "decisions",
+        "adr",
+        "framework",
+        "references"
+      ]
+    },
+    {
+      "slug": "decision-documentation-standard",
+      "title": "Decision Documentation Standard",
+      "tagline": "ADR format — every decision leaves a trace",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "governance",
+        "decisions",
+        "documentation",
+        "standards"
+      ]
+    },
+    {
+      "slug": "agent-work-queue-model",
+      "title": "Agent Work Queue Model",
+      "tagline": "How agents pick up, hand off, and finish work",
+      "status": "draft",
+      "audience": "both",
+      "tags": [
+        "governance",
+        "queue",
+        "agents",
+        "work-management"
+      ]
+    },
+    {
+      "slug": "naming-conventions",
+      "title": "Naming Conventions",
+      "tagline": "One vocabulary across code, docs, and agents",
+      "status": "template",
+      "audience": "both",
+      "tags": [
+        "naming",
+        "convention",
+        "machines",
+        "agents",
+        "identity"
+      ]
+    },
+    {
+      "slug": "agent-policies",
+      "title": "Agent Policies",
+      "tagline": "What agents may do — and must never do",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "agent",
+        "policy",
+        "security"
+      ]
+    },
+    {
+      "slug": "threat-model",
+      "title": "Threat Model",
+      "tagline": "Security posture, attack surfaces, mitigations",
+      "status": "draft",
+      "audience": "both",
+      "tags": [
+        "security",
+        "threat-model"
+      ]
+    },
+    {
+      "slug": "hardening-checklist",
+      "title": "Linux Security Hardening Checklist",
+      "tagline": "The Linux hardening baseline, as a checklist",
+      "status": "active",
+      "audience": "human",
+      "tags": [
+        "security",
+        "hardening",
+        "linux"
+      ]
+    },
+    {
+      "slug": "authentication-strategy",
+      "title": "Authentication Strategy",
+      "tagline": "How identity and access work, end to end",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "security",
+        "authentication",
+        "credentials",
+        "ssh",
+        "api-keys"
+      ]
+    },
+    {
+      "slug": "new-business-setup",
+      "title": "New Business Setup Guide",
+      "tagline": "Stand up a new venture from zero",
+      "status": "draft",
+      "audience": "both",
+      "tags": [
+        "playbook",
+        "setup",
+        "onboarding",
+        "replicability",
+        "attribution"
+      ]
+    },
+    {
+      "slug": "agent-approved-paths",
+      "title": "Agent Approved Paths Registry",
+      "tagline": "The registry of paths agents may touch",
+      "status": "template",
+      "audience": "both",
+      "tags": [
+        "agent",
+        "security",
+        "filesystem",
+        "autonomy"
+      ]
+    },
+    {
+      "slug": "portable-bootstrap",
+      "title": "Portable Bootstrap — Quick Context for Ad-Hoc AI Clients",
+      "tagline": "Quick context to brief any ad-hoc AI client",
+      "status": "active",
+      "audience": "ai",
+      "tags": [
+        "ai-context",
+        "bootstrap",
+        "multi-client",
+        "portable"
+      ]
+    },
+    {
+      "slug": "development-methodology",
+      "title": "Development Methodology — The Spell Loop",
+      "tagline": "The Spell Loop itself, as enforceable text",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "methodology",
+        "spell-loop",
+        "development",
+        "workflow"
+      ]
+    },
+    {
+      "slug": "cicd-standards",
+      "title": "CI/CD Standards",
+      "tagline": "Build, verify, and release gates",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "cicd",
+        "pipelines",
+        "devops",
+        "prospero",
+        "azure-devops"
+      ]
+    },
+    {
+      "slug": "poc-management-pattern",
+      "title": "POC Management Pattern",
+      "tagline": "How proofs of concept graduate — or get killed",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "governance",
+        "poc",
+        "prototypes",
+        "ideas",
+        "lifecycle",
+        "methodology"
+      ]
+    },
+    {
+      "slug": "product-excellence-standards",
+      "title": "Product Excellence Standards",
+      "tagline": "The bar a feature must clear to ship",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "quality",
+        "ux",
+        "accessibility",
+        "performance",
+        "security",
+        "spell-enchant",
+        "ADR-052"
+      ]
+    },
+    {
+      "slug": "spell-authoring-standards",
+      "title": "Spell Authoring Standards",
+      "tagline": "How to write a spell that holds up",
+      "status": "active",
+      "audience": "contributor",
+      "tags": [
+        "spell",
+        "authoring",
+        "quality",
+        "governance",
+        "ARC-014"
+      ]
+    },
+    {
+      "slug": "rca-process-standard",
+      "title": "Root Cause Analysis (RCA) Process Standard",
+      "tagline": "Root cause, not blame, when things break",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "governance",
+        "rca",
+        "process",
+        "incident",
+        "corrective-actions"
+      ]
+    },
+    {
+      "slug": "universal-agent-rules",
+      "title": "Universal Agent Rules — Single Source of Truth",
+      "tagline": "The single source of truth every agent obeys",
+      "status": "active",
+      "audience": "ai",
+      "tags": [
+        "rules",
+        "governance",
+        "ai-agents",
+        "multi-client"
+      ]
+    },
+    {
+      "slug": "records-conventions",
+      "title": "Records Conventions",
+      "tagline": "Supersession, tombstone, and retention rules",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "records",
+        "documentation",
+        "retention",
+        "supersession"
+      ]
+    },
+    {
+      "slug": "external-verification-standards",
+      "title": "External Verification Standards",
+      "tagline": "Confirm a write actually took effect out there",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "verification",
+        "external-systems",
+        "deployment",
+        "reliability"
+      ]
+    },
+    {
+      "slug": "web-discoverability-standards",
+      "title": "Web Discoverability Standards",
+      "tagline": "Search-engine and AI-assistant discoverability rules",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "discoverability",
+        "metadata",
+        "crawlers",
+        "search-indexing",
+        "structured-data"
+      ]
+    },
+    {
+      "slug": "mobile-release-standards",
+      "title": "Mobile Release Standards",
+      "tagline": "App Store and Play Store release-track facts",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "mobile",
+        "app-store",
+        "google-play",
+        "release",
+        "deployment"
+      ]
+    },
+    {
+      "slug": "compliance-standards",
+      "title": "Compliance Standards",
+      "tagline": "GDPR/CCPA/SOC 2/HIPAA, tiered by applicability",
+      "status": "active",
+      "audience": "both",
+      "tags": [
+        "compliance",
+        "privacy",
+        "gdpr",
+        "ccpa",
+        "soc2",
+        "hipaa"
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "full",
+      "displayName": "Full Suite",
+      "description": "All components — spells, governance, agents, templates",
+      "spellIds": [
+        "spell-open-session",
+        "spell-close-session",
+        "spell-commit-work",
+        "spell-status",
+        "spell-arcane-version",
+        "spell-save-idea",
+        "spell-todo",
+        "spell-feedback",
+        "spell-suggest-feature",
+        "spell-document",
+        "spell-verification-ledger",
+        "spell-brainstorm",
+        "spell-explain-concept",
+        "spell-create-pull-request",
+        "spell-sync-pull-request",
+        "spell-address-review",
+        "spell-review",
+        "spell-review-batch",
+        "spell-plan",
+        "spell-architect",
+        "spell-scope",
+        "spell-product-review",
+        "spell-implement",
+        "spell-test",
+        "spell-full-cycle",
+        "spell-bug",
+        "spell-bump",
+        "spell-dotnet-expert",
+        "spell-security-review",
+        "spell-ship",
+        "spell-enchant",
+        "spell-generate-bot-icons",
+        "spell-make-discoverable",
+        "spell-scry",
+        "spell-eas-store-deploy",
+        "spell-compliance",
+        "spell-adopt-docs",
+        "spell-summon-venture",
+        "spell-manifest",
+        "spell-present-arcane",
+        "spell-check-drift"
+      ],
+      "governanceSlugs": [
+        "git-conventions",
+        "testing-standards",
+        "framework-decisions",
+        "decision-documentation-standard",
+        "agent-work-queue-model",
+        "naming-conventions",
+        "agent-policies",
+        "threat-model",
+        "hardening-checklist",
+        "authentication-strategy",
+        "new-business-setup",
+        "agent-approved-paths",
+        "portable-bootstrap",
+        "development-methodology",
+        "cicd-standards",
+        "poc-management-pattern",
+        "product-excellence-standards",
+        "spell-authoring-standards",
+        "rca-process-standard",
+        "universal-agent-rules",
+        "records-conventions",
+        "external-verification-standards",
+        "web-discoverability-standards",
+        "mobile-release-standards",
+        "compliance-standards"
+      ],
+      "extras": [
+        "agent-output-instructions",
+        "docs-baseline",
+        "line-ending-baseline",
+        "venture-template",
+        "session-continuity",
+        "agent-definitions"
+      ]
+    },
+    {
+      "id": "lite",
+      "displayName": "Essentials",
+      "description": "Spells + core governance — fast start",
+      "spellIds": [
+        "spell-open-session",
+        "spell-close-session",
+        "spell-commit-work",
+        "spell-status",
+        "spell-arcane-version",
+        "spell-save-idea",
+        "spell-todo",
+        "spell-feedback",
+        "spell-suggest-feature",
+        "spell-document",
+        "spell-verification-ledger",
+        "spell-brainstorm",
+        "spell-explain-concept",
+        "spell-create-pull-request",
+        "spell-sync-pull-request",
+        "spell-address-review",
+        "spell-review",
+        "spell-review-batch",
+        "spell-plan",
+        "spell-architect",
+        "spell-scope",
+        "spell-product-review",
+        "spell-implement",
+        "spell-test",
+        "spell-full-cycle",
+        "spell-bug",
+        "spell-bump",
+        "spell-dotnet-expert",
+        "spell-security-review",
+        "spell-ship",
+        "spell-enchant",
+        "spell-generate-bot-icons",
+        "spell-make-discoverable",
+        "spell-scry",
+        "spell-eas-store-deploy",
+        "spell-compliance",
+        "spell-summon-venture",
+        "spell-manifest",
+        "spell-present-arcane",
+        "spell-check-drift"
+      ],
+      "governanceSlugs": [
+        "git-conventions",
+        "testing-standards",
+        "framework-decisions"
+      ],
+      "extras": [
+        "agent-output-instructions",
+        "session-continuity",
+        "line-ending-baseline"
+      ]
+    },
+    {
+      "id": "methodology",
+      "displayName": "Methodology Suite",
+      "description": "Spells + governance — full methodology without security/infra docs",
+      "spellIds": [
+        "spell-open-session",
+        "spell-close-session",
+        "spell-commit-work",
+        "spell-status",
+        "spell-arcane-version",
+        "spell-save-idea",
+        "spell-todo",
+        "spell-feedback",
+        "spell-suggest-feature",
+        "spell-document",
+        "spell-verification-ledger",
+        "spell-brainstorm",
+        "spell-explain-concept",
+        "spell-create-pull-request",
+        "spell-sync-pull-request",
+        "spell-address-review",
+        "spell-review",
+        "spell-review-batch",
+        "spell-plan",
+        "spell-architect",
+        "spell-scope",
+        "spell-product-review",
+        "spell-implement",
+        "spell-test",
+        "spell-full-cycle",
+        "spell-bug",
+        "spell-bump",
+        "spell-dotnet-expert",
+        "spell-security-review",
+        "spell-ship",
+        "spell-enchant",
+        "spell-generate-bot-icons",
+        "spell-make-discoverable",
+        "spell-scry",
+        "spell-eas-store-deploy",
+        "spell-compliance",
+        "spell-summon-venture",
+        "spell-manifest",
+        "spell-present-arcane",
+        "spell-check-drift"
+      ],
+      "governanceSlugs": [
+        "git-conventions",
+        "testing-standards",
+        "framework-decisions",
+        "decision-documentation-standard",
+        "agent-work-queue-model",
+        "development-methodology",
+        "spell-authoring-standards"
+      ],
+      "extras": [
+        "agent-output-instructions",
+        "session-continuity",
+        "line-ending-baseline"
+      ]
+    },
+    {
+      "id": "docs",
+      "displayName": "Docs / Records",
+      "description": "Documentation and records repositories — no code, test, or deployment workflows",
+      "spellIds": [
+        "spell-open-session",
+        "spell-close-session",
+        "spell-commit-work",
+        "spell-status",
+        "spell-arcane-version",
+        "spell-save-idea",
+        "spell-todo",
+        "spell-feedback",
+        "spell-suggest-feature",
+        "spell-document",
+        "spell-verification-ledger",
+        "spell-brainstorm",
+        "spell-explain-concept",
+        "spell-create-pull-request",
+        "spell-sync-pull-request",
+        "spell-address-review",
+        "spell-plan",
+        "spell-architect",
+        "spell-scope",
+        "spell-product-review",
+        "spell-present-arcane",
+        "spell-check-drift",
+        "spell-adopt-docs"
+      ],
+      "governanceSlugs": [
+        "records-conventions",
+        "git-conventions",
+        "agent-policies",
+        "framework-decisions",
+        "decision-documentation-standard",
+        "agent-work-queue-model",
+        "development-methodology",
+        "naming-conventions",
+        "universal-agent-rules",
+        "spell-authoring-standards"
+      ],
+      "extras": [
+        "docs-baseline",
+        "line-ending-baseline",
+        "agent-output-instructions",
+        "session-continuity"
+      ]
+    },
+    {
+      "id": "governance-only",
+      "displayName": "Governance Only",
+      "description": "Standards docs only — no spells or agents",
+      "spellIds": [],
+      "governanceSlugs": [
+        "git-conventions",
+        "testing-standards",
+        "framework-decisions",
+        "decision-documentation-standard",
+        "agent-work-queue-model",
+        "naming-conventions",
+        "agent-policies",
+        "threat-model",
+        "hardening-checklist",
+        "authentication-strategy",
+        "new-business-setup",
+        "agent-approved-paths",
+        "portable-bootstrap",
+        "development-methodology",
+        "cicd-standards",
+        "poc-management-pattern",
+        "product-excellence-standards",
+        "rca-process-standard",
+        "universal-agent-rules",
+        "spell-authoring-standards",
+        "external-verification-standards",
+        "web-discoverability-standards",
+        "mobile-release-standards",
+        "records-conventions",
+        "compliance-standards"
+      ],
+      "extras": [
+        "agent-output-instructions",
+        "line-ending-baseline"
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "id": "orchestrator",
+      "role": "Product Operations Manager",
+      "category": "operations",
+      "codename": "Kellar",
+      "epithet": "the Maestro"
+    },
+    {
+      "id": "architecture-lead",
+      "role": "CTO / Architecture Lead",
+      "category": "engineering",
+      "codename": "Merlin",
+      "epithet": "the Archmage"
+    },
+    {
+      "id": "fullstack-dev",
+      "role": "Full-Stack Developer",
+      "category": "engineering",
+      "codename": "Lafayette",
+      "epithet": "the Conjuror"
+    },
+    {
+      "id": "qa-lead",
+      "role": "QA Lead",
+      "category": "quality",
+      "codename": "Lince",
+      "epithet": "the Unmasker"
+    },
+    {
+      "id": "devops",
+      "role": "DevOps / CI/CD Engineer",
+      "category": "engineering",
+      "codename": "Prospero",
+      "epithet": "the Stormcaller"
+    },
+    {
+      "id": "frontend-dev",
+      "role": "Frontend Developer",
+      "category": "engineering",
+      "codename": "Adelaide",
+      "epithet": "the Illusionist"
+    },
+    {
+      "id": "mobile-dev",
+      "role": "Mobile Developer",
+      "category": "engineering",
+      "codename": "Mercurio",
+      "epithet": "the Swift"
+    },
+    {
+      "id": "research-analyst",
+      "role": "Research & Backlog Analyst",
+      "category": "research",
+      "codename": "Alexander",
+      "epithet": "the Man Who Knows"
+    },
+    {
+      "id": "marketing-strategist",
+      "role": "Marketing Strategist",
+      "category": "operations",
+      "codename": "Circe",
+      "epithet": "the Charmweaver"
+    },
+    {
+      "id": "operations-comms",
+      "role": "Operations Communications",
+      "category": "operations",
+      "codename": "Bess",
+      "epithet": "the Herald"
+    },
+    {
+      "id": "collaborator",
+      "role": "External Collaboration Lead",
+      "category": "operations",
+      "codename": "Iris",
+      "epithet": "the Emissary"
+    },
+    {
+      "id": "security-ops",
+      "role": "Security Operations",
+      "category": "quality",
+      "codename": "Custodio",
+      "epithet": "the Warden"
+    }
   ]
 }

@@ -5,13 +5,15 @@ import { parse as parseYaml } from "yaml";
 import {
   TAGLINE_MAX_LENGTH,
   generateSpellCatalog,
+  parseExecutiveSummary,
   renderJsonArtifact,
   renderReadmeBlock,
   spliceReadmeBlock,
   taglineProblem,
 } from "../scripts/spell-catalog.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
-import { getAllComponents } from "../src/modules/registry.js";
+import { getAllComponents, listProfiles } from "../src/modules/registry.js";
+import { AGENT_ROLES } from "../src/config/agent-roles.js";
 
 /**
  * T15/BC-23. registry.ts's spells-* components are the single source of
@@ -113,6 +115,132 @@ describe("registry-driven spell catalog (T15/BC-23)", () => {
       await writeFile(governance, governanceOriginal.replace(/^tagline: .*\r?\n/m, ""), "utf8");
       await writeFile(target, original, "utf8");
       await expect(generateSpellCatalog(fixture)).rejects.toThrow(/git-conventions\.md: frontmatter missing a string "tagline"/);
+    } finally {
+      await removeFixtureDir(fixture);
+    }
+  });
+
+  it("spells[] is the flat view of groups[], with the client hints, the group and the Executive Summary bullets", async () => {
+    const catalog = await generateSpellCatalog(ASSETS_DIR);
+    const flattened = catalog.groups.flatMap((group) =>
+      group.spells.map((spell) => ({ ...spell, group: group.component })),
+    );
+    expect(catalog.spells.map((s) => s.id)).toEqual(flattened.map((s) => s.id));
+    for (const [index, spell] of catalog.spells.entries()) {
+      const fromGroup = flattened[index];
+      expect(spell).toMatchObject(fromGroup);
+      expect(spell.claudeDescription.length).toBeGreaterThan(0);
+      expect(spell.argumentHint.length).toBeGreaterThan(0);
+      expect(Array.isArray(spell.executiveSummary)).toBe(true);
+      for (const bullet of spell.executiveSummary) {
+        expect(bullet.trim()).toBe(bullet);
+        expect(bullet.length).toBeGreaterThan(0);
+        expect(bullet.startsWith("- ")).toBe(false);
+      }
+    }
+    // The one spell authored without the section is the only empty list.
+    expect(catalog.spells.filter((s) => s.executiveSummary.length === 0).map((s) => s.id)).toEqual([
+      "spell-present-arcane",
+    ]);
+  });
+
+  it("parseExecutiveSummary folds wrapped bullets, skips prose, and stops at the first rule", () => {
+    const content = [
+      "---",
+      "name: x",
+      "---",
+      "",
+      "## Executive Summary",
+      "",
+      "- First bullet",
+      "  continues here.",
+      "- Second bullet",
+      "",
+      "**Related spells:** a paragraph that is not a bullet.",
+      "",
+      "---",
+      "",
+      "- A bullet after the rule is body text, not summary",
+      "",
+    ].join("\n");
+    expect(parseExecutiveSummary(content)).toEqual(["First bullet continues here.", "Second bullet"]);
+    expect(parseExecutiveSummary(content.replace(/\n/g, "\r\n"))).toEqual([
+      "First bullet continues here.",
+      "Second bullet",
+    ]);
+    expect(parseExecutiveSummary("---\nname: x\n---\n\n## Mode Selection\n\n- not a summary\n")).toEqual([]);
+  });
+
+  it("governance[] carries slug, title, tagline, status, audience and tags for every distributed doc, in governanceDocs order", async () => {
+    const catalog = await generateSpellCatalog(ASSETS_DIR);
+    expect(catalog.governance.length).toBe(catalog.totalGovernanceDocs);
+    expect(catalog.governance.map((doc) => doc.slug)).toEqual(catalog.governanceDocs);
+    for (const doc of catalog.governance) {
+      expect(doc.title.length).toBeGreaterThan(0);
+      expect(taglineProblem(doc.tagline)).toBeNull();
+      expect(["active", "draft", "template"]).toContain(doc.status);
+      expect(["both", "human", "ai", "contributor"]).toContain(doc.audience);
+      expect(doc.tags.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("profiles[] expands src/config/profiles.ts into spell ids, governance slugs and extras, with every component reported once", async () => {
+    const catalog = await generateSpellCatalog(ASSETS_DIR);
+    const profiles = listProfiles();
+    expect(catalog.profiles.map((p) => p.id)).toEqual(profiles.map((p) => p.id));
+    const allSpellIds = new Set(catalog.spells.map((s) => s.id));
+    const allSlugs = new Set(catalog.governanceDocs);
+    for (const [index, profile] of catalog.profiles.entries()) {
+      expect(profile.displayName).toBe(profiles[index].displayName);
+      expect(profile.description).toBe(profiles[index].description);
+      for (const id of profile.spellIds) expect(allSpellIds.has(id), id).toBe(true);
+      for (const slug of profile.governanceSlugs) expect(allSlugs.has(slug), slug).toBe(true);
+      expect(new Set(profile.spellIds).size).toBe(profile.spellIds.length);
+      expect(new Set(profile.governanceSlugs).size).toBe(profile.governanceSlugs.length);
+      // Every extra is a registered component that ships neither spells nor governance docs.
+      for (const name of profile.extras) {
+        const component = getAllComponents().find((c) => c.name === name);
+        expect(component, name).toBeDefined();
+        expect(component!.files.some((f) => f.startsWith(".arcane/spells/") || f.startsWith(".arcane/governance/"))).toBe(false);
+      }
+    }
+    const full = catalog.profiles.find((p) => p.id === "full")!;
+    expect(full.spellIds).toEqual([...allSpellIds]);
+    expect(full.governanceSlugs).toEqual(catalog.governanceDocs);
+    const governanceOnly = catalog.profiles.find((p) => p.id === "governance-only")!;
+    expect(governanceOnly.spellIds).toEqual([]);
+  });
+
+  it("agents[] joins agent-roles.ts with the framework naming strategy, one entry per role", async () => {
+    const catalog = await generateSpellCatalog(ASSETS_DIR);
+    expect(catalog.agents.length).toBe(AGENT_ROLES.length);
+    expect(catalog.totalAgents).toBe(catalog.agents.length);
+    expect(catalog.agents.map((a) => a.id)).toEqual(AGENT_ROLES.map((r) => r.id));
+    for (const [index, agent] of catalog.agents.entries()) {
+      expect(agent.role).toBe(AGENT_ROLES[index].role);
+      expect(agent.category).toBe(AGENT_ROLES[index].category);
+      expect(agent.codename.length).toBeGreaterThan(0);
+      expect(agent.epithet.startsWith("the ")).toBe(true);
+    }
+    expect(new Set(catalog.agents.map((a) => a.codename)).size).toBe(catalog.agents.length);
+  });
+
+  it("the gate fails on a spell without an argument-hint and on a governance doc without status, audience or tags", async () => {
+    const fixture = await createFixtureDir("arcane-catalog-fields");
+    try {
+      await cp(ASSETS_DIR, fixture, { recursive: true });
+      const spell = join(fixture, ".arcane", "spells", "spell-plan.md");
+      const spellOriginal = await readFile(spell, "utf8");
+      await writeFile(spell, spellOriginal.replace(/^argument-hint: .*\r?\n/m, ""), "utf8");
+      await expect(generateSpellCatalog(fixture)).rejects.toThrow(/spell-plan\.md: frontmatter is missing a string "argument-hint"/);
+      await writeFile(spell, spellOriginal, "utf8");
+
+      const doc = join(fixture, ".arcane", "governance", "testing-standards.md");
+      const docOriginal = await readFile(doc, "utf8");
+      await writeFile(doc, docOriginal.replace(/^audience: .*\r?\n/m, ""), "utf8");
+      await expect(generateSpellCatalog(fixture)).rejects.toThrow(/testing-standards\.md: frontmatter is missing a string "audience"/);
+      await writeFile(doc, docOriginal.replace(/^tags: .*$/m, "tags: not-a-list"), "utf8");
+      await expect(generateSpellCatalog(fixture)).rejects.toThrow(/testing-standards\.md: frontmatter "tags" must be a list of strings/);
     } finally {
       await removeFixtureDir(fixture);
     }
