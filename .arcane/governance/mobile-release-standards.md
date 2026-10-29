@@ -1,5 +1,6 @@
 ---
 title: Mobile Release Standards
+tagline: App Store and Play Store release-track facts
 audience: both
 last_updated: YYYY-MM-DD
 status: active

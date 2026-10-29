@@ -1,5 +1,6 @@
 ---
 title: Testing Standards
+tagline: Coverage thresholds and what counts as tested
 audience: both
 last_updated: YYYY-MM-DD
 status: active

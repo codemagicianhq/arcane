@@ -1,5 +1,6 @@
 ---
 title: Threat Model
+tagline: Security posture, attack surfaces, mitigations
 audience: both
 last_updated: YYYY-MM-DD
 status: draft

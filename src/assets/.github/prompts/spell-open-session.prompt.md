@@ -1,6 +1,7 @@
 ---
 name: Spell — Open Session
 description: Open an Arcane session in a new chat by rebuilding context, identifying highest-priority unfinished work, and proposing concrete next actions.
+tagline: Start a logged working session
 claude_description: Use PROACTIVELY at the start of any new session, even if the user just says 'let's start' or asks 'what's next'.
 argument-hint: Optional focus area (e.g., security hardening, a specific feature, infrastructure setup)
 agent: agent

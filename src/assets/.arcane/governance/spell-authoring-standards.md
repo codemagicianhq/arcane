@@ -1,5 +1,6 @@
 ---
 title: Spell Authoring Standards
+tagline: How to write a spell that holds up
 audience: contributor
 last_updated: YYYY-MM-DD
 status: active
@@ -40,9 +41,26 @@ this broader ≥ Silver gate is not fully verified by any coded scorer or workfl
 
 | Tier | Bar |
 | --- | --- |
-| Bronze | Front-matter complete: `name`, `description`, `argument-hint`, `agent`. Enforcement: explicitly advisory prose (ARC-023) — self-graded during spell audit; a CI check (`npm run check:spell-catalog`, running `scripts/spell-catalog.ts`) incidentally validates only the `name`/`description` fields as a side effect of catalog generation, not the full front-matter set this bar requires. |
+| Bronze | Front-matter complete: `name`, `description`, `tagline`, `argument-hint`, `agent`. The `tagline` is one sentence of at most 60 characters with no trailing period — a marketing-quality one-liner a catalog consumer can show as-is (`Start a logged working session`), distinct from `description`, which tells the AI client when to invoke the spell. Enforcement: executable check for `name`, `description` and `tagline` (ARC-023) — `npm run check:spell-catalog` (`scripts/spell-catalog.ts`) fails CI when a spell or a distributed governance doc lacks one, or when a `tagline` is empty, longer than 60 characters, more than one sentence, or ends with a period; `argument-hint` and `agent` are explicitly advisory prose, self-graded during spell audit. |
 | Silver | + an accurate **Executive Summary** stating purpose, when to use it, and what it produces. |
 | Gold | + explicitly disambiguates itself from sibling spells a user might confuse it with. |
+
+A new spell starts from this front-matter block, every field filled (the generated client shims copy
+it verbatim, so there is no second place to fill it in):
+
+```yaml
+---
+name: Spell — <Title Case Name>
+description: <What the spell does and when the AI client should invoke it, in one or two sentences>
+tagline: <One sentence, at most 60 characters, no trailing period>
+claude_description: Use PROACTIVELY when <the situation that should trigger it, even unprompted>
+argument-hint: <What the user passes, with an example>
+agent: agent
+---
+```
+
+Governance documents carry the same `tagline` field beside their `title`; `npm run check:spell-catalog`
+holds both to the same rule.
 
 ### D2 — Distributability / no org-coupling **(HARD GATE ≥ Silver)**
 

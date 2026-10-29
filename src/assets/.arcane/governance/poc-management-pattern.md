@@ -1,5 +1,6 @@
 ---
 title: POC Management Pattern
+tagline: How proofs of concept graduate — or get killed
 audience: both
 last_updated: YYYY-MM-DD
 status: active

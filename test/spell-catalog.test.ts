@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { readFile } from "node:fs/promises";
+import { cp, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { parse as parseYaml } from "yaml";
 import {
+  TAGLINE_MAX_LENGTH,
   generateSpellCatalog,
   renderJsonArtifact,
   renderReadmeBlock,
   spliceReadmeBlock,
+  taglineProblem,
 } from "../scripts/spell-catalog.js";
+import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 import { getAllComponents } from "../src/modules/registry.js";
 
 /**
@@ -41,7 +45,7 @@ describe("registry-driven spell catalog (T15/BC-23)", () => {
     expect(catalog.groups.reduce((sum, group) => sum + group.spells.length, 0)).toBe(expectedTotal);
   });
 
-  it("every spell entry has a non-empty name and description sourced from its own frontmatter", async () => {
+  it("every spell entry has a non-empty name, description and tagline sourced from its own frontmatter", async () => {
     const catalog = await generateSpellCatalog(ASSETS_DIR);
     for (const group of catalog.groups) {
       expect(group.spells.length).toBeGreaterThan(0);
@@ -50,7 +54,67 @@ describe("registry-driven spell catalog (T15/BC-23)", () => {
         expect(spell.shortName.length).toBeGreaterThan(0);
         expect(spell.name.length).toBeGreaterThan(0);
         expect(spell.description.length).toBeGreaterThan(0);
+        expect(taglineProblem(spell.tagline)).toBeNull();
       }
+    }
+  });
+
+  it("every distributed governance doc carries a tagline under the same contract", async () => {
+    const files = new Set<string>();
+    for (const component of getAllComponents()) {
+      for (const file of component.files) {
+        if (file.startsWith(".arcane/governance/") && file.endsWith(".md")) files.add(file);
+      }
+    }
+    expect(files.size).toBeGreaterThan(0);
+    for (const file of files) {
+      const raw = await readFile(join(ASSETS_DIR, file), "utf8");
+      const block = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
+      expect(block, `${file} has frontmatter`).not.toBeNull();
+      const parsed = parseYaml(block![1]) as Record<string, unknown>;
+      expect(taglineProblem(parsed["tagline"]), file).toBeNull();
+    }
+  });
+
+  it("the tagline contract: one sentence, at most 60 characters, no trailing period", () => {
+    expect(TAGLINE_MAX_LENGTH).toBe(60);
+    expect(taglineProblem("Start a logged working session")).toBeNull();
+    expect(taglineProblem("Wrap up; journal the session")).toBeNull();
+    expect(taglineProblem("GDPR/CCPA/SOC 2/HIPAA, before you need it")).toBeNull();
+    expect(taglineProblem("x".repeat(60))).toBeNull();
+
+    expect(taglineProblem(undefined)).toMatch(/missing/);
+    expect(taglineProblem(42)).toMatch(/missing/);
+    expect(taglineProblem("")).toMatch(/empty/);
+    expect(taglineProblem("   ")).toMatch(/empty/);
+    expect(taglineProblem(" padded")).toMatch(/whitespace/);
+    expect(taglineProblem("x".repeat(61))).toMatch(/61 characters; the maximum is 60/);
+    expect(taglineProblem("Ends with a period.")).toMatch(/period/);
+    expect(taglineProblem("Shouts!")).toMatch(/period or other sentence mark/);
+    expect(taglineProblem("Two sentences. Not one")).toMatch(/one sentence/);
+    expect(taglineProblem("Two\nlines")).toMatch(/single line/);
+  });
+
+  it("the gate fails on a spell whose tagline is missing or too long", async () => {
+    const fixture = await createFixtureDir("arcane-catalog-tagline");
+    try {
+      await cp(ASSETS_DIR, fixture, { recursive: true });
+      const target = join(fixture, ".arcane", "spells", "spell-open-session.md");
+      const original = await readFile(target, "utf8");
+
+      await writeFile(target, original.replace(/^tagline: .*$/m, `tagline: ${"x".repeat(61)}`), "utf8");
+      await expect(generateSpellCatalog(fixture)).rejects.toThrow(/spell-open-session\.md: frontmatter "tagline" is 61 characters/);
+
+      await writeFile(target, original.replace(/^tagline: .*\r?\n/m, ""), "utf8");
+      await expect(generateSpellCatalog(fixture)).rejects.toThrow(/spell-open-session\.md: frontmatter missing a string "tagline"/);
+
+      const governance = join(fixture, ".arcane", "governance", "git-conventions.md");
+      const governanceOriginal = await readFile(governance, "utf8");
+      await writeFile(governance, governanceOriginal.replace(/^tagline: .*\r?\n/m, ""), "utf8");
+      await writeFile(target, original, "utf8");
+      await expect(generateSpellCatalog(fixture)).rejects.toThrow(/git-conventions\.md: frontmatter missing a string "tagline"/);
+    } finally {
+      await removeFixtureDir(fixture);
     }
   });
 

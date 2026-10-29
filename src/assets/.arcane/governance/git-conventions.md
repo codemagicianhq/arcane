@@ -1,5 +1,6 @@
 ---
 title: Git Conventions — Commit Format and Branching Model
+tagline: Branch names, commit format, merge rules
 audience: both
 status: active
 distributable: true

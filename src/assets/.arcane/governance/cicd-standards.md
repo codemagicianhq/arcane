@@ -1,5 +1,6 @@
 ---
 title: CI/CD Standards
+tagline: Build, verify, and release gates
 audience: both
 last_updated: YYYY-MM-DD
 status: active

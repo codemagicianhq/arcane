@@ -1,5 +1,6 @@
 ---
 title: Web Discoverability Standards
+tagline: Search-engine and AI-assistant discoverability rules
 audience: both
 last_updated: YYYY-MM-DD
 status: active

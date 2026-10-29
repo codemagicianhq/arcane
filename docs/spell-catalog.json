@@ -38,31 +38,36 @@
           "id": "spell-open-session",
           "shortName": "open-session",
           "name": "Spell — Open Session",
-          "description": "Open an Arcane session in a new chat by rebuilding context, identifying highest-priority unfinished work, and proposing concrete next actions."
+          "description": "Open an Arcane session in a new chat by rebuilding context, identifying highest-priority unfinished work, and proposing concrete next actions.",
+          "tagline": "Start a logged working session"
         },
         {
           "id": "spell-close-session",
           "shortName": "close-session",
           "name": "Spell — Close Session",
-          "description": "End a work session by logging outcomes in today's journal and pruning completed TODO items with verifiable evidence."
+          "description": "End a work session by logging outcomes in today's journal and pruning completed TODO items with verifiable evidence.",
+          "tagline": "Wrap up; journal the session"
         },
         {
           "id": "spell-commit-work",
           "shortName": "commit-work",
           "name": "Spell — Commit Work",
-          "description": "Generate Conventional Commits message with agent attribution and commit current work during an active session"
+          "description": "Generate Conventional Commits message with agent attribution and commit current work during an active session",
+          "tagline": "Conventional commits, written for you"
         },
         {
           "id": "spell-status",
           "shortName": "status",
           "name": "Spell — Status",
-          "description": "Show a fast, read-only snapshot of the current session — branch, git working state, open TODO count, decision count, and last journal date. Text or JSON."
+          "description": "Show a fast, read-only snapshot of the current session — branch, git working state, open TODO count, decision count, and last journal date. Text or JSON.",
+          "tagline": "Where the work stands, at a glance"
         },
         {
           "id": "spell-arcane-version",
           "shortName": "arcane-version",
           "name": "Spell — Arcane Version",
-          "description": "Report the version of Arcane installed in this repository, the active profile, installed components, and whether an update is available."
+          "description": "Report the version of Arcane installed in this repository, the active profile, installed components, and whether an update is available.",
+          "tagline": "What is installed, what is current"
         }
       ]
     },
@@ -74,49 +79,57 @@
           "id": "spell-save-idea",
           "shortName": "save-idea",
           "name": "Spell — Save Idea",
-          "description": "Quickly capture a fleeting idea into the repo's idea inbox so it is not lost. Low ceremony, no approval gate, optimized for voice and speed. In a hub repo, optionally target a venture's own idea book."
+          "description": "Quickly capture a fleeting idea into the repo's idea inbox so it is not lost. Low ceremony, no approval gate, optimized for voice and speed. In a hub repo, optionally target a venture's own idea book.",
+          "tagline": "Bank an idea before it evaporates"
         },
         {
           "id": "spell-todo",
           "shortName": "todo",
           "name": "Spell — Todo",
-          "description": "Elaborate a raw idea into one or more well-scoped TODO items and place them in the right document(s). In a hub repo, optionally target a venture's own TODO book, or sweep every book's open-item counts."
+          "description": "Elaborate a raw idea into one or more well-scoped TODO items and place them in the right document(s). In a hub repo, optionally target a venture's own TODO book, or sweep every book's open-item counts.",
+          "tagline": "Capture and track loose ends"
         },
         {
           "id": "spell-feedback",
           "shortName": "feedback",
           "name": "Spell — Feedback",
-          "description": "Collect structured feedback on AI-assistance quality and workflow friction, and append it to FEEDBACK.md for continuous improvement. Framework-shaped items can route upstream to arcane's public GitHub issues."
+          "description": "Collect structured feedback on AI-assistance quality and workflow friction, and append it to FEEDBACK.md for continuous improvement. Framework-shaped items can route upstream to arcane's public GitHub issues.",
+          "tagline": "Send feedback upstream to Arcane"
         },
         {
           "id": "spell-suggest-feature",
           "shortName": "suggest-feature",
           "name": "Spell — Suggest Feature",
-          "description": "Capture a feature suggestion from smoke testing or usage — assesses impact, files a tracker item (provider-aware), and adds to backlog"
+          "description": "Capture a feature suggestion from smoke testing or usage — assesses impact, files a tracker item (provider-aware), and adds to backlog",
+          "tagline": "Propose the next thing worth building"
         },
         {
           "id": "spell-document",
           "shortName": "document",
           "name": "Spell — Document",
-          "description": "Formalize valuable insights, analysis, or decisions from the current conversation into polished, permanent reference documents."
+          "description": "Formalize valuable insights, analysis, or decisions from the current conversation into polished, permanent reference documents.",
+          "tagline": "Write the docs that match the code"
         },
         {
           "id": "spell-verification-ledger",
           "shortName": "verification-ledger",
           "name": "Spell — Verification Ledger",
-          "description": "Extract a structured record of claims that were checked this session and what the check showed — especially the ones that didn't survive. Separate from spell-close-session; run on demand, not every session."
+          "description": "Extract a structured record of claims that were checked this session and what the check showed — especially the ones that didn't survive. Separate from spell-close-session; run on demand, not every session.",
+          "tagline": "Record what a session actually verified"
         },
         {
           "id": "spell-brainstorm",
           "shortName": "brainstorm",
           "name": "Spell — Brainstorm",
-          "description": "Divergent ideation — explore multiple solutions to a problem space before committing to a plan"
+          "description": "Divergent ideation — explore multiple solutions to a problem space before committing to a plan",
+          "tagline": "Structured divergent thinking"
         },
         {
           "id": "spell-explain-concept",
           "shortName": "explain-concept",
           "name": "Spell — Explain Concept",
-          "description": "Explain a technical concept, architecture, or system behavior in a balanced way: enough technical depth to be accurate, enough plain language to be accessible. Use when: confused about how something works, need to understand a system before making decisions, want a 'teach me' breakdown."
+          "description": "Explain a technical concept, architecture, or system behavior in a balanced way: enough technical depth to be accurate, enough plain language to be accessible. Use when: confused about how something works, need to understand a system before making decisions, want a 'teach me' breakdown.",
+          "tagline": "Explain any concept, in context"
         }
       ]
     },
@@ -128,19 +141,22 @@
           "id": "spell-create-pull-request",
           "shortName": "create-pull-request",
           "name": "Spell — Create Pull Request",
-          "description": "Open a pull request for the current branch with an auto-generated title and description from commit history. Provider-agnostic (GitHub or Azure DevOps)."
+          "description": "Open a pull request for the current branch with an auto-generated title and description from commit history. Provider-agnostic (GitHub or Azure DevOps).",
+          "tagline": "Open a PR with full context"
         },
         {
           "id": "spell-sync-pull-request",
           "shortName": "sync-pull-request",
           "name": "Spell — Sync Pull Request",
-          "description": "Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical / regenerable / ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points."
+          "description": "Safely sync an open PR's branch with its target when it has fallen behind — recoverable pre-rebase ref, mechanical / regenerable / ambiguous conflict handling, force-with-lease push, provider-verified landing. Use when a PR needs rebasing onto a moved target, or was routed here from spell-create-pull-request/spell-ship's own conflict-stop points.",
+          "tagline": "Rebase a stale PR, resolve conflicts safely"
         },
         {
           "id": "spell-address-review",
           "shortName": "address-review",
           "name": "Spell — Address Review",
-          "description": "Respond to code-review feedback on a pull request — fetch comment threads, triage each, implement fixes or reply with rationale, and resolve every thread."
+          "description": "Respond to code-review feedback on a pull request — fetch comment threads, triage each, implement fixes or reply with rationale, and resolve every thread.",
+          "tagline": "Resolve reviewer feedback systematically"
         }
       ]
     },
@@ -152,13 +168,15 @@
           "id": "spell-review",
           "shortName": "review",
           "name": "Spell — Review",
-          "description": "Adversarial code review — must find issues, validate architecture compliance, and check security"
+          "description": "Adversarial code review — must find issues, validate architecture compliance, and check security",
+          "tagline": "Adversarial review before merge"
         },
         {
           "id": "spell-review-batch",
           "shortName": "review-batch",
           "name": "Spell — Review Batch",
-          "description": "Adversarially review many pull requests in one run and emit per-PR verdicts plus a consolidated go/no-go readiness gate report. Provider-agnostic."
+          "description": "Adversarially review many pull requests in one run and emit per-PR verdicts plus a consolidated go/no-go readiness gate report. Provider-agnostic.",
+          "tagline": "Review a stack of changes at once"
         }
       ]
     },
@@ -170,25 +188,29 @@
           "id": "spell-plan",
           "shortName": "plan",
           "name": "Spell — Plan",
-          "description": "Generate a Product Requirements Document (PRD) from a feature description using structured planning"
+          "description": "Generate a Product Requirements Document (PRD) from a feature description using structured planning",
+          "tagline": "Turn intent into a reviewable PRD"
         },
         {
           "id": "spell-architect",
           "shortName": "architect",
           "name": "Spell — Architect",
-          "description": "Generate architecture decisions and story breakdown from a PRD, producing architecture.md and stories.json"
+          "description": "Generate architecture decisions and story breakdown from a PRD, producing architecture.md and stories.json",
+          "tagline": "Break the plan into stories + criteria"
         },
         {
           "id": "spell-scope",
           "shortName": "scope",
           "name": "Spell — Scope",
-          "description": "Analyze a large PRD — scope it, split into epics, check architecture and security implications, estimate effort, and produce an execution plan with agent assignments"
+          "description": "Analyze a large PRD — scope it, split into epics, check architecture and security implications, estimate effort, and produce an execution plan with agent assignments",
+          "tagline": "Cut the work down to shippable size"
         },
         {
           "id": "spell-product-review",
           "shortName": "product-review",
           "name": "Spell — Product Review",
-          "description": "Build/Measure/Analyze/Decide cycle — evaluate feature performance and recommend next actions"
+          "description": "Build/Measure/Analyze/Decide cycle — evaluate feature performance and recommend next actions",
+          "tagline": "Judge the product, not the diff"
         }
       ]
     },
@@ -200,85 +222,99 @@
           "id": "spell-implement",
           "shortName": "implement",
           "name": "Spell — Implement",
-          "description": "Autonomous implementation loop — pick a story from stories.json, build it, test it, commit it, repeat until all stories pass"
+          "description": "Autonomous implementation loop — pick a story from stories.json, build it, test it, commit it, repeat until all stories pass",
+          "tagline": "Build against stories, never freestyle"
         },
         {
           "id": "spell-test",
           "shortName": "test",
           "name": "Spell — Test",
-          "description": "Run tests, validate coverage thresholds, and generate test evidence for a completed story or feature"
+          "description": "Run tests, validate coverage thresholds, and generate test evidence for a completed story or feature",
+          "tagline": "Prove it works; enforce thresholds"
         },
         {
           "id": "spell-full-cycle",
           "shortName": "full-cycle",
           "name": "Spell — Full Cycle",
-          "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time"
+          "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time",
+          "tagline": "Run the whole loop end-to-end"
         },
         {
           "id": "spell-bug",
           "shortName": "bug",
           "name": "Spell — Bug",
-          "description": "Document, diagnose, and fix a bug — files a tracker work item (per tracking_mode), traces root cause, implements fix, verifies, and commits"
+          "description": "Document, diagnose, and fix a bug — files a tracker work item (per tracking_mode), traces root cause, implements fix, verifies, and commits",
+          "tagline": "File a reproducible bug report"
         },
         {
           "id": "spell-bump",
           "shortName": "bump",
           "name": "Spell — Bump Version",
-          "description": "Determine the correct semver bump type for the current change and apply it to package.json"
+          "description": "Determine the correct semver bump type for the current change and apply it to package.json",
+          "tagline": "Version bump + changelog entry"
         },
         {
           "id": "spell-dotnet-expert",
           "shortName": "dotnet-expert",
           "name": "Spell — .NET Expert",
-          "description": "Load .NET best practices and patterns for any development agent working on .NET projects"
+          "description": "Load .NET best practices and patterns for any development agent working on .NET projects",
+          "tagline": "Summon deep .NET expertise"
         },
         {
           "id": "spell-security-review",
           "shortName": "security-review",
           "name": "Spell — Security Review",
-          "description": "OWASP Top 10 and AI/agent (LLM) security audit plus dependency vulnerability check for any project"
+          "description": "OWASP Top 10 and AI/agent (LLM) security audit plus dependency vulnerability check for any project",
+          "tagline": "Threat-model the change"
         },
         {
           "id": "spell-ship",
           "shortName": "ship",
           "name": "Spell — Ship",
-          "description": "Pre-deploy checklist, merge approval workflow, and deployment gate verification"
+          "description": "Pre-deploy checklist, merge approval workflow, and deployment gate verification",
+          "tagline": "Merge, version, release"
         },
         {
           "id": "spell-enchant",
           "shortName": "enchant",
           "name": "Spell — Enchant",
-          "description": "Enchant a PRD from functional to exceptional — proactively enhance features, UX, accessibility, security, and performance using a research lens and a marketing/brand lens"
+          "description": "Enchant a PRD from functional to exceptional — proactively enhance features, UX, accessibility, security, and performance using a research lens and a marketing/brand lens",
+          "tagline": "Harden a PRD — tighter scope, security, edge cases"
         },
         {
           "id": "spell-generate-bot-icons",
           "shortName": "generate-bot-icons",
           "name": "Spell — Generate Bot Icons",
-          "description": "Generate a bot avatar concept with an image-capable agent, then normalize it into Teams-ready color and outline icons."
+          "description": "Generate a bot avatar concept with an image-capable agent, then normalize it into Teams-ready color and outline icons.",
+          "tagline": "Generate avatars for your roster"
         },
         {
           "id": "spell-make-discoverable",
           "shortName": "make-discoverable",
           "name": "Spell — Make Discoverable",
-          "description": "Audit and fix a web property's search and AI-assistant discoverability — per-route share metadata, robots and sitemap policy, non-production noindexing, and search-engine registration. Read-only by default."
+          "description": "Audit and fix a web property's search and AI-assistant discoverability — per-route share metadata, robots and sitemap policy, non-production noindexing, and search-engine registration. Read-only by default.",
+          "tagline": "Audit a site's search/AI-assistant discoverability"
         },
         {
           "id": "spell-scry",
           "shortName": "scry",
           "name": "Spell — Scry",
-          "description": "Clear a candidate name before it ships — four outward checks (who coined it, estate still trading, same-audience giants, first-association salience) plus a mandatory inward repo-local collision pass. Use when naming anything new (a spell, a field, a product, an internal concept) before committing to it."
+          "description": "Clear a candidate name before it ships — four outward checks (who coined it, estate still trading, same-audience giants, first-association salience) plus a mandatory inward repo-local collision pass. Use when naming anything new (a spell, a field, a product, an internal concept) before committing to it.",
+          "tagline": "Clear a name before you commit to it"
         },
         {
           "id": "spell-eas-store-deploy",
           "shortName": "eas-store-deploy",
           "name": "Spell — EAS Store Deploy",
-          "description": "Deploy an Expo app to the Apple App Store and Google Play via EAS Build + EAS Submit — one-time setup, repeat deployments, and the known pitfalls hit dogfooding both flows for real."
+          "description": "Deploy an Expo app to the Apple App Store and Google Play via EAS Build + EAS Submit — one-time setup, repeat deployments, and the known pitfalls hit dogfooding both flows for real.",
+          "tagline": "Ship an Expo app to the App Store or Play"
         },
         {
           "id": "spell-compliance",
           "shortName": "compliance",
           "name": "Spell — Compliance",
-          "description": "Run a regulatory compliance self-assessment against this repo (GDPR, CCPA, SOC 2, HIPAA) and produce a prioritized remediation checklist. Read-only — never drafts policies or fixes gaps automatically."
+          "description": "Run a regulatory compliance self-assessment against this repo (GDPR, CCPA, SOC 2, HIPAA) and produce a prioritized remediation checklist. Read-only — never drafts policies or fixes gaps automatically.",
+          "tagline": "GDPR/CCPA/SOC 2/HIPAA, before you need it"
         }
       ]
     },
@@ -290,7 +326,8 @@
           "id": "spell-adopt-docs",
           "shortName": "adopt-docs",
           "name": "Spell — Adopt Docs",
-          "description": "Bring an existing document tree under Arcane governance without moving anything first — inventory, propose a mapping, get approval, then apply in reversible steps. Dry-run by default."
+          "description": "Bring an existing document tree under Arcane governance without moving anything first — inventory, propose a mapping, get approval, then apply in reversible steps. Dry-run by default.",
+          "tagline": "Bring an existing doc tree under governance"
         }
       ]
     },
@@ -302,13 +339,15 @@
           "id": "spell-summon-venture",
           "shortName": "summon-venture",
           "name": "Spell — Summon Venture",
-          "description": "Create a new venture in a hub repo — folder, overview/config/legal docs, idea and todo books, and a registry entry — in one hub-gated move."
+          "description": "Create a new venture in a hub repo — folder, overview/config/legal docs, idea and todo books, and a registry entry — in one hub-gated move.",
+          "tagline": "Stand up a new venture from zero"
         },
         {
           "id": "spell-manifest",
           "shortName": "manifest",
           "name": "Spell — Manifest",
-          "description": "Hub-gated interactive triage that promotes idea-book and todo-book entries downstream — to a consumer repo, a PRD scaffold, a tracker item, public disclosure, or another venture's book."
+          "description": "Hub-gated interactive triage that promotes idea-book and todo-book entries downstream — to a consumer repo, a PRD scaffold, a tracker item, public disclosure, or another venture's book.",
+          "tagline": "Triage idea and todo books across ventures"
         }
       ]
     },
@@ -320,13 +359,15 @@
           "id": "spell-present-arcane",
           "shortName": "present-arcane",
           "name": "Spell — Present Arcane",
-          "description": "Present Arcane in one of three modes — a full 1-hour talk (default), a live-state executive summary document, or a deck-builder meta-prompt sized to a slide count or duration."
+          "description": "Present Arcane in one of three modes — a full 1-hour talk (default), a live-state executive summary document, or a deck-builder meta-prompt sized to a slide count or duration.",
+          "tagline": "Pitch Arcane to your team"
         },
         {
           "id": "spell-check-drift",
           "shortName": "check-drift",
           "name": "Spell — Check Doc Drift",
-          "description": "Detect contradictions and stale statements across core Arcane docs and report severity-graded findings (report-only by default; opt-in --fix applies safe mechanical fixes)."
+          "description": "Detect contradictions and stale statements across core Arcane docs and report severity-graded findings (report-only by default; opt-in --fix applies safe mechanical fixes).",
+          "tagline": "Detect divergence from the plan"
         }
       ]
     }

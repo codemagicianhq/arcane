@@ -1,5 +1,6 @@
 ---
 title: Product Excellence Standards
+tagline: The bar a feature must clear to ship
 audience: both
 last_updated: YYYY-MM-DD
 status: active

@@ -1,5 +1,6 @@
 ---
 title: External Verification Standards
+tagline: Confirm a write actually took effect out there
 audience: both
 last_updated: YYYY-MM-DD
 status: active

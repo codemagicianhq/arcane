@@ -1,5 +1,6 @@
 ---
 title: Development Methodology — The Spell Loop
+tagline: The Spell Loop itself, as enforceable text
 audience: both
 last_updated: YYYY-MM-DD
 status: active

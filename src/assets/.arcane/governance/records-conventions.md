@@ -1,5 +1,6 @@
 ---
 title: Records Conventions
+tagline: Supersession, tombstone, and retention rules
 audience: both
 last_updated: YYYY-MM-DD
 status: active
