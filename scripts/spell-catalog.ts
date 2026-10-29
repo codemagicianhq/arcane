@@ -3,9 +3,12 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
-import { getAllComponents } from "../src/modules/registry.js";
+import { getAllComponents, getComponent, listProfiles } from "../src/modules/registry.js";
 import { MARKER_START, MARKER_END } from "../src/modules/merger.js";
 import { AGENT_ROLES } from "../src/config/agent-roles.js";
+import { loadAllAgentDefinitions } from "../src/modules/agent-loader.js";
+import { applyArcanosNames } from "../src/modules/naming.js";
+import type { RegistryComponent } from "../src/types.js";
 
 // A spell is identified by its canonical source (ARC-045 / CS-03) -- the
 // client shims that follow it in each spells-* component are the same spell
@@ -38,12 +41,59 @@ export interface SpellCatalogGroup {
   spells: SpellCatalogEntry[];
 }
 
+/** One spell, flat: everything a consumer needs to render it without opening the file. */
+export interface SpellCatalogSpell extends SpellCatalogEntry {
+  /** The Claude Code stub's proactive-invocation hint; falls back to `description`, as the compiler does. */
+  claudeDescription: string;
+  /** What the user passes, with an example. */
+  argumentHint: string;
+  /** The `spells-*` component the spell ships in (`groups[].component`). */
+  group: string;
+  /** The bullets of the spell's `## Executive Summary`, in order; empty when the spell has none. */
+  executiveSummary: string[];
+}
+
+export interface GovernanceCatalogEntry {
+  slug: string;
+  title: string;
+  tagline: string;
+  status: string;
+  audience: string;
+  tags: string[];
+}
+
+export interface ProfileCatalogEntry {
+  id: string;
+  displayName: string;
+  description: string;
+  /** Spell ids installed by this profile, in registry order. */
+  spellIds: string[];
+  /** Governance slugs installed by this profile, in registry order. */
+  governanceSlugs: string[];
+  /** The profile's other components (templates, baselines, instructions), by registry name. */
+  extras: string[];
+}
+
+export interface AgentCatalogEntry {
+  id: string;
+  role: string;
+  category: string;
+  /** The persona name under the framework's own naming strategy. */
+  codename: string;
+  /** The persona's epithet under that strategy. */
+  epithet: string;
+}
+
 export interface SpellCatalog {
   totalSpells: number;
   totalAgents: number;
   totalGovernanceDocs: number;
   governanceDocs: string[];
   groups: SpellCatalogGroup[];
+  spells: SpellCatalogSpell[];
+  governance: GovernanceCatalogEntry[];
+  profiles: ProfileCatalogEntry[];
+  agents: AgentCatalogEntry[];
 }
 
 export interface SpellCatalogResult {
@@ -100,16 +150,74 @@ function requireTagline(filePath: string, frontmatter: Record<string, unknown>):
   return frontmatter["tagline"] as string;
 }
 
-async function loadFrontmatter(
-  assetsDir: string,
-  promptPath: string,
-): Promise<{ name: string; description: string; tagline: string }> {
+function requireString(filePath: string, frontmatter: Record<string, unknown>, key: string): string {
+  const value = frontmatter[key];
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error(`${filePath}: frontmatter is missing a string "${key}"`);
+  }
+  return value;
+}
+
+function requireStringList(filePath: string, frontmatter: Record<string, unknown>, key: string): string[] {
+  const value = frontmatter[key];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string" || item.trim() === "")) {
+    throw new Error(`${filePath}: frontmatter "${key}" must be a list of strings`);
+  }
+  return value as string[];
+}
+
+/**
+ * The bullets of a spell's `## Executive Summary`, each continuation line
+ * (indented under its bullet) folded into the bullet it belongs to, and the
+ * section ending at the first `---` rule. A spell without the section yields
+ * an empty list rather than failing: the authoring standard puts the summary
+ * at D1 Silver, not Bronze.
+ */
+export function parseExecutiveSummary(content: string): string[] {
+  const header = /^## Executive Summary[ \t]*\r?\n/m.exec(content);
+  if (!header) return [];
+  const body = content.slice(header.index + header[0].length);
+  const rule = /^---[ \t]*\r?$/m.exec(body);
+  const section = rule ? body.slice(0, rule.index) : body;
+  const bullets: string[] = [];
+  for (const rawLine of section.split(/\r?\n/)) {
+    if (/^- /.test(rawLine)) {
+      bullets.push(rawLine.slice(2).trim());
+    } else if (/^\s+\S/.test(rawLine) && bullets.length > 0) {
+      bullets[bullets.length - 1] = `${bullets[bullets.length - 1]} ${rawLine.trim()}`;
+    }
+  }
+  return bullets;
+}
+
+interface SpellFrontmatter {
+  name: string;
+  description: string;
+  tagline: string;
+  claudeDescription: string;
+  argumentHint: string;
+  executiveSummary: string[];
+}
+
+async function loadFrontmatter(assetsDir: string, promptPath: string): Promise<SpellFrontmatter> {
+  const raw = await readFile(join(assetsDir, promptPath), "utf8");
   const parsed = await readFrontmatter(assetsDir, promptPath);
   if (typeof parsed["name"] !== "string" || typeof parsed["description"] !== "string") {
     throw new Error(`${promptPath}: frontmatter is missing a string "name" or "description"`);
   }
   const tagline = requireTagline(promptPath, parsed);
-  return { name: parsed["name"], description: parsed["description"], tagline };
+  const claudeDescription =
+    typeof parsed["claude_description"] === "string" ? parsed["claude_description"] : parsed["description"];
+  // D1 Bronze in spell-authoring-standards.md: `argument-hint` is required.
+  const argumentHint = requireString(promptPath, parsed, "argument-hint");
+  return {
+    name: parsed["name"],
+    description: parsed["description"],
+    tagline,
+    claudeDescription,
+    argumentHint,
+    executiveSummary: parseExecutiveSummary(raw),
+  };
 }
 
 /**
@@ -121,13 +229,81 @@ async function loadFrontmatter(
 async function loadGovernanceFrontmatter(
   assetsDir: string,
   docPath: string,
-): Promise<{ title: string; tagline: string }> {
+): Promise<Omit<GovernanceCatalogEntry, "slug">> {
   const parsed = await readFrontmatter(assetsDir, docPath);
-  if (typeof parsed["title"] !== "string") {
-    throw new Error(`${docPath}: frontmatter is missing a string "title"`);
-  }
+  const title = requireString(docPath, parsed, "title");
   const tagline = requireTagline(docPath, parsed);
-  return { title: parsed["title"], tagline };
+  const status = requireString(docPath, parsed, "status");
+  const audience = requireString(docPath, parsed, "audience");
+  const tags = requireStringList(docPath, parsed, "tags");
+  return { title, tagline, status, audience, tags };
+}
+
+function spellIdsOf(component: RegistryComponent): string[] {
+  return component.files
+    .filter((file) => file.startsWith(SPELL_PREFIX) && file.endsWith(SPELL_SUFFIX))
+    .map(idForPromptFile);
+}
+
+function governanceSlugsOf(component: RegistryComponent): string[] {
+  return component.files
+    .filter((file) => file.startsWith(GOVERNANCE_PREFIX) && file.endsWith(GOVERNANCE_SUFFIX))
+    .map((file) => file.slice(GOVERNANCE_PREFIX.length, -GOVERNANCE_SUFFIX.length));
+}
+
+/**
+ * Profiles as data, from src/config/profiles.ts through the registry's own
+ * expansion (so `"*"` means what `spell init` makes it mean). A component is
+ * reported once, under whichever of the three lists fits it: its spells, its
+ * governance docs, or -- for templates, baselines and instruction files -- its
+ * registry name under `extras`.
+ */
+function catalogProfiles(): ProfileCatalogEntry[] {
+  return listProfiles().map((profile) => {
+    const spellIds: string[] = [];
+    const governanceSlugs: string[] = [];
+    const extras: string[] = [];
+    for (const name of profile.components) {
+      const component = getComponent(name);
+      const spells = spellIdsOf(component);
+      const slugs = governanceSlugsOf(component);
+      if (spells.length > 0) spellIds.push(...spells);
+      if (slugs.length > 0) governanceSlugs.push(...slugs);
+      if (spells.length === 0 && slugs.length === 0) extras.push(name);
+    }
+    return {
+      id: profile.id,
+      displayName: profile.displayName,
+      description: profile.description,
+      spellIds,
+      governanceSlugs,
+      extras,
+    };
+  });
+}
+
+/**
+ * Agents as data: the canonical role list (src/config/agent-roles.ts) joined
+ * with the framework's own naming strategy (src/modules/naming.ts), checked
+ * against the shipped definition files so a role without a YAML, or a YAML
+ * without a role, fails here rather than at `spell agents init`.
+ */
+async function catalogAgents(assetsDir: string): Promise<AgentCatalogEntry[]> {
+  const definitions = await loadAllAgentDefinitions(join(assetsDir, "agents"));
+  const definitionIds = new Set(definitions.map((definition) => definition.id));
+  const roleIds = new Set(AGENT_ROLES.map((role) => role.id));
+  for (const role of AGENT_ROLES) {
+    if (!definitionIds.has(role.id)) throw new Error(`agents/${role.id}.yaml: no definition for role "${role.id}"`);
+  }
+  for (const id of definitionIds) {
+    if (!roleIds.has(id)) throw new Error(`agents/${id}.yaml: definition has no entry in agent-roles.ts`);
+  }
+  const named = new Map(applyArcanosNames(AGENT_ROLES.map((role) => role.id)).map((n) => [n.definition, n]));
+  return AGENT_ROLES.map((role) => {
+    const naming = named.get(role.id);
+    if (!naming?.epithet) throw new Error(`agent-roles.ts: role "${role.id}" has no codename or epithet in naming.ts`);
+    return { id: role.id, role: role.role, category: role.category, codename: naming.name, epithet: naming.epithet };
+  });
 }
 
 /**
@@ -139,6 +315,8 @@ async function loadGovernanceFrontmatter(
  */
 export async function generateSpellCatalog(assetsDir: string): Promise<SpellCatalog> {
   const groups: SpellCatalogGroup[] = [];
+  const spells: SpellCatalogSpell[] = [];
+  const governance: GovernanceCatalogEntry[] = [];
   let totalSpells = 0;
   const governanceFiles = new Set<string>();
   const governanceDocs: string[] = [];
@@ -147,10 +325,9 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
     for (const file of component.files) {
       if (file.startsWith(GOVERNANCE_PREFIX) && file.endsWith(GOVERNANCE_SUFFIX)) {
         if (!governanceFiles.has(file)) {
-          governanceDocs.push(file.slice(GOVERNANCE_PREFIX.length, -GOVERNANCE_SUFFIX.length));
-          // Validated here even though the slug list carries no tagline yet:
-          // the gate must fail on a governance doc without one.
-          await loadGovernanceFrontmatter(assetsDir, file);
+          const slug = file.slice(GOVERNANCE_PREFIX.length, -GOVERNANCE_SUFFIX.length);
+          governanceDocs.push(slug);
+          governance.push({ slug, ...(await loadGovernanceFrontmatter(assetsDir, file)) });
         }
         governanceFiles.add(file);
       }
@@ -162,23 +339,43 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
       (file) => file.startsWith(SPELL_PREFIX) && file.endsWith(SPELL_SUFFIX),
     );
 
-    const spells: SpellCatalogEntry[] = [];
+    const groupSpells: SpellCatalogEntry[] = [];
     for (const file of promptFiles) {
       const id = idForPromptFile(file);
-      const { name, description, tagline } = await loadFrontmatter(assetsDir, file);
-      spells.push({ id, shortName: id.replace(/^spell-/, ""), name, description, tagline });
+      const frontmatter = await loadFrontmatter(assetsDir, file);
+      const entry: SpellCatalogEntry = {
+        id,
+        shortName: id.replace(/^spell-/, ""),
+        name: frontmatter.name,
+        description: frontmatter.description,
+        tagline: frontmatter.tagline,
+      };
+      groupSpells.push(entry);
+      spells.push({
+        ...entry,
+        claudeDescription: frontmatter.claudeDescription,
+        argumentHint: frontmatter.argumentHint,
+        group: component.name,
+        executiveSummary: frontmatter.executiveSummary,
+      });
     }
 
-    groups.push({ component: component.name, label: labelForComponent(component.name), spells });
-    totalSpells += spells.length;
+    groups.push({ component: component.name, label: labelForComponent(component.name), spells: groupSpells });
+    totalSpells += groupSpells.length;
   }
+
+  const agents = await catalogAgents(assetsDir);
 
   return {
     totalSpells,
-    totalAgents: AGENT_ROLES.length,
+    totalAgents: agents.length,
     totalGovernanceDocs: governanceFiles.size,
     governanceDocs,
     groups,
+    spells,
+    governance,
+    profiles: catalogProfiles(),
+    agents,
   };
 }
 
