@@ -9,6 +9,17 @@ import { AGENT_ROLES } from "../src/config/agent-roles.js";
 import { loadAllAgentDefinitions } from "../src/modules/agent-loader.js";
 import { applyArcanosNames } from "../src/modules/naming.js";
 import type { RegistryComponent } from "../src/types.js";
+import {
+  CAPABILITY_HOLDS,
+  CAPABILITY_LEGEND,
+  CAPABILITY_LINES,
+  CAPABILITY_THEMES,
+} from "../src/config/capabilities.js";
+import type {
+  CapabilityHoldDefinition,
+  CapabilityLine,
+  CapabilityTheme,
+} from "../src/config/capabilities.js";
 
 // A spell is identified by its canonical source (ARC-045 / CS-03) -- the
 // client shims that follow it in each spells-* component are the same spell
@@ -84,6 +95,14 @@ export interface AgentCatalogEntry {
   epithet: string;
 }
 
+/** Capabilities as data: the legend, the hold vocabulary, the themes and the lines, verbatim from src/config/capabilities.ts. */
+export interface CapabilityCatalog {
+  legend: string;
+  holds: CapabilityHoldDefinition[];
+  themes: CapabilityTheme[];
+  lines: CapabilityLine[];
+}
+
 export interface SpellCatalog {
   totalSpells: number;
   totalAgents: number;
@@ -94,6 +113,7 @@ export interface SpellCatalog {
   governance: GovernanceCatalogEntry[];
   profiles: ProfileCatalogEntry[];
   agents: AgentCatalogEntry[];
+  capabilities: CapabilityCatalog;
 }
 
 export interface SpellCatalogResult {
@@ -376,7 +396,94 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
     governance,
     profiles: catalogProfiles(),
     agents,
+    capabilities: catalogCapabilities(),
   };
+}
+
+/**
+ * Validates src/config/capabilities.ts before it is rendered anywhere: ids
+ * unique, every line under a declared theme and every theme with at least
+ * one line, every hold in the vocabulary, every line with a non-empty
+ * headline, text and source, and -- the one semantic rule -- a line with no
+ * mechanism belongs to the `limits` theme and a line in it has none, since a
+ * non-claim rendered with a "CLI" marker would read as a checked claim.
+ */
+export function catalogCapabilities(
+  source: CapabilityCatalog = {
+    legend: CAPABILITY_LEGEND,
+    holds: CAPABILITY_HOLDS,
+    themes: CAPABILITY_THEMES,
+    lines: CAPABILITY_LINES,
+  },
+): CapabilityCatalog {
+  const holdIds = new Set(source.holds.map((hold) => hold.id));
+  const themeIds = new Set<string>();
+  for (const theme of source.themes) {
+    if (themeIds.has(theme.id)) throw new Error(`capabilities.ts: duplicate theme id "${theme.id}"`);
+    themeIds.add(theme.id);
+    if (theme.title.trim() === "") throw new Error(`capabilities.ts: theme "${theme.id}" has an empty title`);
+  }
+  const lineIds = new Set<string>();
+  const linesPerTheme = new Map<string, number>();
+  for (const line of source.lines) {
+    if (lineIds.has(line.id)) throw new Error(`capabilities.ts: duplicate line id "${line.id}"`);
+    lineIds.add(line.id);
+    if (!themeIds.has(line.theme)) throw new Error(`capabilities.ts: line "${line.id}" names unknown theme "${line.theme}"`);
+    linesPerTheme.set(line.theme, (linesPerTheme.get(line.theme) ?? 0) + 1);
+    for (const key of ["headline", "text", "source"] as const) {
+      if (line[key].trim() === "") throw new Error(`capabilities.ts: line "${line.id}" has an empty ${key}`);
+    }
+    for (const hold of line.holds) {
+      if (!holdIds.has(hold)) throw new Error(`capabilities.ts: line "${line.id}" names unknown hold "${hold}"`);
+    }
+    if (new Set(line.holds).size !== line.holds.length) {
+      throw new Error(`capabilities.ts: line "${line.id}" repeats a hold`);
+    }
+    if ((line.theme === "limits") !== (line.holds.length === 0)) {
+      throw new Error(
+        `capabilities.ts: line "${line.id}" must have no hold if and only if it is in the "limits" theme`,
+      );
+    }
+  }
+  for (const theme of source.themes) {
+    if (!linesPerTheme.has(theme.id)) throw new Error(`capabilities.ts: theme "${theme.id}" has no lines`);
+  }
+  return {
+    legend: source.legend,
+    holds: source.holds.map((hold) => ({ ...hold })),
+    themes: source.themes.map((theme) => ({ ...theme })),
+    lines: source.lines.map((line) => ({ ...line, holds: [...line.holds] })),
+  };
+}
+
+export const CAPABILITIES_MARKER_START = "<!-- arcane:capabilities:start -->";
+export const CAPABILITIES_MARKER_END = "<!-- arcane:capabilities:end -->";
+
+/**
+ * Renders the README's "What the framework does" block: the legend with the
+ * hold vocabulary, then each theme as a bold heading over its lines, each
+ * line as its text, qualifier and limit in that order, followed by the
+ * italic marker(s) of what holds it. A line with no hold ends without a
+ * marker.
+ */
+export function renderCapabilitiesBlock(capabilities: CapabilityCatalog): string {
+  const legend = [
+    capabilities.legend,
+    ...capabilities.holds.map((hold) => `*${hold.label}:* ${hold.meaning}`),
+  ].join(" ");
+  const labelFor = new Map(capabilities.holds.map((hold) => [hold.id, hold.label]));
+  const sections = capabilities.themes.map((theme) => {
+    const lines = capabilities.lines
+      .filter((line) => line.theme === theme.id)
+      .map((line) => {
+        const prose = [line.text, line.qualifier, line.limit].filter((part) => part !== undefined).join(" ");
+        const marker = line.holds.map((hold) => labelFor.get(hold)).join(" · ");
+        return marker === "" ? `- ${prose}` : `- ${prose} *${marker}*`;
+      });
+    const heading = theme.lede === undefined ? `**${theme.title}**` : `**${theme.title}** ${theme.lede}`;
+    return [heading, ...lines].join("\n");
+  });
+  return [legend, "", sections.join("\n\n")].join("\n");
 }
 
 export function renderJsonArtifact(catalog: SpellCatalog): string {
@@ -510,6 +617,12 @@ export async function runSpellCatalogCheck(
     GOVERNANCE_MARKER_START,
     GOVERNANCE_MARKER_END,
   );
+  expectedReadme = spliceReadmeBlock(
+    expectedReadme,
+    renderCapabilitiesBlock(catalog.capabilities),
+    CAPABILITIES_MARKER_START,
+    CAPABILITIES_MARKER_END,
+  );
   expectedReadme = spliceNamedCounts(expectedReadme, {
     spells: catalog.totalSpells,
     agents: catalog.totalAgents,
@@ -517,7 +630,7 @@ export async function runSpellCatalogCheck(
   });
   if (normalizeLineEndings(readme) !== normalizeLineEndings(expectedReadme)) {
     drifted.push(
-      "README.md's spell catalogue block, governance-standards block, and/or spell/agent/governance counts do not match the registry.",
+      "README.md's spell catalogue block, governance-standards block, capabilities block, and/or spell/agent/governance counts do not match the registry and src/config/capabilities.ts.",
     );
     if (mode === "fix") {
       await writeFile(readmePath, expectedReadme, "utf8");

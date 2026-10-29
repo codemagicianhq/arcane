@@ -148,6 +148,7 @@ It isn't a prompt snippet — it's a full framework. Everything installs into yo
 
 ## What the framework does
 
+<!-- arcane:capabilities:start -->
 Every line says how it holds, because a rule nobody checks should not read like one that is checked. *CLI:* the `spell` command, or a hook it installs, does it. *Spell step:* your AI client does it when the work runs through the spells. *Convention:* the standards ask for it; nothing checks it.
 
 **The memory lives in your repository.**
@@ -177,6 +178,7 @@ Every line says how it holds, because a rule nobody checks should not read like 
 - It does not intercept raw git. A commit you type by hand skips the spells' approval and test gates; any hook it installed still runs.
 - The credential scan looks for known patterns: it can find a leak, never prove a commit is clean.
 - The push controls stop an accidental push, not a determined operator.
+<!-- arcane:capabilities:end -->
 
 ---
 

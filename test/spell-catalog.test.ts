@@ -3,9 +3,13 @@ import { cp, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
+  CAPABILITIES_MARKER_END,
+  CAPABILITIES_MARKER_START,
   TAGLINE_MAX_LENGTH,
+  catalogCapabilities,
   generateSpellCatalog,
   parseExecutiveSummary,
+  renderCapabilitiesBlock,
   renderJsonArtifact,
   renderReadmeBlock,
   spliceReadmeBlock,
@@ -14,6 +18,8 @@ import {
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 import { getAllComponents, listProfiles } from "../src/modules/registry.js";
 import { AGENT_ROLES } from "../src/config/agent-roles.js";
+import { CAPABILITY_LINES, CAPABILITY_THEMES } from "../src/config/capabilities.js";
+import type { CapabilityLine } from "../src/config/capabilities.js";
 
 /**
  * T15/BC-23. registry.ts's spells-* components are the single source of
@@ -244,6 +250,84 @@ describe("registry-driven spell catalog (T15/BC-23)", () => {
     } finally {
       await removeFixtureDir(fixture);
     }
+  });
+
+  it("capabilities carries src/config/capabilities.ts verbatim, with every line under a declared theme", async () => {
+    const catalog = await generateSpellCatalog(ASSETS_DIR);
+    expect(catalog.capabilities.themes).toEqual(CAPABILITY_THEMES);
+    expect(catalog.capabilities.lines).toEqual(CAPABILITY_LINES);
+    expect(catalog.capabilities.holds.map((h) => h.id)).toEqual(["cli", "spell", "convention"]);
+    const themeIds = new Set(catalog.capabilities.themes.map((t) => t.id));
+    for (const line of catalog.capabilities.lines) {
+      expect(themeIds.has(line.theme), line.id).toBe(true);
+      expect(line.headline.length).toBeGreaterThan(0);
+      expect(line.text.length).toBeGreaterThan(0);
+      expect(line.source.length).toBeGreaterThan(0);
+      expect(line.holds.length === 0).toBe(line.theme === "limits");
+    }
+  });
+
+  it("catalogCapabilities refuses a malformed source", () => {
+    const valid = catalogCapabilities();
+    const line = (overrides: Partial<CapabilityLine>): CapabilityLine => ({
+      id: "x",
+      headline: "X",
+      text: "X.",
+      holds: ["cli"],
+      source: "spell x",
+      theme: "memory",
+      ...overrides,
+    });
+    const withLines = (lines: CapabilityLine[]) => ({ ...valid, lines });
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ id: "install-once" })]))).toThrow(/duplicate line id/);
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ theme: "nope" })]))).toThrow(/unknown theme "nope"/);
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ holds: ["nope" as never] })]))).toThrow(/unknown hold "nope"/);
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ holds: ["cli", "cli"] })]))).toThrow(/repeats a hold/);
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ headline: " " })]))).toThrow(/empty headline/);
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ holds: [] })]))).toThrow(/no hold if and only if/);
+    expect(() => catalogCapabilities(withLines([...valid.lines, line({ theme: "limits" })]))).toThrow(/no hold if and only if/);
+    expect(() => catalogCapabilities(withLines(valid.lines.filter((l) => l.theme !== "done")))).toThrow(/theme "done" has no lines/);
+    expect(() =>
+      catalogCapabilities({ ...valid, themes: [...valid.themes, { id: "memory", title: "Again." }] }),
+    ).toThrow(/duplicate theme id/);
+  });
+
+  it("renderCapabilitiesBlock prints text, qualifier, limit and the hold markers, and no marker for a non-claim", () => {
+    const block = renderCapabilitiesBlock({
+      legend: "Legend.",
+      holds: [
+        { id: "cli", label: "CLI", meaning: "the CLI does it." },
+        { id: "spell", label: "Spell step", meaning: "the client does it." },
+        { id: "convention", label: "Convention", meaning: "nothing checks it." },
+      ],
+      themes: [
+        { id: "a", title: "A." },
+        { id: "limits", title: "Not." },
+      ],
+      lines: [
+        { id: "one", headline: "One", text: "One.", qualifier: "Q.", limit: "L.", holds: ["cli", "spell"], source: "s", theme: "a" },
+        { id: "two", headline: "Two", text: "Two.", holds: [], source: "s", theme: "limits" },
+      ],
+    });
+    expect(block).toBe(
+      [
+        "Legend. *CLI:* the CLI does it. *Spell step:* the client does it. *Convention:* nothing checks it.",
+        "",
+        "**A.**",
+        "- One. Q. L. *CLI · Spell step*",
+        "",
+        "**Not.**",
+        "- Two.",
+      ].join("\n"),
+    );
+  });
+
+  it("ARC-012/ARC-027-style parity: committed README.md's marked capabilities block matches what src/config/capabilities.ts renders", async () => {
+    const catalog = await generateSpellCatalog(ASSETS_DIR);
+    const block = renderCapabilitiesBlock(catalog.capabilities);
+    const readme = await readFile(join(ROOT_DIR, "README.md"), "utf8");
+    const expected = spliceReadmeBlock(readme, block, CAPABILITIES_MARKER_START, CAPABILITIES_MARKER_END);
+    expect(normalizeLineEndings(readme)).toBe(normalizeLineEndings(expected));
   });
 
   it("renders the README block and JSON artifact deterministically", async () => {
