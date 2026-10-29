@@ -92,6 +92,9 @@ jobs:
       - name: Verify spell catalog
         run: npm run check:spell-catalog
 
+      - name: Verify the changelog has an entry for package.json's version
+        run: npm run check:changelog
+
       - name: Check show reports (warn mode, SR-02)
         run: npm run check:report
         continue-on-error: true

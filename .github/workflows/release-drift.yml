@@ -18,6 +18,9 @@ name: Release drift
 # Safe by construction:
 #   - Only runs on codemagicianhq/arcane (skipped on forks).
 #   - Only creates a release when tag v<version> does not already exist.
+#   - Refuses to cut a release whose version has no `## [x.y.z] - YYYY-MM-DD`
+#     entry in CHANGELOG.md (the same rule `npm run check:changelog` applies
+#     in ci.yml, run here as a grep so the job needs no install).
 #   - Never modifies package.json; never publishes directly to npm.
 
 on:
@@ -86,6 +89,22 @@ jobs:
         if: steps.compare.outputs.needs_release == 'no'
         run: |
           echo "✅ package.json (${{ steps.compare.outputs.pkg_version }}) is not ahead of npm (${{ steps.compare.outputs.npm_version }}). Nothing to do."
+
+      - name: Require a CHANGELOG.md entry for the version
+        if: steps.compare.outputs.needs_release == 'yes'
+        env:
+          PKG_VERSION: ${{ steps.compare.outputs.pkg_version }}
+        run: |
+          set -euo pipefail
+          # The heading shape scripts/check-changelog.ts requires: the version in
+          # brackets, a dash, an ISO date. A release with no entry is refused here
+          # rather than cut silently; package.json is never touched.
+          if grep -qE "^## \[${PKG_VERSION//./\\.}\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md; then
+            echo "✅ CHANGELOG.md has an entry for ${PKG_VERSION}."
+          else
+            echo "::error::CHANGELOG.md has no entry for ${PKG_VERSION}. Add \"## [${PKG_VERSION}] - YYYY-MM-DD\" with the release's date, merge it, then start this workflow by hand: gh workflow run release-drift.yml"
+            exit 1
+          fi
 
       - name: Check whether tag already exists
         if: steps.compare.outputs.needs_release == 'yes'

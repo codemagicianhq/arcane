@@ -44,6 +44,7 @@
     "check:self-host-parity": "tsx scripts/self-host-parity.ts --check",
     "fix:self-host-parity": "tsx scripts/self-host-parity.ts --fix",
     "check:spell-catalog": "tsx scripts/spell-catalog.ts --check",
+    "check:changelog": "tsx scripts/check-changelog.ts",
     "fix:spell-catalog": "tsx scripts/spell-catalog.ts --fix",
     "check:report": "tsx scripts/report.ts --check --all",
     "check:report-template": "tsx scripts/check-report-template.ts",
