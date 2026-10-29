@@ -77,3 +77,5 @@
   5. **Pushing from the operator's Windows machine** runs the pre-push suite at 4 workers, and two sessions running the suite at once still contend (Current Priorities item 11). Observed 2026-10-23: 2409 tests in 192 s.
   6. **Conflicts on this repository's pull requests are resolved by rebase**, per `git-conventions.md`, not by the merge an Auto-fix event asks for (operator, 2026-10-21).
   7. **From a linked worktree in the Claude desktop app,** write a pull-request body to the session scratchpad, not to `<git-dir>`: `TODO.md` ("the pull-request body file has no fallback location when `<git-dir>` cannot be written").
+
+> ✓ Consumed: 2026-10-29
