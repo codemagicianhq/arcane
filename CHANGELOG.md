@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.13.0] - 2026-10-29
+
+Every spell and governance document now carries a `tagline`, and the published catalog carries it too.
+
+### Added
+
+- **`tagline` is a required frontmatter field on every spell and every governance document.** One sentence of at most 60 characters with no trailing period: a one-liner a consumer of `docs/spell-catalog.json` can show as-is (`Start a logged working session`), where `description` keeps telling the AI client when to invoke the spell. Each spell entry in `docs/spell-catalog.json` gains a `tagline` field; every existing field keeps its name, type and meaning. `npm run check:spell-catalog` now fails when a spell or a distributed governance document has no tagline, or when one is empty, longer than 60 characters, more than one sentence, or ends with a period. `spell-authoring-standards.md` lists `tagline` in the D1 Bronze bar, with the frontmatter block a new spell starts from.
+
+### Changed
+
+- **The generated Copilot prompt shims carry the new field**, because they copy each spell's frontmatter block verbatim. `spell update` rewrites them as managed files; VS Code ignores a field it does not read.
+
 ## [1.12.4] - 2026-10-23
 
 A security fix: a directory link inside a repository no longer takes Arcane's writes and deletes outside it.
