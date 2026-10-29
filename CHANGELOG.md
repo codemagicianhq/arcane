@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [Unreleased]
+
+### Changed
+
+- **A release needs its changelog entry.** `release-drift.yml` refuses to cut a GitHub Release, and so never starts the npm publish, when `CHANGELOG.md` has no `## [x.y.z] - YYYY-MM-DD` heading for the version `package.json` carries; the message names the heading to add and how to start the workflow again by hand. The same rule runs in CI as `npm run check:changelog` (`scripts/check-changelog.ts`), so the pull request that bumps the version fails before it merges, and the check also holds every release heading to that form and every section heading to the standard set: Added, Changed, Fixed, Removed, Notes. Three one-off section headings in older entries were renamed to fit (`Migration` and `What this deliberately does not claim` to `Notes`; `Documentation` folded into `Changed`); no entry text changed.
+
 ## [1.13.2] - 2026-10-29
 
 The README's "What the framework does" block is now rendered from a structured source, and the catalog carries the same capabilities as data. No CLI behavior changes.
@@ -533,7 +539,7 @@ The first stable-contract release: one authored source per spell, and every AI c
 - **A same-version `spell update` restores missing tracked files** instead of stopping at "Already up to date." — the remedy after porting a customized shim's edits into the canonical spell: delete the old file, commit, run `spell update`, and the generated shim comes back. Only files that are tracked, absent and vendor-owned are written; `initOnly` files (EF-17) and user-owned `skipExisting` files (`TODO.md`, `.mcp.json`, `journal/.gitkeep`) keep their version-change-only backfill, so a file you deleted on purpose does not return on every run.
 - **Four long-broken links now resolve:** `spell-brainstorm`'s `../../../TODO.md`, `spell-arcane-version`'s bare `.arcane.json`, and the two `development-methodology.md` links that pointed at `../.github/prompts/…` from inside `.arcane/governance/`.
 
-### Migration
+### Notes
 
 Run `spell update` from a committed, clean working tree (it refuses to run otherwise).
 
@@ -1099,9 +1105,6 @@ Fixes defects in `0.20.0`'s push-safety controls, found by a verification review
 - **A blocked push now names its own remedy.** With both layers active the URL fails first and the hook never runs, so the only text git prints is the scheme name. It is now `arcane-push-blocked-run-spell-unblock-push`, turning a dead end into an instruction.
 - **The `guarded` reminder prints each remote's push URL**, not just its name. Catching a wrong remote is the reminder's entire job, and `origin` alone says nothing about where it points.
 - **Config scope is read rather than inferred**, via `git config --show-scope`. A `core.hooksPath` set at *system* scope, or per-worktree, was previously described to the operator as "set globally" — sending them somewhere that did not have it.
-
-### Documentation
-
 - ARC-034 asserted that no single bypass gets through, three lines above the paragraph documenting the case where one does. That property holds only for remotes covered at the time the policy was applied, and now says so.
 
 ## [0.20.0] - 2026-08-23
@@ -1116,7 +1119,7 @@ Implements the push-safety design accepted in [EF-09](docs/intake/batch-001/EF-0
 - **`spell unblock-push`** — the only way to lift a block. Interactive terminal only, requires the repository name typed back, records the change with a timestamp, and offers no "just this once" mode.
 - **A `doctor` check that verifies enforcement, not just declaration.** A manifest claiming `blocked` while the controls are absent is reported as such — a protection that is only asserted is worse than none, because it gets trusted. That includes checking the hook **file** exists, not only that `core.hooksPath` points at it: deleting the file leaves the config intact and pushes succeed. A `blocked` repository with no remote is likewise not reported as fully protected. For `guarded` repositories the reminder fires regardless of remote state, rather than going silent the moment any remote (possibly the wrong one) is configured.
 
-### What this deliberately does not claim
+### Notes
 
 The controls resist an **accidental** push — wrong remote, muscle memory, an unsupervised agent — not a determined operator, and `core.hooksPath` does not travel to a fresh clone. ARC-034 states the limits plainly rather than implying a guarantee, because a control believed to be stronger than it is produces exactly the carelessness it was meant to prevent.
 
