@@ -1,5 +1,6 @@
 ---
 title: Universal Agent Rules — Single Source of Truth
+tagline: The single source of truth every agent obeys
 audience: ai
 status: active
 tags: [rules, governance, ai-agents, multi-client]

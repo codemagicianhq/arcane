@@ -15,11 +15,21 @@ const SPELL_SUFFIX = ".md";
 const GOVERNANCE_PREFIX = ".arcane/governance/";
 const GOVERNANCE_SUFFIX = ".md";
 
+/**
+ * The tagline contract, shared by every spell and governance doc: one
+ * marketing-quality sentence of at most TAGLINE_MAX_LENGTH characters with
+ * no trailing period, so a consumer can render it as a card title or a list
+ * entry without editing it. Enforced here (the CI gate) and stated in
+ * spell-authoring-standards.md's D1 Bronze bar.
+ */
+export const TAGLINE_MAX_LENGTH = 60;
+
 export interface SpellCatalogEntry {
   id: string;
   shortName: string;
   name: string;
   description: string;
+  tagline: string;
 }
 
 export interface SpellCatalogGroup {
@@ -51,27 +61,73 @@ function idForPromptFile(filePath: string): string {
   return base.slice(0, -SPELL_SUFFIX.length);
 }
 
-interface PromptFrontmatter {
-  name?: unknown;
-  description?: unknown;
+/**
+ * Validates one tagline against the contract. Returns the reason it fails,
+ * or null when it passes. Exported so the test can pin each rule.
+ */
+export function taglineProblem(value: unknown): string | null {
+  if (typeof value !== "string") return 'missing a string "tagline"';
+  const tagline = value.trim();
+  if (tagline.length === 0) return '"tagline" is empty';
+  if (tagline !== value) return '"tagline" has leading or trailing whitespace';
+  if (tagline.length > TAGLINE_MAX_LENGTH) {
+    return `"tagline" is ${tagline.length} characters; the maximum is ${TAGLINE_MAX_LENGTH}`;
+  }
+  if (/[.!?]$/.test(tagline)) return '"tagline" must not end with a period or other sentence mark';
+  if (/\r|\n/.test(tagline)) return '"tagline" must be a single line';
+  if (/[.!?]\s+\S/.test(tagline)) return '"tagline" must be one sentence';
+  return null;
+}
+
+async function readFrontmatter(
+  assetsDir: string,
+  filePath: string,
+): Promise<Record<string, unknown>> {
+  const raw = await readFile(join(assetsDir, filePath), "utf8");
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
+  if (!match) {
+    throw new Error(`${filePath}: no YAML frontmatter block found`);
+  }
+  const parsed = parseYaml(match[1]) as Record<string, unknown> | null;
+  return parsed ?? {};
+}
+
+function requireTagline(filePath: string, frontmatter: Record<string, unknown>): string {
+  const problem = taglineProblem(frontmatter["tagline"]);
+  if (problem !== null) {
+    throw new Error(`${filePath}: frontmatter ${problem}`);
+  }
+  return frontmatter["tagline"] as string;
 }
 
 async function loadFrontmatter(
   assetsDir: string,
   promptPath: string,
-): Promise<{ name: string; description: string }> {
-  const raw = await readFile(join(assetsDir, promptPath), "utf8");
-  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
-  if (!match) {
-    throw new Error(`${promptPath}: no YAML frontmatter block found`);
-  }
-
-  const parsed = parseYaml(match[1]) as PromptFrontmatter;
-  if (typeof parsed.name !== "string" || typeof parsed.description !== "string") {
+): Promise<{ name: string; description: string; tagline: string }> {
+  const parsed = await readFrontmatter(assetsDir, promptPath);
+  if (typeof parsed["name"] !== "string" || typeof parsed["description"] !== "string") {
     throw new Error(`${promptPath}: frontmatter is missing a string "name" or "description"`);
   }
+  const tagline = requireTagline(promptPath, parsed);
+  return { name: parsed["name"], description: parsed["description"], tagline };
+}
 
-  return { name: parsed.name, description: parsed.description };
+/**
+ * A governance doc's frontmatter has `title` where a spell has `name`; both
+ * carry `tagline` under the same contract. Checked for every governance file
+ * the registry distributes, so a doc added without one fails the gate the
+ * same way a spell does.
+ */
+async function loadGovernanceFrontmatter(
+  assetsDir: string,
+  docPath: string,
+): Promise<{ title: string; tagline: string }> {
+  const parsed = await readFrontmatter(assetsDir, docPath);
+  if (typeof parsed["title"] !== "string") {
+    throw new Error(`${docPath}: frontmatter is missing a string "title"`);
+  }
+  const tagline = requireTagline(docPath, parsed);
+  return { title: parsed["title"], tagline };
 }
 
 /**
@@ -92,6 +148,9 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
       if (file.startsWith(GOVERNANCE_PREFIX) && file.endsWith(GOVERNANCE_SUFFIX)) {
         if (!governanceFiles.has(file)) {
           governanceDocs.push(file.slice(GOVERNANCE_PREFIX.length, -GOVERNANCE_SUFFIX.length));
+          // Validated here even though the slug list carries no tagline yet:
+          // the gate must fail on a governance doc without one.
+          await loadGovernanceFrontmatter(assetsDir, file);
         }
         governanceFiles.add(file);
       }
@@ -106,8 +165,8 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
     const spells: SpellCatalogEntry[] = [];
     for (const file of promptFiles) {
       const id = idForPromptFile(file);
-      const { name, description } = await loadFrontmatter(assetsDir, file);
-      spells.push({ id, shortName: id.replace(/^spell-/, ""), name, description });
+      const { name, description, tagline } = await loadFrontmatter(assetsDir, file);
+      spells.push({ id, shortName: id.replace(/^spell-/, ""), name, description, tagline });
     }
 
     groups.push({ component: component.name, label: labelForComponent(component.name), spells });

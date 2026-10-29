@@ -1,5 +1,6 @@
 ---
 title: Agent Work Queue Model
+tagline: How agents pick up, hand off, and finish work
 audience: both
 last_updated: YYYY-MM-DD
 status: draft

@@ -1,5 +1,6 @@
 ---
 title: Decision Documentation Standard
+tagline: ADR format — every decision leaves a trace
 audience: both
 status: active
 distributable: true

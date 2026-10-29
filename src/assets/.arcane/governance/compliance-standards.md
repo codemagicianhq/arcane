@@ -1,5 +1,6 @@
 ---
 title: Compliance Standards
+tagline: GDPR/CCPA/SOC 2/HIPAA, tiered by applicability
 audience: both
 last_updated: YYYY-MM-DD
 status: active

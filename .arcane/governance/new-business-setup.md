@@ -1,5 +1,6 @@
 ---
 title: New Business Setup Guide
+tagline: Stand up a new venture from zero
 audience: both
 status: draft
 distributable: true

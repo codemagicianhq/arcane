@@ -1,5 +1,6 @@
 ---
 title: Agent Policies
+tagline: What agents may do — and must never do
 audience: both
 status: active
 distributable: true

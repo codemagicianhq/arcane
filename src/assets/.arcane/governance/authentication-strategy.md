@@ -1,5 +1,6 @@
 ---
 title: Authentication Strategy
+tagline: How identity and access work, end to end
 audience: both
 last_updated: YYYY-MM-DD
 status: active

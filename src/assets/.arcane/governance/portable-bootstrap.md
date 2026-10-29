@@ -1,5 +1,6 @@
 ---
 title: Portable Bootstrap — Quick Context for Ad-Hoc AI Clients
+tagline: Quick context to brief any ad-hoc AI client
 audience: ai
 status: active
 tags: [ai-context, bootstrap, multi-client, portable]

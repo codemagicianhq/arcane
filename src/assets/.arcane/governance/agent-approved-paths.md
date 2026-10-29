@@ -1,5 +1,6 @@
 ---
 title: Agent Approved Paths Registry
+tagline: The registry of paths agents may touch
 audience: both
 last_updated: YYYY-MM-DD
 status: template

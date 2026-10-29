@@ -1,5 +1,6 @@
 ---
 title: Naming Conventions
+tagline: One vocabulary across code, docs, and agents
 audience: both
 last_updated: YYYY-MM-DD
 status: template

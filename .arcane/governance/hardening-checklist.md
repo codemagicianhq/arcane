@@ -1,5 +1,6 @@
 ---
 title: Linux Security Hardening Checklist
+tagline: The Linux hardening baseline, as a checklist
 audience: human
 last_updated: YYYY-MM-DD
 status: active

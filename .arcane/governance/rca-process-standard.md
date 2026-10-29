@@ -1,5 +1,6 @@
 ---
 title: Root Cause Analysis (RCA) Process Standard
+tagline: Root cause, not blame, when things break
 audience: both
 last_updated: YYYY-MM-DD
 status: active

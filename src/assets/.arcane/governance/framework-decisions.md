@@ -1,5 +1,6 @@
 ---
 title: Legacy Framework Decision Reference
+tagline: Offline reference for legacy ADR citations
 audience: both
 status: active
 distributable: true
