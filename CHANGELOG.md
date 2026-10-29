@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after this file had stopped at `0.22.0`. Each of those entries was reconstructed from its release tag, the pull requests merged inside it and their commit messages, and is deliberately shorter than the entries written at release time. Two versions that were tagged but never reached npm (`0.32.1`, `0.34.3`) are recorded as notes under the release that carried their content.
 
+## [1.13.2] - 2026-10-29
+
+The README's "What the framework does" block is now rendered from a structured source, and the catalog carries the same capabilities as data. No CLI behavior changes.
+
+### Added
+
+- **`src/config/capabilities.ts` is the one home of the capability lines.** Six themes (`id`, `title`, optional `lede`) and sixteen lines (`id`, `headline`, `text`, `holds[]`, `source`, optional `limit` and `qualifier`, `theme`), with the legend and the three-word vocabulary of how a line holds (`cli`, `spell`, `convention`). `docs/spell-catalog.json` gains a `capabilities` key carrying all of it verbatim, and the README block between `<!-- arcane:capabilities:start -->` and `<!-- arcane:capabilities:end -->` is rendered from it, byte-for-byte what the hand-written block said. `npm run check:spell-catalog` fails when either drifts, and when the source is malformed: a duplicate id, a line under an unknown theme or hold, a theme with no lines, an empty headline, text or source, or a line whose lack of a mechanism does not match the `limits` theme. Edit the prose in the source, then `npm run fix:spell-catalog`.
+
 ## [1.13.1] - 2026-10-29
 
 The published catalog now describes the whole framework as data: governance documents, profiles, agents and a flat spell list join the spell groups. No CLI behavior changes.
