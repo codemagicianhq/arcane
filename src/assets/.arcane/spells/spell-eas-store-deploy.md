@@ -224,8 +224,16 @@ offers it).
   5. Prove it by reading the update back: `eas update:view <new-group-id> --json` must show the stranded
      runtime's `runtimeVersion`, the git branch's `gitCommitHash`, and the `branch` that
      `eas channel:view <channel>` names. The pipeline's "succeeded" is not evidence (`EV-02`).
-  6. Mark the git branch publish-only (its name and its first commit say so) and never merge it: it exists
-     to publish from, and a merge would bring that old tree back into the trunk.
+  6. Anchor the published commit with an annotated git tag such as
+     `backport/<version>-update-prompt`, then retire the temporary backport branch. Before deleting the
+     branch, push the tag and verify that `git rev-parse "refs/tags/<tag>^{commit}"` and the remote's
+     peeled tag target (`git ls-remote origin 'refs/tags/<tag>^{}'`) both equal the `gitCommitHash` read
+     from the published update in step 5. Also verify that any build pipeline needed
+     for this runtime can run from `refs/tags/<tag>` and does not require a branch-name variable. Protect
+     the tag against deletion or replacement with the provider's tag permissions or tag ruleset; a git
+     branch by itself is not a durable publication anchor. Never merge the old tree into trunk. For a
+     later hotfix to this runtime, create a new temporary branch from the tag and give the new published
+     commit its own annotated tag after the same checks.
 
 ### 2. A store update prompt
 

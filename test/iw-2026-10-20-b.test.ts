@@ -174,10 +174,16 @@ describe("#376 spell-eas-store-deploy: the EAS Update lifecycle", () => {
             "must not end in `*`",
             "the stranded runtime's `runtimeVersion`, the git branch's `gitCommitHash`",
             "the `branch` that `eas channel:view <channel>` names",
-            "Mark the git branch publish-only",
-            "never merge it",
+            "annotated git tag",
+            "push the tag and verify",
+            "both equal the `gitCommitHash` read from the published update",
+            "can run from `refs/tags/<tag>`",
+            "Protect the tag against deletion or replacement",
+            "Never merge the old tree into trunk",
+            "create a new temporary branch from the tag",
         ]);
         expect(recipe).toContain("(`EV-02`)");
+        expect(recipe).not.toContain("Mark the git branch publish-only");
     });
 
     it("part 2 carries the store update prompt pattern", () => {
