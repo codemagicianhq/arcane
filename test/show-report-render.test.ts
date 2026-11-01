@@ -133,7 +133,11 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
     expect(html).toMatch(/<a href="https:\/\/github\.com\/codemagicianhq\/arcane\/pull\/10"[^>]*>TP-01<\/a>/);
     expect(html).toContain("First epic</div>");
     expect(html).toContain("Shipped <code>code</code> and a <a href=\"https://example.invalid/x\">link</a>.");
-    expect(html).toContain('class="arc-pill"');
+    // The row's category pill. arcane-ui 2.5.0 (ARCUI-022) renders it as
+    // `arc-badge` with a data-tone the template's own CSS maps to the color,
+    // where earlier templates used `arc-pill` with an inline style; accept
+    // either, so a vendoring PR can land without editing this test.
+    expect(html).toMatch(/<span class="arc-(?:pill|badge)"[^>]*>/);
     expect(html).toContain("New Feature</span>");
     expect(html).not.toContain("{{"); // every tag resolved, nothing left unrendered
   });
