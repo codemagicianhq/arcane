@@ -244,6 +244,10 @@ until the moment the release ships.
 
 **Rule (MR-15): Before each store release, list every binary version still in use, from the store releases, not from the updates published to them, and confirm each has an update path, judging each as it will stand once the release ships. An update path is either updates still published for the version's native compatibility version or an in-app prompt that sends it to the store; a version with phones on it and neither is stranded. Before the release ships, give each stranded version one (a backported update, which can carry the prompt) or record the operator's decision to leave it. Enforcement: structured spell gate (ARC-023) — spell-eas-store-deploy's runtime audit is the first step of every repeat deployment, and the release report names each stranded runtime with the route chosen for it; no executable check reads the audit's result.**
 
+Anchor a published backport with a protected, annotated publish-only tag that resolves to the published
+commit. Retire its temporary branch after verifying that the tag can support any future build for that
+runtime. Branch a later hotfix from the tag, then tag the new published commit in turn.
+
 ### MR-16: Pin the Xcode wherever it can change between builds
 
 Xcode stamps its toolchain into every iOS binary it builds (`DTXcode` and `DTSDKName` in the app's

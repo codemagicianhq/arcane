@@ -71,3 +71,4 @@
   3. **Adding a frontmatter field to spells touches the Copilot shims.** They copy the block verbatim, so `npm run fix:self-host-parity` is part of the change, and `spell-authoring-standards.md`'s D1 block is the template a new spell starts from.
   4. **`ci.yml` runs on `pull_request: branches: [main]` only**, so a stacked pull request must target `main` to get checks, and a conflicting pull request gets no run at all; editing a base does not start one (close and reopen, or push).
   5. Re-fetch `origin/main` before trusting any "not merged" claim in a handoff, because other sessions rewrite this block.
+> ✓ Consumed: 2026-11-01
