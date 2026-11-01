@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.14.2] - 2026-11-01
+
+### Changed
+
+- **Published EAS backports are anchored by annotated tags.** The backport recipe verifies the local
+  and remote tag targets against the published update's commit and checks that future builds can run
+  from the tag before retiring the temporary branch. MR-15 names the same durable update path.
+
 ## [1.14.1] - 2026-11-01
 
 The Show Report template is updated from arcane-ui v2.5.0.
