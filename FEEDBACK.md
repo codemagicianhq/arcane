@@ -257,3 +257,18 @@
 
 ### Raw Notes
 > Source: `journal/2026-10-21-issue-wave-357-359.md`, lesson "Concurrent closes rewrite one handoff block".
+
+## Feedback — spell-commit-work (2026-11-01)
+
+**Session:** Backport tags (#404) and this session's close (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** Gerardo Melendrez
+
+### Friction Points
+- In an interactive session with no agent roster, `spell-commit-work` requires exact operator approval for a commit but also says missing validated roster authority requires human execution. The session first promised execution after fingerprint approval, then treated the missing roster as an absolute block, then executed after an explicit operator instruction. The operator needed extra exchanges to discover which gate applied.
+
+### Improvement Items
+- [ ] Clarify `spell-commit-work` Step 4.5 and Step 8 for an interactive generic tool in a repository with no roster: state whether exact fingerprint approval can authorize that tool to execute the commit or whether only the human may run the command, and give one unambiguous action at the stop. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-01-backport-tags.md`, lesson "An interactive commit needs its exact gate read before promising execution".
