@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-11-01
+
+The Show Report template is updated from arcane-ui v2.5.0.
+
+### Changed
+
+- **The Show Report template is vendored from arcane-ui v2.5.0.** The committed reports are regenerated from it. Opened automatically by the arcane-ui pipeline because the compiled template changed.
+
 ## [1.14.0] - 2026-10-29
 
 A new spell for opening the Apple and Google Play developer accounts an app needs before it can ship, and a release now refuses to go out without its changelog entry.
