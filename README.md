@@ -11,6 +11,8 @@
 
 AI agents can write your code; the Arcane framework gives them the discipline to *plan it, govern it, test it, review it, and **ship** it.*
 
+**[arcaneai.net](https://arcaneai.net)**
+
 [![npm version](https://img.shields.io/npm/v/arcane-cli?style=flat-square&color=6f9fd8&label=npm)](https://www.npmjs.com/package/arcane-cli)
 [![npm downloads](https://img.shields.io/npm/dm/arcane-cli?style=flat-square&color=6f9fd8)](https://www.npmjs.com/package/arcane-cli)
 [![CI](https://img.shields.io/github/actions/workflow/status/codemagicianhq/arcane/ci.yml?style=flat-square&branch=main&label=CI)](https://github.com/codemagicianhq/arcane/actions/workflows/ci.yml)
@@ -179,6 +181,8 @@ Every line says how it holds, because a rule nobody checks should not read like 
 - The credential scan looks for known patterns: it can find a leak, never prove a commit is clean.
 - The push controls stop an accidental push, not a determined operator.
 <!-- arcane:capabilities:end -->
+
+**[Everything the framework does](https://arcaneai.net/capabilities)**, by theme, labelled the same way.
 
 ---
 
