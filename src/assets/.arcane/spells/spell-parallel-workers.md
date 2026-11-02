@@ -18,23 +18,16 @@ agent: agent
 
 ```mermaid
 flowchart TD
-    OP1["Operator<br/>approves slice plan and merge order"] --> ORCH
-    ORCH["Orchestrator<br/>owns plan, shared files, merge order, every protocol"]
-    ORCH -->|"brief + own worktree from stack tip"| WA["Worker A<br/>slice A"]
-    ORCH -->|"brief + own worktree from stack tip"| WB["Worker B<br/>slice B"]
-    WA -->|"prepares"| PA[("prep branch A")]
-    WB -->|"prepares"| PB[("prep branch B")]
-    WA -->|"writes one note"| NOTES["Shared notes folder"]
-    WB -->|"writes one note"| NOTES
-    WA -->|"report: branch + note path"| ORCH
-    WA -.->|"BLOCKED or PARTIAL"| ORCH
-    WB -->|"report: branch + note path"| ORCH
-    PA --> INT
+    OP1["Operator<br/>approves plan and merge order"] --> ORCH["Orchestrator<br/>plan, shared files, merge order,<br/>every protocol"]
+    ORCH -->|"brief + worktree from stack tip"| W["Workers A, B, ...<br/>one per slice, in parallel"]
+    W -->|"prepares"| PB[("Prep branch<br/>per slice")]
+    W -->|"writes"| NOTES["One note per slice<br/>in the shared notes folder"]
+    W -.->|"report: READY, BLOCKED or PARTIAL"| ORCH
     PB --> INT
     NOTES --> INT
-    ORCH --> INT["Integrate when the stack reaches the slice<br/>rebase, shared-file edits, full checks,<br/>review, security review, pull request"]
+    ORCH -->|"when the stack reaches the slice"| INT["Integrate<br/>rebase, shared-file edits, full checks,<br/>review, security review, pull request"]
     INT --> OP2["Operator<br/>approves and merges"]
-    OP2 -->|"next slice in merge order"| INT
+    OP2 -.->|"next slice"| INT
 ```
 
 ---

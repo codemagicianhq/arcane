@@ -130,7 +130,7 @@ describe("spell-parallel-workers.md", () => {
     expect(block).not.toBeNull();
     expect(block![1]).toContain("flowchart TD");
     expect(block![1]).not.toMatch(/\[\s*"?end"?\s*\]/i);
-    for (const node of ["Orchestrator", "Worker A", "prep branch A", "Shared notes folder", "Operator"]) {
+    for (const node of ["Orchestrator", "Workers A, B", "Prep branch", "shared notes folder", "Operator"]) {
       expect(block![1]).toContain(node);
     }
   });
