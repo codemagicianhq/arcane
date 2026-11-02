@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-11-02
+
+A new spell for splitting a plan into independent slices that worker sessions prepare in parallel, while one orchestrator session runs the protocols.
+
+### Added
+
+- **`spell-parallel-workers` coordinates one orchestrator session and several worker sessions.** Each worker takes one slice of work in its own worktree, cut from the current stack tip, and leaves a prep branch plus a short note (files changed, the shared-file edits the orchestrator will need, the checks it ran and their results) in a shared notes folder outside the repository. Workers never touch the shared files, commit to the stack branches, push to shared branches, open pull requests, queue pipelines or write docs. The orchestrator owns the plan, the shared files, the merge order and every protocol step; when the stack reaches a slice it rebases the prep branch, applies the shared-file edits, runs the full checks and both reviews, fixes every finding and opens the pull request, and the operator approves and merges. The spell states when to use it (disjoint footprints, shared-file edits listable up front) and when not to, carries the worker brief and note templates, the integration checklist, and the failure cases (a worker needs a shared file, two workers collide, a prep branch goes stale, a slice's gates differ from the plan), and includes a flow diagram. It joins the `spells-build` component, so the catalog and README now count 43 spells.
+
 ## [1.14.3] - 2026-11-02
 
 The Show Report template is updated from arcane-ui v2.10.0.
