@@ -272,3 +272,22 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-01-backport-tags.md`, lesson "An interactive commit needs its exact gate read before promising execution".
+
+## Feedback — Arcane workflow (2026-11-02)
+
+**Session:** Added `spell-parallel-workers` ([PR #412](https://github.com/codemagicianhq/arcane/pull/412)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- A new spell that wrote out the prep-branch format failed `test/branch-naming-fragment.test.ts`, which forbids the format string outside its single source; the targeted tests passed and only the full suite caught it, and `spell-authoring-standards.md` does not say the format has one source.
+- A spell that tells its reader to run another spell's steps contradicted those spells in four high-severity ways (commit authority, the order of commit, review and pull request, removal of a worktree holding uncommitted work, how a report reaches the orchestrator); only an independent read against the cited spells found them.
+- The branch-naming rule names its parallel-subagent suffix `-<agent>`; the new spell puts a slice id in that position, and the rule does not say whether that is allowed.
+
+### Improvement Items
+- [ ] In `spell-authoring-standards.md`'s Distributability conventions, add: never restate the branch-naming format in a spell; refer to the rule, because `test/branch-naming-fragment.test.ts` fails on the literal. <!-- upstream: queued -->
+- [ ] In `spell-authoring-standards.md` D6 (cross-references), add at Silver: when a spell directs the reader through another spell's steps, cite the step numbers and have a reader who did not write the spell check them against those steps. <!-- upstream: queued -->
+- [ ] In `git-conventions.md`'s branch-naming rule, say what the parallel-subagent suffix may name (an agent, a worker or a slice id). <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-02-parallel-workers-spell.md`, lessons "A branch-format literal in a new spell failed only at the full suite", "An independent read found contradictions in my own spell with the spells it cites".
