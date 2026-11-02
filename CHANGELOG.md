@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.14.3] - 2026-11-02
+
+The Show Report template is updated from arcane-ui v2.10.0.
+
+### Changed
+
+- **The Show Report template is vendored from arcane-ui v2.10.0.** The committed reports are regenerated from it. Opened automatically by the arcane-ui pipeline because the compiled template changed.
+
 ## [1.14.2] - 2026-11-01
 
 ### Changed
