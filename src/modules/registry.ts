@@ -374,6 +374,10 @@ const COMPONENTS: RegistryComponent[] = [
       ".github/prompts/spell-app-store-accounts.prompt.md",
       ".claude/commands/spell-app-store-accounts.md",
       ".agents/skills/spell-app-store-accounts/SKILL.md",
+      ".arcane/spells/spell-parallel-workers.md",
+      ".github/prompts/spell-parallel-workers.prompt.md",
+      ".claude/commands/spell-parallel-workers.md",
+      ".agents/skills/spell-parallel-workers/SKILL.md",
     ],
     // spell-make-discoverable cites the first two for every EV-/WD- rationale;
     // spell-eas-store-deploy and spell-compliance consume the last two
