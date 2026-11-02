@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-11-02
+
+The Show Report template is updated from arcane-ui v2.15.0.
+
+### Changed
+
+- **The Show Report template is vendored from arcane-ui v2.15.0.** The committed reports are regenerated from it. Opened automatically by the arcane-ui pipeline because the compiled template changed.
+
 ## [1.15.0] - 2026-11-02
 
 A new spell for splitting a plan into independent slices that worker sessions prepare in parallel, while one orchestrator session runs the protocols.
