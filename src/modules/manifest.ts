@@ -164,6 +164,25 @@ export function isValidIdeaTags(value: unknown): value is IdeaTags {
   );
 }
 
+/**
+ * True when a `todo_done_book` value is safe to store (#415): `false` (opt
+ * out of the done book), or a relative Markdown file path that stays inside
+ * the repository and is not the TODO book itself. The path is handed to
+ * `spell-todo --prune`, which writes to it, so the escape rules are
+ * `subject_root`'s; a directory, a non-Markdown file or `TODO.md` would make
+ * the move write somewhere it should not.
+ */
+export function isValidTodoDoneBook(value: unknown): value is string | false {
+  if (value === false) return true;
+  if (typeof value !== "string" || !isValidSubjectRoot(value)) return false;
+  const normalized = path.posix.normalize(value.replace(/\\/g, "/"));
+  return (
+    /\.md$/i.test(normalized) &&
+    !normalized.endsWith("/") &&
+    normalized.toLowerCase() !== "todo.md"
+  );
+}
+
 function manifestPath(targetDir: string): string {
   return path.join(targetDir, MANIFEST_FILE);
 }
@@ -230,6 +249,9 @@ export function validateManifestFields(manifest: Partial<ArcaneManifest>, filePa
   }
   if (manifest.idea_tags !== undefined && !isValidIdeaTags(manifest.idea_tags)) {
     throw new ManifestInvalidFieldError(filePath, "idea_tags", manifest.idea_tags);
+  }
+  if (manifest.todo_done_book !== undefined && !isValidTodoDoneBook(manifest.todo_done_book)) {
+    throw new ManifestInvalidFieldError(filePath, "todo_done_book", manifest.todo_done_book);
   }
 }
 

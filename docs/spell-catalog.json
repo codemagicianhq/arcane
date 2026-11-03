@@ -497,7 +497,7 @@
         "It reads the current TODO landscape and repo structure to avoid duplicates and pick the right home.",
         "Use this any time you have an idea mid-session and don't want to lose it or park it in the wrong place.",
         "If the idea is ADR-worthy or journal-worthy, it flags that and routes accordingly.",
-        "`--prune` removes checked items from a TODO book — report first, outcome recorded or migrated before anything is deleted, one fingerprinted batch approval, and unchecked items are never touched.",
+        "`--prune` removes checked items from a TODO book and moves them word for word to an append-only done book (`DONE.md` by default; `todo_done_book: false` in `.arcane.json` deletes instead) — report first, outcome recorded or migrated before anything is removed, one fingerprinted batch approval, and unchecked items are never touched.",
         "**In a hub repo:** \"add a todo for &lt;venture&gt;\" targets that venture's own `TODO.md` book instead of the hub root. `--sweep` skips elaboration entirely and reports new/open counts across every book (hub root + every venture)."
       ]
     },

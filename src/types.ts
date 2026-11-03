@@ -167,6 +167,14 @@ export interface ArcaneManifest {
    * there is no retrofit question for it.
    */
   idea_tags?: IdeaTags;
+  /**
+   * Where `spell-todo --prune` moves checked TODO items (#415). Absent means
+   * `DONE.md` beside the TODO book; a string is a path relative to the TODO
+   * book's directory; `false` opts out, and `--prune` deletes checked items
+   * instead of moving them. The done book is append-only. Set by hand --
+   * there is no retrofit question for it.
+   */
+  todo_done_book?: string | false;
 }
 
 export interface IdeaTags {
