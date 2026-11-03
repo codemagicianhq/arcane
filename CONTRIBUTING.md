@@ -31,8 +31,14 @@ Useful scripts:
 | `npm run build`                  | Bundle the CLI and copy assets                             |
 | `npm run check:self-host-parity` | Fail when generated dogfood copies have real content drift |
 | `npm run fix:self-host-parity`   | Regenerate dogfood copies from canonical assets            |
+| `npm run check:demos`            | Fail when the README demos differ from the built CLI       |
+| `npm run fix:demos`              | Build, then regenerate the README demos in `assets/demo/`  |
 
 > Asset source lives in `src/assets/` and is copied to `dist/assets/` at build time. Edit the **source** in `src/assets/`, never `dist/`.
+
+### README demos
+
+The animated demos in `assets/demo/*.svg` are captured from the built CLI by `scripts/demos.ts` (ARC-058); the scenarios live in `scripts/lib/demos/scenarios.ts`. Never hand-edit an SVG. `npm version` regenerates them as part of the bump, and CI's `check:demos` fails when a change alters what `spell init` or `spell agents` prints without them: run `npm run fix:demos` and commit the result. Generating them needs Node 18.18+ or 19+ (`node --import`).
 
 ### Generated self-host copies
 

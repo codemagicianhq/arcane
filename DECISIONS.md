@@ -3578,3 +3578,42 @@ The two lists differ in kind. A newly available component is a preference: nothi
 - **The git repository as the boundary:** puts a git call in every write path, and a target that is not a repository falls back to the target directory anyway.
 
 ---
+
+## ARC-058 — README Demos Are Generated From the Built CLI, as Animated SVG
+
+**Date:** 2026-11-03
+**Status:** Accepted — operator, 2026-11-03 (generate the README demos at release; animated SVG rather than regenerated GIFs). Drafted by the implementing agent; ships in 1.16.1.
+**Related:** [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) (the check is the enforcement), `scripts/spell-catalog.ts` (the `--check`/`--fix` pattern and the README count markers this follows)
+
+**Context:**
+
+- The README's "See it in action" section showed three GIFs recorded by hand with a terminal recorder at 0.13.0; two more recorder scripts for demos the README no longer showed sat beside them. By 1.16.0 they showed 33 spell prompts, 102 files and version 0.13.0 against 43 spells and 210 files, while the README's text counts stayed current because `fix:spell-catalog` fills them.
+- npm publishes this `README.md` and points its relative images at `raw.githubusercontent.com/codemagicianhq/arcane/HEAD/…`, so the npm page shows whatever the default branch holds at that path.
+- The recordings needed a recorder, a terminal emulator, a shell and a font installed by hand, and the GIFs were 125–250 KB of binary history each.
+
+**Decision:**
+
+1. `scripts/demos.ts` captures each scenario in `scripts/lib/demos/scenarios.ts` from the built CLI (`dist/index.js`) and writes `assets/demo/<id>.svg`. `npm run fix:demos` builds and regenerates; `npm run check:demos` fails when a demo is missing, when its stamped version differs from `package.json`, when it differs from what the current CLI prints, when an SVG in `assets/demo/` has no scenario, or when `README.md` shows a demo no scenario produces. Both refuse a `dist/index.js` older than any file under `src/` (the built CLI reads its version from `package.json` at run time, so its `--version` proves nothing about the build), and both refuse a demo whose printed text contains this machine's home directory, checkout path, host name or user name (on CI, where the host and user belong to a disposable runner, only the paths).
+2. The capture is reproducible byte for byte: a temporary repository and an empty temporary HOME, an environment built from scratch, a preload shim that gives the CLI a fixed-size TTY (100×34) so it takes its interactive paths, scripted keystrokes each sent only once the text it answers has rendered (the prompt, or the echo of the previous key) and the output has gone quiet, temporary paths rewritten to `~/demo`, and synthetic timing taken from the scenario rather than the clock. The same files came out on macOS with Node 24 and Linux with Node 20. The shim loads through `node --import`, so generating the demos needs Node 18.18+ or 19+.
+3. The output is played through a small virtual terminal (`scripts/lib/demos/terminal.ts`) and rendered as an SVG filmstrip moved by a CSS animation with step timing: no script, nothing loaded from outside the file, rows defined once and reused. Under `prefers-reduced-motion`, or wherever the animation does not run, the last frame is shown still.
+4. Each SVG carries the version as `data-arcane-version` on its root element and in its visible title bar.
+5. package.json's `version` lifecycle script runs `fix:demos` and stages `assets/demo`, so `npm version` regenerates the demos in the bump itself; CI runs `check:demos` after its build step, so a pull request that changes the CLI's output or the version without regenerating cannot merge.
+
+**Consequences:**
+
+- Every version bump regenerates the demos; `npm version` now takes a build (about ten seconds longer).
+- A change to what `spell init` or `spell agents` prints fails CI until `npm run fix:demos` is run and its result committed. That is the point, but it touches pull requests that never meant to change the demos.
+- The demos show exactly what a terminal shows, including the setup-question hint `spell init` prints when it leaves questions unanswered.
+- The renderer approximates terminal character widths (emoji and East Asian wide characters take two cells, a text-presentation pictograph one until a VS16 follows it). The output is still pinned byte for byte; only spacing on screen could differ from a real terminal's.
+- The private-value refusal looks for paths as whole paths or path prefixes (not inside a longer name or a web address) and for the host and user names as whole words of four characters or more; a shorter name is not looked for, since it would match ordinary words. It reads the printed text after the capture has rewritten the paths it knows, so a path the capture rewrites is not refused, and a new one the CLI starts printing is.
+- The demos stand at what the default branch holds, so a merge that changes them reaches the npm page before the matching release does. This change itself is released as 1.16.1, because removing the GIFs would otherwise leave the 1.16.0 npm page with broken images until the next release.
+
+**Rejected alternatives:**
+
+- **Regenerate the GIFs at release:** binary churn on every bump, and the recorder, a headless terminal and a video encoder in the release path.
+- **Record real timing:** the files would differ on every run, which defeats a byte-for-byte check.
+- **A pseudo-terminal package or the system `script` command:** a native dependency, or flags that differ between platforms, for what a preload shim does in a few lines.
+- **A third-party terminal-to-SVG renderer:** each one needs a recording format, a headless terminal or a browser; the in-repo renderer is a few hundred lines with nothing to install.
+- **Extend `check:stale-claims`:** it reads the living documents for prose claims; the demos are generated artifacts, the shape `check:spell-catalog` already guards.
+
+---

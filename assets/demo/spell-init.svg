@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="872" height="672" viewBox="0 0 872 672" role="img" aria-labelledby="title desc" data-demo="spell-init" data-arcane-version="1.16.0">
+<title id="title">spell init — arcane-cli 1.16.0</title>
+<desc id="desc">spell init --profile full installs the spell library, governance docs, agent policies and templates into a fresh repository.</desc>
+<style>
+text{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', 'Liberation Mono', monospace;font-size:14px;white-space:pre}
+.s0{fill:#a855f7}
+.s1{fill:#e6e1f0}
+.s2{fill:#6f9fd8}
+.s3{fill:#e6e1f0;font-weight:700}
+.s4{fill:#3a6ea5}
+.s5{fill:#e6e1f0;fill-opacity:.6}
+.film{transform:translateY(-33660px);animation:film 11455ms steps(1,end) infinite}
+@keyframes film{0.000%{transform:translateY(-0px)}5.238%{transform:translateY(-612px)}5.718%{transform:translateY(-1224px)}6.198%{transform:translateY(-1836px)}6.678%{transform:translateY(-2448px)}7.158%{transform:translateY(-3060px)}7.639%{transform:translateY(-3672px)}8.119%{transform:translateY(-4284px)}8.599%{transform:translateY(-4896px)}9.079%{transform:translateY(-5508px)}9.559%{transform:translateY(-6120px)}10.039%{transform:translateY(-6732px)}10.519%{transform:translateY(-7344px)}11.000%{transform:translateY(-7956px)}11.480%{transform:translateY(-8568px)}11.960%{transform:translateY(-9180px)}12.440%{transform:translateY(-9792px)}12.920%{transform:translateY(-10404px)}13.400%{transform:translateY(-11016px)}13.880%{transform:translateY(-11628px)}14.361%{transform:translateY(-12240px)}14.841%{transform:translateY(-12852px)}15.321%{transform:translateY(-13464px)}15.801%{transform:translateY(-14076px)}16.281%{transform:translateY(-14688px)}16.761%{transform:translateY(-15300px)}17.241%{transform:translateY(-15912px)}17.547%{transform:translateY(-16524px)}17.852%{transform:translateY(-17136px)}18.158%{transform:translateY(-17748px)}18.464%{transform:translateY(-18360px)}18.769%{transform:translateY(-18972px)}19.075%{transform:translateY(-19584px)}19.380%{transform:translateY(-20196px)}19.686%{transform:translateY(-20808px)}19.991%{transform:translateY(-21420px)}20.297%{transform:translateY(-22032px)}20.602%{transform:translateY(-22644px)}20.908%{transform:translateY(-23256px)}21.213%{transform:translateY(-23868px)}21.519%{transform:translateY(-24480px)}21.825%{transform:translateY(-25092px)}22.130%{transform:translateY(-25704px)}22.436%{transform:translateY(-26316px)}22.741%{transform:translateY(-26928px)}23.047%{transform:translateY(-27540px)}23.352%{transform:translateY(-28152px)}23.658%{transform:translateY(-28764px)}23.963%{transform:translateY(-29376px)}24.269%{transform:translateY(-29988px)}24.574%{transform:translateY(-30600px)}24.880%{transform:translateY(-31212px)}25.186%{transform:translateY(-31824px)}25.491%{transform:translateY(-32436px)}25.797%{transform:translateY(-33048px)}86.905%{transform:translateY(-33660px)}100%{transform:translateY(-33660px)}}
+@media (prefers-reduced-motion:reduce){.film{animation:none}}
+</style>
+<defs>
+<g id="r0"><text y="13.5"><tspan x="0" class="s0">$</tspan></text></g>
+<g id="r1"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> s</tspan></text></g>
+<g id="r2"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> sp</tspan></text></g>
+<g id="r3"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spe</tspan></text></g>
+<g id="r4"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spel</tspan></text></g>
+<g id="r5"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell</tspan></text></g>
+<g id="r6"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell i</tspan></text></g>
+<g id="r7"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell in</tspan></text></g>
+<g id="r8"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell ini</tspan></text></g>
+<g id="r9"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init</tspan></text></g>
+<g id="r10"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init -</tspan></text></g>
+<g id="r11"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --</tspan></text></g>
+<g id="r12"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --p</tspan></text></g>
+<g id="r13"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --pr</tspan></text></g>
+<g id="r14"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --pro</tspan></text></g>
+<g id="r15"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --prof</tspan></text></g>
+<g id="r16"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profi</tspan></text></g>
+<g id="r17"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profil</tspan></text></g>
+<g id="r18"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profile</tspan></text></g>
+<g id="r19"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profile f</tspan></text></g>
+<g id="r20"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profile fu</tspan></text></g>
+<g id="r21"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profile ful</tspan></text></g>
+<g id="r22"><text y="13.5"><tspan x="0" class="s0">$</tspan><tspan x="8.4" class="s1"> spell init --profile full</tspan></text></g>
+<g id="r23"><text y="13.5"><tspan x="0" class="s0">  ✦ Arcane v1.16.0</tspan></text></g>
+<g id="r24"><text y="13.5"><tspan x="0" class="s2">─</tspan><tspan x="16.8" class="s3">📦</tspan><tspan x="33.6" class="s3"> Profile: full</tspan></text></g>
+<g id="r25"><text y="13.5"><tspan x="0" class="s1">  ✨</tspan><tspan x="33.6" class="s1"> 43 Spells (Copilot, Claude Code, Codex) · 🤖</tspan><tspan x="411.6" class="s1"> 12 Agent Roles · 📋</tspan><tspan x="579.6" class="s1"> 25 Governance Docs · 🛡️</tspan><tspan x="781.2" class="s1"> 1 Agen</tspan></text></g>
+<g id="r26"><text y="13.5"><tspan x="0" class="s1">t Policies · 📄</tspan><tspan x="126" class="s1"> 3 Templates</tspan></text></g>
+<g id="r27"><text y="13.5"><tspan x="16.8" class="s4">▸</tspan><tspan x="25.2" class="s1"> ✨</tspan><tspan x="50.4" class="s1"> 43 Spells (Copilot, Claude Code, Codex)</tspan></text></g>
+<g id="r28"><text y="13.5"><tspan x="16.8" class="s4">▸</tspan><tspan x="25.2" class="s1"> 📋</tspan><tspan x="50.4" class="s1"> 25 Governance Docs</tspan></text></g>
+<g id="r29"><text y="13.5"><tspan x="16.8" class="s4">▸</tspan><tspan x="25.2" class="s1"> 🛡️</tspan><tspan x="50.4" class="s1"> 1 Agent Policies</tspan></text></g>
+<g id="r30"><text y="13.5"><tspan x="16.8" class="s4">▸</tspan><tspan x="25.2" class="s1"> 📄</tspan><tspan x="50.4" class="s1"> 3 Templates</tspan></text></g>
+<g id="r31"><text y="13.5"><tspan x="0" class="s2">✦</tspan><tspan x="16.8" class="s3">Initialized with profile &quot;full&quot; — 210 files installed</tspan></text></g>
+<g id="r32"><text y="13.5"><tspan x="16.8" class="s5">Some setup questions were left unanswered. Answer them without a prompt with:</tspan></text></g>
+<g id="r33"><text y="13.5"><tspan x="16.8" class="s5">  spell update --role &lt;hub|consumer&gt; --tracking-mode &lt;internal|external&gt; --content-sensitivity &lt;st</tspan></text></g>
+<g id="r34"><text y="13.5"><tspan x="0" class="s5">andard|sensitive&gt; --push-policy &lt;open|guarded|blocked&gt;</tspan></text></g>
+<g id="r35"><text y="13.5"><tspan x="16.8" class="s5">  (--tracking-mode external also needs --external-provider &lt;ado|github|jira|other&gt;)</tspan></text></g>
+<g id="r36"><text y="13.5"><tspan x="16.8" class="s5">Installed a pre-push hook that warns when the current branch's PR is already closed or merged.</tspan></text></g>
+<g id="r37"><text y="13.5"><tspan x="16.8" class="s5">Installed a pre-commit hook that scans staged content for leaked credentials.</tspan></text></g>
+<g id="r38"><text y="13.5"><tspan x="0" class="s2">─</tspan><tspan x="16.8" class="s3">🚀</tspan><tspan x="33.6" class="s3"> Next steps</tspan></text></g>
+<g id="r39"><text y="13.5"><tspan x="16.8" class="s4">1.</tspan><tspan x="33.6" class="s1"> Run `spell agents init` to set up your agent team</tspan></text></g>
+<g id="r40"><text y="13.5"><tspan x="16.8" class="s4">2.</tspan><tspan x="33.6" class="s1"> Review .arcane/governance/ docs and customize for your project</tspan></text></g>
+<g id="r41"><text y="13.5"><tspan x="16.8" class="s4">3.</tspan><tspan x="33.6" class="s1"> Commit the new files: git add .arcane .github .claude AGENTS.md CLAUDE.md .arcane.json .gitattr</tspan></text></g>
+<g id="r42"><text y="13.5"><tspan x="0" class="s1">ibutes</tspan></text></g>
+</defs>
+<rect x="1" y="1" width="870" height="670" rx="10" fill="#15121d" stroke="#2d2640" stroke-width="1.5"/>
+<path d="M1 11a10 10 0 0 1 10-10h850a10 10 0 0 1 10 10v25h-870z" fill="#221b33"/>
+<circle cx="22" cy="18" r="5.5" fill="#ff5f56"/><circle cx="42" cy="18" r="5.5" fill="#ffbd2e"/><circle cx="62" cy="18" r="5.5" fill="#27c93f"/>
+<text x="436" y="22.5" text-anchor="middle" style="font-size:12.5px;fill:#8a7fb0">spell init — arcane-cli 1.16.0</text>
+<svg x="16" y="48" width="840" height="612" viewBox="0 0 840 612">
+<g class="film">
+<g transform="translate(0 0)"><use href="#r0" y="0"/><rect x="16.8" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 612)"><use href="#r1" y="0"/><rect x="25.2" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 1224)"><use href="#r2" y="0"/><rect x="33.6" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 1836)"><use href="#r3" y="0"/><rect x="42" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 2448)"><use href="#r4" y="0"/><rect x="50.4" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 3060)"><use href="#r5" y="0"/><rect x="58.8" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 3672)"><use href="#r5" y="0"/><rect x="67.2" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 4284)"><use href="#r6" y="0"/><rect x="75.6" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 4896)"><use href="#r7" y="0"/><rect x="84" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 5508)"><use href="#r8" y="0"/><rect x="92.4" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 6120)"><use href="#r9" y="0"/><rect x="100.8" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 6732)"><use href="#r9" y="0"/><rect x="109.2" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 7344)"><use href="#r10" y="0"/><rect x="117.6" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 7956)"><use href="#r11" y="0"/><rect x="126" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 8568)"><use href="#r12" y="0"/><rect x="134.4" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 9180)"><use href="#r13" y="0"/><rect x="142.8" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 9792)"><use href="#r14" y="0"/><rect x="151.2" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 10404)"><use href="#r15" y="0"/><rect x="159.6" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 11016)"><use href="#r16" y="0"/><rect x="168" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 11628)"><use href="#r17" y="0"/><rect x="176.4" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 12240)"><use href="#r18" y="0"/><rect x="184.8" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 12852)"><use href="#r18" y="0"/><rect x="193.2" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 13464)"><use href="#r19" y="0"/><rect x="201.6" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 14076)"><use href="#r20" y="0"/><rect x="210" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 14688)"><use href="#r21" y="0"/><rect x="218.4" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 15300)"><use href="#r22" y="0"/><rect x="226.8" y="2" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 15912)"><use href="#r22" y="0"/><rect x="0" y="20" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 16524)"><use href="#r22" y="0"/><rect x="0" y="38" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 17136)"><use href="#r22" y="0"/><use href="#r23" y="36"/><rect x="0" y="56" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 17748)"><use href="#r22" y="0"/><use href="#r23" y="36"/><rect x="0" y="74" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 18360)"><use href="#r22" y="0"/><use href="#r23" y="36"/><rect x="0" y="92" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 18972)"><use href="#r22" y="0"/><use href="#r23" y="36"/><rect x="0" y="110" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 19584)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><rect x="0" y="128" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 20196)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><rect x="0" y="146" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 20808)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><rect x="0" y="182" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 21420)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><rect x="0" y="200" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 22032)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><rect x="0" y="218" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 22644)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><rect x="0" y="236" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 23256)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><rect x="0" y="254" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 23868)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><rect x="0" y="272" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 24480)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><rect x="0" y="290" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 25092)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><rect x="0" y="308" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 25704)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><rect x="0" y="326" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 26316)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><rect x="0" y="362" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 26928)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><rect x="0" y="380" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 27540)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><rect x="0" y="398" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 28152)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><rect x="0" y="416" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 28764)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><rect x="0" y="434" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 29376)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><rect x="0" y="452" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 29988)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><rect x="0" y="470" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 30600)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><rect x="0" y="488" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 31212)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><use href="#r39" y="486"/><rect x="0" y="506" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 31824)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><use href="#r39" y="486"/><use href="#r40" y="504"/><rect x="0" y="524" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 32436)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><use href="#r39" y="486"/><use href="#r40" y="504"/><use href="#r41" y="522"/><use href="#r42" y="540"/><rect x="0" y="560" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 33048)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><use href="#r39" y="486"/><use href="#r40" y="504"/><use href="#r41" y="522"/><use href="#r42" y="540"/><rect x="0" y="578" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+<g transform="translate(0 33660)"><use href="#r22" y="0"/><use href="#r23" y="36"/><use href="#r24" y="108"/><use href="#r25" y="144"/><use href="#r26" y="162"/><use href="#r27" y="198"/><use href="#r28" y="216"/><use href="#r29" y="234"/><use href="#r30" y="252"/><use href="#r31" y="288"/><use href="#r32" y="306"/><use href="#r33" y="324"/><use href="#r34" y="342"/><use href="#r35" y="360"/><use href="#r36" y="378"/><use href="#r37" y="396"/><use href="#r38" y="450"/><use href="#r39" y="486"/><use href="#r40" y="504"/><use href="#r41" y="522"/><use href="#r42" y="540"/><use href="#r0" y="576"/><rect x="16.8" y="578" width="8.4" height="15" fill="#e6e1f0" fill-opacity=".55"/></g>
+</g>
+</svg>
+</svg>

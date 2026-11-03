@@ -138,6 +138,12 @@ jobs:
           ARCANE_ORG_TOKENS: ${{ secrets.ARCANE_ORG_TOKENS }}
         run: npm run build
 
+      # Needs the build above: it runs dist/index.js and compares what it
+      # prints with assets/demo/*.svg, and the stamped version with
+      # package.json. `npm version` regenerates them (ARC-058).
+      - name: Verify the README demos match the CLI (ARC-058)
+        run: npm run check:demos
+
       - name: Test
         run: npm run test:coverage
 
