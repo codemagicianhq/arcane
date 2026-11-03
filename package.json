@@ -56,6 +56,9 @@
     "check:followups": "tsx scripts/check-followups.ts",
     "check:staged-org-tokens": "tsx scripts/check-staged-org-tokens.ts",
     "check:review-round": "tsx scripts/check-review-round.ts",
+    "check:demos": "tsx scripts/demos.ts --check",
+    "fix:demos": "npm run build && tsx scripts/demos.ts --fix",
+    "version": "npm run fix:demos && git add assets/demo",
     "doctor:leaks": "tsx src/index.ts doctor --leaks",
     "prepare": "husky"
   },

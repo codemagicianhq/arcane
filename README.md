@@ -54,7 +54,7 @@ npm install -g arcane-cli   #  then:  spell init
 <br>
 
 <div align="center">
-<img src="./assets/demo/spell-init.gif" alt="spell init — installs the full spell library and governance" width="800">
+<img src="./assets/demo/spell-init.svg" alt="Animated terminal recording: spell init --profile full installs the spell library, governance docs, agent policies and templates into a fresh repository." width="800">
 </div>
 
 </details>
@@ -65,7 +65,7 @@ npm install -g arcane-cli   #  then:  spell init
 <br>
 
 <div align="center">
-<img src="./assets/demo/spell-agents-arcanos.gif" alt="spell agents init — Arcanos naming strategy" width="800">
+<img src="./assets/demo/spell-agents-arcanos.svg" alt="Animated terminal recording: spell agents init picks the full roster and the Arcanos naming strategy, then spell agents list shows the named team." width="800">
 </div>
 
 </details>
@@ -76,7 +76,7 @@ npm install -g arcane-cli   #  then:  spell init
 <br>
 
 <div align="center">
-<img src="./assets/demo/spell-agents-custom.gif" alt="spell agents init — custom public-domain mythology naming" width="800">
+<img src="./assets/demo/spell-agents-custom.svg" alt="Animated terminal recording: spell agents init with the base profile and custom naming, typing a public-domain mythology name (Athena, Apollo, Thoth, Maat) for each role, then spell agents list." width="800">
 </div>
 
 </details>
