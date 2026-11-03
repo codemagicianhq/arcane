@@ -9,6 +9,15 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-11-03
+
+The README's demos are generated from the real CLI at every release, as animated SVG.
+
+### Changed
+
+- **The README's three demos are animated SVGs captured from the built CLI (ARC-058).** `spell init --profile full`, `spell agents init` with the Arcanos naming, and `spell agents init` with custom names replace the hand-recorded GIFs, which still showed 0.13.0 and 33 spell prompts. Each SVG is stamped with the version it was captured at, uses no script, and holds its last frame under reduced motion. The GIFs and all five recorder scripts in `assets/demo/` are removed. This release exists so the npm page points at the new files: npm loads the README's images from the default branch, where the GIFs no longer are.
+- **`npm version` regenerates the demos, and CI checks them.** `npm run fix:demos` builds and rewrites `assets/demo/*.svg`; package.json's `version` script runs it and stages the result. `npm run check:demos`, a new blocking CI step after the build, fails when a demo is missing, stamped with another version than `package.json`, different from what the current CLI prints, left over from a removed scenario, or shown by the README without a scenario. Both scripts refuse a build older than `src/`, and refuse a demo that would publish the machine's home directory, checkout path, host name or user name (on CI, only the paths). Generating the demos needs Node 18.18+ or 19+.
+
 ## [1.16.0] - 2026-11-03
 
 `spell-todo --prune` keeps the list of finished work: it moves checked items to a done book instead of deleting them.
