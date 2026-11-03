@@ -20,6 +20,8 @@ they may not be deleted. Applies to documentation and records repositories.
   document by an old link is never stranded.
 - Deletion is a separate, explicit decision from supersession — and some records
   may not be deleted at all.
+- Completed TODO items move to an append-only done book (`DONE.md`) rather than
+  being deleted.
 - These are framework conventions, not legal advice. Where a retention
   obligation applies, that obligation governs.
 
@@ -85,6 +87,25 @@ Rules:
 
   One-directional linking only helps readers who arrive at the old document.
   The reverse direction is what preserves the record's own history.
+
+## Completed TODO items
+
+A completed TODO item has one home once it leaves its TODO book: the **done
+book**, `DONE.md` beside the TODO book by default. `spell-todo --prune` moves an
+item there word for word, with its continuation lines, under the heading it had
+in the TODO book, once its outcome is shown to be recorded somewhere durable.
+
+- **The done book is append-only. Enforcement: structured spell gate (ARC-023) — `spell-todo --prune` only adds lines to it, inside its fingerprinted batch approval; no script checks a done book's history for an edited or removed line.**
+  It keeps the list of what was finished, which git history can recover line by
+  line but cannot be read as a list.
+- **It is not the outcome record.** The outcome still lives where `--prune`
+  found it or migrated it (a journal entry, `DECISIONS.md`, `CHANGELOG.md`, a
+  linked pull request). The done book keeps the item; the outcome record keeps
+  the evidence.
+- **`.arcane.json`'s `todo_done_book` sets its path, relative to the TODO
+  book's directory, or opts out with `false`.** Under `false`, `--prune`
+  deletes checked items instead, and that deletion is recorded as the section
+  below requires.
 
 ## Retention and deletion
 

@@ -9,6 +9,16 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-11-03
+
+`spell-todo --prune` keeps the list of finished work: it moves checked items to a done book instead of deleting them.
+
+### Changed
+
+- **`spell-todo --prune` now moves checked items to `DONE.md`; set `todo_done_book: false` to keep deleting (#415).** Each approved item is copied word for word, with its continuation lines, under the heading it had in the TODO book, and only then removed from the TODO book; the done book's file and heading are created when missing. The done book is append-only: `--prune` never edits or removes a line already in it. The outcome check, the report-first step and the one fingerprinted batch approval are unchanged; the report now reads "Move N items to DONE.md", and the fingerprint covers the done-book path. A consumer hub kept 246 checked items rather than lose that list to deletion.
+- **`.arcane.json` takes an optional `todo_done_book` field.** A Markdown path relative to the TODO book's directory (default `DONE.md`), or `false` to opt out. A value that is absolute, escapes the repository, is not a `.md` file, or names `TODO.md` itself is rejected when the manifest is read.
+- **`records-conventions.md` names the done book as the home for completed TODO items**, in a new "Completed TODO items" section.
+
 ## [1.15.1] - 2026-11-02
 
 The Show Report template is updated from arcane-ui v2.15.0.

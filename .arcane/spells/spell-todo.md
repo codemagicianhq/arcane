@@ -13,7 +13,7 @@ agent: agent
 - It reads the current TODO landscape and repo structure to avoid duplicates and pick the right home.
 - Use this any time you have an idea mid-session and don't want to lose it or park it in the wrong place.
 - If the idea is ADR-worthy or journal-worthy, it flags that and routes accordingly.
-- `--prune` removes checked items from a TODO book — report first, outcome recorded or migrated before anything is deleted, one fingerprinted batch approval, and unchecked items are never touched.
+- `--prune` removes checked items from a TODO book and moves them word for word to an append-only done book (`DONE.md` by default; `todo_done_book: false` in `.arcane.json` deletes instead) — report first, outcome recorded or migrated before anything is removed, one fingerprinted batch approval, and unchecked items are never touched.
 - **In a hub repo:** "add a todo for &lt;venture&gt;" targets that venture's own `TODO.md` book instead of the hub root. `--sweep` skips elaboration entirely and reports new/open counts across every book (hub root + every venture).
 
 ---
@@ -86,20 +86,28 @@ Without `--validate`, the sweep never edits anything. With it, the sweep also as
 
 ## Prune Mode (`--prune`)
 
-If the argument is (or starts with) `--prune`, skip every other step in this spell entirely and run this instead. It removes resolved items from a TODO book only after proving each one's outcome is recorded somewhere durable. (Not to be confused with `spell update --prune`, which removes orphaned managed files.)
+If the argument is (or starts with) `--prune`, skip every other step in this spell entirely and run this instead. It moves resolved items out of a TODO book into a done book, only after proving each one's outcome is recorded somewhere durable. (Not to be confused with `spell update --prune`, which removes orphaned managed files.)
 
 **Target book:** this repo's root `TODO.md`. In a hub, `--prune --venture <slug>` targets that venture's own `TODO.md` instead, resolved through the registry's aliases exactly as Step 0 below does. One book per run.
+
+**Done book:** read `.arcane.json`'s optional `todo_done_book` field.
+
+- **Absent:** the done book is `DONE.md`, in the same directory as the target book.
+- **A path, for example `"DONE.md"` or `"docs/DONE.md"`:** the done book is that path, relative to the target book's directory.
+- **`false`:** there is no done book. Approved items are deleted, not moved, as `--prune` did before the done book existed.
+
+The done book is the home `governance/records-conventions.md` ("Completed TODO items") names for completed TODO items. **It is append-only: this mode adds lines to it and never edits, reorders or removes a line already in it.**
 
 1. **Collect checked items only.** A candidate is a checked item — `- [x]` or `- [X]` — together with its indented continuation lines, and only when every item it is nested under is checked too: a checked sub-item under an unchecked parent belongs to that open item and is never a candidate. **An unchecked item (`- [ ]`) is never a candidate: it is never deleted, moved or edited by this mode.** A checked item with any unchecked sub-item is kept whole and reported as `has open sub-items — kept`.
 2. **Check each outcome is recorded durably.** For each candidate, look for the record of what happened, in this order:
    - the item's own reference — a file link, a PR or issue link, an ADR id, a tracker-id suffix — followed and confirmed to exist and to describe the outcome;
    - otherwise, a search of `journal/`, `DECISIONS.md`, `CHANGELOG.md`, and the repo's audit log and playbooks where they exist, for the item's key terms.
 
-   Classify each candidate as `recorded → <where>` (path, plus heading or line) or `unrecorded`. A merged PR or closed issue counts as durable only when the item links it; an unlinked guess ("probably PR #40") is `unrecorded`.
-3. **Report first — no edits yet.** Print every candidate with its classification. For each `unrecorded` one, print the outcome migration you propose: a short outcome note (what was done, when, where it can be seen) appended to today's journal entry, `journal/YYYY-MM-DD-<topic-slug>.md`, under a `### Pruned TODO outcomes` heading. If you cannot tell what the outcome was, say so and leave that item out of the batch — never invent an outcome.
+   Classify each candidate as `recorded → <where>` (path, plus heading or line) or `unrecorded`. A merged PR or closed issue counts as durable only when the item links it; an unlinked guess ("probably PR #40") is `unrecorded`. The done book does not count as the outcome record: it keeps the item, not the evidence of what the item produced.
+3. **Report first — no edits yet.** Print every candidate with its classification, and the done book it will move to. For each `unrecorded` one, print the outcome migration you propose: a short outcome note (what was done, when, where it can be seen) appended to today's journal entry, `journal/YYYY-MM-DD-<topic-slug>.md`, under a `### Pruned TODO outcomes` heading. If you cannot tell what the outcome was, say so and leave that item out of the batch — never invent an outcome.
 
    ```
-   Todo prune — TODO.md, 5 checked items
+   Todo prune — TODO.md, 5 checked items → DONE.md
 
      1. [x] Add export button              recorded → CHANGELOG.md (1.4.0)
      2. [x] Decide on ADR numbering         recorded → DECISIONS.md (numbering entry)
@@ -107,11 +115,18 @@ If the argument is (or starts with) `--prune`, skip every other step in this spe
      4. [x] Wire the push hook              has open sub-items — kept
      5. [x] Try the new cache               outcome unknown — kept (tell me what happened, or leave it)
 
-   Delete 3 items (1 after migration). Fingerprint: 3f9c1a…
+   Move 3 items to DONE.md (1 after migration). Fingerprint: 3f9c1a…
    ```
-4. **One batch approval, fingerprinted.** This is the same gate `spell-commit-work` step 8 uses for a commit. Compute an approval fingerprint from the exact deletion list (book path, line, full item text for every item to delete) plus the exact migration text. Present the list, the migration text and the fingerprint through a structured approval control, and wait for an authenticated operator response tied to that fingerprint. One approval covers the whole batch; there are no per-item prompts. A timeout, a cancellation, a host-generated fallback, a delegated response, or ordinary conversational assent is not approval: halt with nothing written. Recompute the fingerprint immediately before writing. If the book or the migration text changed, the approval is void; ask again. **Enforcement: structured spell gate (ARC-023) — nothing is written until the operator approves the fingerprinted batch; the fingerprint comparison is agent-administered, not tool-verified.**
-5. **Migrate, then delete.** Write every migration first and confirm each one landed. Then delete exactly the approved lines, and nothing else. An item whose migration failed stays in the book. Update `last_updated` in the frontmatter of every touched file.
-6. **Record the deletion; do not commit.** `governance/records-conventions.md` ("Retention and deletion") requires an approved deletion to be recorded. Propose a commit message whose body lists each deleted item and where its outcome is recorded, and hand off to `spell-commit-work`. No separate completed-items ledger is written: `records-conventions.md` defines no home for one, and the commit body plus the migrated journal notes are the record.
+
+   With `todo_done_book: false`, the header names no done book and the last line reads `Delete 3 items (1 after migration).`
+4. **One batch approval, fingerprinted.** This is the same gate `spell-commit-work` step 8 uses for a commit. Compute an approval fingerprint from the exact deletion list (book path, line, full item text for every item to delete) plus the exact migration text, plus the done-book path when items move. Present the list, the migration text and the fingerprint through a structured approval control, and wait for an authenticated operator response tied to that fingerprint. One approval covers the whole batch, the move to the done book included; there are no per-item prompts. A timeout, a cancellation, a host-generated fallback, a delegated response, or ordinary conversational assent is not approval: halt with nothing written. Recompute the fingerprint immediately before writing. If the book or the migration text changed, the approval is void; ask again. **Enforcement: structured spell gate (ARC-023) — nothing is written until the operator approves the fingerprinted batch; the fingerprint comparison is agent-administered, not tool-verified.**
+5. **Migrate, move, then delete.** Write every migration first and confirm each one landed. Then, unless `todo_done_book` is `false`, copy each approved item into the done book:
+   - **Word for word.** The item line and its continuation lines exactly as they stand in the TODO book, checkbox and indentation included; nothing reworded, dated or summarised.
+   - **Under the same heading.** The heading is the nearest one above the item in the TODO book, matched in the done book by its exact text and level. The item goes after the last line of that heading's section, so items keep their order within it. If the heading is missing, add it, word for word, at the end of the file, then the item under it.
+   - **Creating the file when missing.** A new done book starts with a `# Done` title and the line `<!-- Append-only: spell-todo --prune adds items here and never edits or removes them. -->`, and has no frontmatter, so no later run has a reason to edit a line already in it.
+
+   Confirm every copied item is in the done book word for word. Then delete exactly the approved lines from the TODO book, and nothing else. An item whose migration or copy failed stays in the TODO book. Update `last_updated` in the frontmatter of every touched file that has one; the done book has none.
+6. **Record the move; do not commit.** `governance/records-conventions.md` ("Retention and deletion") requires an approved deletion to be recorded. Propose a commit message whose body lists each item removed from the TODO book, where its outcome is recorded, and the done book it moved to (or that it was deleted, under `todo_done_book: false`), and hand off to `spell-commit-work`. The done book, the commit body and the migrated journal notes are the record.
 
 **Speed rule:** a book with no checked items reports `Nothing to prune — 0 checked items` and stops.
 
