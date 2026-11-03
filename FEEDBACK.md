@@ -291,3 +291,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-02-parallel-workers-spell.md`, lessons "A branch-format literal in a new spell failed only at the full suite", "An independent read found contradictions in my own spell with the spells it cites".
+
+## Feedback — Arcane workflow (2026-11-03)
+
+**Session:** Done book for `spell-todo --prune` ([PR #416](https://github.com/codemagicianhq/arcane/pull/416)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The branch rename gate's "if `<old>` was already pushed" was answered from the local remote-tracking ref; the session told the operator the branch was pushed, and the remote delete then failed because the branch had never reached the remote.
+- `spell-open-session`'s version check runs `npm view arcane-cli version`, which returned the cached 1.15.1 after 1.16.0 was published; `--prefer-online` returned 1.16.0.
+
+### Improvement Items
+- [ ] In the `branch-rename-gate` fragment, step 4: decide "already pushed" with `git ls-remote --heads <remote> <old>`, never from a local remote-tracking ref. <!-- upstream: queued -->
+- [ ] In `spell-open-session`'s Arcane version check, run `npm view arcane-cli version --prefer-online` so the latest-published reading bypasses the local cache. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-03-todo-done-book.md`, lessons "\"Already pushed\" was read from a stale local ref" and "A plain `npm view` can report the previous version".
