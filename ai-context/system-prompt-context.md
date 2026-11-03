@@ -67,3 +67,5 @@
   - Review and merge the website repository's bot sync pull request for 1.15.0 when it appears — a merge there deploys production, and the agent has no authority to merge it.
   - Decide land-or-abandon for the remaining Windows-machine `backup/*` snapshot and remove the leaked `%TEMP%` fixture directories — registered in `TODO.md` ("Operator-machine follow-ups from the 2026-10-09 and 2026-10-12 handoffs" and "Operator machine: remove the fixture directories the suite leaked into `%TEMP%`").
 - **Notes:** The 2026-11-01 handoff's `sync-backup/*` tags and `stash@{0}` were checked absent on 2026-11-02 (`git tag -l 'sync-backup/*'`, `git stash list`). The primary checkout's local `main` was 4 commits behind `origin/main` on 2026-11-02, and the worktree `sessions/2026-10-27-app-store-accounts-spell` is still attached with its remote branch deleted; neither was touched. The spell's canonical source is `src/assets/.arcane/spells/spell-parallel-workers.md`; its client shims are generated.
+
+> ✓ Consumed: 2026-11-03
