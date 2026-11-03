@@ -63,7 +63,7 @@ describe("UP03-B-02: one batch approval, fingerprinted like spell-commit-work", 
 
   it("fingerprints the exact deletion list plus migration text", () => {
     expect(prune).toContain(
-      "Compute an approval fingerprint from the exact deletion list (book path, line, full item text for every item to delete) plus the exact migration text, plus the done-book path when items move.",
+      "Compute an approval fingerprint from the exact deletion list (book path, line, full item text for every item to delete) plus the exact migration text, plus the done-book path and its current content (or its absence) when items move.",
     );
   });
 
@@ -105,7 +105,7 @@ describe("UP03-B-02: outcome migration before deletion", () => {
   });
 
   it("fingerprints the done-book path too, inside the one batch approval", () => {
-    expect(prune).toContain("plus the done-book path when items move");
+    expect(prune).toContain("plus the done-book path and its current content (or its absence) when items move");
     expect(prune).toContain("One approval covers the whole batch, the move to the done book included");
   });
 
@@ -165,7 +165,7 @@ describe("#415: the done book", () => {
   it("moves word for word, with continuation lines, under the same heading", () => {
     expect(prune).toContain("**Word for word.** The item line and its continuation lines exactly as they stand");
     expect(prune).toContain("**Under the same heading.**");
-    expect(prune).toContain("If the heading is missing, add it, word for word, at the end of the file");
+    expect(prune).toContain("A heading missing from the path is added word for word");
     expect(prune).toContain("**Creating the file when missing.**");
   });
 
@@ -177,6 +177,26 @@ describe("#415: the done book", () => {
     expect(copy).toBeGreaterThan(-1);
     expect(copy).toBeLessThan(confirm);
     expect(confirm).toBeLessThan(del);
+  });
+
+  it("a checked sub-item moves with its candidate parent, never twice", () => {
+    expect(prune).toContain("it moves with the parent and is never a separate candidate, so nothing reaches the done book twice");
+  });
+
+  it("matches the whole heading path and places the item before any subheading", () => {
+    expect(prune).toContain("plus every heading that encloses that one");
+    expect(prune).toContain("before that heading's first subheading or the next heading");
+    expect(prune).toContain("at the end of its parent's section in the done book");
+    expect(prune).toContain("An item with no heading but the title above it goes directly under the done book's `# Done` title");
+  });
+
+  it("never writes through a symbolic link", () => {
+    expect(prune).toContain("**Never through a link.**");
+  });
+
+  it("voids approval when the done book changed, and never edits its frontmatter", () => {
+    expect(prune).toContain("If the book, the migration text or the done book changed, the approval is void");
+    expect(prune).toContain("except the done book: its existing lines are never edited, frontmatter included");
   });
 
   it("the done book is append-only", () => {

@@ -26,7 +26,7 @@ describe("todo_done_book", () => {
     await fs.writeFile(join(dir, ".arcane.json"), JSON.stringify(value, null, 2));
   }
 
-  it.each([["DONE.md"], ["docs/DONE.md"], ["./done/archive.MD"], [false]])(
+  it.each([["DONE.md"], ["docs/DONE.md"], ["./done/archive.MD"], ["ventures/acme/DONE.md"], [false]])(
     "valid value %j round-trips through readManifest/writeManifest",
     async (todo_done_book) => {
       await writeRaw({ ...BASE, todo_done_book });
@@ -57,6 +57,19 @@ describe("todo_done_book", () => {
     ["the TODO book itself", "TODO.md"],
     ["the TODO book by another spelling", "./todo.md"],
     ["a multi-line value", "DONE.md\nrm -rf"],
+    ["a backslash traversal to the TODO book", "sub\\..\\TODO.md"],
+    ["a slash traversal that stays inside", "sub/../TODO.md"],
+    ["the TODO book in another case", "Todo.MD"],
+    ["a nested TODO book (a hub venture's live book)", "ventures/acme/TODO.md"],
+    ["a doubled-slash TODO book", "a//TODO.md"],
+    ["the changelog", "CHANGELOG.md"],
+    ["the decision log", "DECISIONS.md"],
+    ["the idea book", "IDEAS.md"],
+    ["a managed spell file", ".arcane/spells/spell-todo.md"],
+    ["a path under .git", ".git/DONE.md"],
+    ["an NTFS alternate data stream", "TODO.md:x.md"],
+    ["surrounding whitespace", " DONE.md"],
+    ["a bare extension", ".md"],
   ])("%s -> ManifestInvalidFieldError naming todo_done_book", async (_label, todo_done_book) => {
     await writeRaw({ ...BASE, todo_done_book });
 
