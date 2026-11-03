@@ -165,21 +165,33 @@ export function isValidIdeaTags(value: unknown): value is IdeaTags {
 }
 
 /**
+ * Basenames `todo_done_book` may not name: the TODO book itself (at any
+ * depth, so a hub's root prune cannot write into a venture's live book) and
+ * the other core records `--prune` reads as outcome evidence.
+ */
+const TODO_DONE_BOOK_RESERVED = new Set(["todo.md", "ideas.md", "decisions.md", "changelog.md"]);
+
+/**
  * True when a `todo_done_book` value is safe to store (#415): `false` (opt
  * out of the done book), or a relative Markdown file path that stays inside
- * the repository and is not the TODO book itself. The path is handed to
- * `spell-todo --prune`, which writes to it, so the escape rules are
- * `subject_root`'s; a directory, a non-Markdown file or `TODO.md` would make
- * the move write somewhere it should not.
+ * the repository. The path is handed to `spell-todo --prune`, which writes
+ * to it, so it gets `subject_root`'s escape rules plus: a `.md` file with a
+ * name before the extension, no surrounding whitespace, no `:` (an NTFS
+ * alternate data stream), no dot-directory (`.arcane/`, `.git/`, client
+ * shim folders), and none of the reserved core-record basenames above.
  */
 export function isValidTodoDoneBook(value: unknown): value is string | false {
   if (value === false) return true;
   if (typeof value !== "string" || !isValidSubjectRoot(value)) return false;
+  if (value !== value.trim() || value.includes(":")) return false;
   const normalized = path.posix.normalize(value.replace(/\\/g, "/"));
+  const segments = normalized.split("/");
+  const basename = segments[segments.length - 1] ?? "";
   return (
-    /\.md$/i.test(normalized) &&
-    !normalized.endsWith("/") &&
-    normalized.toLowerCase() !== "todo.md"
+    /^[^/]+\.md$/i.test(basename) &&
+    !/^\.md$/i.test(basename) &&
+    !segments.slice(0, -1).some((segment) => segment.startsWith(".") && segment !== ".") &&
+    !TODO_DONE_BOOK_RESERVED.has(basename.toLowerCase())
   );
 }
 
