@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-11-04T12:00:00.000Z",
+  "generator": {
+    "name": "arcane-cli",
+    "version": "1.17.0"
+  },
+  "repository": {
+    "root": "<root>",
+    "scope": "repo",
+    "role": "consumer",
+    "profile": "lite"
+  },
+  "versions": {
+    "files": "1.17.0",
+    "cli": "1.17.0",
+    "latest": null,
+    "drift": {
+      "files_behind_cli": false,
+      "cli_behind_latest": null
+    },
+    "components": [
+      {
+        "name": "agent-policies",
+        "installedVersion": "1.16.0"
+      },
+      {
+        "name": "git-conventions",
+        "installedVersion": "1.17.0"
+      }
+    ]
+  },
+  "git": {
+    "branch": "main",
+    "detached": false,
+    "trunk": "main",
+    "ahead": 1,
+    "behind": 0,
+    "uncommitted": 0,
+    "remote": {
+      "provider": "github",
+      "url": "https://github.com/ordovica/survey.git"
+    },
+    "worktrees": [
+      {
+        "path": ".",
+        "branch": "main"
+      }
+    ],
+    "pull_request": null
+  },
+  "indexes": {
+    "decisions": [
+      {
+        "id": "ADR-001",
+        "title": "Geothermal survey cadence",
+        "status": "Accepted",
+        "date": "2026-10-01",
+        "anchor": "adr-001--geothermal-survey-cadence"
+      },
+      {
+        "id": "ADR-002",
+        "title": "Tidal repair fleet sizing",
+        "status": "Proposed",
+        "date": "2026-10-05",
+        "anchor": "adr-002--tidal-repair-fleet-sizing"
+      }
+    ],
+    "todos": {
+      "open": 2,
+      "done": 1,
+      "items": [
+        {
+          "text": "**Survey the Ordovica deep-earth site.** Type: `todo`; domain: `survey`.",
+          "section": "Open Items",
+          "locator": "open-items/b393432e99e1",
+          "checked": false
+        },
+        {
+          "text": "**Order the Tidewright repair drones.** Done 2026-11-01. <!-- status: done -->",
+          "section": "Open Items",
+          "locator": "open-items/afd43fd37efe",
+          "checked": true
+        },
+        {
+          "text": "Confirm the Overshore orbit window",
+          "section": "Operator follow-ups",
+          "locator": "operator-follow-ups/85608ead6852",
+          "checked": false
+        }
+      ]
+    },
+    "ideas": null,
+    "done": null,
+    "journal": null
+  },
+  "config": {
+    "tracking_mode": "internal",
+    "external_provider": null,
+    "push_policy": "open",
+    "role": null,
+    "business_root": null,
+    "spell_scope": null,
+    "content_sensitivity": "standard"
+  },
+  "registry": null,
+  "features": null,
+  "agents": null,
+  "warnings": []
+}

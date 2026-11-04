@@ -1,0 +1,218 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-11-04T12:00:00.000Z",
+  "generator": {
+    "name": "arcane-cli",
+    "version": "1.17.0"
+  },
+  "repository": {
+    "root": "<root>",
+    "scope": "repo",
+    "role": "hub",
+    "profile": "full"
+  },
+  "versions": {
+    "files": "1.17.0",
+    "cli": "1.17.0",
+    "latest": null,
+    "drift": {
+      "files_behind_cli": false,
+      "cli_behind_latest": null
+    },
+    "components": [
+      {
+        "name": "spells-core",
+        "installedVersion": "1.17.0"
+      }
+    ]
+  },
+  "git": {
+    "branch": "main",
+    "detached": false,
+    "trunk": "main",
+    "ahead": null,
+    "behind": null,
+    "uncommitted": 0,
+    "remote": null,
+    "worktrees": [
+      {
+        "path": ".",
+        "branch": "main"
+      },
+      {
+        "path": "../hub-wt",
+        "branch": "hub-wt"
+      }
+    ],
+    "pull_request": null
+  },
+  "indexes": {
+    "decisions": [
+      {
+        "id": "ADR-001",
+        "title": "Geothermal survey cadence",
+        "status": "Accepted",
+        "date": "2026-10-01",
+        "anchor": "adr-001--geothermal-survey-cadence"
+      },
+      {
+        "id": "ADR-002",
+        "title": "Tidal repair fleet sizing",
+        "status": "Proposed",
+        "date": "2026-10-05",
+        "anchor": "adr-002--tidal-repair-fleet-sizing"
+      }
+    ],
+    "todos": {
+      "open": 2,
+      "done": 1,
+      "items": [
+        {
+          "text": "**Survey the Ordovica deep-earth site.** Type: `todo`; domain: `survey`.",
+          "section": "Open Items",
+          "locator": "open-items/b393432e99e1",
+          "checked": false
+        },
+        {
+          "text": "**Order the Tidewright repair drones.** Done 2026-11-01. <!-- status: done -->",
+          "section": "Open Items",
+          "locator": "open-items/afd43fd37efe",
+          "checked": true
+        },
+        {
+          "text": "Confirm the Overshore orbit window",
+          "section": "Operator follow-ups",
+          "locator": "operator-follow-ups/85608ead6852",
+          "checked": false
+        }
+      ]
+    },
+    "ideas": {
+      "open": 1,
+      "done": 1,
+      "items": [
+        {
+          "text": "**[2026-10-20]** [#orbit] Overshore could lease vacuum time to the Tidewright sensor team.",
+          "section": "Idea Inbox",
+          "locator": "idea-inbox/8203383dd554",
+          "checked": false
+        },
+        {
+          "text": "**[2026-10-21]** [#survey] Pair the Ordovica survey with a coastal scan. <!-- status: promoted -->",
+          "section": "Idea Inbox",
+          "locator": "idea-inbox/8f109b2e16be",
+          "checked": true
+        }
+      ]
+    },
+    "done": null,
+    "journal": [
+      {
+        "date": "2026-10-30",
+        "slug": "portfolio-review",
+        "title": "Portfolio review",
+        "path": "journal/2026-10-30-portfolio-review.md"
+      }
+    ]
+  },
+  "config": {
+    "tracking_mode": "internal",
+    "external_provider": null,
+    "push_policy": "guarded",
+    "role": "hub",
+    "business_root": "ventures",
+    "spell_scope": null,
+    "content_sensitivity": "sensitive"
+  },
+  "registry": {
+    "updated": "2026-11-01",
+    "ventures": [
+      {
+        "slug": "ordovica",
+        "name": "Ordovica",
+        "aliases": [
+          "ordo",
+          "ord"
+        ],
+        "status": "active",
+        "visibility": "public",
+        "ownership": "llc",
+        "tracking": "github",
+        "repos": [
+          {
+            "name": "survey",
+            "remote": "https://github.com/ordovica/survey.git",
+            "default": true
+          },
+          {
+            "name": "notes",
+            "remote": null,
+            "default": false
+          }
+        ]
+      },
+      {
+        "slug": "overshore",
+        "name": "Overshore",
+        "aliases": [
+          "over",
+          "osh"
+        ],
+        "status": "idea",
+        "visibility": "private",
+        "ownership": "personal",
+        "tracking": "none",
+        "repos": []
+      },
+      {
+        "slug": "tidewright",
+        "name": "Tidewright",
+        "aliases": [
+          "tide",
+          "tw"
+        ],
+        "status": "active",
+        "visibility": "private",
+        "ownership": "llc",
+        "tracking": {
+          "provider": "ado",
+          "project": "platform"
+        },
+        "repos": [
+          {
+            "name": "repair",
+            "remote": "https://dev.azure.com/tidewright/platform/_git/repair",
+            "default": true
+          }
+        ]
+      }
+    ]
+  },
+  "features": null,
+  "agents": {
+    "schema": "roster-v2",
+    "naming_strategy": "arcanos",
+    "agent_profile": "base",
+    "entries": [
+      {
+        "definition": "architecture-lead",
+        "name": "Merlin",
+        "id": "merlin",
+        "epithet": "the Archmage",
+        "origin": "repo",
+        "definition_revision": "sha256:938afaa6938c24bf9e2a3d16cae3e89075172f5f3d6ebda16e4695f783c2358e"
+      },
+      {
+        "definition": "qa-lead",
+        "name": "Lince",
+        "id": "lince",
+        "epithet": null,
+        "origin": "repo",
+        "definition_revision": null
+      }
+    ]
+  },
+  "warnings": [
+    "agents: the definition file for \"qa-lead\" (lince) is missing from its definitions directory; definition_revision is null"
+  ]
+}
