@@ -1,7 +1,7 @@
 ---
 title: "PRD: The state export — `spell state --json`"
 status: accepted
-implementation_status: not-started
+implementation_status: in-progress
 accepted: 2026-11-04
 tracking:
   tracking_mode: internal
