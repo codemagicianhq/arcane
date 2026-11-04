@@ -13,3 +13,14 @@
 ### What to watch for
 - Books (todos/ideas/done) export as `{ open, done, items[] }` per architecture D6, not as bare arrays as the PRD's ST-05 prose reads; the schema follows the architecture.
 - `warnings[]` is sorted; every other array keeps collector order unless STATE_SHAPE names a sort key.
+
+## Iteration 2 — SE-02 — 2026-11-04
+### What was done
+- src/modules/state/versions.ts: collectVersions(manifest, packageVersion, { online, feedUrl?, cachePath? }) -> { versions, warnings, lookup }, plus compareVersions.
+- src/commands/status.ts reads files/cli/latest from the section and the footer's "unable to check" from `lookup.error`; no checkForUpdate/getFeedUrl import left.
+- test/state-versions.test.ts; byte identity checked with the built CLI on a fixture (cmp) besides status.test.ts.
+### What was learned
+- The built CLI's `getFeedUrl()` throws at runtime (dist/index.js resolves `../../package.json` outside the repo), so `spell status` prints "Latest: unable to check" from the package; preserved as is (byte identity), a pre-existing bug for a follow-up, not this feature.
+- `lookup` (the raw VersionCheckResult) is returned beside the section because the footer distinguishes "unable to check" (error) from a null latest.
+### What to watch for
+- Keep status's lookup `online: true`; only `spell state` defaults to offline (ST-13).
