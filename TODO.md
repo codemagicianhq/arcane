@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-29
+last_updated: 2026-11-04
 ---
 
 # TODO
@@ -11,6 +11,14 @@ last_updated: 2026-10-29
 - [ ] **A cloud session's pull request arrives on a random `claude/<adjective>-<noun>-<hash>` branch, and ARC-053 cannot catch it (raised 2026-10-10).** ARC-053 renames a non-compliant branch on sight from inside a session, but a cloud session creates its branch before any spell runs and may open the pull request without one. PR 354 (2026-10-10) arrived that way. Decide: accept the generated name for cloud-originated pull requests and say so in the branch-naming fragment, or add a rename step the cloud session runs at start (the fragment is read at session start already; the rename gate would need to run there too). Until decided, merging such a pull request and letting the branch delete is the right end.
 
 <!-- Add task items here during sessions. Mark completed with [x] and date. -->
+
+### State export (ARC-044, 1.17.0) — registered 2026-11-04 by spell-close-session
+
+- [ ] **State export (ARC-044): push `sessions/2026-11-03-plan-spell-state-json` and open its pull request.** Type: `todo`; domain: `release`. The branch holds SE-01..SE-14 (14/14 `passes: true` in `features/state-export/stories.json`), the 1.17.0 bump and the regenerated demos; nothing is pushed because the brief reserved push and pull request for the operator. **Done when:** the pull request is open, the three-OS `state-snapshot` step and the release-drift gate pass in CI, and 1.17.0 is published; then set `features/state-export/PRD.md` to `implementation_status: shipped`. Journal: `journal/2026-11-04-state-export-build.md`.
+- [ ] **Move per-machine clone paths out of the committed `registry.json` (ARC-030 decision 2 amendment).** Type: `todo`; domain: `hub`. Decided with the operator on 2026-11-03 as the follow-up to `features/state-export/PRD.md` open question 2: the `clones` map keyed by machine name moves to an untracked local overlay (`.arcane/local/` or the user store), keyed by venture slug and remote, so a shared hub never pushes every member's machine name and folder layout. The export's `repos[].local_path` field is unchanged by it. **Done when:** a decision record amends ARC-030 and `src/modules/state/registry.ts` reads the overlay. File before any multi-person hub install.
+- [ ] **LOW: index `IDEAS.md` entries in the state export.** Type: `todo`; domain: `state-export`. This repository's idea book uses `- **[YYYY-MM-DD HH:MM]**` bullets with a trailing `<!-- status: ... -->` comment, not checkboxes, so `indexes.ideas` exports zero items here (architecture D6 defines an item as a checkbox line). **Done when:** `src/modules/state/books.ts` (or a sibling) also indexes dated idea bullets with their status comment, additively to schema 1.0.0, with a fixture.
+- [ ] **MEDIUM (bug): the built CLI's `spell status` never reaches npm.** Type: `bug`; domain: `cli`. Found 2026-11-04 while proving byte identity for the state export: from `dist/index.js`, `getFeedUrl()` in `src/modules/version-check.ts` requires `../../package.json`, which resolves outside the repository, throws, and `spell status` prints `Latest: unable to check` on every run (seen on a lite fixture with the 1.16.1 build). Running from source (`tsx src/index.ts status`) works. `collectVersions` preserves the behaviour on purpose; `spell state --json --online` inherits it. **Done when:** the feed URL is read from the package the bundle belongs to (tsup's `require` shim resolves `../package.json` from `dist/`), with a built-CLI test that asserts a real `Latest:` value against a mocked feed.
+- [ ] **LOW (test infrastructure): `test/demos-capture.test.ts` expects an EPIPE that Windows never raises.** Type: `todo`; domain: `test-infrastructure`. After `1158dda` fixed the capture's `GIT_CONFIG_GLOBAL` for Windows, one test still fails here: "fails with a clear message, not a crash, when a key cannot be delivered" expects `Could not write to the CLI: ... EPIPE` from a stand-in CLI that closed stdin, but on Windows the write succeeds and the step times out ("Timed out waiting for the CLI"). Linux and macOS pass. **Done when:** the test accepts the platform's own closed-pipe outcome, or `runCommand` detects a closed stdin the same way on Windows, and the file passes on all three CI runners.
 
 ### Operator follow-ups
 
