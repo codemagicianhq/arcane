@@ -323,3 +323,18 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-04-state-export-build.md`, lesson "A rebase merge rewrites every commit id the session docs cite".
+
+## Feedback — spell-bug (2026-11-04)
+
+**Session:** Symlink write hardening and the 1.17.2 release ([PR #422](https://github.com/codemagicianhq/arcane/pull/422)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- `spell-bug` step 7 asks the operator to approve the commit message, and `spell-commit-work`'s test-and-coverage gate runs only afterwards. A per-file coverage threshold failed (`copier.ts` 89% against 95%, because the new code was exercised only by tests that skip on that platform); fixing it changed the staged diff, so the approval no longer applied and had to be asked again.
+
+### Improvement Items
+- [ ] In `spell-bug` step 7, run `spell-commit-work`'s step 2 gates (tests, coverage, the staged version-bump check) before presenting the commit message for approval, so the operator approves the diff that will actually be committed. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-04-symlink-write-hardening.md`, lesson "Ask for commit approval only after the commit gates have run".
