@@ -211,9 +211,9 @@
         "spell-bump applied a minor bump and the release-drift check passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: README State export section links src/assets/schemas/state.schema.json and names dist/assets/schemas/state.schema.json with a trimmed example; CHANGELOG 1.17.0 entry under ARC-044 records schema 1.0.0 and the additive-only rule (check:changelog passed); fragment state-export expanded into spell-open-session.md and its root copy (self-host parity: 368 items match); npm version minor -> 1.17.0, check:version-bump --working-tree passed, README demos regenerated and check:demos passed (after the Windows devNull fix in scripts/lib/demos/capture.ts); check:spell-catalog, check:adr-references and check:stale-claims Class A passed; release-drift check runs in CI on merge"
     }
   ]
 }
