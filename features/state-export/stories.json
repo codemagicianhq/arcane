@@ -105,9 +105,9 @@
         "A pre-ARC-032 manifest with none of them exports null for each and still validates against the schema (ST-06)"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-config.test.ts 3/3 (every field set, pre-ARC-032 manifest all null, explicit null provider), both documents validate against the schema; config.ts fully covered (one pure function); lint and typecheck:all green"
     },
     {
       "id": "SE-08",
