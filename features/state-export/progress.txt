@@ -65,3 +65,11 @@
 - journal/.gitkeep exists in this repository; dotfiles and subdirectories are skipped silently, every other mis-named file warns once.
 ### What to watch for
 - Only the head of each file is read for the title; bodies never reach the document.
+
+## Iteration 7 — SE-07 — 2026-11-04
+### What was done
+- src/modules/state/config.ts: collectConfig(manifest), pure.
+### What was learned
+- `repository.role` is the resolved role (consumer by default) while `config.role` is the raw answer (null when never asked); the two differ on purpose.
+### What to watch for
+- Nothing.
