@@ -34,7 +34,7 @@ import {
   AgentRosterNotFoundError,
 } from "./agent-loader.js";
 import { syncAgents } from "./agent-generator.js";
-import { validateRealTargetDirectory, validateRealTargetPath } from "./copier.js";
+import { validateRealTargetDirectory, validateRealTargetFile } from "./copier.js";
 import { printStep, printSuccess } from "./banner.js";
 import { readManifest, writeManifest } from "./manifest.js";
 import {
@@ -176,7 +176,7 @@ async function performAgentSync(
       console.log(`  ${line}`);
     }
     if (!options.dryRun) {
-      await writeManifest(targetDir, { ...manifest, fanout: fanout.record });
+      await writeManifest(targetDir, { ...manifest, fanout: fanout.record }, { followLinks: true });
     }
   }
 
@@ -347,7 +347,7 @@ export async function runAgentsInit(
     // resolves back inside while agents.yaml does not.
     if (scope === "repo") {
       validateRealTargetDirectory(targetDir, ".arcane/agents");
-      validateRealTargetPath(targetDir, ".arcane/agents.yaml");
+      validateRealTargetFile(targetDir, ".arcane/agents.yaml");
     }
     await mkdir(arcaneDir, { recursive: true });
     await writeFile(join(baseDir, "agents.yaml"), stringify(roster), "utf8");
@@ -360,6 +360,10 @@ export async function runAgentsInit(
     const src = join(assetsDir, "agents", `${roleId}.yaml`);
     const dest = join(arcaneDir, `${roleId}.yaml`);
     if (!options.dryRun) {
+      // copyFile writes through a link at the destination: refused, not
+      // skipped, like agents.yaml above (TODO.md, "writers outside
+      // `copier.ts` follow a symlink at the file itself").
+      if (scope === "repo") validateRealTargetFile(targetDir, `.arcane/agents/${roleId}.yaml`);
       try {
         await copyFile(src, dest);
       } catch {

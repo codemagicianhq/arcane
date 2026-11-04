@@ -5,7 +5,7 @@ import type { Delegation, DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { listSymlinkTrackedPaths, runGit } from "../modules/git.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
-import { findLinkedEscape, looksLikeBarePath } from "../modules/copier.js";
+import { findLinkedEscape, findLinkedFileEscape, looksLikeBarePath } from "../modules/copier.js";
 import {
   readManifest,
   resolveSecretsScanExcludePrefixes,
@@ -334,6 +334,16 @@ export async function fixSessionContinuity(targetDir: string, assetsDir: string)
       if (escape !== null) {
         console.log(
           `    ! Not created: ${file} — it is under "${escape.link}", a link to "${escape.resolvesTo}" outside "${resolve(targetDir)}".`,
+        );
+        continue;
+      }
+      // access() fails on a dangling link too, and copyFile would create
+      // the link's target wherever it points (TODO.md, "writers outside
+      // `copier.ts` follow a symlink at the file itself").
+      const fileEscape = findLinkedFileEscape(targetDir, file);
+      if (fileEscape !== null) {
+        console.log(
+          `    ! Not created: ${file} — it is a link to "${fileEscape.resolvesTo}" outside "${resolve(targetDir)}".`,
         );
         continue;
       }

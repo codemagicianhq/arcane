@@ -39,7 +39,7 @@ const ROSTER: AgentRoster = {
   schema_version: 2,
   naming_strategy: "arcanos",
   agent_profile: "base",
-  openclaw: { enabled: true, workspace_root: join(tmpdir(), "never-written") },
+  openclaw: { enabled: true, workspace_root: "~/.openclaw/never-written" },
   roster: [
     { definition: "architecture-lead", name: "Merlin", id: "merlin" },
     { definition: "qa-lead", name: "Bess", id: "bess" },

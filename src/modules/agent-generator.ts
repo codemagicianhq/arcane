@@ -28,7 +28,10 @@ import type {
   AgentSyncOptions,
 } from "../types.js";
 import { mergeIntoFile } from "./merger.js";
-import { validateRealTargetDirectory, validateRealTargetPath } from "./copier.js";
+import { validateRealTargetDirectory, validateRealTargetFile } from "./copier.js";
+
+/** The files `spell agents sync` writes into each OpenClaw workspace. */
+const OPENCLAW_WORKSPACE_FILES = ["IDENTITY.md", "SOUL.md", "TOOLS.md"] as const;
 import { loadAgentDefinition, projectAgentsDir } from "./agent-loader.js";
 import { userAgentFanoutPath, type FanoutFile } from "./user-tier.js";
 
@@ -347,6 +350,17 @@ export async function syncAgents(
         entry.id === "main" ? "workspace" : `workspace-${entry.id}`;
       const workspaceDir = join(openclawRoot, workspaceName);
 
+      // The roster restricts workspace_root and the id when it loads; a link
+      // inside the OpenClaw home is checked here, before anything is created
+      // (TODO.md, "writers outside `copier.ts` follow a symlink at the file
+      // itself").
+      if (!options.dryRun) {
+        validateRealTargetDirectory(openclawRoot, workspaceName);
+        for (const file of OPENCLAW_WORKSPACE_FILES) {
+          validateRealTargetFile(openclawRoot, `${workspaceName}/${file}`);
+        }
+      }
+
       try {
         if (!options.dryRun) {
           await mkdir(workspaceDir, { recursive: true });
@@ -396,6 +410,7 @@ export async function syncAgents(
       // Checked before the mkdir, which would create the directory wherever
       // a linked .arcane points (TODO.md, decided 2026-10-22).
       validateRealTargetDirectory(targetDir, ".arcane/generated");
+      validateRealTargetFile(targetDir, ".arcane/generated/openclaw-roster.json");
       await mkdir(generatedDir, { recursive: true });
       await writeFile(
         join(generatedDir, "openclaw-roster.json"),
@@ -452,7 +467,7 @@ export async function syncAgents(
       if (!options.dryRun) {
         // The file name comes from the roster, which is repository content:
         // a name that walks out of the repository is refused here too.
-        validateRealTargetPath(targetDir, `.github/agents/${fileName}`);
+        validateRealTargetFile(targetDir, `.github/agents/${fileName}`);
         await writeFile(join(agentsDir, fileName), content, "utf8");
       } else {
         console.log(`  [dry-run] Would write: .github/agents/${fileName}`);

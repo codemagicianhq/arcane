@@ -1,4 +1,4 @@
-import { lstatSync } from "node:fs";
+import { lstatSync, readlinkSync } from "node:fs";
 import {
   mkdir,
   access,
@@ -182,6 +182,77 @@ export function validateRealTargetDirectory(targetDir: string, relativeDir: stri
   validateTargetPath(targetDir, relativeDir);
   const escape = findLinkedEscape(targetDir, relativeDir);
   if (escape !== null) throw new LinkedDirectoryError(relativeDir, escape, targetDir);
+}
+
+/**
+ * Raised for a destination file that is itself a link resolving outside the
+ * target directory. A subclass, so every handler that already turns a
+ * LinkedDirectoryError into a refusal handles this one the same way.
+ */
+export class LinkedFileError extends LinkedDirectoryError {
+  constructor(relativePath: string, escape: LinkedEscape, targetDir: string) {
+    super(relativePath, escape, targetDir);
+    this.message =
+      `Linked file: "${relativePath}" is a link to "${escape.resolvesTo}" outside target directory ` +
+      `"${targetDir}". Arcane writes managed files only inside the target directory: replace the link ` +
+      "with a regular file, then run the command again.";
+    this.name = "LinkedFileError";
+  }
+}
+
+/** Hops followed before a chain of links is treated as a loop (POSIX's own SYMLOOP_MAX floor is 8; Linux uses 40). */
+const MAX_LINK_HOPS = 40;
+
+/**
+ * Where a write to absPath lands once every link at the leaf is followed,
+ * a dangling link included (writeFile creates its target), or null for a
+ * loop. Each hop resolves relative to the real directory holding the link,
+ * which is what the OS does.
+ */
+function resolveWriteDestination(absPath: string): string | null {
+  let current = absPath;
+  for (let hop = 0; hop < MAX_LINK_HOPS; hop++) {
+    let isLink: boolean;
+    try {
+      isLink = lstatSync(current).isSymbolicLink();
+    } catch {
+      return resolveRealPath(current); // absent: written where it is spelled
+    }
+    if (!isLink) return resolveRealPath(current);
+    current = path.resolve(resolveRealPath(path.dirname(current)), readlinkSync(current));
+  }
+  return null;
+}
+
+/**
+ * The escape when relativePath is itself a link whose write would land
+ * outside targetDir by real path (dangling or looping included), or null
+ * when it is not a link or the link stays inside (`CLAUDE.md` -> `AGENTS.md`
+ * keeps working).
+ */
+export function findLinkedFileEscape(targetDir: string, relativePath: string): LinkedEscape | null {
+  const abs = path.resolve(targetDir, relativePath);
+  try {
+    if (!lstatSync(abs).isSymbolicLink()) return null;
+  } catch {
+    return null;
+  }
+  const destination = resolveWriteDestination(abs);
+  if (destination !== null && isWithin(resolveRealPath(path.resolve(targetDir)), destination)) return null;
+  return { link: relativePath.replace(/\\/g, "/"), resolvesTo: destination ?? "a loop of links" };
+}
+
+/**
+ * `validateRealTargetPath`, and also the file itself: for a writer that
+ * writes, appends or chmods through whatever sits at relativePath rather than
+ * replacing it (`writeManagedFile` replaces a leaf link instead). Throws
+ * LinkedFileError when a link at the file takes the write outside targetDir
+ * (TODO.md, "writers outside `copier.ts` follow a symlink at the file itself").
+ */
+export function validateRealTargetFile(targetDir: string, relativePath: string): void {
+  validateRealTargetPath(targetDir, relativePath);
+  const escape = findLinkedFileEscape(targetDir, relativePath);
+  if (escape !== null) throw new LinkedFileError(relativePath, escape, targetDir);
 }
 
 /**
