@@ -48,3 +48,12 @@
 - "Malformed entry" = a matching heading with neither a **Date:** nor a **Status:** line; it is skipped with a warning rather than exported half-empty.
 ### What to watch for
 - `\d{3,}` ids sort by code unit; a four-digit id in a 3-digit series would sort before "ARC-100".
+
+## Iteration 5 — SE-05 — 2026-11-04
+### What was done
+- src/modules/state/books.ts: parseBook, itemLocator (<section-anchor or root>/<sha256[0..12] of whitespace-normalized full text>), collectBook(root, fileName) -> { book | null, warnings }.
+### What was learned
+- The locator hashes the full item text, not the 200-char export, so a truncated display never collides.
+- IDEAS.md in this repository uses `- **[date]**` bullets, not checkboxes, so its book exports 0 items; indexing idea entries is a follow-up, not ST-05.
+### What to watch for
+- Only `- [ ]`/`- [x]`/`- [X]` with a hyphen bullet count; `* [ ]` does not.
