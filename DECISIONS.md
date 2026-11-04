@@ -89,6 +89,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-055](#arc-055--sign-in-result-pages-vendored-gate-pages-inlined-art-and-fonts-hash-only-policy) | Sign-In Result Pages: Vendored Gate Pages, Inlined Art and Fonts, Hash-Only Policy | 2026-10-12 | Accepted |
 | [ARC-056](#arc-056--the-macos-fixture-job-is-a-required-check) | The macOS Fixture Job Is a Required Check | 2026-10-12 | Accepted |
 | [ARC-057](#arc-057--managed-paths-stay-inside-the-target-directory-by-real-path) | Managed Paths Stay Inside the Target Directory by Real Path | 2026-10-22 | Accepted |
+| [ARC-058](#arc-058--readme-demos-are-generated-from-the-built-cli-as-animated-svg) | README Demos Are Generated From the Built CLI, as Animated SVG | 2026-11-03 | Accepted |
 
 ---
 
