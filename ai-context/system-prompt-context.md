@@ -66,3 +66,5 @@
   - Review and merge the close-session PR after its checks pass — interactive sessions cannot self-merge without separate authority.
   - Review and merge the website repository's bot sync pull request for 1.16.0 when it appears — a merge there deploys production, and the agent has no authority to merge it.
 - **Notes:** The 2026-11-02 handoff's Windows `backup/*` and `%TEMP%` items are both marked done in `TODO.md` ("Operator follow-ups", completed 2026-11-01), so they are no longer carried. Cloud sessions start on a generated `claude/...` branch; this one renamed it at the first write, which bears on the open `TODO.md` item "A cloud session's pull request arrives on a random `claude/<adjective>-<noun>-<hash>` branch".
+
+> ✓ Consumed: 2026-11-04
