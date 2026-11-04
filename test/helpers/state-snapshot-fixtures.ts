@@ -156,7 +156,7 @@ const HUB_ROSTER = [
   "agent_profile: base",
   "openclaw:",
   "  enabled: false",
-  "  workspace_root: ~/never-written",
+  "  workspace_root: ~/.openclaw/never-written",
   "roster:",
   "  - definition: architecture-lead",
   "    name: Merlin",

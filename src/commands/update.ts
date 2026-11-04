@@ -844,7 +844,7 @@ export async function runUpdate(
           && (JSON.stringify(fanout.record) !== JSON.stringify(manifest.fanout ?? {})
             || scopePatch !== undefined)
         ) {
-          await writeManifest(targetDir, { ...manifest, ...scopePatch, fanout: fanout.record });
+          await writeManifest(targetDir, { ...manifest, ...scopePatch, fanout: fanout.record }, { followLinks: scope === "user" });
         }
       }
       return;
@@ -1365,7 +1365,7 @@ export async function runUpdate(
     ...(fanoutRecord !== undefined ? { fanout: fanoutRecord } : {}),
     ...defaultScopePatch(options, manifest),
   };
-  await writeManifest(targetDir, updated);
+  await writeManifest(targetDir, updated, { followLinks: scope === "user" });
 
   console.log(
     `\n\u2713 Updated ${fileCount} files.`,
