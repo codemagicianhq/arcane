@@ -73,3 +73,11 @@
 - `repository.role` is the resolved role (consumer by default) while `config.role` is the raw answer (null when never asked); the two differ on purpose.
 ### What to watch for
 - Nothing.
+
+## Iteration 8 — SE-08 — 2026-11-04
+### What was done
+- src/modules/state/registry.ts: parseRegistry + collectRegistry(root, manifest, { includeLocalPaths, hostname? }); clones never serialized; local_path only with the flag and only for this hostname.
+### What was learned
+- registry.json ventures are a slug-keyed map in the scaffolded shape; an array of entries with `slug` is accepted too. `tracking` is exported as written (string or object).
+### What to watch for
+- The hostname parameter exists for tests; production uses os.hostname().
