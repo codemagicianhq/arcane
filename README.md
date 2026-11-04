@@ -244,6 +244,35 @@ spell report     # writes docs/plans/<slug>/show-report.{json,html}
 
 Requires **Node.js 18+**.
 
+### State export
+
+One command answers "what is the state of this repository" for a program -- a cockpit, a mobile companion, another agent -- so nothing has to parse `.arcane.json`, `DECISIONS.md` or `TODO.md` itself:
+
+```bash
+spell state --json                       # one JSON document on stdout, nothing else; no network
+spell state --json --online              # also the latest published arcane-cli and this branch's open pull request (gh / az)
+spell state --json --include-local-paths # hub only: add this machine's clone path per registered repository
+```
+
+The document is derived, never authoritative, and deterministic: two runs differ only in `generated_at`. It carries versions and drift, git topology, the decision log, the TODO/IDEAS/DONE books (first lines and content-hash locators, never bodies), the journal index, the persisted configuration, a hub's venture registry, every feature PRD's status and the effective agent roster; a source that cannot be read becomes `null` plus a line in `warnings[]`. Trimmed:
+
+```json
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-11-04T12:00:00.000Z",
+  "generator": { "name": "arcane-cli", "version": "1.17.0" },
+  "repository": { "root": "/home/dev/ordovica", "scope": "repo", "role": "consumer", "profile": "full" },
+  "versions": { "files": "1.17.0", "cli": "1.17.0", "latest": null, "drift": { "files_behind_cli": false, "cli_behind_latest": null }, "components": [] },
+  "git": { "branch": "sessions/2026-11-04-survey", "detached": false, "trunk": "main", "ahead": 2, "behind": 0, "uncommitted": 0,
+           "remote": { "provider": "github", "url": "https://github.com/ordovica/survey.git" }, "worktrees": [{ "path": ".", "branch": "sessions/2026-11-04-survey" }], "pull_request": null },
+  "indexes": { "decisions": [{ "id": "ADR-001", "title": "Geothermal survey cadence", "status": "Accepted", "date": "2026-10-01", "anchor": "adr-001--geothermal-survey-cadence" }], "todos": { "open": 1, "done": 0, "items": [] }, "ideas": null, "done": null, "journal": [] },
+  "config": { "tracking_mode": "internal", "external_provider": null, "push_policy": "open", "role": null, "business_root": null, "spell_scope": null, "content_sensitivity": null },
+  "registry": null, "features": [], "agents": null, "warnings": []
+}
+```
+
+The shape is the JSON Schema at [`src/assets/schemas/state.schema.json`](src/assets/schemas/state.schema.json) (`$id` `https://arcaneai.net/schemas/state/v1`), shipped in the package as `dist/assets/schemas/state.schema.json`. Schema `1.0.0` is additive-only: a field is never removed or retyped; a breaking change is a new major version and a new decision record ([ARC-044](DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel)).
+
 ### Profiles
 
 Install everything, or just the slice you want:

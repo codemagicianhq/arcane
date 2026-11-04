@@ -9,6 +9,23 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-11-04
+
+`spell state --json` exports a repository's Arcane state as one versioned JSON document, so programs stop parsing Arcane files.
+
+### Added
+
+- **`spell state --json`: the files-first state contract (ARC-044 decision 1).** One JSON document on stdout and nothing else, exit 0; without `--json` a one-line pointer and exit 2; without a manifest the `spell status` wording and exit 1. The document carries `versions` (files, CLI, latest, drift, components), `git` (branch, trunk, ahead/behind, uncommitted, origin with its credentials stripped, worktrees, pull request), `indexes` (the decision log with any `AA-NNN` prefix, the TODO, IDEAS and DONE books as first lines with content-hash locators, the journal), `config` (the persisted manifest answers, `null` when never asked), a hub's `registry`, every `features/*/PRD.md`'s frontmatter status, the effective `agents` roster as `roster-v2` with `origin` and `definition_revision`, and `warnings[]` for every source that degraded to `null`. Derived, never authoritative; deterministic (two runs differ only in `generated_at`); every git read goes through `runGit` with its timeout, and `worktree list` and `remote get-url` are now classified as reads.
+- **The schema `https://arcaneai.net/schemas/state/v1`, version `1.0.0`, ships as `dist/assets/schemas/state.schema.json`** and is linked from the README. Additive-only from here: a field is never removed or retyped; a breaking change is a new major and a new decision record. The test suite validates every fixture export against it with `ajv`, a devDependency only (ARC-037 decision 8), and keeps the serializer's key order in step with the schema's property order.
+- **`--online` is the one switch for every network read**: the npm lookup behind `versions.latest` and `drift.cli_behind_latest`, and the pull-request lookup (`gh pr list` for GitHub, `az repos pr list` through the resolved Azure CLI launcher for Azure DevOps). A plain run makes no network request; a missing tool, no authentication or a timeout yields `null` plus a warning and exit 0.
+- **`--include-local-paths`** adds, on a hub, each registered repository's clone path on this machine only; the registry's `clones` map is never exported (ARC-030 decision 6).
+- **`spell-open-session` reads the export first.** A shared fragment in its Workspace Health Check says: when `spell state --json --online` is available, take the versions and git readings from its document; otherwise proceed as before. Prose only; nothing changes where the command is absent.
+
+### Changed
+
+- **`spell status` computes its versions through the same module** (`src/modules/state/versions.ts`) and prints byte-identical output; the version-drift diagram keeps its three-string signature.
+- **The decisions parser moved** from Show Report to `src/modules/state/decisions.ts` and now reads `ADR-` and `DMC-` logs as well as `ARC-`; Show Report imports it from there, unchanged in behaviour.
+
 ## [1.16.1] - 2026-11-03
 
 The README's demos are generated from the real CLI at every release, as animated SVG.
