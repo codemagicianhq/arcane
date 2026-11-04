@@ -109,3 +109,11 @@
 - vitest 5 text coverage table omits files at 100% (config.ts, agents.ts); the summary block still counts them.
 ### What to watch for
 - The ADO lookup needs org/project/repo from the remote URL; a URL that names none warns rather than guessing az defaults.
+
+## Iteration 12 — SE-12 — 2026-11-04
+### What was done
+- src/modules/state/agents.ts: collectAgents(targetDir, { homeDir? }) over resolveRoster; roster-v2 entries with origin and definition_revision; AgentRosterNotFoundError -> null; AgentConfigValidationError propagates; collect.ts rethrows it from the guard and threads homeDir; state.ts prints the loader message and exits 1.
+### What was learned
+- A story whose test file depends on the next story's option cannot sit untracked in the tree while the earlier story commits: the pre-commit typecheck runs on the whole tree, so SE-12's files were parked outside the repository for the SE-11 commit.
+### What to watch for
+- The v3 roster fields are deliberately absent; the identity ARC adds them additively.
