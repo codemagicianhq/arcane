@@ -37,3 +37,14 @@
 - Worktree paths sort in code-unit order: "." comes before "../x".
 ### What to watch for
 - The injected `runGit` in tests matches on args[0] (and args[1]); the real runner still runs for everything else, so each timeout test costs real git calls.
+
+## Iteration 4 — SE-04 — 2026-11-04
+### What was done
+- src/modules/state/decisions.ts: parseDecisions (any `AA-NNN` prefix, CRLF-safe, title/status/date/anchor), parseAdrs + countAcceptedAdrsInWindow kept for Show Report, collectDecisions(root) sorted by id or null when absent.
+- show-report/decisions-parser.ts removed; model.ts and show-report-parser.test.ts import from the new path (assertions unchanged).
+- Drift fixed in its own commit: ARC-058 was missing from DECISIONS.md's table of contents (58 headings, 57 rows).
+### What was learned
+- GitHub heading anchors keep `_` (tracking_mode) and drop other punctuation; an em dash between spaces becomes `--`. The TOC-anchor parity test over the real DECISIONS.md is the guard.
+- "Malformed entry" = a matching heading with neither a **Date:** nor a **Status:** line; it is skipped with a warning rather than exported half-empty.
+### What to watch for
+- `\d{3,}` ids sort by code unit; a four-digit id in a 3-digit series would sort before "ARC-100".

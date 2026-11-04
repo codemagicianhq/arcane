@@ -63,9 +63,9 @@
         "An absent DECISIONS.md yields null, not an error; a malformed entry yields a warning (ST-05)"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-decisions.test.ts 8/8 (this repository's DECISIONS.md: 58 entries = 58 TOC rows, every anchor equals its TOC link; ADR-/DMC- fixtures; absent -> null; malformed entry -> warning) and show-report-parser/model/close-anchor tests 35/35 with only the import path changed; src/modules/state/decisions.ts 96.9% lines / 77.3% branches / 100% functions; lint and typecheck:all green"
     },
     {
       "id": "SE-05",

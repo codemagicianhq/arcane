@@ -7,7 +7,7 @@ import {
 } from "../src/modules/show-report/plan-parser.js";
 import { parseOperatorQueue } from "../src/modules/show-report/queue-parser.js";
 import { parseVerificationLedgerSection } from "../src/modules/show-report/ledger-parser.js";
-import { parseAdrs, countAcceptedAdrsInWindow } from "../src/modules/show-report/decisions-parser.js";
+import { parseAdrs, countAcceptedAdrsInWindow } from "../src/modules/state/decisions.js";
 
 describe("show-report plan-parser: parseFrontmatter", () => {
   it("reads title/status/created/baseline/owner/executor from a real-shaped frontmatter block", () => {
