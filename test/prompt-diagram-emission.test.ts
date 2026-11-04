@@ -156,9 +156,17 @@ describe("spell-commit-work and spell-create-pull-request emit branch/PR topolog
       expect(text).toContain("gitGraph");
       expect(text).toContain('commit id: "<target HEAD short-sha>"');
       expect(text).toContain("branch <branch-name>");
-      expect(text).toContain('commit id: "<short-sha 1>"');
-      expect(text).toContain('commit id: "<short-sha 2>"');
+      expect(text).toContain('commit id: "<short-sha 1> <summary 1>"');
+      expect(text).toContain('commit id: "<short-sha 2> <summary 2>"');
+      expect(text).not.toContain('commit id: "<short-sha 1>"');
     }
+  });
+
+  it("both label every commit with its short SHA and a summary of its subject, never the SHA alone (rule 8)", () => {
+    expect(universalRules).toContain("labels every commit `<short-sha> <summary>`");
+    expect(universalRules).toContain("never the SHA alone");
+    expect(commitWork).toContain("two-to-five-word summary of that commit's subject (`<short-sha> <summary>`, rule 8)");
+    expect(createPullRequest).toContain("labelled `<short-sha> <summary>` (rule 8)");
   });
 
   it("spell-commit-work states the applicability guard: no separate branch or no usable remote", () => {
@@ -219,6 +227,13 @@ describe("R10 adopters each reference the convention and derive only from alread
   it("spell-close-session ties each commit's diagram label to step 1b's real classification, never an assumed success", () => {
     expect(closeSession).toContain("step 1b's succeeded/pending/failed classification");
     expect(closeSession).toContain("never claim `succeeded` for anything step 1b did not confirm");
+  });
+
+  it("spell-close-session labels each commit with its short SHA, a summary and the classification", () => {
+    expect(closeSession).toContain('commit id: "<short-sha 1> <summary 1> succeeded"');
+    expect(closeSession).toContain('commit id: "<short-sha 2> <summary 2> pending"');
+    expect(closeSession).toContain("a two-to-five-word summary of its");
+    expect(closeSession).toContain("subject (rule 8) and step 1b's classification");
   });
 });
 

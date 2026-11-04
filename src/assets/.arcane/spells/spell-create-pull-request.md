@@ -5,7 +5,7 @@ tagline: Open a PR with full context
 claude_description: Use PROACTIVELY whenever opening a pull request for the current branch, even if the user just says 'open a PR'.
 argument-hint: '[--draft] [--reviewers <name,...>] [--target <branch>] [--docs-only]'
 agent: agent
-last_updated: 2026-07-05
+last_updated: 2026-11-04
 ---
 
 ## Executive Summary
@@ -263,12 +263,13 @@ so they need no edit.
   gitGraph
      commit id: "<target HEAD short-sha>"
      branch <branch-name>
-     commit id: "<short-sha 1>"
-     commit id: "<short-sha 2>"
+     commit id: "<short-sha 1> <summary 1>"
+     commit id: "<short-sha 2> <summary 2>"
   ```
 
   Same shape `spell-commit-work` uses for the identical concept — reference it rather than re-deriving
-  the rule (D8): one commit per gathered log entry, target's short SHA as the fork point.
+  the rule (D8): one commit per gathered log entry labelled `<short-sha> <summary>` (rule 8), target's short SHA
+  as the fork point.
 
 ## Rules
 

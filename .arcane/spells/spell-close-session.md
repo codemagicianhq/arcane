@@ -266,11 +266,12 @@ Output format:
 
   ```mermaid
   gitGraph
-     commit id: "<short-sha 1> succeeded"
-     commit id: "<short-sha 2> pending"
+     commit id: "<short-sha 1> <summary 1> succeeded"
+     commit id: "<short-sha 2> <summary 2> pending"
   ```
 
-  One commit per session commit, in order, `id` carrying its short SHA and step 1b's classification —
+  One commit per session commit, in order, `id` carrying its short SHA, a two-to-five-word summary of its
+  subject (rule 8) and step 1b's classification —
   never claim `succeeded` for anything step 1b did not confirm as such.
 
 ## Journal Updates
