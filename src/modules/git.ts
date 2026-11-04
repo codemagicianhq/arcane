@@ -68,6 +68,16 @@ const WRITE_SUBCOMMANDS = new Set([
 // risks being killed mid-operation.
 const AMBIGUOUS_AS_WRITE = new Set(["branch", "config", "remote", "worktree"]);
 
+// The read-only forms of two ambiguous subcommands, keyed by their first
+// argument (architecture D4 of the state export): `worktree list` and
+// `remote get-url` only report, so they take the read budget. Every other
+// form of `worktree`/`remote` (add, remove, prune, set-url, ...) stays a
+// write.
+const AMBIGUOUS_READ_FORMS: Record<string, ReadonlySet<string>> = {
+  worktree: new Set(["list"]),
+  remote: new Set(["get-url"]),
+};
+
 // Known read-only subcommands get the fast 15s budget explicitly. Anything
 // NOT in this list, NOT in WRITE_SUBCOMMANDS/AMBIGUOUS_AS_WRITE, and NOT in
 // NETWORK_SUBCOMMANDS is a subcommand this module doesn't recognize at all --
@@ -120,6 +130,7 @@ const DEFAULT_TIMEOUTS_MS: Record<GitCommandClass, number> = {
  */
 export function classifyGitCommand(args: string[]): GitCommandClass {
   let subcommand: string | undefined;
+  let form: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (GLOBAL_FLAGS_WITH_SEPARATE_VALUE.has(arg)) {
@@ -128,10 +139,12 @@ export function classifyGitCommand(args: string[]): GitCommandClass {
     }
     if (arg.startsWith("-")) continue;
     subcommand = arg;
+    form = args[i + 1];
     break;
   }
   if (!subcommand) return "read";
   if (NETWORK_SUBCOMMANDS.has(subcommand)) return "network";
+  if (form !== undefined && AMBIGUOUS_READ_FORMS[subcommand]?.has(form)) return "read";
   if (WRITE_SUBCOMMANDS.has(subcommand) || AMBIGUOUS_AS_WRITE.has(subcommand)) return "write";
   if (READ_SUBCOMMANDS.has(subcommand)) return "read";
   // A subcommand this module doesn't recognize at all: default to "write"

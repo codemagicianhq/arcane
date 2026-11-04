@@ -48,9 +48,9 @@
         "classifyGitCommand returns read for [\"worktree\",\"list\"] and [\"remote\",\"get-url\",\"origin\"] and still write for [\"worktree\",\"add\"] and [\"remote\",\"add\"]"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-git.test.ts 10/10 (no remote, detached HEAD, second worktree, upstream ahead 3/behind 2 with a userinfo URL stripped, seven timeout injections each null+one warning, not-a-repo null) and git-execution-contract.test.ts 13/13 incl. the worktree list / remote get-url read forms; src/modules/state/git.ts 96.2% lines / 91.2% branches / 100% functions; lint and typecheck:all green"
     },
     {
       "id": "SE-04",

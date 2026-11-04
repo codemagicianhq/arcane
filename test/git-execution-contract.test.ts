@@ -48,6 +48,19 @@ describe("classifyGitCommand", () => {
     expect(classifyGitCommand(["config", "--get", "user.name"])).toBe("write");
   });
 
+  it("classifies the read-only forms `worktree list` and `remote get-url` as read (state export D4)", () => {
+    expect(classifyGitCommand(["worktree", "list"])).toBe("read");
+    expect(classifyGitCommand(["worktree", "list", "--porcelain"])).toBe("read");
+    expect(classifyGitCommand(["remote", "get-url", "origin"])).toBe("read");
+    expect(classifyGitCommand(["-C", "/repo", "remote", "get-url", "origin"])).toBe("read");
+    // Every other form of the two stays a write.
+    expect(classifyGitCommand(["worktree", "add", "../x"])).toBe("write");
+    expect(classifyGitCommand(["worktree", "remove", "../x"])).toBe("write");
+    expect(classifyGitCommand(["remote", "add", "origin", "url"])).toBe("write");
+    expect(classifyGitCommand(["remote", "set-url", "origin", "url"])).toBe("write");
+    expect(classifyGitCommand(["remote"])).toBe("write");
+  });
+
   it("classifies known read subcommands as read", () => {
     expect(classifyGitCommand(["status", "--porcelain"])).toBe("read");
     expect(classifyGitCommand(["rev-parse", "--verify", "HEAD"])).toBe("read");
