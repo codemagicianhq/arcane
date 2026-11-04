@@ -308,3 +308,18 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-03-todo-done-book.md`, lessons "\"Already pushed\" was read from a stale local ref" and "A plain `npm view` can report the previous version".
+
+## Feedback — Arcane workflow (2026-11-04)
+
+**Session:** State export build and merge ([PR #419](https://github.com/codemagicianhq/arcane/pull/419)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The journal, `TODO.md`, the handoff and the architecture note quoted branch commit ids; the pull request was merged with a rebase merge, so all 23 commits took new ids on `main` and 22 citations pointed at objects that exist nowhere on the trunk, forcing a second remap in one day.
+
+### Improvement Items
+- [ ] In `spell-close-session` step 2 and `spell-create-pull-request`, say that a branch commit id is provisional until the merge strategy is known: cite the pull request number plus the file, or re-check cited ids against `<remote>/<trunk>` after a rebase merge. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-04-state-export-build.md`, lesson "A rebase merge rewrites every commit id the session docs cite".
