@@ -17,9 +17,9 @@
         "serialize() emits keys in schema order and a trailing newline; a unit test proves two differently-ordered input objects serialize identically (ST-09)"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-schema.test.ts 12/12 passed; serialize.ts 94.3% lines / 89.4% branches / 100% functions; npm pack --dry-run lists dist/assets/schemas/state.schema.json (266 files); ajv ^8.20.0 under devDependencies only; lint, typecheck, typecheck:all green"
     },
     {
       "id": "SE-02",
