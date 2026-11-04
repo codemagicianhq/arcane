@@ -1,6 +1,6 @@
 # Architecture — The State Export (`spell state --json`)
 
-Source: [PRD.md](PRD.md) (accepted 2026-11-04, `275a0ea`). Decision implemented:
+Source: [PRD.md](PRD.md) (accepted 2026-11-04, `06eb4fc`). Decision implemented:
 [ARC-044 — Client Architecture: Files-First State Contract and a Local Presence Channel](../../DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel),
 decision 1 only.
 
