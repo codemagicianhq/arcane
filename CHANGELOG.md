@@ -9,6 +9,19 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.17.2] - 2026-11-04
+
+A link at a file Arcane writes can no longer take the write outside the repository, and a roster can no longer name paths elsewhere ([#422](https://github.com/codemagicianhq/arcane/pull/422)).
+
+### Fixed
+
+- **Security: writers refuse a link at the file itself that resolves outside the target directory.** 1.12.4 refused a linked *directory*, but a link *at the file* was replaced only for managed files; every other writer wrote through it. On Linux or macOS a cloned repository whose `CLAUDE.md` linked to `~/.ssh/authorized_keys` could have `spell agents sync` append to it, and a linked `.arcane/hooks/pre-commit` could overwrite a shell profile and make it executable. The marker merge and strip (`CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`), the git hook and its `chmod`, `.arcane/agents.yaml` and the copied definition files, `.github/agents/*.agent.md`, the OpenClaw workspace files and `openclaw-roster.json`, `spell doctor --fix` and `.arcane.json` now follow the link (a dangling or looping one included) and refuse with a `Linked file:` message naming where it would land. A link that stays inside, such as `CLAUDE.md` -> `AGENTS.md`, keeps working; links in the user tier's store are still followed.
+- **Security: `.arcane/agents.yaml` is checked when it loads.** A roster `name` or `id` that is empty, `.` or `..`, or contains `/`, `\` or a control character such as a newline is refused, and so is an `epithet` with a control character: each became a file name or was rendered unescaped into an appended file.
+
+### Changed
+
+- **`openclaw.workspace_root` must be `~/.openclaw` or a folder inside it.** A roster whose OpenClaw root names any other directory now fails to load, with a message naming the field, in every command that reads the roster (`spell agents sync`, `spell state --json`, ...). Move the workspaces under `~/.openclaw` and update the field to continue.
+
 ## [1.17.1] - 2026-11-04
 
 Commit diagrams name their commits.
