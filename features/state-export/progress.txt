@@ -1,0 +1,15 @@
+# Progress — the state export (spell state --json)
+
+## Iteration 1 — SE-01 — 2026-11-04
+### What was done
+- src/assets/schemas/state.schema.json (draft 2020-12, $id https://arcaneai.net/schemas/state/v1, closed envelope, $defs per section, one example with ARC-031 names).
+- src/modules/state/types.ts (TypeScript twin), src/modules/state/serialize.ts (STATE_SHAPE key-order table, canonicalize, serializeState, toPosixRelative).
+- test/state-schema.test.ts: ajv validation, extra-key rejection, copy-assets ships the schema, devDependency-only check, shape-vs-schema order walk, sort/order tests.
+### What was learned
+- ajv strict mode rejects union `type` arrays unless `allowUnionTypes: true`; the schema keeps the unions (nullable fields) and the test passes the option.
+- Under nodenext, import `{ Ajv2020 }` (named) from `ajv/dist/2020.js`; the default import is not constructable for tsc.
+- scripts/copy-assets.ts copies all of src/assets/, so the schema ships with no script change; `npm pack --dry-run` lists it after a build.
+- Sorting must use code-unit order, never localeCompare, for identical output across the CI matrix.
+### What to watch for
+- Books (todos/ideas/done) export as `{ open, done, items[] }` per architecture D6, not as bare arrays as the PRD's ST-05 prose reads; the schema follows the architecture.
+- `warnings[]` is sorted; every other array keeps collector order unless STATE_SHAPE names a sort key.

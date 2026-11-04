@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arcaneai.net/schemas/state/v1",
+  "title": "Arcane state export",
+  "description": "One JSON document per repository, printed by `spell state --json` (ARC-044 decision 1). Derived from the repository's Arcane files, never authoritative, and deterministic: two runs on an unchanged repository differ only in `generated_at` (and `versions.latest` under `--online`). After 1.0.0 the schema is additive-only: a field is never removed or retyped; a breaking change is a new major version and a new decision record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "generated_at",
+    "generator",
+    "repository",
+    "versions",
+    "git",
+    "indexes",
+    "config",
+    "registry",
+    "features",
+    "agents",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of this document's shape. 1.0.0 at first release."
+    },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "When the document was generated, ISO 8601 in UTC. The only field that changes between two runs on an unchanged repository."
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "const": "arcane-cli" },
+        "version": { "type": "string", "description": "The CLI version that produced the document." }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "scope", "role", "profile"],
+      "properties": {
+        "root": { "type": "string", "description": "Absolute real path of the repository the document describes. Every other path in the document is POSIX-relative to it." },
+        "scope": { "type": "string", "enum": ["repo", "user"], "description": "Which tier the manifest describes (ARC-045)." },
+        "role": { "type": "string", "enum": ["hub", "consumer"], "description": "Resolved hub role (ARC-030): consumer when the manifest does not declare one." },
+        "profile": { "type": "string", "description": "The install profile recorded in the manifest." }
+      }
+    },
+    "versions": { "$ref": "#/$defs/versions" },
+    "git": {
+      "oneOf": [{ "$ref": "#/$defs/git" }, { "type": "null" }],
+      "description": "Git topology, or null when the directory is not a git repository."
+    },
+    "indexes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decisions", "todos", "ideas", "done", "journal"],
+      "properties": {
+        "decisions": {
+          "oneOf": [{ "type": "array", "items": { "$ref": "#/$defs/decision" } }, { "type": "null" }],
+          "description": "DECISIONS.md entries sorted by id, or null when the file is absent."
+        },
+        "todos": { "oneOf": [{ "$ref": "#/$defs/book" }, { "type": "null" }], "description": "TODO.md, or null when absent." },
+        "ideas": { "oneOf": [{ "$ref": "#/$defs/book" }, { "type": "null" }], "description": "IDEAS.md, or null when absent." },
+        "done": { "oneOf": [{ "$ref": "#/$defs/book" }, { "type": "null" }], "description": "The append-only done book (DONE.md), or null when absent." },
+        "journal": {
+          "oneOf": [{ "type": "array", "items": { "$ref": "#/$defs/journalEntry" } }, { "type": "null" }],
+          "description": "journal/YYYY-MM-DD-<slug>.md files sorted by date then slug, or null when the directory is absent."
+        }
+      }
+    },
+    "config": { "$ref": "#/$defs/config" },
+    "registry": {
+      "oneOf": [{ "$ref": "#/$defs/registry" }, { "type": "null" }],
+      "description": "The hub's venture registry (ARC-030 decision 2), or null on a consumer."
+    },
+    "features": {
+      "oneOf": [{ "type": "array", "items": { "$ref": "#/$defs/feature" } }, { "type": "null" }],
+      "description": "Every features/*/PRD.md sorted by slug, or null when features/ is absent."
+    },
+    "agents": {
+      "oneOf": [{ "$ref": "#/$defs/agents" }, { "type": "null" }],
+      "description": "The effective agent roster after precedence resolution (ARC-047), or null when no roster applies."
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "One line per source that degraded to null. Part of the document, never stderr noise."
+    }
+  },
+  "$defs": {
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "cli", "latest", "drift", "components"],
+      "properties": {
+        "files": { "type": "string", "description": "The version the managed files were written at (manifest `version`)." },
+        "cli": { "type": "string", "description": "The installed arcane-cli version." },
+        "latest": { "type": ["string", "null"], "description": "The latest published arcane-cli version; null unless --online, and null with a warning when the lookup fails." },
+        "drift": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["files_behind_cli", "cli_behind_latest"],
+          "properties": {
+            "files_behind_cli": { "type": "boolean" },
+            "cli_behind_latest": { "type": ["boolean", "null"], "description": "null when `latest` is null." }
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "installedVersion"],
+            "properties": {
+              "name": { "type": "string" },
+              "installedVersion": { "type": "string" }
+            }
+          },
+          "description": "Installed components sorted by name."
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "detached", "trunk", "ahead", "behind", "uncommitted", "remote", "worktrees", "pull_request"],
+      "properties": {
+        "branch": { "type": ["string", "null"], "description": "The checked-out branch, or the short commit id when HEAD is detached; null when unreadable." },
+        "detached": { "type": "boolean" },
+        "trunk": { "type": ["string", "null"], "description": "origin/HEAD's branch, else the first of main/master that exists; null when neither does." },
+        "ahead": { "type": ["integer", "null"], "description": "Commits ahead of the upstream; null without an upstream." },
+        "behind": { "type": ["integer", "null"], "description": "Commits behind the upstream; null without an upstream." },
+        "uncommitted": { "type": ["integer", "null"], "description": "Count of uncommitted changes (status --porcelain lines)." },
+        "remote": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["provider", "url"],
+              "properties": {
+                "provider": { "type": "string", "enum": ["github", "ado", "other"] },
+                "url": { "type": "string", "description": "origin's URL with any userinfo (credentials) stripped." }
+              }
+            },
+            { "type": "null" }
+          ],
+          "description": "The origin remote, or null when there is none."
+        },
+        "worktrees": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["path", "branch"],
+                "properties": {
+                  "path": { "type": "string", "description": "POSIX path relative to repository.root ('.' for the main worktree)." },
+                  "branch": { "type": ["string", "null"], "description": "null when that worktree's HEAD is detached." }
+                }
+              }
+            },
+            { "type": "null" }
+          ],
+          "description": "Every worktree of the repository sorted by path, or null when the list could not be read."
+        },
+        "pull_request": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "url", "state"],
+              "properties": {
+                "id": { "type": "integer" },
+                "url": { "type": "string" },
+                "state": { "type": "string" }
+              }
+            },
+            { "type": "null" }
+          ],
+          "description": "The open pull request for the current branch. Looked up only under --online; null otherwise, and null with a warning when the lookup fails."
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "status", "date", "anchor"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Z]{2,5}-[0-9]{3,}$" },
+        "title": { "type": "string" },
+        "status": { "type": ["string", "null"], "description": "First word of the first **Status:** line." },
+        "date": { "type": ["string", "null"], "description": "First **Date:** line, YYYY-MM-DD." },
+        "anchor": { "type": "string", "description": "GitHub-style slug of the heading." }
+      }
+    },
+    "book": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["open", "done", "items"],
+      "properties": {
+        "open": { "type": "integer" },
+        "done": { "type": "integer" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["text", "section", "locator", "checked"],
+            "properties": {
+              "text": { "type": "string", "maxLength": 200, "description": "The item's first line without its checkbox." },
+              "section": { "type": ["string", "null"], "description": "The nearest preceding heading." },
+              "locator": { "type": "string", "description": "<section-slug>/<first 12 hex of sha256(normalized text)>; survives moves, changes only when the text does." },
+              "checked": { "type": "boolean" }
+            }
+          },
+          "description": "Items in file order (order is meaning in a book)."
+        }
+      }
+    },
+    "journalEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "slug", "title", "path"],
+      "properties": {
+        "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "slug": { "type": "string" },
+        "title": { "type": ["string", "null"] },
+        "path": { "type": "string" }
+      }
+    },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracking_mode", "external_provider", "push_policy", "role", "business_root", "spell_scope", "content_sensitivity"],
+      "description": "The persisted manifest answers. null means the question was never asked.",
+      "properties": {
+        "tracking_mode": { "type": ["string", "null"], "enum": ["internal", "external", null] },
+        "external_provider": { "type": ["string", "null"], "enum": ["ado", "github", "jira", "other", null] },
+        "push_policy": { "type": ["string", "null"], "enum": ["open", "guarded", "blocked", null] },
+        "role": { "type": ["string", "null"], "enum": ["hub", "consumer", null] },
+        "business_root": { "type": ["string", "null"] },
+        "spell_scope": { "type": ["string", "null"], "enum": ["repo", "user", null] },
+        "content_sensitivity": { "type": ["string", "null"], "enum": ["standard", "sensitive", null] }
+      }
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["updated", "ventures"],
+      "properties": {
+        "updated": { "type": ["string", "null"] },
+        "ventures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slug", "name", "aliases", "status", "visibility", "ownership", "tracking", "repos"],
+            "properties": {
+              "slug": { "type": "string" },
+              "name": { "type": ["string", "null"] },
+              "aliases": { "type": "array", "items": { "type": "string" } },
+              "status": { "type": ["string", "null"] },
+              "visibility": { "type": ["string", "null"] },
+              "ownership": { "type": ["string", "null"] },
+              "tracking": { "description": "The registry's tracking value as written: a provider name, an object with coordinates, or null." },
+              "repos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["name", "remote", "default"],
+                  "properties": {
+                    "name": { "type": ["string", "null"] },
+                    "remote": { "type": ["string", "null"] },
+                    "default": { "type": "boolean" },
+                    "local_path": { "type": ["string", "null"], "description": "Present only with --include-local-paths: the clone path on the machine running the command. Other machines' paths are never exported." }
+                  }
+                }
+              }
+            }
+          },
+          "description": "Ventures sorted by slug."
+        }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["slug", "title", "status", "implementation_status", "tracking", "path"],
+      "properties": {
+        "slug": { "type": "string", "description": "The features/<slug>/ folder name." },
+        "title": { "type": ["string", "null"] },
+        "status": { "type": ["string", "null"] },
+        "implementation_status": { "type": ["string", "null"] },
+        "tracking": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["tracking_mode", "external_provider", "adoWorkItemId", "githubIssueId"],
+              "properties": {
+                "tracking_mode": { "type": ["string", "null"] },
+                "external_provider": { "type": ["string", "null"] },
+                "adoWorkItemId": { "type": ["integer", "string", "null"] },
+                "githubIssueId": { "type": ["integer", "string", "null"] }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "path": { "type": "string" }
+      }
+    },
+    "agents": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "naming_strategy", "agent_profile", "entries"],
+      "properties": {
+        "schema": { "type": "string", "const": "roster-v2", "description": "The roster shape exported. roster-v3 fields arrive additively with the agent-identity decision record." },
+        "naming_strategy": { "type": "string" },
+        "agent_profile": { "type": "string" },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["definition", "name", "id", "epithet", "origin", "definition_revision"],
+            "properties": {
+              "definition": { "type": "string" },
+              "name": { "type": ["string", "null"] },
+              "id": { "type": "string" },
+              "epithet": { "type": ["string", "null"] },
+              "origin": { "type": "string", "enum": ["repo", "user"] },
+              "definition_revision": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$", "description": "Hash of the role definition file; null with a warning when the file is missing." }
+            }
+          },
+          "description": "Entries in roster order."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema_version": "1.0.0",
+      "generated_at": "2026-11-04T12:00:00.000Z",
+      "generator": { "name": "arcane-cli", "version": "1.17.0" },
+      "repository": { "root": "/home/dev/ordovica", "scope": "repo", "role": "consumer", "profile": "full" },
+      "versions": {
+        "files": "1.17.0",
+        "cli": "1.17.0",
+        "latest": null,
+        "drift": { "files_behind_cli": false, "cli_behind_latest": null },
+        "components": [{ "name": "git-conventions", "installedVersion": "1.17.0" }]
+      },
+      "git": {
+        "branch": "sessions/2026-11-04-geothermal-survey",
+        "detached": false,
+        "trunk": "main",
+        "ahead": 2,
+        "behind": 0,
+        "uncommitted": 0,
+        "remote": { "provider": "github", "url": "https://github.com/ordovica/survey.git" },
+        "worktrees": [{ "path": ".", "branch": "sessions/2026-11-04-geothermal-survey" }],
+        "pull_request": null
+      },
+      "indexes": {
+        "decisions": [{ "id": "ADR-001", "title": "Geothermal survey cadence", "status": "Accepted", "date": "2026-10-01", "anchor": "adr-001--geothermal-survey-cadence" }],
+        "todos": { "open": 1, "done": 0, "items": [{ "text": "**Survey the Tidewright coastal site.**", "section": "Open Items", "locator": "open-items/0123456789ab", "checked": false }] },
+        "ideas": null,
+        "done": null,
+        "journal": [{ "date": "2026-11-03", "slug": "survey-kickoff", "title": "Survey kickoff", "path": "journal/2026-11-03-survey-kickoff.md" }]
+      },
+      "config": { "tracking_mode": "internal", "external_provider": null, "push_policy": "open", "role": null, "business_root": null, "spell_scope": null, "content_sensitivity": "standard" },
+      "registry": null,
+      "features": [{ "slug": "survey", "title": "PRD: Site survey", "status": "accepted", "implementation_status": "in-progress", "tracking": { "tracking_mode": "internal", "external_provider": null, "adoWorkItemId": null, "githubIssueId": null }, "path": "features/survey/PRD.md" }],
+      "agents": null,
+      "warnings": []
+    }
+  ]
+}
