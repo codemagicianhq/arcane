@@ -120,9 +120,9 @@
         "A hub with no registry.json exports null and one warning (ST-07)"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-registry.test.ts 7/7 (hub fixture: ventures sorted, no local_path and no clones key by default; with the flag local_path only from this hostname matched case-insensitively, the foreign hostname and path absent from the output; consumer null; hub without registry.json null + one warning; invalid JSON null + warning; custom business_root; array-form ventures), both documents validate against the schema; registry.ts 100% lines / 83.7% branches; lint and typecheck:all green"
     },
     {
       "id": "SE-09",
