@@ -127,3 +127,12 @@
 - vitest 5 does not print the coverage table when any test fails.
 ### What to watch for
 - The snapshots pin generated_at and repository.root only; everything else must stay deterministic across OSes (no SHAs, no absolute paths, LF content).
+
+## Iteration 14 — SE-14 — 2026-11-04
+### What was done
+- Fragment _fragments/state-export.md + marked span in spell-open-session.md (expanded by fix:self-host-parity, root copy repaired); README State export section; CHANGELOG 1.17.0 under ARC-044; PRD implementation_status in-progress; npm version minor (1.17.0) with the demos regenerated.
+### What was learned
+- `npm version` runs fix:demos (build + capture) on this repository; the capture died on Windows because scripts/lib/demos/capture.ts used os.devNull for GIT_CONFIG_GLOBAL. Fixed in its own commit; one Windows-only demos test (EPIPE expectation) remains a follow-up.
+- The user-tier copy of spell-open-session under ~/.arcane is outside the repository and is refreshed by `spell update --user`, not by this branch.
+### What to watch for
+- The release-drift gate and the three-OS snapshot step run only in CI; both are pending the first push.
