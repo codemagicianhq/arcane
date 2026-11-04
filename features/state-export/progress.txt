@@ -100,3 +100,12 @@
 - A user-tier manifest outside the store warns (repository.scope) instead of exiting, since --user is out of scope here.
 ### What to watch for
 - agents stays null until SE-12; --online is accepted but only the versions lookup honours it until SE-11.
+
+## Iteration 11 — SE-11 — 2026-11-04
+### What was done
+- src/modules/state/pull-request.ts: collectPullRequest(git, { exec?, azureLaunch? }) -> gh pr list / az repos pr list via execFileWithTimeout and EXTERNAL_CLI_TIMEOUT_MS; parseAdoRemote for the three ADO URL forms; collect.ts runs it only when online and git is not null.
+### What was learned
+- vi.mock of ../src/modules/exec.js with importOriginal keeps resolveAzureCli real while execFileWithTimeout is a spy; the offline test asserts zero calls on it, on checkForUpdate and on a global fetch spy.
+- vitest 5 text coverage table omits files at 100% (config.ts, agents.ts); the summary block still counts them.
+### What to watch for
+- The ADO lookup needs org/project/repo from the remote URL; a URL that names none warns rather than guessing az defaults.
