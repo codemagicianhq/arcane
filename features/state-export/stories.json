@@ -180,9 +180,9 @@
         "agents.schema is the string roster-v2 and no ref, slug, aliases, derived_from or binding key is present (ST-12)"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-agents.test.ts 4/4 (own roster -> origin repo with sha256 definition_revision and a null+warning for a missing definition; opted-in repository with no roster and a user store under a temp home -> origin user, documents validate; plain repository never reads the store; malformed roster -> AgentConfigValidationError from collectAgents and collectState; spell state prints the loader's message, no JSON, exit 1); no ref/slug/aliases/derived_from/binding key on any entry; agents.ts fully covered (omitted from the text table at 100%%), collect.ts 100%% lines; lint, typecheck, typecheck:all green"
     },
     {
       "id": "SE-13",

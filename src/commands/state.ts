@@ -1,3 +1,4 @@
+import { AgentConfigValidationError } from "../modules/agent-loader.js";
 import { ManifestNotFoundError } from "../modules/manifest.js";
 import { collectState, type CollectStateOptions } from "../modules/state/collect.js";
 import { serializeState } from "../modules/state/serialize.js";
@@ -55,6 +56,9 @@ export async function runState(
   } catch (error) {
     if (error instanceof ManifestNotFoundError) {
       console.error('Not initialized. Run "spell init" first.');
+    } else if (error instanceof AgentConfigValidationError) {
+      // The loader's own message, as spell agents list prints it (PRD ST-12).
+      console.error(error.message);
     } else {
       console.error(`spell state: ${error instanceof Error ? error.message : String(error)}`);
     }

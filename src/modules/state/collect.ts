@@ -8,9 +8,11 @@
  * the whole document to one unreadable source.
  */
 
+import { AgentConfigValidationError } from "../agent-loader.js";
 import { readManifest } from "../manifest.js";
 import { resolveRealPath } from "../real-path.js";
 import { misplacedUserManifestMessage, resolveInstallScope } from "../user-tier.js";
+import { collectAgents } from "./agents.js";
 import { collectBook } from "./books.js";
 import { collectConfig } from "./config.js";
 import { collectDecisions } from "./decisions.js";
@@ -35,6 +37,8 @@ export interface CollectStateOptions {
   runGit?: RunGitFn;
   /** The process runner for the pull-request lookup (gh / az); tests inject one. */
   exec?: ExecFn;
+  /** The home the user-tier store sits under, for the roster fallback; tests point it at a temp directory. */
+  homeDir?: string;
   /** Forwarded to collectVersions when online. */
   feedUrl?: string;
   cachePath?: string;
@@ -42,7 +46,8 @@ export interface CollectStateOptions {
 
 /**
  * Runs one collector; an exception it did not expect becomes a null section
- * and one warning, never a lost document.
+ * and one warning, never a lost document. A malformed roster is the one
+ * exception: it is a hard failure by contract (PRD ST-12) and propagates.
  */
 async function guarded<T>(
   section: string,
@@ -55,6 +60,7 @@ async function guarded<T>(
     warnings.push(...result.warnings);
     return result.value;
   } catch (error) {
+    if (error instanceof AgentConfigValidationError) throw error;
     warnings.push(`${section}: collector failed (${error instanceof Error ? error.message : String(error)}); the section is null`);
     return fallback;
   }
@@ -169,6 +175,16 @@ export async function collectState(
     null,
   );
 
+  const agents = await guarded(
+    "agents",
+    warnings,
+    async () => {
+      const result = await collectAgents(cwd, options.homeDir === undefined ? {} : { homeDir: options.homeDir });
+      return { value: result.agents, warnings: result.warnings };
+    },
+    null,
+  );
+
   const now = options.now ?? (() => new Date());
 
   return {
@@ -187,7 +203,7 @@ export async function collectState(
     config: collectConfig(manifest),
     registry,
     features,
-    agents: null,
+    agents,
     warnings,
   };
 }
