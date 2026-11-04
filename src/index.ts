@@ -6,6 +6,7 @@ import { runInit } from "./commands/init.js";
 import { runAdd } from "./commands/add.js";
 import { runUpdate } from "./commands/update.js";
 import { runStatus } from "./commands/status.js";
+import { runState } from "./commands/state.js";
 import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
 import { runWardCli } from "./commands/ward.js";
@@ -227,6 +228,26 @@ program
   .option("--user", USER_FLAG_DESCRIPTION)
   .action(async (opts: { user?: boolean }) => {
     await runStatus(targetDirFor(opts), pkg.version, { user: opts.user });
+  });
+
+// ─── spell state ──────────────────────────────────────────────────────────────
+// ARC-044 decision 1: the files-first state contract. Derived, never
+// authoritative; deterministic; no network unless --online.
+
+program
+  .command("state")
+  .description("Export this repository's Arcane state as one JSON document (schema https://arcaneai.net/schemas/state/v1)")
+  .option("--json", "Print the document to stdout (required; `spell status` is the human view)")
+  .option(
+    "--online",
+    "Also look up the latest published arcane-cli version and this branch's open pull request (gh / az). Off by default: a plain run makes no network request",
+  )
+  .option(
+    "--include-local-paths",
+    "Hub only: add each registered repository's clone path on this machine. Other machines' paths are never exported",
+  )
+  .action(async (opts: { json?: boolean; online?: boolean; includeLocalPaths?: boolean }) => {
+    await runState(process.cwd(), pkg.version, opts);
   });
 
 program

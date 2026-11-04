@@ -150,9 +150,9 @@
         "A collector failure degrades to null plus a warning and the command still exits 0 (D12)"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-command.test.ts 12/12 (consumer fixture document validates with every SE-02..SE-09 section; no manifest -> Not initialized exit 1; no --json -> exit 2 one stderr line; flags passed through; collector error exit 1; unwritable stdout exit 1; built CLI: stdout parses, stderr empty, exit 0/2/1) and test/state-collect-degrade.test.ts 1/1 (throwing collector -> null + warning); collect.ts 100% lines / 75% branches, commands/state.ts 100% lines / 81.3% branches; lint, typecheck, typecheck:all green"
     },
     {
       "id": "SE-11",
