@@ -134,9 +134,9 @@
         "An absent features/ directory yields null (ST-08)"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-features.test.ts 7/7 (this repository's 27 PRD folders listed and validated, the one malformed-YAML PRD warned by path; fixture: no-frontmatter PRD null fields + one warning, folder without PRD skipped, sorted by slug; absent features/ null; nested and flat tracking shapes; leading # Title accepted); features.ts 94.7% lines / 78.7% branches / 100% functions; lint and typecheck:all green"
     },
     {
       "id": "SE-10",
