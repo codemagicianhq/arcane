@@ -165,9 +165,9 @@
         "With --online, versions.latest is populated and drift.cli_behind_latest is a boolean (ST-13)"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-online.test.ts 9/9 (offline: mocked checkForUpdate, execFileWithTimeout and global fetch each zero calls; online: mocked gh with one open PR populates git.pull_request {id,url,state}, versions.latest 1.1.0 and cli_behind_latest true; mocked missing gh -> null + one warning; detached/other-provider/timeout/non-zero/unparseable each warn; ADO lookup through the resolved launcher builds the PR URL; parseAdoRemote three URL forms); pull-request.ts 98.4% lines / 96% branches, collect.ts 100% lines; lint, typecheck, typecheck:all green"
     },
     {
       "id": "SE-12",

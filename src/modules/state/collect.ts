@@ -17,6 +17,7 @@ import { collectDecisions } from "./decisions.js";
 import { collectFeatures } from "./features.js";
 import { collectGit, type RunGitFn } from "./git.js";
 import { collectJournal } from "./journal.js";
+import { collectPullRequest, type ExecFn } from "./pull-request.js";
 import { collectRegistry } from "./registry.js";
 import { STATE_SCHEMA_VERSION, type StateDocument } from "./types.js";
 import { collectVersions } from "./versions.js";
@@ -32,6 +33,8 @@ export interface CollectStateOptions {
   hostname?: string;
   /** The git runner; tests inject one. */
   runGit?: RunGitFn;
+  /** The process runner for the pull-request lookup (gh / az); tests inject one. */
+  exec?: ExecFn;
   /** Forwarded to collectVersions when online. */
   feedUrl?: string;
   cachePath?: string;
@@ -98,6 +101,18 @@ export async function collectState(
     },
     null,
   );
+
+  if (options.online && git !== null) {
+    git.pull_request = await guarded(
+      "git.pull_request",
+      warnings,
+      async () => {
+        const result = await collectPullRequest(git, options.exec === undefined ? {} : { exec: options.exec });
+        return { value: result.pull_request, warnings: result.warnings };
+      },
+      null,
+    );
+  }
 
   const decisions = await guarded(
     "indexes.decisions",
