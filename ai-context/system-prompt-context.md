@@ -64,3 +64,5 @@
   - Merge the follow-up pull request for `sessions/2026-11-04-remap-ids-after-rebase-merge` once its checks pass — a merge needs a human.
   - Review and merge the website repository's bot sync pull requests for 1.16.0, 1.16.1 and 1.17.0 — a merge there deploys production, and the agent cannot see that repository from this checkout (`TODO.md`, "Review and merge the website repository's bot sync pull requests").
 - **Notes:** Commit ids quoted in the 2026-11-04 journal, `TODO.md` and `features/state-export/architecture.md` are the ids on `main` after the rebase merge; the branch's original ids exist nowhere on origin. `features/state-export/progress.txt` holds one entry per iteration. The stray `probe/2026-11-04-push-health` ref on origin was deleted through the GitHub API on 2026-11-04.
+
+> ✓ Consumed: 2026-11-04
