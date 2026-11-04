@@ -1,0 +1,179 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-11-04T12:00:00.000Z",
+  "generator": {
+    "name": "arcane-cli",
+    "version": "1.17.0"
+  },
+  "repository": {
+    "root": "<root>",
+    "scope": "repo",
+    "role": "consumer",
+    "profile": "full"
+  },
+  "versions": {
+    "files": "1.17.0",
+    "cli": "1.17.0",
+    "latest": null,
+    "drift": {
+      "files_behind_cli": false,
+      "cli_behind_latest": null
+    },
+    "components": [
+      {
+        "name": "governance",
+        "installedVersion": "1.17.0"
+      },
+      {
+        "name": "spells-core",
+        "installedVersion": "1.17.0"
+      }
+    ]
+  },
+  "git": {
+    "branch": "main",
+    "detached": false,
+    "trunk": "main",
+    "ahead": 2,
+    "behind": 1,
+    "uncommitted": 0,
+    "remote": {
+      "provider": "github",
+      "url": "https://github.com/overshore/orbit.git"
+    },
+    "worktrees": [
+      {
+        "path": ".",
+        "branch": "main"
+      }
+    ],
+    "pull_request": null
+  },
+  "indexes": {
+    "decisions": [
+      {
+        "id": "ARC-001",
+        "title": "Framework / Operations Separation",
+        "status": "Accepted",
+        "date": "2026-05-04",
+        "anchor": "arc-001--framework--operations-separation"
+      },
+      {
+        "id": "ARC-002",
+        "title": "Distribute Agent Files via spell init",
+        "status": "Superseded",
+        "date": "2026-05-14",
+        "anchor": "arc-002--distribute-agent-files-via-spell-init"
+      },
+      {
+        "id": "ARC-003",
+        "title": "Agents Are Roster-Rendered",
+        "status": "Accepted",
+        "date": "2026-09-11",
+        "anchor": "arc-003--agents-are-roster-rendered"
+      }
+    ],
+    "todos": {
+      "open": 2,
+      "done": 1,
+      "items": [
+        {
+          "text": "**Survey the Ordovica deep-earth site.** Type: `todo`; domain: `survey`.",
+          "section": "Open Items",
+          "locator": "open-items/b393432e99e1",
+          "checked": false
+        },
+        {
+          "text": "**Order the Tidewright repair drones.** Done 2026-11-01. <!-- status: done -->",
+          "section": "Open Items",
+          "locator": "open-items/afd43fd37efe",
+          "checked": true
+        },
+        {
+          "text": "Confirm the Overshore orbit window",
+          "section": "Operator follow-ups",
+          "locator": "operator-follow-ups/85608ead6852",
+          "checked": false
+        }
+      ]
+    },
+    "ideas": null,
+    "done": {
+      "open": 0,
+      "done": 1,
+      "items": [
+        {
+          "text": "**Ship the state export schema.** Moved 2026-10-31.",
+          "section": "2026-10",
+          "locator": "2026-10/943677b01d4f",
+          "checked": true
+        }
+      ]
+    },
+    "journal": [
+      {
+        "date": "2026-10-29",
+        "slug": "schema-draft",
+        "title": "Schema draft",
+        "path": "journal/2026-10-29-schema-draft.md"
+      },
+      {
+        "date": "2026-11-02",
+        "slug": "serializer",
+        "title": "2026-11-02 — Serializer",
+        "path": "journal/2026-11-02-serializer.md"
+      }
+    ]
+  },
+  "config": {
+    "tracking_mode": "internal",
+    "external_provider": null,
+    "push_policy": null,
+    "role": null,
+    "business_root": null,
+    "spell_scope": "repo",
+    "content_sensitivity": null
+  },
+  "registry": null,
+  "features": [
+    {
+      "slug": "legacy-flat",
+      "title": "PRD: Legacy flat tracking",
+      "status": "shipped",
+      "implementation_status": null,
+      "tracking": {
+        "tracking_mode": "internal",
+        "external_provider": null,
+        "adoWorkItemId": null,
+        "githubIssueId": null
+      },
+      "path": "features/legacy-flat/PRD.md"
+    },
+    {
+      "slug": "no-frontmatter",
+      "title": null,
+      "status": null,
+      "implementation_status": null,
+      "tracking": null,
+      "path": "features/no-frontmatter/PRD.md"
+    },
+    {
+      "slug": "state-export",
+      "title": "PRD: The state export",
+      "status": "accepted",
+      "implementation_status": "in-progress",
+      "tracking": {
+        "tracking_mode": "internal",
+        "external_provider": null,
+        "adoWorkItemId": null,
+        "githubIssueId": null
+      },
+      "path": "features/state-export/PRD.md"
+    }
+  ],
+  "agents": null,
+  "warnings": [
+    "features: features/no-frontmatter/PRD.md has no frontmatter",
+    "indexes.journal: journal/notes.md does not match YYYY-MM-DD-<slug>.md and was skipped"
+  ]
+}

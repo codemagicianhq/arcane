@@ -117,3 +117,13 @@
 - A story whose test file depends on the next story's option cannot sit untracked in the tree while the earlier story commits: the pre-commit typecheck runs on the whole tree, so SE-12's files were parked outside the repository for the SE-11 commit.
 ### What to watch for
 - The v3 roster fields are deliberately absent; the identity ARC adds them additively.
+
+## Iteration 13 — SE-13 — 2026-11-04
+### What was done
+- test/helpers/state-snapshot-fixtures.ts (buildConsumerFixture, buildHubFixture, buildSelfHostedFixture with planted strings), test/state-snapshot.test.ts (toMatchFileSnapshot into test/__snapshots__/state/*.json, determinism, schema, leak scan), the ci.yml matrix step.
+### What was learned
+- A Bash call near 9 KB fails to parse in this harness; the fixture helper had to be written with the Write tool.
+- test/demos-capture.test.ts (ARC-058, unchanged on this branch) fails on this Windows machine alone and in the suite: `git init --quiet` under captureEnvironment and an EPIPE expectation that times out. Coverage was measured with that file excluded; it is unrelated to the state export.
+- vitest 5 does not print the coverage table when any test fails.
+### What to watch for
+- The snapshots pin generated_at and repository.root only; everything else must stay deterministic across OSes (no SHAs, no absolute paths, LF content).

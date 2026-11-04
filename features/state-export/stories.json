@@ -196,9 +196,9 @@
         "Coverage for src/modules/state/** and src/commands/state.ts is at or above 80% in npm run test:coverage"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-snapshot.test.ts 6/6 on Windows (consumer, hub, hub-with-local-paths, self-hosted file snapshots under test/__snapshots__/state/, each validated against the schema, re-run deterministic apart from generated_at, denylist scan over each output finds neither the foreign hostname, its clone path, the planted private name nor the userinfo credential; no clones key anywhere); ci.yml runs the file on the ubuntu/windows/macos matrix job (Linux and macOS results pending the first CI run); npm run test:coverage (demos-capture excluded, see progress.txt) 170 files / 2729 tests green, src/modules/state 97.2% lines / 87.4% branches / 100% functions, src/commands/state.ts 100% lines; lint and typecheck:all green"
     },
     {
       "id": "SE-14",

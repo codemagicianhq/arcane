@@ -172,6 +172,12 @@ jobs:
       - name: Test sign-in and session storage
         run: npm test -- test/credential-store.test.ts test/session-store.test.ts test/login-commands.test.ts test/oidc.test.ts test/oidc-browser-opener.test.ts test/oidc-server-guard.test.ts --testTimeout=20000
 
+      # The state export's snapshots must be byte-identical on every OS
+      # (features/state-export, ST-09): POSIX-relative paths, code-unit
+      # sorting, pinned commit dates, no drive letters.
+      - name: Test the state export snapshots on this OS (ST-09)
+        run: npm test -- test/state-snapshot.test.ts --testTimeout=20000
+
   # The full suite above runs only on Linux, whose temp directory is a real
   # path. macOS's is not -- /var/folders/... sits under the /var ->
   # /private/var symlink -- and git reports real paths, which failed 179 tests
