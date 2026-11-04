@@ -148,16 +148,29 @@ describe.skipIf(!POSIX)("the git hook refuses it (the shell-profile scenario)", 
 });
 
 describe.skipIf(!POSIX)("agent outputs refuse it", { timeout: HEAVY_TEST_TIMEOUT }, () => {
-  it("spell agents init writes no roster through a linked agents.yaml", async () => {
+  // Without --force an existing roster -- here, the file the link names --
+  // stops init before any write, so the write is reached by --force (an
+  // existing target) or by a dangling link (no roster seen).
+  it("spell agents init --force overwrites no file a linked agents.yaml names", async () => {
     const target = join(outside, "agents.yaml");
     await fs.writeFile(target, "kept\n");
     await linkFile(".arcane/agents.yaml", target);
     vi.spyOn(console, "log").mockImplementation(() => {});
 
+    await expect(
+      runAgentsInit({ profile: "base", naming: "generic", force: true }, repo, ASSETS_DIR),
+    ).rejects.toThrow(linkedFileRefusal(".arcane/agents.yaml"));
+    expect(await fs.readFile(target, "utf8")).toBe("kept\n");
+  });
+
+  it("spell agents init creates nothing through a dangling agents.yaml", async () => {
+    await linkFile(".arcane/agents.yaml", join(outside, "agents.yaml"));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
     await expect(runAgentsInit({ profile: "base", naming: "generic" }, repo, ASSETS_DIR)).rejects.toThrow(
       linkedFileRefusal(".arcane/agents.yaml"),
     );
-    expect(await fs.readFile(target, "utf8")).toBe("kept\n");
+    expect(await fs.readdir(outside)).toEqual([]);
   });
 
   it("spell agents init copies no definition through a linked definition file", async () => {
