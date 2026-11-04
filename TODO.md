@@ -10,6 +10,8 @@ last_updated: 2026-11-04
 
 - [ ] **A cloud session's pull request arrives on a random `claude/<adjective>-<noun>-<hash>` branch, and ARC-053 cannot catch it (raised 2026-10-10).** ARC-053 renames a non-compliant branch on sight from inside a session, but a cloud session creates its branch before any spell runs and may open the pull request without one. PR 354 (2026-10-10) arrived that way. Decide: accept the generated name for cloud-originated pull requests and say so in the branch-naming fragment, or add a rename step the cloud session runs at start (the fragment is read at session start already; the rename gate would need to run there too). Until decided, merging such a pull request and letting the branch delete is the right end.
 
+- [ ] **`spell agents rename <slug> <new name>`: change a display name or a slug by reference, record the former slug as an alias, and rewrite the outputs in one run.** Type: `todo`; domain: `agents`. Deferred 2026-11-04 by the operator (`features/agent-identity/PRD.md`, open question 4): in the first roster v3 release slugs are immutable and a display name is changed by editing `name`. **Done when:** the command exists with the PRD's AI-15 acceptance (the reference unchanged, the former slug recorded as a `{ value, context: "slug" }` alias, and `spell agents sync` afterwards writing no file under the old slug), with a test. Registered 2026-11-04 by the agent-identity planning session.
+
 <!-- Add task items here during sessions. Mark completed with [x] and date. -->
 
 ### State export (ARC-044, 1.17.0) — registered 2026-11-04 by spell-close-session
