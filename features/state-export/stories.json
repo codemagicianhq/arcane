@@ -78,9 +78,9 @@
         "An absent IDEAS.md yields null (ST-05)"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-books.test.ts 6/6 (3 open / 2 checked with sections, CRLF twin identical, 200-char truncation with full-text hash, locator stable on move and changed on edit, absent IDEAS.md null); books.ts 96.9% lines / 81.3% branches / 100% functions; lint and typecheck:all green"
     },
     {
       "id": "SE-06",

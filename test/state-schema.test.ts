@@ -1,79 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
-import {
-  STATE_SCHEMA_ASSET_PATH,
-  STATE_SCHEMA_ID,
-  STATE_SCHEMA_VERSION,
-  type StateDocument,
-} from "../src/modules/state/types.js";
+import { join } from "node:path";
+import { STATE_SCHEMA_ASSET_PATH, STATE_SCHEMA_ID, STATE_SCHEMA_VERSION, type StateDocument } from "../src/modules/state/types.js";
+import { REPO_ROOT, compileStateSchema, loadStateSchema as loadSchema, minimalDocument, type JsonSchema } from "./helpers/state-schema.js";
 import { STATE_SHAPE, canonicalize, serializeState, toPosixRelative, type Shape } from "../src/modules/state/serialize.js";
 import { copyAssets } from "../scripts/copy-assets.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SCHEMA_PATH = join(ROOT, "src/assets", STATE_SCHEMA_ASSET_PATH);
-
-type JsonSchema = {
-  $id?: string;
-  properties?: Record<string, JsonSchema>;
-  items?: JsonSchema;
-  oneOf?: JsonSchema[];
-  $ref?: string;
-  $defs?: Record<string, JsonSchema>;
-  examples?: unknown[];
-  additionalProperties?: boolean;
-  type?: string | string[];
-};
-
-async function loadSchema(): Promise<JsonSchema> {
-  return JSON.parse(await readFile(SCHEMA_PATH, "utf8")) as JsonSchema;
-}
-
-/** A minimal, complete document: every section present, every nullable one null. */
-export function minimalDocument(): StateDocument {
-  return {
-    schema_version: STATE_SCHEMA_VERSION,
-    generated_at: "2026-11-04T12:00:00.000Z",
-    generator: { name: "arcane-cli", version: "0.0.0-test" },
-    repository: { root: "/repo", scope: "repo", role: "consumer", profile: "lite" },
-    versions: {
-      files: "0.0.0-test",
-      cli: "0.0.0-test",
-      latest: null,
-      drift: { files_behind_cli: false, cli_behind_latest: null },
-      components: [],
-    },
-    git: null,
-    indexes: { decisions: null, todos: null, ideas: null, done: null, journal: null },
-    config: {
-      tracking_mode: null,
-      external_provider: null,
-      push_policy: null,
-      role: null,
-      business_root: null,
-      spell_scope: null,
-      content_sensitivity: null,
-    },
-    registry: null,
-    features: null,
-    agents: null,
-    warnings: [],
-  };
-}
-
-/** Compiles the shipped schema with ajv; shared by the state snapshot tests. */
-export async function compileStateSchema(): Promise<(doc: unknown) => string[]> {
-  const ajv = new Ajv2020({ allErrors: true, strict: true, allowUnionTypes: true });
-  const validate = ajv.compile(await loadSchema());
-  return (doc: unknown) => {
-    if (validate(doc)) return [];
-    return (validate.errors ?? []).map((e: ErrorObject) => `${e.instancePath || "/"} ${e.message ?? ""}`.trim());
-  };
-}
+const ROOT = REPO_ROOT;
 
 describe("state schema (ST-02, ST-10)", () => {
   it("carries the agreed $id, a 1.0.0 schema version and a closed envelope", async () => {
