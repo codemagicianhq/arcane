@@ -24,3 +24,16 @@
 - `lookup` (the raw VersionCheckResult) is returned beside the section because the footer distinguishes "unable to check" (error) from a null latest.
 ### What to watch for
 - Keep status's lookup `online: true`; only `spell state` defaults to offline (ST-13).
+
+## Iteration 3 — SE-03 — 2026-11-04
+### What was done
+- src/modules/state/git.ts: collectGit(cwd, root, { runGit? }) -> { git | null, warnings }; remoteProvider, stripUserinfo, parseWorktreeList exported for tests.
+- src/modules/git.ts: classifyGitCommand treats `worktree list` and `remote get-url` as reads (AMBIGUOUS_READ_FORMS); tests in git-execution-contract.test.ts.
+- test/helpers/state-fixtures.ts: initRepo, commitFiles (pinned dates), repoWithOneCommit, withUpstream (bare upstream on disk, ahead/behind, optional origin URL rewrite), addWorktree, detachHead.
+### What was learned
+- Absence is an answer, not a failure: no upstream / no remote / no trunk are null without a warning; only a timeout or unexpected error warns. The upstream probe (`rev-parse --abbrev-ref @{upstream}`) separates the two cases for ahead/behind.
+- `uncommitted` reads `status --porcelain -uall` directly (same count as countUncommittedChanges) because that helper returns 0 on failure, which would report a timed-out read as a clean tree.
+- `git remote` (no args) is still write-class by name; collectGit passes commandClass "read" for it. The origin check happens before `remote get-url` so a missing remote is silent.
+- Worktree paths sort in code-unit order: "." comes before "../x".
+### What to watch for
+- The injected `runGit` in tests matches on args[0] (and args[1]); the real runner still runs for everything else, so each timeout test costs real git calls.
