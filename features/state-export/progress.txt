@@ -81,3 +81,12 @@
 - registry.json ventures are a slug-keyed map in the scaffolded shape; an array of entries with `slug` is accepted too. `tracking` is exported as written (string or object).
 ### What to watch for
 - The hostname parameter exists for tests; production uses os.hostname().
+
+## Iteration 9 — SE-09 — 2026-11-04
+### What was done
+- src/modules/state/features.ts: parsePrd, featureTracking, collectFeatures(root).
+### What was learned
+- Nine of this repository's PRDs put a `# Title` line before their `---` block; the parser accepts exactly one leading H1 and uses it as the title fallback. codex-support/PRD.md has a YAML value with an unquoted `: ` inside and warns as malformed, which is the truth.
+- Older PRDs carry tracking_mode/external_provider flat at the top level; both shapes map to the same tracking object.
+### What to watch for
+- yaml error messages are multi-line; only their first line goes into the warning.
