@@ -1,0 +1,219 @@
+{
+  "feature": "state-export",
+  "branchName": "claude/feat/state-export",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "externalProvider": null,
+  "stories": [
+    {
+      "id": "SE-01",
+      "title": "Schema, TypeScript twin, serializer and the parity test",
+      "description": "Add src/assets/schemas/state.schema.json (draft 2020-12, $id https://arcaneai.net/schemas/state/v1, additionalProperties false at the envelope, examples using ARC-031 fictional names) covering every section the PRD lists (envelope, versions, git, indexes, config, registry, features, agents, warnings). Add src/modules/state/types.ts as its TypeScript twin and src/modules/state/serialize.ts (architecture D11: schema key order, sorted arrays, POSIX relative paths, 2-space JSON plus trailing newline). Add ajv as a devDependency and test/state-schema.test.ts that validates a hand-built minimal document and fails on an extra top-level key. Confirm scripts/copy-assets.ts ships the schema under dist/assets/schemas/ and that npm pack lists it.",
+      "acceptanceCriteria": [
+        "src/assets/schemas/state.schema.json exists with $id https://arcaneai.net/schemas/state/v1 and schema_version 1.0.0 (ST-02, ST-10)",
+        "A minimal valid document passes ajv validation in the test suite; a document with an extra envelope key fails (ST-02)",
+        "npm pack output lists dist/assets/schemas/state.schema.json (ST-10)",
+        "ajv appears only under devDependencies (ARC-037 decision 8)",
+        "serialize() emits keys in schema order and a trailing newline; a unit test proves two differently-ordered input objects serialize identically (ST-09)"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-02",
+      "title": "Extract collectVersions and make spell status its caller",
+      "description": "Create src/modules/state/versions.ts exporting collectVersions(manifest, packageVersion, { online, feedUrl?, cachePath? }) returning the versions section: files (manifest.version), cli, latest (null unless online; checkForUpdate with its existing 24h cache), drift { files_behind_cli: boolean, cli_behind_latest: boolean | null }, components[] ({ name, installedVersion } sorted by name). Refactor src/commands/status.ts to call it (online: true, matching today's default-on lookup) and render exactly the same table and footer. Existing test/status.test.ts assertions must pass unchanged.",
+      "acceptanceCriteria": [
+        "spell status output is byte-identical on the existing status.test.ts fixtures after the refactor (ST-03)",
+        "status.ts no longer calls checkForUpdate or compares versions itself; it reads the section from collectVersions (ST-03)",
+        "One unit test covers the four drift combinations of files/cli/latest (ST-03)",
+        "With online false, collectVersions makes no fetch call and returns latest null, cli_behind_latest null (ST-13)"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-03",
+      "title": "Git topology collector over runGit",
+      "description": "Create src/modules/state/git.ts exporting collectGit(cwd): branch (symbolic-ref --short -q HEAD, else short SHA with detached true), trunk (origin/HEAD, else first existing of main/master, else null), ahead/behind via rev-list --left-right --count against @{upstream} (null without upstream), uncommitted via countUncommittedChanges, worktrees[] via worktree list --porcelain ({ path, branch }, sorted by path), remote { provider github|ado|other|null, url with userinfo stripped }. pull_request is null here (SE-11 fills it). Every call goes through runGit with its timeout; a timeout or failure sets that field to null and pushes one warning. In src/modules/git.ts, teach classifyGitCommand that `worktree list` and `remote get-url` are reads (architecture D4) with unit tests for both.",
+      "acceptanceCriteria": [
+        "Fixtures with a detached HEAD, no remote, and a second worktree each produce a valid git section (ST-04)",
+        "A fixture with an upstream three ahead and two behind reports ahead 3, behind 2; a branch without upstream reports null for both (ST-04)",
+        "A remote URL containing userinfo exports without it (ST-11)",
+        "A mocked runGit timeout yields null for that field plus one warnings[] entry and no throw (ST-04)",
+        "classifyGitCommand returns read for [\"worktree\",\"list\"] and [\"remote\",\"get-url\",\"origin\"] and still write for [\"worktree\",\"add\"] and [\"remote\",\"add\"]"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-04",
+      "title": "Move the decisions parser to state/decisions.ts and generalize the prefix",
+      "description": "Move src/modules/show-report/decisions-parser.ts to src/modules/state/decisions.ts. Heading pattern becomes ^## ([A-Z]{2,5})-(\\d{3,})\\b. Each entry exports id, title (text after the id and dash), status (first word of the first **Status:** line, null when absent), date (first **Date:** line, null when absent), anchor (GitHub-style heading slug). Keep parseAdrs and countAcceptedAdrsInWindow as named exports for Show Report, which now imports from the new path; Show Report's tests pass unchanged. Add collectDecisions(root) that reads DECISIONS.md and returns the sorted array or null when the file is absent; a heading that matches but has no parseable body is skipped with a warning.",
+      "acceptanceCriteria": [
+        "The arcane repository's own DECISIONS.md parses to the same ARC entry count its TOC table lists (ST-05)",
+        "A fixture DECISIONS.md with ADR- entries and one with DMC- entries parse with the right ids (ST-05)",
+        "Show Report tests pass unchanged after the import path moves (D5)",
+        "An absent DECISIONS.md yields null, not an error; a malformed entry yields a warning (ST-05)"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-05",
+      "title": "Book items with content-hash locators (TODO, IDEAS, DONE)",
+      "description": "Create src/modules/state/books.ts exporting collectBook(root, fileName) used for TODO.md, IDEAS.md and DONE.md. An item is a line matching ^\\s*- \\[( |x)\\] ; text is the line without the checkbox, first 200 characters, CRLF-safe; section is the nearest preceding Markdown heading text; locator is <section-slug>/<first 12 hex of sha256(normalized text)>; checked is the checkbox state. Return { open, done, items[] } or null when the file is absent. Items keep file order (the one array not sorted by key, because order is meaning in a book).",
+      "acceptanceCriteria": [
+        "A fixture TODO.md with 3 open and 2 checked items reports open 3, done 2 and 5 items with the right sections (ST-05)",
+        "Moving an item to another line without editing it keeps the same hash part of its locator; editing its text changes it (D6)",
+        "A CRLF file parses identically to its LF twin (constraints)",
+        "An absent IDEAS.md yields null (ST-05)"
+      ],
+      "priority": 5,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-06",
+      "title": "Journal index",
+      "description": "Create src/modules/state/journal.ts exporting collectJournal(root): every journal/YYYY-MM-DD-<slug>.md file as { date, slug, title, path } where title comes from frontmatter title: or the first # heading, else null with a warning; path POSIX-relative to root; sorted by date then slug. Null when journal/ is absent. Files not matching the name pattern are ignored with one warning each.",
+      "acceptanceCriteria": [
+        "A fixture journal with three dated files exports three sorted entries with titles (ST-05)",
+        "A file named without the date prefix is skipped and produces one warning (ST-05)",
+        "An absent journal/ directory yields null (ST-05)"
+      ],
+      "priority": 6,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-07",
+      "title": "Config section from the manifest",
+      "description": "Create src/modules/state/config.ts exporting collectConfig(manifest): tracking_mode, external_provider, push_policy, role, business_root, spell_scope, content_sensitivity, each null when the manifest does not carry it. Pure function, no I/O.",
+      "acceptanceCriteria": [
+        "A manifest with every field set exports every value (ST-06)",
+        "A pre-ARC-032 manifest with none of them exports null for each and still validates against the schema (ST-06)"
+      ],
+      "priority": 7,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-08",
+      "title": "Hub registry section with this-machine local_path",
+      "description": "Create src/modules/state/registry.ts exporting collectRegistry(root, manifest, { includeLocalPaths }): when manifest.role is hub, read {business_root}/registry.json and export ventures[] sorted by slug with slug, name, aliases, status, visibility, ownership, tracking, repos[] ({ name, remote, default }). With includeLocalPaths, add repos[].local_path from clones[os.hostname()] matched case-insensitively (null when no entry for this machine). Never serialize the clones map. When role is not hub, return null. A missing or unparseable registry.json on a hub returns null with a warning.",
+      "acceptanceCriteria": [
+        "The hub fixture exports its ventures with no local_path and no clones key by default (ST-07)",
+        "With --include-local-paths, local_path appears only from the clones entry matching the test's own hostname; the foreign hostname's path never appears (ST-07, ST-11)",
+        "A consumer fixture exports registry null (ST-07)",
+        "A hub with no registry.json exports null and one warning (ST-07)"
+      ],
+      "priority": 8,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-09",
+      "title": "Features section from PRD frontmatter",
+      "description": "Create src/modules/state/features.ts exporting collectFeatures(root): every features/*/PRD.md as { slug (folder name), title, status, implementation_status, tracking { tracking_mode, external_provider, adoWorkItemId, githubIssueId }, path } parsed from YAML frontmatter with the parser agent-loader.ts already imports; a PRD without frontmatter exports null fields and a warning; sorted by slug; null when features/ is absent.",
+      "acceptanceCriteria": [
+        "The arcane repository's own features/ directory lists every folder that has a PRD.md (ST-08)",
+        "A PRD without frontmatter appears with null fields and one warning (ST-08)",
+        "An absent features/ directory yields null (ST-08)"
+      ],
+      "priority": 9,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-10",
+      "title": "collectState orchestrator and the spell state command",
+      "description": "Create src/modules/state/collect.ts exporting collectState(cwd, packageVersion, { online, includeLocalPaths }): readManifest (ManifestNotFoundError → the caller exits 1 with the spell status wording), real-path repository.root, run every collector from SE-02..SE-09 (agents from SE-12 once it lands; null until then), gather warnings[], assemble the envelope (schema_version 1.0.0, generated_at ISO UTC, generator { name: arcane-cli, version }, repository { root, scope, role, profile }). Create src/commands/state.ts: without --json print one line pointing at --json and exit 2; with it print serialize(doc) to stdout and nothing else, exit 0. Register in src/index.ts beside status with --json, --online, --include-local-paths. Diagnostics go to stderr only.",
+      "acceptanceCriteria": [
+        "spell state --json in a fixture prints one JSON document to stdout, nothing else, and exits 0 (ST-01)",
+        "In a directory without .arcane.json it prints the spell status Not initialized wording and exits 1 (ST-01, D12)",
+        "spell state without --json exits 2 with a one-line pointer (ST-01)",
+        "The document validates against the schema and every section from SE-02..SE-09 is present (ST-02)",
+        "A collector failure degrades to null plus a warning and the command still exits 0 (D12)"
+      ],
+      "priority": 10,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-11",
+      "title": "--online: npm latest and the pull-request lookup",
+      "description": "Thread the online flag from state.ts through collectState to collectVersions (SE-02) and to a new collectPullRequest(cwd, git) in src/modules/state/git.ts: for a github remote run gh pr list --head <branch> --state open --json number,url,state; for an ado remote run az repos pr list --source-branch <branch> --status active via resolveAzureCli; both through execFileWithTimeout with EXTERNAL_CLI_TIMEOUT_MS. Result { id, url, state } or null. Missing tool, non-zero exit, unparseable output or timeout → null plus one warning. Without --online neither read runs and no warning is emitted.",
+      "acceptanceCriteria": [
+        "Without --online, mocked fetch and mocked execFileWithTimeout each assert zero calls (ST-13)",
+        "With --online, a mocked gh returning one open PR populates git.pull_request with id, url and state (ST-04, ST-13)",
+        "With --online and a mocked missing gh, pull_request is null, one warning is present, exit 0 (ST-04)",
+        "With --online, versions.latest is populated and drift.cli_behind_latest is a boolean (ST-13)"
+      ],
+      "priority": 11,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-12",
+      "title": "Agents section: resolved roster-v2 with origin and definition_revision",
+      "description": "Create src/modules/state/agents.ts exporting collectAgents(targetDir): resolveRoster(targetDir, \"repo\"); export { schema: \"roster-v2\", naming_strategy, agent_profile, entries[] } where each entry carries definition, name, id, epithet (null when absent), origin (\"user\" when fromUserTier else \"repo\"), definition_revision (\"sha256:\" + hash of <definitionsDir>/<definition>.yaml, null with a warning when the file is missing). AgentRosterNotFoundError → null. AgentConfigValidationError propagates so state.ts prints the loader's message to stderr and exits 1. Wire into collectState. Do not add any v3 field; they belong to the identity ARC's feature.",
+      "acceptanceCriteria": [
+        "A fixture with its own roster exports entries with origin repo and a sha256 definition_revision (ST-12)",
+        "A fixture with no roster, spell_scope user and an opted-in user tier (homeDir pointed at a temp store) exports origin user (ST-12)",
+        "A malformed roster exits 1 with the loader's error on stderr and no JSON on stdout (ST-12)",
+        "agents.schema is the string roster-v2 and no ref, slug, aliases, derived_from or binding key is present (ST-12)"
+      ],
+      "priority": 12,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-13",
+      "title": "Fixtures, cross-platform snapshots, determinism and the leak scan",
+      "description": "Add test/helpers/state-fixtures.ts building the three fixtures the architecture's Testing Strategy describes (consumer, hub, self-hosted) with test/helpers/git-fixture.ts, including the variant repos (detached HEAD, no remote, second worktree, upstream 3/2, userinfo URL). Add test/state-snapshot.test.ts: toMatchSnapshot on serialized output with generated_at replaced by a constant, for all three fixtures; a determinism test comparing two consecutive runs; a schema validation pass over every fixture output; a leak-scan test running denylist-scan over every output with a test denylist containing the foreign hostname and a fake org token. Snapshots must be identical across the ubuntu, windows and macos CI jobs (POSIX paths, no drive letters).",
+      "acceptanceCriteria": [
+        "Snapshot tests for the three fixtures pass on all three ci.yml matrix jobs (ST-09)",
+        "Two consecutive runs on an unchanged fixture differ only in generated_at (ST-09)",
+        "Every fixture output validates against the schema (ST-10)",
+        "The leak-scan test finds neither the foreign hostname nor the fake org token in any output; the userinfo URL fixture output contains no credential (ST-11)",
+        "Coverage for src/modules/state/** and src/commands/state.ts is at or above 80% in npm run test:coverage"
+      ],
+      "priority": 13,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    },
+    {
+      "id": "SE-14",
+      "title": "Docs, open-session fragment, CHANGELOG and version bump",
+      "description": "Add a short State export section to README.md linking the schema and showing one trimmed example; add the CHANGELOG entry under ARC-044 recording schema 1.0.0, the additive-only rule, the --online and --include-local-paths flags, and the status refactor; run spell-bump (minor). Add src/assets/.arcane/spells/_fragments/state-export.md and a marked span in spell-open-session.md's Workspace Health Check saying that when spell state --json --online is available its versions and git sections replace the individual commands, otherwise proceed as today; expand it via scripts/self-host-parity.ts so every generated client picks it up; no spell behaviour changes when the command is absent.",
+      "acceptanceCriteria": [
+        "README.md links dist/assets/schemas/state.schema.json's published location and shows an example (ST-10)",
+        "CHANGELOG.md has the entry under ARC-044 with schema 1.0.0 and the additive-only rule (acceptance list)",
+        "The open-session change is one fragment expanded into the spell and its generated client files; self-host parity passes (ST-14)",
+        "spell-bump applied a minor bump and the release-drift check passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": null
+    }
+  ]
+}
