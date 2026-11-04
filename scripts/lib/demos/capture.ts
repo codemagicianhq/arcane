@@ -23,7 +23,7 @@ import { spawn, execFileSync } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { rmSync } from "node:fs";
 import { mkdtemp, mkdir, realpath, rm } from "node:fs/promises";
-import { devNull, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { VirtualTerminal } from "./terminal.js";
 import type { ScreenSnapshot } from "./terminal.js";
@@ -230,7 +230,12 @@ export function captureEnvironment(home: string, inherited: NodeJS.ProcessEnv = 
     XDG_CONFIG_HOME: join(home, ".config"),
     XDG_CACHE_HOME: join(home, ".cache"),
     GIT_CONFIG_NOSYSTEM: "1",
-    GIT_CONFIG_GLOBAL: devNull,
+    // The literal POSIX path, not `os.devNull`: on Windows that is `\\.\nul`,
+    // which git rejects ("unable to access '\\.\nul': Invalid argument", exit
+    // 128), so every capture died at `git init` there. Git for Windows maps
+    // "/dev/null" to the NUL device itself -- the same choice, for the same
+    // reason, as test/helpers/git-fixture.ts.
+    GIT_CONFIG_GLOBAL: "/dev/null",
     TERM: "xterm-256color",
     COLORTERM: "truecolor",
     FORCE_COLOR: "3",
