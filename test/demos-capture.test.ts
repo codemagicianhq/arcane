@@ -277,7 +277,13 @@ describe("runCommand and captureScenario against a stand-in CLI", () => {
     HEAVY_TEST_TIMEOUT,
   );
 
-  it(
+  // POSIX only: a write to a child's closed stdin raises EPIPE there, which
+  // is the failure this test asserts. On Windows the same write succeeds and
+  // the step times out instead ("Timed out waiting for the CLI"), so the
+  // expectation can only hold on the Linux and macOS runners. Tracked in
+  // TODO.md ("`test/demos-capture.test.ts` expects an EPIPE that Windows
+  // never raises"); the skip keeps the pre-push suite honest on Windows.
+  it.skipIf(process.platform === "win32")(
     "fails with a clear message, not a crash, when a key cannot be delivered",
     async () => {
       const dir = await fixture();
