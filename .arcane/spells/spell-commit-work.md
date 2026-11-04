@@ -5,7 +5,7 @@ tagline: Conventional commits, written for you
 claude_description: Use PROACTIVELY whenever committing work during a session, even if the user just says 'commit this'.
 argument-hint: Optional focus (e.g., security, prompts, agents, infrastructure)
 agent: agent
-last_updated: 2026-07-05
+last_updated: 2026-11-04
 ---
 
 ## Executive Summary
@@ -312,11 +312,13 @@ trunk) or no usable remote (nothing to compare against):
 gitGraph
    commit id: "<target HEAD short-sha>"
    branch <branch-name>
-   commit id: "<short-sha 1>"
-   commit id: "<short-sha 2>"
+   commit id: "<short-sha 1> <summary 1>"
+   commit id: "<short-sha 2> <summary 2>"
 ```
 
-One commit per entry in the gathered commit list, in the same order; omit the diagram (not just the
-commits) if that list is empty. Use `<target>`'s short SHA as the fork-point commit id.
+One commit per entry in the gathered commit list, in the same order, each `id` carrying the short SHA and
+then a two-to-five-word summary of that commit's subject (`<short-sha> <summary>`, rule 8): the SHA
+identifies the point, the words say what it is, so the diagram reads without the log beside it. Omit the
+diagram (not just the commits) if that list is empty. Use `<target>`'s short SHA as the fork-point commit id.
 
 **Next:** Continue work or run `spell-close-session` to finalize journal and session docs.

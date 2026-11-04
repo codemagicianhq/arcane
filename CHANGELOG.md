@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-11-04
+
+Commit diagrams name their commits.
+
+### Changed
+
+- **Every `gitGraph` a spell draws from commits now labels each commit `<short-sha> <summary>`, never the SHA alone** (rule 8 of `universal-agent-rules.md`): the short SHA, then two to five words from the commit subject already in scope, so the diagram reads without the log beside it. `spell-commit-work`'s and `spell-create-pull-request`'s branch-topology templates and `spell-close-session`'s session commit graph carry the new form; `spell-open-session`'s version diagram, whose points are versions, is unchanged.
+
 ## [1.17.0] - 2026-11-04
 
 `spell state --json` exports a repository's Arcane state as one versioned JSON document, so programs stop parsing Arcane files.
