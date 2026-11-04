@@ -90,3 +90,13 @@
 - Older PRDs carry tracking_mode/external_provider flat at the top level; both shapes map to the same tracking object.
 ### What to watch for
 - yaml error messages are multi-line; only their first line goes into the warning.
+
+## Iteration 10 — SE-10 — 2026-11-04
+### What was done
+- src/modules/state/collect.ts: collectState(cwd, packageVersion, { online, includeLocalPaths, now?, hostname?, runGit?, feedUrl?, cachePath? }); every collector runs under a guard that turns a throw into null + one warning.
+- src/commands/state.ts: runState with injectable collect/write; src/index.ts registers `spell state --json [--online] [--include-local-paths]`.
+### What was learned
+- process.exitCode (not process.exit) lets stdout flush before exit; the handler tests read process.exitCode and reset it in afterEach.
+- A user-tier manifest outside the store warns (repository.scope) instead of exiting, since --user is out of scope here.
+### What to watch for
+- agents stays null until SE-12; --online is accepted but only the versions lookup honours it until SE-11.
