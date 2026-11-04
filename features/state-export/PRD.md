@@ -222,7 +222,7 @@ Identifiers are `ST-NN` so `spell-architect` can carry them into stories.
 - [ARC-036](../../DECISIONS.md#arc-036--generated-state-diagrams-deterministic-mermaid-for-computed-spell-state) — the computed state this externalizes; its generator becomes a consumer (ST-03).
 - [ARC-037](../../DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) — leak scan and zero-extra-install posture (ST-10, ST-11).
 - [ARC-047](../../DECISIONS.md#arc-047--agents-are-roster-rendered-not-registry-distributed-and-get-a-user-tier) — roster precedence the `agents` section resolves through (ST-12).
-- **Not yet filed:** the agent-identity framework ARC (reference format `arcane:agent:<uuidv7>`, roster v3, neutral export) requested by the operator's hub decision of 2026-09-22. ST-12's v3 fields wait on it; the ARC is to be drafted from an arcane session, sanitized per ARC-031.
+- **Filed 2026-11-04 as [ARC-059](../../DECISIONS.md#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export) (Proposed) with [features/agent-identity/PRD.md](../agent-identity/PRD.md):** the agent-identity framework ARC (reference format `arcane:agent:<uuidv7>`, roster v3, neutral export) requested by the operator's hub decision of 2026-09-22. ST-12's v3 fields arrive with it, additively, as state schema `1.1.0`.
 - Downstream: the cockpit adapter (roadmap 1.2) and the mobile companion (1.5) consume this; neither is a dependency of it.
 
 ## Open Questions
