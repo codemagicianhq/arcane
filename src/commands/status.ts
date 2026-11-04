@@ -3,10 +3,7 @@ import {
   readManifest,
   ManifestNotFoundError,
 } from "../modules/manifest.js";
-import {
-  checkForUpdate,
-  getFeedUrl,
-} from "../modules/version-check.js";
+import { collectVersions } from "../modules/state/versions.js";
 import { generateVersionDriftDiagram } from "../modules/diagram-generator.js";
 import {
   CLAUDE_PRECEDENCE_NOTE,
@@ -64,17 +61,11 @@ export async function runStatus(
     return;
   }
 
-  // Check for update (never throws)
-  let feedUrl: string;
-  try {
-    feedUrl = getFeedUrl();
-  } catch {
-    feedUrl = "";
-  }
-
-  const versionResult = feedUrl
-    ? await checkForUpdate(packageVersion, feedUrl)
-    : { current: packageVersion, latest: null, updateAvailable: false, error: "Feed URL unavailable" };
+  // Check for update (never throws). The versions section is computed once,
+  // in state/versions.ts, for this command and `spell state --json` alike
+  // (ARC-044 consequence 1); status keeps its default-on lookup.
+  const { versions, lookup } = await collectVersions(manifest, packageVersion, { online: true });
+  const versionResult = lookup ?? { current: packageVersion, latest: null, updateAvailable: false };
 
   // ─── Print component table ─────────────────────────────────────────────────
 
@@ -156,9 +147,9 @@ export async function runStatus(
 
   const latestStr = versionResult.error
     ? "unable to check"
-    : (versionResult.latest ?? manifest.version);
+    : (versions.latest ?? versions.files);
 
-  let footer = `  Installed: ${packageVersion}  Latest: ${latestStr}`;
+  let footer = `  Installed: ${versions.cli}  Latest: ${latestStr}`;
 
   if (versionResult.updateAvailable) {
     footer += "  (spell update available)";
@@ -172,11 +163,11 @@ export async function runStatus(
   // which is null when the npm check failed — skip the diagram entirely in
   // that case rather than showing a partial, potentially misleading picture;
   // the "Latest: unable to check" footer above already covers that failure.
-  if (versionResult.latest !== null) {
+  if (versions.latest !== null) {
     const diagram = generateVersionDriftDiagram(
-      manifest.version,
-      packageVersion,
-      versionResult.latest,
+      versions.files,
+      versions.cli,
+      versions.latest,
     );
 
     if (diagram !== null) {
@@ -185,9 +176,9 @@ export async function runStatus(
         // Interactive terminal: a fenced Mermaid block doesn't render here —
         // print the same three readings as plain aligned text instead.
         console.log("  Version drift:");
-        console.log(`    repo-files:    ${manifest.version}`);
-        console.log(`    installed-cli: ${packageVersion}`);
-        console.log(`    latest (npm):  ${versionResult.latest}`);
+        console.log(`    repo-files:    ${versions.files}`);
+        console.log(`    installed-cli: ${versions.cli}`);
+        console.log(`    latest (npm):  ${versions.latest}`);
       } else {
         // Piped (file, another tool, a captured PR body): emit the real
         // diagram so the redirected output is directly usable.

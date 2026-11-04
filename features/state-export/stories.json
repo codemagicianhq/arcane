@@ -32,9 +32,9 @@
         "With online false, collectVersions makes no fetch call and returns latest null, cli_behind_latest null (ST-13)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-versions.test.ts 12/12 (four drift combinations, offline zero-fetch, feed-URL error) and test/status.test.ts 21/21 unchanged; versions.ts 100% lines / 92.1% branches, status.ts 98.7% lines; built-CLI spell status output on a lite fixture byte-identical before and after (265 bytes, cmp); lint and typecheck:all green"
     },
     {
       "id": "SE-03",
