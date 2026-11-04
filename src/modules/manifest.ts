@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { validateRealTargetFile } from "./copier.js";
 import type {
   ArcaneManifest,
   ContentSensitivity,
@@ -349,8 +350,15 @@ export async function resolveSecretsScanExcludePrefixes(targetDir: string): Prom
 export async function writeManifest(
   targetDir: string,
   manifest: ArcaneManifest,
+  opts: { followLinks?: boolean } = {},
 ): Promise<void> {
   const filePath = manifestPath(targetDir);
+
+  // A repository's .arcane.json is never written through a link that leaves
+  // it; the user tier's store follows its links, as every other store write
+  // does (TODO.md, "writers outside `copier.ts` follow a symlink at the file
+  // itself").
+  if (!opts.followLinks) validateRealTargetFile(targetDir, path.relative(path.resolve(targetDir), filePath));
 
   // Advisory read: it only tells us how to format bytes we are about to
   // overwrite. Unlike readManifest above, a failure here must never fail a

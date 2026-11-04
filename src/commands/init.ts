@@ -893,7 +893,7 @@ async function runInitUser(
     scope: "user",
     fanout: fanout.record,
   };
-  await writeManifest(storeRoot, manifest);
+  await writeManifest(storeRoot, manifest, { followLinks: true });
 
   printStep(`✨ ${fileCount} Spells installed to ${storeRoot}/spells/`);
   for (const line of describeFanoutOutcomes(fanout.outcomes)) {

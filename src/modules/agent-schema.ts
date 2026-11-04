@@ -152,6 +152,58 @@ export function validateAgentDefinition(
   return definition as unknown as AgentDefinition;
 }
 
+/** A C0 control character or DEL: a newline in a roster value is rendered unescaped into appended files. */
+function hasControlCharacter(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) return true;
+  }
+  return false;
+}
+
+/** Where every roster's OpenClaw workspaces live: the default root, or a folder inside it. */
+export const OPENCLAW_HOME = "~/.openclaw";
+
+/**
+ * A roster value that becomes one file or directory name (`name` ->
+ * `.github/agents/<slug>.agent.md`, `id` -> `workspace-<id>`): a string with
+ * no control character, no path separator, and not `.` or `..`. `agents.yaml`
+ * is repository content, so these are refused when it loads rather than at
+ * each write (TODO.md, "roster names, ids and the OpenClaw root ... become
+ * file paths unchecked").
+ */
+function requirePathSegment(value: unknown, field: string, issues: string[]): void {
+  if (typeof value !== "string") {
+    requireString(value, field, issues);
+    return;
+  }
+  const trimmed = value.trim();
+  if (trimmed === "" || trimmed === "." || trimmed === "..") {
+    issues.push(`${field} must name something other than "${value}"`);
+  } else if (hasControlCharacter(value)) {
+    issues.push(`${field} must not contain a control character such as a newline`);
+  } else if (/[\\/]/.test(value)) {
+    issues.push(`${field} must not contain "/" or "\\"; it becomes a file name`);
+  }
+}
+
+/** `~/.openclaw` or a folder inside it, spelled with forward slashes and no `.` or `..` segment (operator decision 2026-11-04). */
+function requireOpenClawRoot(value: unknown, field: string, issues: string[]): void {
+  if (typeof value !== "string") {
+    requireString(value, field, issues);
+    return;
+  }
+  const segments = value.split("/");
+  const insideHome =
+    (value === OPENCLAW_HOME || value.startsWith(`${OPENCLAW_HOME}/`)) &&
+    !hasControlCharacter(value) &&
+    !value.includes("\\") &&
+    !segments.slice(2).some((s) => s === "." || s === "..");
+  if (!insideHome) {
+    issues.push(`${field} must be "${OPENCLAW_HOME}" or a folder inside it, not "${value}"`);
+  }
+}
+
 export function validateAgentRoster(value: unknown, source: string): AgentRoster {
   const issues: string[] = [];
   const parsed = requireRecord(value, "roster", issues);
@@ -183,7 +235,7 @@ export function validateAgentRoster(value: unknown, source: string): AgentRoster
   const openclaw = requireRecord(roster.openclaw, "openclaw", issues);
   if (openclaw) {
     requireBoolean(openclaw.enabled, "openclaw.enabled", issues);
-    requireString(openclaw.workspace_root, "openclaw.workspace_root", issues);
+    requireOpenClawRoot(openclaw.workspace_root, "openclaw.workspace_root", issues);
   }
 
   if (!Array.isArray(roster.roster)) {
@@ -193,9 +245,15 @@ export function validateAgentRoster(value: unknown, source: string): AgentRoster
       const item = requireRecord(entry, `roster[${index}]`, issues);
       if (!item) return;
       requireString(item.definition, `roster[${index}].definition`, issues);
-      if (item.name !== null) requireString(item.name, `roster[${index}].name`, issues);
-      requireString(item.id, `roster[${index}].id`, issues);
-      if (item.epithet !== undefined) requireString(item.epithet, `roster[${index}].epithet`, issues);
+      if (item.name !== null) requirePathSegment(item.name, `roster[${index}].name`, issues);
+      requirePathSegment(item.id, `roster[${index}].id`, issues);
+      if (item.epithet !== undefined) {
+        requireString(item.epithet, `roster[${index}].epithet`, issues);
+        // Rendered beside the name in the same appended roster section.
+        if (typeof item.epithet === "string" && hasControlCharacter(item.epithet)) {
+          issues.push(`roster[${index}].epithet must not contain a control character such as a newline`);
+        }
+      }
     });
   }
 

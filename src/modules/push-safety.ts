@@ -28,7 +28,7 @@
 import { mkdir, readFile, writeFile, chmod, access, rm, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join, resolve, dirname, basename } from "node:path";
-import { fileExists, findLinkedEscape, validateRealTargetDirectory } from "./copier.js";
+import { fileExists, findLinkedEscape, validateRealTargetDirectory, validateRealTargetFile } from "./copier.js";
 import { runGit } from "./git.js";
 import { resolveRealPath } from "./real-path.js";
 
@@ -344,6 +344,10 @@ export async function installHook(cwd: string, hookName: string, body: string): 
   // a linked .arcane points and aim core.hooksPath there (TODO.md, decided
   // 2026-10-22).
   validateRealTargetDirectory(root, ARCANE_HOOKS_DIR);
+  // The hook file itself too: a planted link there would take the write and
+  // the chmod to whatever it names, a shell profile say (TODO.md, "writers
+  // outside `copier.ts` follow a symlink at the file itself").
+  validateRealTargetFile(root, `${ARCANE_HOOKS_DIR}/${hookName}`);
   await mkdir(join(root, ARCANE_HOOKS_DIR), { recursive: true });
   await writeFile(hookPath, body, "utf-8");
   // Git requires the hook be executable on POSIX. chmod is a no-op for the

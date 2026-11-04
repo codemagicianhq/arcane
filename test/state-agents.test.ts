@@ -20,7 +20,7 @@ const ROSTER: AgentRoster = {
   schema_version: 2,
   naming_strategy: "arcanos",
   agent_profile: "base",
-  openclaw: { enabled: false, workspace_root: "~/never-written" },
+  openclaw: { enabled: false, workspace_root: "~/.openclaw/never-written" },
   roster: [
     { definition: "architecture-lead", name: "Merlin", id: "merlin", epithet: "the Archmage" },
     { definition: "qa-lead", name: null, id: "qa" },
