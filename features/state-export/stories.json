@@ -92,9 +92,9 @@
         "An absent journal/ directory yields null (ST-05)"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-04: test/state-journal.test.ts 5/5 (three dated files sorted by date then slug with titles, mis-named file skipped with one warning, absent journal/ null, this repository's journal titled throughout); journal.ts 94.4% lines / 69.2% branches / 100% functions; lint and typecheck:all green"
     },
     {
       "id": "SE-07",

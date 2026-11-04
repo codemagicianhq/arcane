@@ -57,3 +57,11 @@
 - IDEAS.md in this repository uses `- **[date]**` bullets, not checkboxes, so its book exports 0 items; indexing idea entries is a follow-up, not ST-05.
 ### What to watch for
 - Only `- [ ]`/`- [x]`/`- [X]` with a hyphen bullet count; `* [ ]` does not.
+
+## Iteration 6 — SE-06 — 2026-11-04
+### What was done
+- src/modules/state/journal.ts: collectJournal(root) over journal/YYYY-MM-DD-<slug>.md; journalTitle reads frontmatter title: or the first # heading.
+### What was learned
+- journal/.gitkeep exists in this repository; dotfiles and subdirectories are skipped silently, every other mis-named file warns once.
+### What to watch for
+- Only the head of each file is read for the title; bodies never reach the document.
