@@ -330,3 +330,19 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   and failed for the wrong reason. Build on its own line before built-CLI tests.
 - The new caps (256 sessions, 32 aliases) are additions to ARC-060 decision 3's limits; they are
   in the PR description for the operator to confirm.
+
+## Iteration 19 — a signal race in serve — 2026-11-05
+### What happened
+- CI run 42016564388 (ubuntu, the review-fix push) failed one test: presence-lifecycle's
+  "--rotate replaces the token" saw `serve` exit by signal (exit code null) instead of 0 on
+  SIGTERM. Cause: runPresenceServe printed the "listening" line and only then installed its
+  SIGINT/SIGTERM listeners. The test waits for that line and signals at once; a signal that
+  arrives before Node has a listener takes the default action and kills the process, so
+  server.json was left behind.
+- Fix: the listeners are installed first, before startPresenceService; a signal that arrives
+  before the service is ready is remembered and stops it as soon as it is ready.
+### Honest note on the regression test
+- The added test ("a SIGTERM that arrives as soon as server.json exists...") passes against the
+  fix and, three times out of three, against the old code too: the window is microseconds and a
+  2 ms poll does not land in it here. It states the requirement; it does not reproduce the race.
+  The evidence for the fix is the cause above and the lifecycle suites passing 3/3 locally.

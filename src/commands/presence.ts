@@ -154,26 +154,40 @@ export async function startPresenceService(
 
 /** `spell presence serve`: runs in the foreground until SIGINT or SIGTERM. */
 export async function runPresenceServe(options: ServeOptions, io: PresenceIo = consoleIo): Promise<void> {
+  // The signal handlers go in first: server.json is written, and the URL printed, before this
+  // function returns from startPresenceService, and a `stop` or a supervisor may signal from that
+  // moment. A signal that arrives before the service is ready stops it as soon as it is.
+  let signalled = false;
+  let onSignal: () => void = () => {
+    signalled = true;
+  };
+  const handler = () => onSignal();
+  process.on("SIGINT", handler);
+  process.on("SIGTERM", handler);
+  const detach = () => {
+    process.off("SIGINT", handler);
+    process.off("SIGTERM", handler);
+  };
+
   let service: RunningService;
   try {
     service = await startPresenceService(options);
   } catch (error) {
+    detach();
     io.err(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
     return;
   }
   io.out(`Presence service listening on ${service.url} (loopback only). Stop it with Ctrl+C or \`spell presence stop\`.`);
   await new Promise<void>((resolve) => {
-    const shutdown = () => {
-      process.off("SIGINT", shutdown);
-      process.off("SIGTERM", shutdown);
+    onSignal = () => {
+      detach();
       void service.stop().then(() => {
         io.out("Presence service stopped.");
         resolve();
       });
     };
-    process.on("SIGINT", shutdown);
-    process.on("SIGTERM", shutdown);
+    if (signalled) onSignal();
   });
   process.exitCode = 0;
 }

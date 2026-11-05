@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { BUILT_CLI_SKIP_REASON, resolveBuiltCli } from "./helpers/resolve-cli.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
-import { httpRequest, loadPresenceFixture, runSpell, spawnServe, type ServeProcess } from "./helpers/presence.js";
+import { httpRequest, loadPresenceFixture, presenceEnv, runSpell, spawnServe, type ServeProcess } from "./helpers/presence.js";
 import { createServer } from "node:net";
 import { PRESENCE_ENV } from "../src/modules/presence/types.js";
 
@@ -84,6 +84,17 @@ describe.skipIf(!BIN)("spell presence serve (PC-02, ARC-060 decision 2)", () => 
     await terminate(s);
     expect(readdirSync(store())).toEqual(["token"]);
     expect(readFileSync(join(store(), "token"), "utf8")).toBe(token);
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it.skipIf(!POSIX)("a SIGTERM that arrives as soon as server.json exists still shuts down cleanly", async () => {
+    const child = spawn(process.execPath, [BIN!, "presence", "serve", "--port", "0"], { cwd: home, env: presenceEnv(home), windowsHide: true });
+    const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((r) => child.once("exit", (code, signal) => r({ code, signal })));
+    const file = join(store(), "server.json");
+    for (let i = 0; i < 3_000 && !existsSync(file); i += 1) await new Promise((r) => setTimeout(r, 2));
+    expect(existsSync(file)).toBe(true);
+    child.kill("SIGTERM");
+    expect(await exited).toEqual({ code: 0, signal: null });
+    expect(existsSync(file)).toBe(false);
   }, VERY_HEAVY_TEST_TIMEOUT);
 
   it("binds 127.0.0.1 only: a non-loopback address of this machine does not connect (threat-model controls 1 and 13)", async () => {
