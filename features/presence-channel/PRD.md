@@ -9,7 +9,7 @@ tracking:
   githubIssueId: null
 source_intake: operator hub roadmap item 2.1 (private record), re-planned 2026-11-03; ARC-044 decisions 2 and 3
 created: 2026-11-04
-decision: ARC-060 (Proposed)
+decision: ARC-060 (Accepted 2026-11-04)
 ---
 
 # PRD: The presence channel — `arcane-mcp` v0

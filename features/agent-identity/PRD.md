@@ -9,7 +9,7 @@ tracking:
   githubIssueId: null
 source_intake: the operator's agent-identity decision of 2026-09-22 (a private record); features/state-export/PRD.md open question 1 (decided 2026-11-03)
 created: 2026-11-04
-decision: ARC-059 (Proposed)
+decision: ARC-059 (Accepted 2026-11-04)
 ---
 
 # PRD: Agent identity — stable references and the roster v3 write path
