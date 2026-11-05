@@ -109,9 +109,9 @@
         "logEvent has exactly three parameters and a captured run of report, update and end logs only event names, session references and statuses (PC-12; threat-model control 12)"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-server.test.ts 17/17 passed; auth.ts 100% (95% tier added to vitest.config.ts), log.ts 100%, server.ts 93.98% lines / 86.2% branches together with PS-07's suite; 270 unauthenticated combinations (9 paths x 6 methods x 5 header variants) all 401 with an empty body and no CORS header; foreign Host 401 without token, 200 with it; preflight 401 without CORS; token in query or cookie ignored; 65,537-byte body 413 and the service answers after; invalid JSON and bad status 400; 201/200/404 flows; route table equals the six routes; descriptor on health and snapshot; logger: three parameters, a marker in task, message and needs_you, the checkout path and the token appear in no line; service-side files import no process, git, manifest, roster or outbound module"
     },
     {
       "id": "PS-07",

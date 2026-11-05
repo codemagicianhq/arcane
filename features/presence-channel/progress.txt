@@ -90,3 +90,22 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 - The Windows ACL assertion has not run yet: it needs the matrix job (PS-11).
 - store.ts imports session-store.ts (and so the keychain backend) for restrictToCurrentUser;
   if the reporter's cold start is too slow (PS-11), that import is a candidate to split.
+
+## Iteration 6 — PS-06 — 2026-11-05
+### What was done
+- src/modules/presence/auth.ts (checkBearer, SHA-256 + timingSafeEqual), log.ts (logEvent with
+  three shape-checked parameters, setLogSink for tests), server.ts (createPresenceServer:
+  auth first, PRESENCE_ROUTES, JSON routes, limits, headers).
+- server.ts also carries the event feed (GET /v0/events): it was written in one pass with the
+  JSON routes; PS-07's commit adds its tests and marks it. Recorded here so the commit split
+  does not mislead.
+- test/helpers/presence.ts: httpRequest, startPresence, openFeed (an SSE parser with waitFor).
+- vitest.config.ts: auth.ts at the 95% tier.
+### What was learned
+- The 401 sets Connection: close and drains the request, so an unread body never wedges a
+  keep-alive socket.
+- A malformed percent-escape in /v0/sessions/{session} would throw in decodeURIComponent;
+  it is caught and answered 404 like any other unknown reference.
+- `bearer` in lower case is refused: the story asks for the exact scheme.
+### What to watch for
+- The 1 MiB slow-subscriber close has no test of its own (not an acceptance criterion).
