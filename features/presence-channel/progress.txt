@@ -346,3 +346,13 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   fix and, three times out of three, against the old code too: the window is microseconds and a
   2 ms poll does not land in it here. It states the requirement; it does not reproduce the race.
   The evidence for the fix is the cause above and the lifecycle suites passing 3/3 locally.
+
+## Correction to iteration 10 — 2026-11-05 (morning)
+- Iteration 10 said Copilot and Codex were "not installed on this machine". That was wrong. The
+  check was `which codex copilot`, which looks only at PATH. Installed here: the ChatGPT app with
+  Codex (`~/.codex`), the `openai.chatgpt` VS Code extension, Visual Studio Code (Copilot in VS
+  Code) and `/Applications/GitHub Copilot.app`. Not installed: OpenClaw (it runs on the
+  operator's Ubuntu machine).
+- What does not change: architecture D8 still admits a row only from an observation in a real
+  shell of that harness, and none has been made yet, so the table keeps one row for now.
+- The operator accepted the dual-era MCP server and the 256-session and 32-alias caps.

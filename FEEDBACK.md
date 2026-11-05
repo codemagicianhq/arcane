@@ -355,3 +355,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-04-version-lookup-fix.md`, lessons "A test of the source module cannot see a path that depends on where the file sits" and "Read the suite's own exit line, not the wrapper's exit code".
+
+## Feedback — Arcane workflow (2026-11-05)
+
+**Session:** The presence channel, architected and built ([PR #435](https://github.com/codemagicianhq/arcane/pull/435)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- ARC-060 — The Presence Channel named the MCP `initialize` handshake and five methods without saying which MCP revision it was written against. On the day of implementation (2026-11-05) the current revision was 2026-07-28, which has no handshake and requires `server/discover`; a server built to the record alone would have failed every client on the current revision. Only the story's own rule ("read the spec on the day") caught it.
+- The secrets scan in `src/modules/secrets-scan.ts`, run by `npm run build` and the pre-commit hook, flags any upper-case identifier containing `TOKEN` followed by `=` or `:` and eight more characters, whether or not a secret is present. An environment-variable name constant, a file-name constant and a test's environment object all failed it, and nothing in the governance docs or the scan's own message says how to name such things.
+
+### Improvement Items
+- [ ] In `decision-documentation-standard.md` (and `spell-architect` where it writes decisions), require a decision record that names an external protocol's methods, messages or version strings to name the revision or version it was read against, and the date it was read. <!-- upstream: queued -->
+- [ ] Document the secrets scan's identifier rule where contributors will meet it (the scan's failure message and the contributor or testing docs), with the naming that passes it: lowercase object keys or computed keys for names that contain `TOKEN`. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-05-presence-channel.md`, lessons "The current MCP revision had moved on from the record" and "The repository-wide secrets scan reads identifiers, not values".

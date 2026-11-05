@@ -28,6 +28,8 @@ The operator then:
 
 No new decision record. Three choices taken inside ARC-060 and put to the operator in the PR description: the MCP server serves both the legacy `initialize` handshake and the 2026-07-28 per-request protocol; caps of 256 sessions and 32 aliases added to decision 3's limits; the harness table holds only the row that was observed.
 
+The operator's answers, the morning of 2026-11-05: the dual-era MCP server and the two caps are accepted. The harness choice rested on a wrong premise. The overnight check was `which codex copilot`, which looks only at `PATH`. Codex (the ChatGPT app, `~/.codex` and the `openai.chatgpt` VS Code extension), Copilot in VS Code and the GitHub Copilot app are all installed on this machine. Their rows still need an observation from a real shell of each harness (architecture D8) before they enter the table.
+
 ### Lessons Learned
 
 #### The current MCP revision had moved on from the record
@@ -61,6 +63,7 @@ A built-CLI test then ran the old `dist/` and failed for a reason unrelated to t
 ### Open Items Carried Forward
 
 - PR #435 is open and not merged; merging it publishes 1.18.0 (`TODO.md`, "Presence channel (ARC-060): accept the record, architect it, implement roadmap item 2.1 before T3 (2026-12-02).").
-- The lesson routing above (two framework-shaped lessons for `FEEDBACK.md`) waits for the operator's yes; nothing was routed overnight.
+- The lesson routing above: the operator said yes on 2026-11-05, and the two framework-shaped lessons (the MCP revision and the secrets scan) are queued in `FEEDBACK.md` under "Feedback — Arcane workflow (2026-11-05)".
+- Harness rows for Codex, Copilot in VS Code and the GitHub Copilot app: observe what each sets in its shell, then add the rows.
 - Registered in `TODO.md`: PC-17 to PC-21, the on-disk v3 alias test, the orchestrator-default re-read, marking ARC-060 shipped after the merge, and the stories-key drift.
 - For the hub (its own records): the two further threat-model surfaces and the Windows ACL wording.
