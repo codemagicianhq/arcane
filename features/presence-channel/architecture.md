@@ -2,7 +2,8 @@
 
 Source: [PRD.md](PRD.md) (PC-01 to PC-21). Decision implemented:
 [ARC-060 — The Presence Channel: One Package Behind `spell presence`, a Loopback Contract, Checkout-Keyed Sessions, and a Prompt-Driven Reporting Convention](../../DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention)
-(Accepted 2026-11-04), all twelve decisions. It consumes
+(Accepted 2026-11-04), all twelve decisions and its amendment of 2026-11-05 (decision 13, the
+agent block on a v2 roster). It consumes
 [ARC-059 — Agent Identity: Opaque Typed References, Roster v3 by Write Path Only, and a Neutral Identity Export](../../DECISIONS.md#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export)
 (Accepted 2026-11-04): the `arcane:session:` reference type, the capability descriptor and
 `resolveRoster`'s provenance.
@@ -29,8 +30,8 @@ Facts the design rests on. Each was checked in the checkout, not inferred.
 | Fact | Where | Consequence |
 | --- | --- | --- |
 | No reference module exists: nothing under `src/` mints or parses `arcane:<type>:<uuid>`. | `src/modules/` has no `agent-ref.ts`; `features/agent-identity/` holds only `PRD.md` | PS-01 builds `agent-ref.ts` to the agent-identity PRD's AI-01 specification, as the PRD's Dependencies section allows. |
-| The roster loader refuses `schema_version: 3` ("newer than supported"). | `src/modules/agent-schema.ts`, the `schema_version` check | No roster can carry a reference, a slug or an alias until the agent-identity feature ships its loader. See D7 and Risk R1. |
-| `resolveRoster` returns `{ roster, definitionsDir, fromUserTier }` and no provenance; `origin` and `definition_revision` are computed by the state export's collector. | `src/modules/agents.ts`, `src/modules/state/agents.ts` | The reporter reads the roster through one seam (D7), so AI-07 changes one function. |
+| The roster loader refuses `schema_version: 3` ("newer than supported"). | `src/modules/agent-schema.ts`, the `schema_version` check | No roster can carry a reference or an alias until the agent-identity feature ships its loader. ARC-060 decision 13 fills the agent block from a v2 roster meanwhile. See D7 and Risk R1. |
+| `resolveRoster` returns `{ roster, definitionsDir, fromUserTier }` and no provenance; `origin` and `definition_revision` are computed by the state export's collector, `collectAgents`. | `src/modules/agents.ts`, `src/modules/state/agents.ts` | The reporter reads the roster through one seam (D7) that calls `collectAgents` for a v2 roster, so AI-07 changes one function. |
 | The file rule of ARC-054 — Sign-In from the CLI (decision 3) is implemented as `restrictToCurrentUser` (an `icacls` call on Windows, a no-op on POSIX where the `0600` creation mode already restricts) with a write-to-temp, restrict, rename sequence. | `src/modules/session-store.ts` | Reused for the token file (D13). |
 | A loopback `node:http` listener already exists in the CLI (`server.listen(0, "127.0.0.1")`). | `src/modules/oidc.ts` | The bind pattern and its guard test are precedent, not new ground. |
 | `resolveRealPath` resolves the nearest existing ancestor and re-appends the rest. | `src/modules/real-path.ts` | Checkout key and store paths (ARC-057 — Managed Paths Stay Inside the Target Directory by Real Path). |
@@ -44,9 +45,9 @@ Facts the design rests on. Each was checked in the checkout, not inferred.
 ## Decisions
 
 Each decision names the ARC-060 decision or PRD requirement it implements. "ADR: none" means the
-choice stays inside the accepted record; nothing below needs a new decision record. Two points
-that would need an **amendment** to ARC-060 are listed under [Questions for the operator](#questions-for-the-operator)
-and are not decided here.
+choice stays inside the accepted record; nothing below needs a new decision record. The one
+point that needed an **amendment** to ARC-060 was put to the operator and answered on
+2026-11-05 (D7; [Questions for the operator](#questions-for-the-operator)).
 
 ### D1 — A module folder with a pure core and a thin shell
 
@@ -155,25 +156,34 @@ operator looks at it.
   `definition_revision`, `aliases`. With no agent it is the **null block**: five `null`s and
   `aliases: []`. The PRD's "a session with `agent: null`" means that block; a stable shape is what
   the state export does for its own nullable fields.
-- **On a v2 roster the block is the null block, as ARC-060 decision 4 and PC-04 say** ("every
-  field `null` or `[]` when the roster is v2"). This holds even when `--agent <slug>` is passed.
+- **On a v2 roster the block is filled from the resolved entry (ARC-060 decision 13, the
+  amendment of 2026-11-05):** `slug` is the entry's v2 `id`, `name` its display name (`null`
+  while unnamed), `origin` is `repo` or `user`, `definition_revision` is `sha256:` of the role
+  definition file (`null` when it is missing), `ref` is `null` and `aliases` is `[]`. A reader
+  never mints a reference and never writes a roster. The orchestrator's v2 `id` is `main`, so its
+  `slug` is `main` until `spell agents sync` migrates the roster; a consumer matches
+  `agent.slug` or an alias, as ARC-060's consequences already ask.
 - **The seam:** `resolveSessionAgent(targetDir, agentFlag)` in `presence/agent.ts` is the only
-  place the presence code touches a roster. It calls `resolveRoster(targetDir, "repo")`; no
-  roster, a v2 roster and a roster the loader refuses all yield the null block (the reporter never
-  fails a spell over a roster, D15). For a v3 roster it works on **resolved profiles**
-  (`{ ref, slug, name, origin, definition_revision, aliases, definition }`, the AI-07 shape):
-  `--agent` matches a slug first, then exactly one entry holding an alias of that value in any
-  context; no match or more than one match yields the null block (an identity is never guessed).
-  Without `--agent` it takes the single entry whose definition is `orchestrator`, else the null
-  block (D9).
-- **What can be tested in this feature:** the v3 branch is reachable only through a loader that
-  accepts v3, which the agent-identity feature ships (AI-02, AI-07). PS-10 therefore tests the
-  matching rules against in-memory profiles and the v2 and no-roster paths against fixtures.
+  place the presence code touches a roster. It works on **resolved profiles**
+  (`{ ref, slug, name, origin, definition_revision, aliases, definition }`, the AI-07 shape)
+  from one provider function. Today's provider calls `collectAgents(targetDir)` from
+  `src/modules/state/agents.ts`, which already applies the roster precedence and computes
+  `origin` and `definition_revision`, and maps each v2 entry to a profile with `slug = id`,
+  `ref = null`, `aliases = []`. No roster and a roster the loader refuses both yield no profiles,
+  hence the null block: the reporter never fails a spell over a roster (D15).
+- **Matching:** `--agent` matches a slug first, then exactly one profile holding an alias of
+  that value in any context; no match or more than one match yields the null block (an identity
+  is never guessed). Without `--agent` it takes the single profile whose definition is
+  `orchestrator`, else the null block (D9). On a v2 roster there are no aliases, so `--agent`
+  matches the `id` only.
+- **What can be tested in this feature:** the v2 path end to end, against fixtures. The alias
+  branch is reachable on disk only through a loader that accepts v3, which the agent-identity
+  feature ships (AI-02, AI-07). PS-10 therefore tests alias matching against in-memory profiles.
   PC-05's criterion "`--agent main` resolves the `openclaw` alias on a v3 fixture" is met at the
-  seam now and on disk by the agent-identity feature's AI-07 story, which replaces the profile
-  provider. This is a **recorded deviation** from the letter of PC-05's acceptance (Risk R1).
-- **ADR:** ARC-060 decision 4, ARC-059 decisions 4 and 8. Filling a v2 roster's entries would
-  need an amendment (Question Q1).
+  seam now and on disk by the agent-identity feature's AI-07 story, which replaces the provider.
+  On a v2 fixture `--agent main` already resolves, because `main` is the orchestrator's `id`.
+  This is a **recorded deviation** from the letter of PC-05's acceptance (Risk R1).
+- **ADR:** ARC-060 decisions 4 and 13, ARC-059 decisions 4, 5 and 8.
 
 ### D8 — Harness detection (ARC-060 open question 1: answered)
 
@@ -198,11 +208,13 @@ operator looks at it.
   (`defaultAgent(profiles)`), and both outcomes are the same wire shape (the agent block, filled
   or null), so reversing it later changes one function and no schema.
 - **Why it is not settled here:** the question is whether the default survives the first
-  consumer's rendering choice, and that consumer (hub roadmap item 2.2) is not built. Until a
-  roster is v3 the default has no effect at all (D7), so nothing a consumer sees by T3 depends on
-  it. **Story-level decision:** PS-10 implements the accepted rule; the first story of the
-  agent-identity feature that makes v3 rosters loadable re-reads this question with the consumer's
-  rendering in hand.
+  consumer's rendering choice, and that consumer (hub roadmap item 2.2) is not built. Since the
+  amendment of 2026-11-05 the default is live from the first release: on a v2 roster a session
+  that passes no `--agent` reports the orchestrator (`slug: "main"`), so every spell run without
+  the flag lights the orchestrator's seat. **Story-level decision:** PS-10 implements the
+  accepted rule; the question is re-read when the first consumer first renders the feed (item
+  2.2 starts 2026-11-16, inside this window), and a reversal is an amendment recorded before
+  the release.
 - **ADR:** ARC-060 decision 4; a reversal would be an amendment.
 
 ### D10 — The clocks are constants, injected, and not a `serve` option in v0 (ARC-060 open question 3: answered)
@@ -649,7 +661,7 @@ blocking the first consumer, and moving it is the operator's decision, not a def
 | PC-02 Service and lifecycle | PS-05, PS-08, PS-16 | user-service examples are documentation (PS-16) |
 | PC-03 Loopback HTTP contract | PS-04, PS-06 | |
 | PC-04 Session record and vocabulary | PS-01, PS-02, PS-03, PS-10 | |
-| PC-05 Reporter | PS-09, PS-10 | v3 alias criterion at the seam (D7, R1) |
+| PC-05 Reporter | PS-09, PS-10 | v2 roster end to end (ARC-060 decision 13); v3 alias criterion at the seam (D7, R1) |
 | PC-06 Authentication | PS-05, PS-06, PS-11 | Windows ACL on the CI runner |
 | PC-07 Ephemeral state | PS-03, PS-08, PS-15 | tree comparison instead of a watch (D22) |
 | PC-08 Event feed | PS-03, PS-07 | |
@@ -665,18 +677,17 @@ blocking the first consumer, and moving it is the operator's decision, not a def
 
 ARC-060's three deferred questions: harness detection → answered (D8), with the table's rows as
 evidence-gated story work in PS-10; the orchestrator default → kept and isolated (D9), a
-story-level decision revisited when a v3 roster first loads; the stale clock as an option →
-answered, no (D10).
+story-level decision revisited when the first consumer first renders the feed; the stale clock
+as an option → answered, no (D10).
 
 ## Risks
 
-- **R1 — No roster can name an agent before the agent-identity feature ships.** The loader
-  refuses v3 today, and on a v2 roster the agent block is the null block by the accepted record
-  (D7). Every session reported by the build this feature ships therefore has a null agent until
-  rosters are v3. The first consumer's exit criterion includes lighting one face per agent; with
-  null agents it can light one seat per session, not a named agent's. This is a sequencing fact
-  between two accepted records, not a defect in either, and it is the operator's to settle
-  (Question Q1).
+- **R1 — Roster v3 does not exist yet; the amendment covers the gap, two edges remain.** The
+  loader refuses v3 today. ARC-060 decision 13 (2026-11-05) fills the agent block from a v2
+  roster, so a session names an agent from the first release. What remains: (a) the alias branch
+  of the seam has no on-disk test until the agent-identity feature's loader lands (D7); (b) the
+  orchestrator's `slug` changes from `main` to its name's slug when a roster is migrated, so a
+  consumer must match `agent.slug` or an alias, never the slug alone.
 - **R2 — Two accepted texts leave one reading each to this document:** the `needs_you` cap (D11)
   and "byte-identical" (D19). Both readings are stated and tested; neither changes the contract's
   shape.
@@ -688,21 +699,15 @@ answered, no (D10).
 
 ## Questions for the operator
 
-Neither blocks the stories as written; both are decisions only the operator can take because
-they would amend an accepted record.
-
-- **Q1 — What should `agent` carry on a v2 roster by T3?** As accepted (ARC-060 decision 4): the
-  null block. Alternatives: (b) amend decision 4 so a v2 roster fills `slug` (the v2 `id`),
-  `name`, `origin` and `definition_revision`, with `ref: null` and `aliases: []`; the collector
-  that computes exactly those values already exists (`src/modules/state/agents.ts`), so this is
-  one branch in `presence/agent.ts`, no schema change, and it lets a consumer light a named
-  agent's face from the first release; (c) bring the agent-identity loader and migration forward
-  so rosters are v3 before the consumer's milestone. **Recommendation: (b)**, as an amendment to
-  ARC-060 decision 4 recorded before PS-10 is built (Fri 11-13). Without an answer PS-10 builds
-  the accepted text.
+- **Q1 — What should `agent` carry on a v2 roster by T3? Answered 2026-11-05 (operator): amend
+  ARC-060.** As first accepted, decision 4 gave the null block on a v2 roster. The alternatives
+  put to the operator were (b) amend decision 4 so a v2 roster fills `slug` (the v2 `id`),
+  `name`, `origin` and `definition_revision`, with `ref: null` and `aliases: []`, and (c) bring
+  the agent-identity loader and migration forward. The operator chose (b); it is recorded as
+  ARC-060 decision 13 and built by PS-10 (D7).
 - **Q2 — Confirm the two readings in R2** (a 21-line `needs_you` is refused with `400`; the
-  byte-identity claim is tested through the reporter's silence). Silence is taken as agreement,
-  since both sit inside the accepted text.
+  byte-identity claim is tested through the reporter's silence). Still open. It does not block a
+  story: silence is taken as agreement, since both sit inside the accepted text.
 
 ## Related
 

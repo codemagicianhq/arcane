@@ -130,7 +130,9 @@ rests on.
   checkout update that record; `end` or expiry closes it and the next report mints anew. The
   record: `session`; `agent` (`ref`, `slug`, `name`, `origin`, `definition_revision`, `aliases`,
   from `resolveRoster`, every field `null` or `[]` when the roster is v2 or the session names no
-  agent); `harness` (`claude-code` | `copilot` | `codex` | `openclaw` | `cron` | `other`);
+  agent; **amended 2026-11-05 by ARC-060 decision 13:** on a v2 roster `slug` is the entry's
+  `id` and `name`, `origin` and `definition_revision` are filled, with `ref` `null` and
+  `aliases` `[]`); `harness` (`claude-code` | `copilot` | `codex` | `openclaw` | `cron` | `other`);
   `repository` (`root`, `name`, `remote` as the state export's `git.remote` or `null`);
   `checkout` (`path`, `branch`, `linked_worktree`); `spell`; `task`; `message`; `status`;
   `needs_you` (a list of `{ action, reason }`); `started_at`, `reported_at`, `ended_at`;
