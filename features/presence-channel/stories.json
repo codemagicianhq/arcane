@@ -207,9 +207,9 @@
         "The limits in the test are the literals 500 and 1000 and are not configurable from the environment"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-timing.test.ts passes locally and on all three CI runners (PR #435, CI run 42013918550). p95 over 20 runs, nearest rank: local macOS median 144 ms, p95 149 ms (limit 500); ubuntu-latest median 132 ms, p95 142 ms; macos-latest median 194 ms, p95 251 ms; windows-latest median 440 ms, p95 468 ms (first run 42013321491: median 456, p95 483) (limit 1000 on CI). A 600 ms delay injected locally failed the test at p95 766 ms and was removed. The matrix job builds and runs the store, lifecycle and timing suites, so the Windows ACL and Windows stop path ran on windows-latest (the ACL assertion was corrected after its first run, dd3f520). No split entry was needed: process start (about 0.15 s locally) dominates and every runner is well inside its budget"
     },
     {
       "id": "PS-12",

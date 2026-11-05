@@ -269,3 +269,15 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   status, which would look like a write by the reporter.
 - Deliberate-failure proof: adding `import { execFile } from "node:child_process"` to server.ts
   made the import test fail with node:child_process named; the file was restored byte-identical.
+
+## Iteration 16 — PS-11 closed — 2026-11-05
+### CI measurements (PR #435)
+- Run 42013321491 (first push): windows-latest median 456 ms, p95 483 ms. The same run failed
+  only the Windows ACL assertion (see dd3f520's message): the token file kept explicit entries
+  for SYSTEM and the Administrators group, which the corrected test allows and names.
+- Run 42013918550 (second push), all 7 checks green:
+  - ubuntu-latest: runs 123–144, median 132 ms, p95 142 ms.
+  - macos-latest: runs 143–260, median 194 ms, p95 251 ms.
+  - windows-latest: runs 361–468, median 440 ms, p95 468 ms.
+- Every runner is under its 1 s budget, Windows with the least room (468 ms). No split entry
+  was needed; the fallback in architecture D21 stays unused.
