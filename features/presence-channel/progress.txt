@@ -408,3 +408,15 @@ the stories are committed one per story only after that approval.
   reports a fresh checkout expects 201.
 - A stale record is shown as `unknown`, the fragment's word, rather than its last status: the
   last status is exactly what is no longer known.
+
+## Iteration 22 — PS-18 — 2026-11-05
+### What was done
+- src/assets/.arcane/spells/_fragments/needs-you.md: one bullet before the Enforcement bullet.
+  `npm run fix:self-host-parity` repaired 36 of 372 (18 spell sources, 18 root copies); each
+  spell file gained exactly one line (git diff --numstat: 1 0 for every spell file).
+- test/presence-fragment.test.ts: the report line uses the reporter's flags as registered in
+  src/index.ts, and every spell that hosts the fragment carries it in source and root copy.
+### What was learned
+- In some spells the fragment sits inside a list and is expanded indented; the parity tool
+  handles it, and a substring test still finds the line.
+- The four spells with presence-report now say the waiting report twice (D25, accepted).

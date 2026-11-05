@@ -326,9 +326,9 @@
         "A test asserts that the fragment's report line is the reporter's own flag syntax (--status waiting, --needs-you)"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: needs-you.md carries the waiting report line; fix:self-host-parity repaired 36 of 372 (18 spells, 18 root copies), each spell file +1 line and nothing else (git diff --numstat); check:self-host-parity, check:spell-catalog, check:adr-references pass; test/presence-fragment.test.ts PC-18 block 2/2 (the line uses the flags src/index.ts registers; every host carries it in source and root copy)."
     },
     {
       "id": "PS-19",
