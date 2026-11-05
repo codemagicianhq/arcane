@@ -18,6 +18,7 @@ import { defaultLoginDeps, runLogin } from "./commands/login.js";
 import { runLogout } from "./commands/logout.js";
 import { runWhoami } from "./commands/whoami.js";
 import { runReport } from "./commands/report.js";
+import { runPresenceServe, runPresenceStatus, runPresenceStop } from "./commands/presence.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import { userTierRoot } from "./modules/user-tier.js";
@@ -440,6 +441,38 @@ agentsCommand
   .action(async (opts: { user?: boolean }) => {
     const scope: InstallScope = opts.user ? "user" : "repo";
     await runAgentsList(agentsTargetDir(scope, process.cwd()), scope);
+  });
+
+// ─── spell presence ───────────────────────────────────────────────────────────
+// ARC-060: the local presence channel. Loopback only, observation only, memory
+// only; nothing listens until the operator runs `serve`. No option takes a
+// token, a host or a bind address.
+
+const presenceCommand = program
+  .command("presence")
+  .description("The local presence channel: which session works on what, right now (ARC-060). Loopback only; nothing runs until `serve`");
+
+presenceCommand
+  .command("serve")
+  .description("Run the presence service in the foreground on 127.0.0.1 until Ctrl+C or `spell presence stop`")
+  .option("--port <port>", "Port on 127.0.0.1 (default 27226, or ARCANE_PRESENCE_PORT); 0 picks a free one")
+  .option("--rotate", "Replace the token in ~/.arcane/presence/token; every subscriber must re-read it")
+  .action(async (opts: { port?: string; rotate?: boolean }) => {
+    await runPresenceServe(opts);
+  });
+
+presenceCommand
+  .command("status")
+  .description("Say whether a presence service is running and answering this machine's token (exit 0) or not (exit 1)")
+  .action(async () => {
+    process.exitCode = await runPresenceStatus();
+  });
+
+presenceCommand
+  .command("stop")
+  .description("Stop the presence service this machine recorded; exits 0 whether or not one was running")
+  .action(async () => {
+    process.exitCode = await runPresenceStop();
   });
 
 // Only parse argv when executed directly — not when imported in tests.

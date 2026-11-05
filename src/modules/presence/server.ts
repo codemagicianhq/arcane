@@ -50,7 +50,8 @@ export const PRESENCE_ROUTES = [
 ] as const;
 
 export interface PresenceServerOptions {
-  token: string;
+  /** The bearer token, or a getter: `serve` binds before it writes the token (architecture D13). */
+  token: string | (() => string);
   table: SessionTable;
   generator: PresenceGenerator;
   startedAt: string;
@@ -167,6 +168,7 @@ export function createPresenceServer(options: PresenceServerOptions): PresenceSe
   const keepaliveMs = options.keepaliveMs ?? KEEPALIVE_MS;
   const maxSubscribers = options.maxSubscribers ?? MAX_SUBSCRIBERS;
   const { table } = options;
+  const token = typeof options.token === "function" ? options.token : (): string => options.token as string;
   const feeds = new Set<ServerResponse>();
 
   table.listen((e) => logEvent(e.event, e.data.session, e.data.status));
@@ -220,7 +222,7 @@ export function createPresenceServer(options: PresenceServerOptions): PresenceSe
   };
 
   const handle = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
-    if (!checkBearer(req.headers.authorization, options.token)) {
+    if (!checkBearer(req.headers.authorization, token())) {
       unauthorized(res);
       req.resume();
       return;

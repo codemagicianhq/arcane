@@ -121,3 +121,21 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 ### What to watch for
 - serve (PS-08) must call closeFeeds() and server.closeAllConnections() before close(), or an
   open feed keeps the process alive.
+
+## Iteration 8 — PS-08 — 2026-11-05
+### What was done
+- src/commands/presence.ts: resolvePort, startPresenceService (bind 127.0.0.1, then token, then
+  server.json; returns { url, port, stop }), runPresenceServe (signals), runPresenceStatus,
+  runPresenceStop. src/index.ts registers `presence serve|status|stop`.
+- src/modules/presence/client.ts (written here because status and stop need it; PS-09 adds
+  the reporter on top and its tests): pidAlive, resolveEndpoint, send, callPresence. Dials
+  127.0.0.1 only; takes the port, never the url, from server.json.
+- server.ts: `token` may be a getter, because serve binds before it writes the token.
+- test/helpers/presence.ts: presenceEnv (strips the presence variables), runSpell, spawnServe.
+### What was learned
+- On Windows a signal kills a child outright, so serve cannot remove server.json there;
+  `stop` removes it after the pid exits, and the lifecycle test uses `stop` on Windows.
+- stop keeps server.json when the service answers 401 (it is running; this shell's token is
+  just wrong), and removes it when the port answers nothing.
+### What to watch for
+- The lifecycle suite needs a fresh `npm run build`; CI's matrix job must build first (PS-11).

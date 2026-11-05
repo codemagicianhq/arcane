@@ -8,6 +8,9 @@ import type { AddressInfo } from "node:net";
 import { createPresenceServer, type PresenceServer } from "../../src/modules/presence/server.js";
 import { createSessionTable, type SessionTable } from "../../src/modules/presence/sessions.js";
 import { mintSessionRef } from "../../src/modules/agent-ref.js";
+import { execFile, spawn, type ChildProcess } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { PRESENCE_ENV, type ServerInfo } from "../../src/modules/presence/types.js";
 
 export const PRESENCE_SCHEMA_PATH = join(REPO_ROOT, "src/assets", PRESENCE_SCHEMA_ASSET_PATH);
 export const PRESENCE_FIXTURE_DIR = join(REPO_ROOT, "test/fixtures/presence");
@@ -217,4 +220,69 @@ export function openFeed(port: number, token: string | undefined, headers: Recor
     r.on("error", reject);
     r.end();
   });
+}
+
+// ── Built-CLI runners ─────────────────────────────────────────────────────────
+
+/** The environment a spawned CLI gets: a temporary home, and no presence variables from this shell. */
+export function presenceEnv(home: string, extra: Record<string, string> = {}): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, HOME: home, USERPROFILE: home };
+  delete env[PRESENCE_ENV.token];
+  delete env[PRESENCE_ENV.port];
+  return { ...env, ...extra };
+}
+
+export interface SpellRun {
+  code: number | null;
+  stdout: string;
+  stderr: string;
+}
+
+export function runSpell(bin: string, args: string[], options: { cwd: string; home: string; env?: Record<string, string>; timeoutMs?: number }): Promise<SpellRun> {
+  return new Promise((resolve) => {
+    execFile(
+      process.execPath,
+      [bin, ...args],
+      { cwd: options.cwd, encoding: "utf8", env: presenceEnv(options.home, options.env), timeout: options.timeoutMs ?? 20_000, windowsHide: true },
+      (error, stdout, stderr) => {
+        const code = error === null ? 0 : typeof error.code === "number" ? error.code : null;
+        resolve({ code, stdout, stderr });
+      },
+    );
+  });
+}
+
+export interface ServeProcess {
+  child: ChildProcess;
+  info: ServerInfo;
+  stdout(): string;
+  stderr(): string;
+  exited: Promise<number | null>;
+}
+
+/** Starts `spell presence serve` and waits until it has recorded itself in server.json. */
+export async function spawnServe(bin: string, home: string, args: string[] = ["--port", "0"], options: { cwd?: string; env?: Record<string, string> } = {}): Promise<ServeProcess> {
+  const child = spawn(process.execPath, [bin, "presence", "serve", ...args], { cwd: options.cwd ?? home, env: presenceEnv(home, options.env), windowsHide: true });
+  let out = "";
+  let err = "";
+  child.stdout?.on("data", (c: Buffer) => (out += c.toString("utf8")));
+  child.stderr?.on("data", (c: Buffer) => (err += c.toString("utf8")));
+  const exited = new Promise<number | null>((resolve) => child.on("exit", (code) => resolve(code)));
+  const file = join(home, ".arcane", "presence", "server.json");
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    if (existsSync(file) && out.includes("listening")) {
+      try {
+        const info = JSON.parse(readFileSync(file, "utf8")) as ServerInfo;
+        if (info.pid === child.pid) return { child, info, stdout: () => out, stderr: () => err, exited };
+      } catch {
+        // Mid-rename; try again.
+      }
+    }
+    if (child.exitCode !== null || Date.now() > deadline) {
+      child.kill();
+      throw new Error(`serve did not start (exit ${String(child.exitCode)}): ${err || out}`);
+    }
+    await new Promise((r) => setTimeout(r, 25));
+  }
 }

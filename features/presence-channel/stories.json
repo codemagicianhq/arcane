@@ -147,9 +147,9 @@
         "serve --rotate replaces the token, and a request with the previous token is 401 (PC-06)"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05 (macOS, built CLI): test/presence-lifecycle.test.ts 11/11 passed; serve --port 0 writes exactly token and server.json (0700/0600/0600), prints the URL once, removes server.json on SIGTERM and keeps the token; connection to 127.0.0.1 succeeds and to this machine's non-loopback IPv4 (3 present) fails; serve --help has no host, bind or token option; a second serve and a second serve --rotate on the busy port exit 1 naming it and leave the token byte-identical; ARCANE_PRESENCE_PORT used, --port wins, non-numeric and 99999 refused; --rotate makes the old token 401; restart starts empty; status 1 before, 0 during with URL, pid, version, sessions, 1 with a wrong ARCANE_PRESENCE_TOKEN; stop stops and exits 0, exits 0 with nothing recorded, and signals nothing for an alive pid whose port answers nothing. Windows signal path runs in the matrix after PS-11"
     },
     {
       "id": "PS-09",
