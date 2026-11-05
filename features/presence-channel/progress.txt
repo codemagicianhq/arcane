@@ -457,3 +457,15 @@ the stories are committed one per story only after that approval.
 ### What to watch for
 - Real clients' subscription behaviour (Claude Code, Codex, Copilot) was not tested; the
   protocol tests use a hand-written client that follows the pages above.
+
+## Iteration 24 — PS-20 — 2026-11-05
+### What was done
+- src/commands/doctor.ts: checkPresenceService and fixPresenceService; runDoctor adds the row
+  and runs the fix under --fix; the --fix help text names it.
+- test/presence-doctor.test.ts (8): no directory (silent pass), reachable, stale record and
+  --fix removing only server.json (token unchanged), --fix leaving a live record and an
+  unparseable file, a live pid that does not answer or refuses the token, store without a
+  record, token mode 0644 and 0640 on POSIX, and no mode read on Windows.
+### What was learned
+- A pid above 2^22 is never handed out on Linux or macOS, and an odd one never on Windows, so
+  it stands in for a crashed service's pid without racing a real process.

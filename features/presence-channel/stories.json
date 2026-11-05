@@ -359,9 +359,9 @@
         "On POSIX a token file with mode 0644 is a warning naming the mode"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: test/presence-doctor.test.ts 8/8: no presence directory is a silent non-blocking pass; a reachable service passes with its URL, version and session count; a server.json naming a dead pid warns and fixPresenceService removes only it (token byte-identical, the row then passes); a live record and an unparseable file are left; a live pid that does not answer, and a refused token, warn; a token at 0644 (with a service) and 0640 (without) warns naming the mode; no mode read on win32. Existing doctor suites (doctor-placeholders, up03-a-requires, linked-directory-direct-writers) pass."
     },
     {
       "id": "PS-21",

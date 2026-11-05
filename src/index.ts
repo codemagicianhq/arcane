@@ -312,7 +312,7 @@ program
 program
   .command("doctor")
   .description("Check your environment for Arcane prerequisites")
-  .option("--fix", "Automatically create missing session continuity files")
+  .option("--fix", "Create missing session continuity files, and remove a presence record whose service is gone")
   .option("--leaks", "Run only the on-demand secrets/credential scan (ARC-037), skipping the default checks")
   .action(async (opts: { fix?: boolean; leaks?: boolean }) => {
     await runDoctor(
