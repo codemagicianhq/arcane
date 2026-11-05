@@ -260,9 +260,9 @@
         "A test asserts the section's heading, the fifteen surface names and the word Planned are present in the src/assets copy"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-threat-model.test.ts 4/4 passed; the section is in src/assets/.arcane/governance/threat-model.md and its root copy, identically (self-host parity 372/372); its table has the architecture's 15 surfaces in the same order, 13 Planned and the 2 accepted risks; it names the three actors, the git-hook rule, the absence of a Host check, and the two further surfaces (a port taken after a crash; a rewritten server.json) with their mitigations; it records the Windows ACL finding (SYSTEM and Administrators may keep explicit entries); check:adr-references and check:stale-claims Class A pass; the denylist scan finds nothing; the frontmatter last_updated stays the template placeholder YYYY-MM-DD, because the template is distributed with that placeholder (ARC-051), so it was not set to a date"
     },
     {
       "id": "PS-15",

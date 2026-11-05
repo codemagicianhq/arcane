@@ -241,3 +241,20 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 - Line widths: the fragment keeps the PRD's 100-column wrapping.
 ### What to watch for
 - The CI full suite runs every prompt test; 310 of them were run locally against the change.
+
+## Iteration 14 — PS-14 — 2026-11-05
+### What was done
+- The template's "Local Presence Service (`spell presence`)" section: three assets, three actors,
+  the 15-row table (same names and order as the architecture's Control Traceability), the two
+  further surfaces, and a status line saying every row stays Planned until the operator verifies it.
+- test/presence-threat-model.test.ts reads the architecture's table, so the two cannot drift.
+### What was learned
+- Distributed governance may mention ARC-060 only as plain text: check:adr-references flags a
+  link to an ARC record, which would not resolve in a consumer's repository. The section also
+  avoids naming a tunnel product, in keeping with the template's generic "tunnel/VPN" wording.
+- The story asked to update last_updated; the distributed template carries the placeholder
+  YYYY-MM-DD on purpose (ARC-051 placeholder taxonomy), so it is left as a placeholder.
+- The Windows ACL finding from PS-11's CI run is written into the Token storage row.
+### What to watch for
+- The hub's own instance (a private record) has 15 rows; the two further surfaces are offered
+  to it in the PR description, not changed from here.
