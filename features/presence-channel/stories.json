@@ -190,9 +190,9 @@
         "agent.ts is the only file under src/modules/presence/ that imports from ../agents.js, ../state/agents.js or the agent loader, asserted by a test over the folder's imports"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-agent.test.ts 13/13, test/presence-harness.test.ts 5/5 passed (and presence-reporter 17/17 still green with the real seam wired in); agent.ts 100% lines / 88% branches, harness.ts 100%; ARC-060 decision 13 is built (amendment merged as 510f283 before this story): a v2 entry reports slug = id, name, origin repo, definition_revision sha256, ref null, aliases [], validating; no --agent gives the orchestrator as slug main and --agent main the same block; slug/origin/revision equal what collectAgents exports for every entry; an opted-in user tier gives origin user, a missing definition a null revision, no stderr; roster file byte-identical after reports; no roster, an unmatched --agent and a v3 roster refused by today's loader each give the null block with exit 0 and no stderr; in-memory v3 profiles: slug match, openclaw alias main to its slug, ambiguous alias and unknown value null, one orchestrator default; harness: other never null, --harness wins, CLAUDECODE=1 gives claude-code, the one row has its dated observation in progress.txt, copilot/codex/openclaw unobserved here and so without rows; agent.ts is the only presence file importing a roster module"
     },
     {
       "id": "PS-11",

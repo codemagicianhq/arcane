@@ -17,7 +17,9 @@ import { runGit as defaultRunGit, type GitResult } from "../git.js";
 import { readManifest as defaultReadManifest } from "../manifest.js";
 import { resolveRealPath } from "../real-path.js";
 import { remoteProvider, stripUserinfo } from "../state/git.js";
+import { resolveSessionAgent } from "./agent.js";
 import { resolveEndpoint, send, type ClientOptions, type ClientResult } from "./client.js";
+import { detectHarness as defaultDetectHarness } from "./harness.js";
 import { nullAgentBlock, type AgentBlock, type CheckoutInfo, type Harness, type NeedsYou, type ReportBody, type RepositoryInfo, type SessionRecord } from "./types.js";
 
 export interface ReportFlags {
@@ -105,10 +107,9 @@ export async function sendReport(cwd: string, flags: ReportFlags, deps: Reporter
   if (located === null) return { kind: "silent" };
 
   const env = deps.env ?? process.env;
-  const [agent, harness] = await Promise.all([
-    deps.resolveAgent === undefined ? Promise.resolve(nullAgentBlock()) : quiet(() => deps.resolveAgent!(located.checkout.path, flags.agent)).then((a) => a ?? nullAgentBlock()),
-    Promise.resolve(flags.harness ?? deps.detectHarness?.(env) ?? "other"),
-  ]);
+  const resolveAgent = deps.resolveAgent ?? ((dir: string, flag: string | undefined) => resolveSessionAgent(dir, flag));
+  const agent = (await quiet(() => resolveAgent(located.checkout.path, flags.agent))) ?? nullAgentBlock();
+  const harness = flags.harness ?? (deps.detectHarness ?? defaultDetectHarness)(env);
 
   const body: Record<string, unknown> = {
     status: flags.status,

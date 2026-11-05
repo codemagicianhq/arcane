@@ -158,3 +158,24 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 - `end` for a checkout with no session is a 404 from the service and silent in the reporter.
 ### What to watch for
 - The agent block is the null block and the harness is the flag or `other` until PS-10.
+
+## Iteration 10 — PS-10 — 2026-11-05
+### Evidence for the harness table (architecture D8: no row without an observation)
+- Harness observation: claude-code, Claude Code 2.1.81 (desktop app 4.16336.0, macOS), `env` in its Bash tool showed CLAUDECODE=1 (and CLAUDE_CODE_ENTRYPOINT set), observed 2026-11-05.
+- Not observed, so no row: copilot and codex (neither CLI is installed on this machine: `which codex copilot` found nothing, 2026-11-05); openclaw (it runs on the operator's Ubuntu machine, not here). They report `other` until someone records an observation and adds the row.
+- cron has no marker by design; only `--harness cron` sets it.
+### What was done
+- src/modules/presence/agent.ts: ResolvedProfile, v2Profiles (over collectAgents: slug = v2 id,
+  ref null, aliases []; ARC-060 decision 13), matchAgent, defaultAgent, toAgentBlock,
+  resolveSessionAgent({ profiles?, homeDir? }).
+- src/modules/presence/harness.ts: HARNESS_TABLE (one row), detectHarness.
+- reporter.ts uses both by default.
+### What was learned
+- Q1 of the architecture was answered by an amendment before this story (ARC-060 decision 13,
+  PR #434, merged 2026-11-05 as 510f283), so the v2 path is built, not the null-only text.
+- collectAgents already swallows nothing: a roster the loader refuses throws
+  AgentConfigValidationError, which v2Profiles catches, so a v3 roster on today's loader is
+  the null block and the reporter stays silent.
+### What to watch for
+- The on-disk v3 alias test belongs to the agent-identity feature (AI-02, AI-07), which
+  replaces v2Profiles; PS-16 registers it in TODO.md.
