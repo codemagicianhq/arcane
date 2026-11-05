@@ -83,3 +83,5 @@
     - The hub's threat-model section for the presence service is registered in the hub's own TODO (2026-11-04).
     - The cockpit's event bridge is live, not paused, and has three adapters; the hub roadmap's wording for item 2.1 should say so (reported to the hub session).
   - A Dependabot `minimatch` run failed on `main` at 23:09Z on 2026-11-04. It is unrelated and was not investigated.
+
+> ✓ Consumed: 2026-11-04
