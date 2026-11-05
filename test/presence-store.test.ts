@@ -62,13 +62,24 @@ describe("presence store: the token (PC-06, ARC-060 decision 6; threat-model con
     expect(readdirSync(presenceDir({ home }))).toEqual([]);
   });
 
-  it.runIf(process.platform === "win32")("on Windows removes inheritance and grants only the current account", () => {
+  // Windows: restrictToCurrentUser (ARC-054 decision 3) removes inherited entries and grants the
+  // current account. A new file in a directory without inheritable entries takes the process's
+  // default DACL as explicit entries, so on the CI runner SYSTEM and BUILTIN\Administrators stay
+  // too (observed on windows-latest, 2026-11-05). Both can override any ACL on the machine, so the
+  // assertion is: nothing inherited, the current account granted, and no other principal at all.
+  it.runIf(process.platform === "win32")("on Windows grants the current account and no unprivileged principal, nothing inherited", () => {
     ensureToken({ home });
     const acl = execFileSync("icacls", [tokenPath({ home })], { encoding: "utf8" });
-    const entries = acl.split(/\r?\n/).map((l) => l.replace(tokenPath({ home }), "").trim()).filter((l) => l.includes(":("));
-    expect(entries).toHaveLength(1);
-    expect(entries[0]).toContain(userInfo().username);
-    expect(acl).not.toContain("(I)");
+    const entries = acl
+      .split(/\r?\n/)
+      .map((l) => l.replace(tokenPath({ home }), "").trim())
+      .filter((l) => l.includes(":("));
+    const report = `icacls said:\n${acl}`;
+    expect(acl, report).not.toContain("(I)");
+    expect(entries.some((e) => e.toLowerCase().includes(userInfo().username.toLowerCase())), report).toBe(true);
+    const others = entries.filter((e) => !e.toLowerCase().includes(userInfo().username.toLowerCase()));
+    for (const entry of others) expect(entry, report).toMatch(/^(NT AUTHORITY\\SYSTEM|BUILTIN\\Administrators):/);
+    expect(acl, report).not.toMatch(/Everyone|BUILTIN\\Users|Authenticated Users|CREATOR OWNER/);
   });
 
   it("reuses the token without rotate and replaces it with rotate", () => {
