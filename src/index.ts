@@ -1,7 +1,9 @@
 import { Command } from "commander";
-import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+// The package's own package.json is read in one place, for the version here
+// and the registry in modules/version-check.ts alike.
+import { packageJson as pkg } from "./package-info.js";
 import { runInit } from "./commands/init.js";
 import { runAdd } from "./commands/add.js";
 import { runUpdate } from "./commands/update.js";
@@ -28,9 +30,6 @@ import type {
   NamingStrategy,
   AgentSyncOptions,
 } from "./types.js";
-
-const require = createRequire(import.meta.url);
-const pkg = require("../package.json") as { version: string };
 
 /**
  * Resolved path to the bundled assets directory.
