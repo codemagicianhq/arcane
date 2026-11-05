@@ -258,3 +258,14 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 ### What to watch for
 - The hub's own instance (a private record) has 15 rows; the two further surfaces are offered
   to it in the PR description, not changed from here.
+
+## Iteration 15 — PS-15 — 2026-11-05
+### What was done
+- test/presence-controls.test.ts: one describe block per control it proves (1, 4, 6, 8, 11,
+  12, 14, 15), each with the hub-side manual check as its first comment; a header naming the
+  suites that prove 2, 3, 5, 7, 9, 10 and 13.
+### What was learned
+- The tree comparison takes its listings before any `git status`: git refreshes .git/index on
+  status, which would look like a write by the reporter.
+- Deliberate-failure proof: adding `import { execFile } from "node:child_process"` to server.ts
+  made the import test fail with node:child_process named; the file was restored byte-identical.

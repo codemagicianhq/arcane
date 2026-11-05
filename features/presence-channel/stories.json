@@ -278,9 +278,9 @@
         "npm run test:coverage passes with the global 80% thresholds and the 95% tier for presence/auth.ts and presence/store.ts"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-controls.test.ts 6/6 passed; controls 11 and 15: the five service-side modules import no process, git, manifest, roster, client or outbound module, and createServer( appears only in src/modules/oidc.ts and src/modules/presence/server.ts; a scratch edit adding a node:child_process import to server.ts made the test fail, and was reverted; control 8: six routes and two tools re-asserted; control 14: .husky/, every hooks directory under src/assets and the hook installers (push-safety.ts, secrets-scan.ts) never mention presence; controls 1 and 4: the help of presence and its six subcommands offers no option containing token, host or bind; controls 6 and 12: a built-CLI cycle (serve, three reports from each of two checkouts including a waiting one, end, stop) changed only .arcane/presence/{token,server.json} during the run and only the token after stop, left both checkouts clean, and serve's output carried session references and event names but never the planted marker, the token or either checkout path; header lists the suites that prove controls 2, 3, 5, 7, 9, 10 and 13. Coverage: see the full npm run test:coverage run recorded in progress.txt"
     },
     {
       "id": "PS-16",
