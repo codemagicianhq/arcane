@@ -109,3 +109,15 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 - `bearer` in lower case is refused: the story asks for the exact scheme.
 ### What to watch for
 - The 1 MiB slow-subscriber close has no test of its own (not an acceptance criterion).
+
+## Iteration 7 — PS-07 — 2026-11-05
+### What was done
+- test/presence-events.test.ts: 9 tests over the feed that PS-06's commit added to server.ts.
+### What was learned
+- Writes to every feed happen synchronously inside the table's listener, on one event loop,
+  which is what keeps events ordered per session without any queue.
+- Slot release on disconnect is asynchronous (the socket's close event); the test polls
+  subscriberCount() for up to a second before opening the replacement feed.
+### What to watch for
+- serve (PS-08) must call closeFeeds() and server.closeAllConnections() before close(), or an
+  open feed keeps the process alive.

@@ -128,9 +128,9 @@
         "session.stale and session.expired produced by table.sweep() reach a subscriber with the full record (PC-07, PC-08)"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-events.test.ts 9/9 passed (the feed code landed in PS-06's commit, 79632ce); server.hello carries existing sessions and validates as hello, then one event per report in order, each validating as event; reconnect with Last-Event-ID gets a fresh hello and no replay; 16 subscribers each receive all 10 events in order; 33rd subscriber 503 with Retry-After 5 and a slot frees on disconnect; keepalive comments at an injected 50 ms; descriptor and contract in hello; unauthenticated feed 401 empty without CORS; sweep's stale and expired events reach a subscriber"
     },
     {
       "id": "PS-08",
