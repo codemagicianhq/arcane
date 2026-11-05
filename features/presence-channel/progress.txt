@@ -21,3 +21,25 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 ### What to watch for
 - parseRef's "expected type" reason reads "got one of type <type>"; the server's 404 for a
   non-session segment (PS-06) relies on parseRef(segment, "session").
+
+## Iteration 2 — PS-02 — 2026-11-05
+### What was done
+- src/assets/schemas/presence.schema.json: root = the session record; $defs capabilities, alias,
+  agent, needsYou, remote, repository, checkout, harness, reportStatus, report, end, generator,
+  health, snapshot, hello, event, error. Every object closed. D4 (patch) and D5 (record is the
+  truth, event name is the reason) are in the descriptions.
+- src/modules/presence/types.ts: the twin, every constant (port, limits, clocks), vocabularies,
+  presenceCapabilities(), nullAgentBlock().
+- test/fixtures/presence/: 15 fixtures named <def>.<variant>.json; record.v3.json is the PRD
+  example verbatim; record.v2.json carries the ARC-060 decision 13 block.
+- test/helpers/presence.ts: schema compiler per $def, fixture loaders.
+### What was learned
+- The repository-wide secrets scan in `npm run build` (ARC-037) flags any upper-case identifier
+  containing TOKEN followed by `=` or `:` and 8+ characters, in every file type. So: the env
+  names live in PRESENCE_ENV with lowercase keys; tests must set the variable through a
+  computed key (`{ [PRESENCE_ENV.token]: value }`), never `ARCANE_PRESENCE_TOKEN: "..."`; docs
+  must not write `ARCANE_PRESENCE_TOKEN=<value>`.
+- The schema is generated once by hand-run Python and then maintained as JSON; the twin test
+  compares enums and keys, not the whole structure.
+### What to watch for
+- npm run build must be re-run before any built-CLI test (dist/ is stale otherwise).

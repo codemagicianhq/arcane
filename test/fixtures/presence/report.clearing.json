@@ -1,0 +1,28 @@
+{
+  "harness": "claude-code",
+  "agent": {
+    "ref": "arcane:agent:019a3f2c-7b1e-7d4a-9c0b-3e5f6a7b8c9d",
+    "slug": "merlin",
+    "name": "Merlin",
+    "origin": "repo",
+    "definition_revision": "sha256:4c2e0c8d5a9f3b1e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706",
+    "aliases": []
+  },
+  "repository": {
+    "root": "/home/operator/ventures/ordovica/geothermal-api",
+    "name": "geothermal-api",
+    "remote": {
+      "provider": "github",
+      "url": "https://github.com/ordovica/geothermal-api.git"
+    }
+  },
+  "checkout": {
+    "path": "/home/operator/ventures/ordovica/geothermal-api",
+    "branch": "sessions/2026-11-12-well-telemetry",
+    "linked_worktree": false
+  },
+  "status": "idle",
+  "task": null,
+  "message": null,
+  "needs_you": []
+}

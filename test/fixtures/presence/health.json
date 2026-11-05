@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "generator": {
+    "name": "arcane-cli",
+    "version": "1.18.0"
+  },
+  "contract": "v0",
+  "capabilities": {
+    "observe": true,
+    "actions": []
+  },
+  "sessions": 2,
+  "started_at": "2026-11-12T14:58:00.000Z"
+}

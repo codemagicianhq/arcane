@@ -1,0 +1,34 @@
+{
+  "session": "arcane:session:019a4b11-0a1b-7c2d-9e3f-4a5b6c7d8e9f",
+  "agent": {
+    "ref": null,
+    "slug": "main",
+    "name": "Kellar",
+    "origin": "repo",
+    "definition_revision": "sha256:9d1f2e3d4c5b6a799d1f2e3d4c5b6a799d1f2e3d4c5b6a799d1f2e3d4c5b6a79",
+    "aliases": []
+  },
+  "harness": "claude-code",
+  "repository": {
+    "root": "/home/operator/ventures/ordovica/geothermal-api",
+    "name": "geothermal-api",
+    "remote": {
+      "provider": "github",
+      "url": "https://github.com/ordovica/geothermal-api.git"
+    }
+  },
+  "checkout": {
+    "path": "/home/operator/ventures/ordovica/geothermal-api-telemetry",
+    "branch": "sessions/2026-11-12-well-telemetry-ingest",
+    "linked_worktree": true
+  },
+  "spell": "spell-commit-work",
+  "task": "Commit WT-03",
+  "message": null,
+  "status": "working",
+  "needs_you": [],
+  "started_at": "2026-11-12T15:02:11Z",
+  "reported_at": "2026-11-12T15:21:03.512Z",
+  "ended_at": null,
+  "stale": false
+}

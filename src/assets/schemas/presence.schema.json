@@ -1,0 +1,585 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arcaneai.net/schemas/presence/v0",
+  "title": "Arcane presence session record",
+  "description": "One session of the local presence channel (`spell presence`, ARC-060): one checkout plus the agent it reports as. Held in the service's memory only, reconstructable from `spell state --json` and never authoritative. The document root is a session record; $defs hold the request and response bodies of the /v0/ loopback contract and the event feed. Every route requires `Authorization: Bearer <token>`. The contract is /v0/; from its first stable version the schema is additive-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "session",
+    "agent",
+    "harness",
+    "repository",
+    "checkout",
+    "spell",
+    "task",
+    "message",
+    "status",
+    "needs_you",
+    "started_at",
+    "reported_at",
+    "ended_at",
+    "stale"
+  ],
+  "properties": {
+    "session": {
+      "type": "string",
+      "pattern": "^arcane:session:[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "Minted by the service on the first report from a checkout (ARC-060 decision 4). Opaque."
+    },
+    "agent": {
+      "$ref": "#/$defs/agent"
+    },
+    "harness": {
+      "$ref": "#/$defs/harness"
+    },
+    "repository": {
+      "$ref": "#/$defs/repository"
+    },
+    "checkout": {
+      "$ref": "#/$defs/checkout"
+    },
+    "spell": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256,
+      "description": "The spell running, when reported."
+    },
+    "task": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256,
+      "description": "What the session is doing, in one line."
+    },
+    "message": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256,
+      "description": "A free one-line note."
+    },
+    "status": {
+      "enum": [
+        "working",
+        "waiting",
+        "blocked",
+        "idle",
+        "done"
+      ],
+      "description": "working: a spell is running; waiting: the session asked the operator for something; blocked: cannot proceed for an external reason; idle: open, no spell running; done: ended (set by end only)."
+    },
+    "needs_you": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "$ref": "#/$defs/needsYou"
+      }
+    },
+    "started_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "When this session's reference was minted."
+    },
+    "reported_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "The last accepted report. The stale and expiry clocks run from it."
+    },
+    "ended_at": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Set by end; otherwise null."
+    },
+    "stale": {
+      "type": "boolean",
+      "description": "Set by the service alone: no report for 90 s. status stays as last reported; a client renders a stale session as unknown, never as working. Expired and dropped after 24 h."
+    }
+  },
+  "$defs": {
+    "capabilities": {
+      "description": "The capability descriptor (ARC-059 decision 10). The presence service declares { observe: true, actions: [] } on /v0/health, in server.hello, in the snapshot envelope and as the MCP capabilities resource.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observe",
+        "actions"
+      ],
+      "properties": {
+        "observe": {
+          "type": "boolean",
+          "description": "The source reports state or presence."
+        },
+        "actions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "open",
+              "resume",
+              "instruct"
+            ]
+          },
+          "description": "Action identifiers the source accepts, from ARC-059 decision 10's vocabulary, extended only by a decision record (ARC-060 decision 8). Empty in v0: observation only, by contract. A client renders a control only for a declared action."
+        }
+      }
+    },
+    "alias": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "value",
+        "context"
+      ],
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "context": {
+          "enum": [
+            "openclaw",
+            "slug"
+          ],
+          "description": "openclaw: a harness id; slug: a former slug (ARC-059 decision 4)."
+        }
+      }
+    },
+    "agent": {
+      "description": "Always all six keys (architecture D7). Filled from the resolved roster entry; on a v2 roster ref is null and aliases is [] (ARC-060 decision 13); with no roster, an unloadable one or an unmatched --agent, every field is null and aliases is [].",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "slug",
+        "name",
+        "origin",
+        "definition_revision",
+        "aliases"
+      ],
+      "properties": {
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^arcane:agent:[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+          "description": "The agent's opaque reference (ARC-059). null on a v2 roster: a reader never mints."
+        },
+        "slug": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "On a v3 roster the entry's slug; on a v2 roster the entry's id (ARC-060 decision 13), so the orchestrator is 'main' until the roster is migrated. Match a consumer's seat on slug or on an alias, never on slug alone."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Display name; null while unnamed."
+        },
+        "origin": {
+          "enum": [
+            "repo",
+            "user",
+            null
+          ],
+          "description": "Which roster won the precedence (ARC-059 decision 8)."
+        },
+        "definition_revision": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "sha256 of the role definition file at resolution; null when it is missing."
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/alias"
+          }
+        }
+      }
+    },
+    "needsYou": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action",
+        "reason"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Exactly what the operator must do: one line of a '## ⚠ Needs you' block.",
+          "minLength": 1
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256,
+          "description": "Why the agent cannot do it itself; null when the line carried no reason."
+        }
+      }
+    },
+    "remote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "url"
+      ],
+      "properties": {
+        "provider": {
+          "enum": [
+            "github",
+            "ado",
+            "other"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "description": "origin's URL with userinfo stripped (the state export's git.remote shape)."
+        }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "name",
+        "remote"
+      ],
+      "properties": {
+        "root": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute real path of the repository's main working tree. A label: the service never opens it."
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "The root folder's name.",
+          "minLength": 1
+        },
+        "remote": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/remote"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "checkout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "branch",
+        "linked_worktree"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute real path of this worktree: the session key (ARC-060 decision 4). A linked worktree is its own session."
+        },
+        "branch": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256,
+          "description": "Branch name, the short commit id when detached, or null."
+        },
+        "linked_worktree": {
+          "type": "boolean"
+        }
+      }
+    },
+    "harness": {
+      "enum": [
+        "claude-code",
+        "copilot",
+        "codex",
+        "openclaw",
+        "cron",
+        "other"
+      ],
+      "description": "Where the session runs. 'other' when the reporter cannot tell; never null (architecture D8)."
+    },
+    "reportStatus": {
+      "enum": [
+        "working",
+        "waiting",
+        "blocked",
+        "idle"
+      ]
+    },
+    "report": {
+      "description": "The body of POST /v0/sessions/report: a patch on the record of the checkout it names (architecture D4). 'done' is not a report status: end a session with POST /v0/sessions/end.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "harness",
+        "agent",
+        "repository",
+        "checkout"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/reportStatus"
+        },
+        "harness": {
+          "$ref": "#/$defs/harness"
+        },
+        "agent": {
+          "$ref": "#/$defs/agent"
+        },
+        "repository": {
+          "$ref": "#/$defs/repository"
+        },
+        "checkout": {
+          "$ref": "#/$defs/checkout"
+        },
+        "spell": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256,
+          "description": "Absent keeps the stored value; null clears it."
+        },
+        "task": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256,
+          "description": "Absent keeps the stored value; null clears it."
+        },
+        "message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 256,
+          "description": "Absent keeps the stored value; null clears it."
+        },
+        "needs_you": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/needsYou"
+          },
+          "description": "Replaces the stored list on every report; absent means []. More than 20 entries is refused with 400, never cut."
+        }
+      }
+    },
+    "end": {
+      "description": "The body of POST /v0/sessions/end.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkout"
+      ],
+      "properties": {
+        "checkout": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "arcane-cli"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "health": {
+      "description": "GET /v0/health.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "generator",
+        "contract",
+        "capabilities",
+        "sessions",
+        "started_at"
+      ],
+      "properties": {
+        "ok": {
+          "const": true
+        },
+        "generator": {
+          "$ref": "#/$defs/generator"
+        },
+        "contract": {
+          "const": "v0"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/capabilities"
+        },
+        "sessions": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Active and stale sessions."
+        },
+        "started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+          "description": "When this service started."
+        }
+      }
+    },
+    "snapshot": {
+      "description": "GET /v0/sessions, and the arcane://presence/sessions MCP resource.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capabilities",
+        "generated_at",
+        "sessions"
+      ],
+      "properties": {
+        "capabilities": {
+          "$ref": "#/$defs/capabilities"
+        },
+        "generated_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+          "description": "When the snapshot was taken."
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          },
+          "description": "Active and stale sessions, never expired or ended, by started_at then session."
+        }
+      }
+    },
+    "hello": {
+      "description": "The data of the first event on GET /v0/events, server.hello: the current state, so a subscriber, or a reconnecting one, starts from it. There is no replay.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "capabilities",
+        "sessions"
+      ],
+      "properties": {
+        "contract": {
+          "const": "v0"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/capabilities"
+        },
+        "sessions": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      }
+    },
+    "event": {
+      "description": "One change on GET /v0/events: the event name and the full record after the change. Exactly one event per accepted report, by the precedence started > resumed > needs_you > updated (architecture D5). The record is the truth and the event name is why it was sent: a consumer that alerts on 'needs you' reads the record's needs_you, because a first or a resumed report can carry lines under another event name.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event",
+        "data"
+      ],
+      "properties": {
+        "event": {
+          "enum": [
+            "session.started",
+            "session.updated",
+            "session.needs_you",
+            "session.stale",
+            "session.resumed",
+            "session.ended",
+            "session.expired"
+          ]
+        },
+        "data": {
+          "$ref": "#"
+        }
+      }
+    },
+    "error": {
+      "description": "Every 4xx answer except 401, which has an empty body.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "error"
+      ],
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "message"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "minLength": 1
+            },
+            "field": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

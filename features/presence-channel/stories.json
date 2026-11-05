@@ -35,9 +35,9 @@
         "ajv remains under devDependencies only and package.json dependencies are unchanged (PC-01)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-schema.test.ts 13/13 passed (15 fixtures under test/fixtures/presence/, each validated against the definition its file name names; PRD example validates unchanged; v3, v2 and null agent blocks; extra key, unknown status, done, 21 needs-you lines, 257-char task and a non-session reference refused; leak scan clean with planted terms plus ARCANE_ORG_TOKENS when set); npm pack --dry-run lists dist/assets/schemas/presence.schema.json (16.3 kB); ajv under devDependencies only; build, lint, typecheck, typecheck:all green"
     },
     {
       "id": "PS-03",

@@ -1,0 +1,22 @@
+{
+  "status": "working",
+  "harness": "other",
+  "agent": {
+    "ref": null,
+    "slug": null,
+    "name": null,
+    "origin": null,
+    "definition_revision": null,
+    "aliases": []
+  },
+  "repository": {
+    "root": "/home/operator/ventures/tidewright/seawall-ops",
+    "name": "seawall-ops",
+    "remote": null
+  },
+  "checkout": {
+    "path": "/home/operator/ventures/tidewright/seawall-ops",
+    "branch": null,
+    "linked_worktree": false
+  }
+}

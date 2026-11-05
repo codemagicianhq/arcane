@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "invalid_field",
+    "field": "status",
+    "message": "status must be one of working, waiting, blocked, idle"
+  }
+}

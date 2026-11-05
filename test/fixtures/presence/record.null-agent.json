@@ -1,0 +1,31 @@
+{
+  "session": "arcane:session:019a4b12-5f60-7a71-b2c3-d4e5f6a7b8c9",
+  "agent": {
+    "ref": null,
+    "slug": null,
+    "name": null,
+    "origin": null,
+    "definition_revision": null,
+    "aliases": []
+  },
+  "harness": "other",
+  "repository": {
+    "root": "/home/operator/ventures/tidewright/seawall-ops",
+    "name": "seawall-ops",
+    "remote": null
+  },
+  "checkout": {
+    "path": "/home/operator/ventures/tidewright/seawall-ops",
+    "branch": null,
+    "linked_worktree": false
+  },
+  "spell": null,
+  "task": null,
+  "message": null,
+  "status": "idle",
+  "needs_you": [],
+  "started_at": "2026-11-12T15:02:11Z",
+  "reported_at": "2026-11-12T15:19:40Z",
+  "ended_at": null,
+  "stale": true
+}

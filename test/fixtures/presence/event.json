@@ -1,0 +1,42 @@
+{
+  "event": "session.needs_you",
+  "data": {
+    "session": "arcane:session:019a4b10-2c3d-7e4f-8a9b-0c1d2e3f4a5b",
+    "agent": {
+      "ref": "arcane:agent:019a3f2c-7b1e-7d4a-9c0b-3e5f6a7b8c9d",
+      "slug": "merlin",
+      "name": "Merlin",
+      "origin": "repo",
+      "definition_revision": "sha256:4c2e0c8d5a9f3b1e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706",
+      "aliases": []
+    },
+    "harness": "claude-code",
+    "repository": {
+      "root": "/home/operator/ventures/ordovica/geothermal-api",
+      "name": "geothermal-api",
+      "remote": {
+        "provider": "github",
+        "url": "https://github.com/ordovica/geothermal-api.git"
+      }
+    },
+    "checkout": {
+      "path": "/home/operator/ventures/ordovica/geothermal-api",
+      "branch": "sessions/2026-11-12-well-telemetry",
+      "linked_worktree": false
+    },
+    "spell": "spell-implement",
+    "task": "WT-03: the telemetry ingest endpoint",
+    "message": null,
+    "status": "waiting",
+    "needs_you": [
+      {
+        "action": "Approve the migration 0007_well_readings before the story commits",
+        "reason": "a schema change needs a human"
+      }
+    ],
+    "started_at": "2026-11-12T15:02:11Z",
+    "reported_at": "2026-11-12T15:19:40Z",
+    "ended_at": null,
+    "stale": false
+  }
+}
