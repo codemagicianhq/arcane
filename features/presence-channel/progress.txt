@@ -74,3 +74,19 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   because validate.ts may import nothing but ./types.js.
 ### What to watch for
 - Contract freeze (Phase A exit): report, record, event, error shapes are fixed from here.
+
+## Iteration 5 — PS-05 — 2026-11-05
+### What was done
+- src/modules/presence/store.ts: presenceDir, tokenPath, serverInfoPath, ensureStore,
+  generateToken, ensureToken({ rotate }), readToken({ env }), writeServerInfo, readServerInfo,
+  removeServerInfo, storeExists. Every function takes { home?, restrict? }.
+- vitest.config.ts: store.ts at the 95% critical tier.
+### What was learned
+- chmodSync is called unconditionally: on Windows it only touches the read-only bit, so there
+  is no platform branch to leave uncovered, and restrictToCurrentUser is itself a POSIX no-op.
+- A directory link is made with symlinkSync(target, path, "junction"), which works on Windows
+  without privilege and is an ordinary symlink elsewhere.
+### What to watch for
+- The Windows ACL assertion has not run yet: it needs the matrix job (PS-11).
+- store.ts imports session-store.ts (and so the keychain backend) for restrictToCurrentUser;
+  if the reporter's cold start is too slow (PS-11), that import is a candidate to split.

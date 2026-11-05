@@ -66,6 +66,13 @@ export default defineConfig({
           functions: 95,
           statements: 95,
         },
+        // The presence token store is credential storage (testing-standards.md: critical tier).
+        "src/modules/presence/store.ts": {
+          lines: 95,
+          branches: 95,
+          functions: 95,
+          statements: 95,
+        },
         "src/modules/copier.ts": {
           lines: 95,
           branches: 95,

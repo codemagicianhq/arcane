@@ -89,9 +89,9 @@
         "store.ts meets the 95% tier in npm run test:coverage"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05 (macOS): test/presence-store.test.ts 14 passed, 1 skipped (the Windows ACL test, which runs on windows-latest once PS-11 adds the suite to the matrix job); src/modules/presence/store.ts 100% lines / 97.95% branches / 100% functions / 100% statements, at the 95% tier now in vitest.config.ts; 0700 directory and 0600 token re-set after loosening; injected restrict failure leaves no file; rotate replaces, reuse keeps; the variable wins even when wrong; CRLF and empty files; a junction or symlink out of the store refused; server.json round-trips with no token and nine malformed variants read as null"
     },
     {
       "id": "PS-06",
