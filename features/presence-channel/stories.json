@@ -17,9 +17,9 @@
         "src/modules/agent-ref.ts has at least 80% line, branch, function and statement coverage; lint, typecheck and typecheck:all pass"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/agent-ref.test.ts 21/21 passed; src/modules/agent-ref.ts 100% lines / 100% branches / 100% functions / 100% statements; 10,000 mints unique and strictly increasing, including 10,000 forced into one millisecond (prefix carried forward past the 12-bit counter); imports node:crypto only; lint, typecheck, typecheck:all green"
     },
     {
       "id": "PS-02",
@@ -35,9 +35,9 @@
         "ajv remains under devDependencies only and package.json dependencies are unchanged (PC-01)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-schema.test.ts 13/13 passed (15 fixtures under test/fixtures/presence/, each validated against the definition its file name names; PRD example validates unchanged; v3, v2 and null agent blocks; extra key, unknown status, done, 21 needs-you lines, 257-char task and a non-session reference refused; leak scan clean with planted terms plus ARCANE_ORG_TOKENS when set); npm pack --dry-run lists dist/assets/schemas/presence.schema.json (16.3 kB); ajv under devDependencies only; build, lint, typecheck, typecheck:all green"
     },
     {
       "id": "PS-03",
@@ -53,9 +53,9 @@
         "The module's imports are limited to ./types.js and type-only imports, asserted by reading the file in the test (architecture D1; threat-model control 11)"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-sessions.test.ts 25/25 passed; src/modules/presence/sessions.ts 100% lines / 81.25% branches / 93.75% functions / 94.04% statements; one checkout one reference, end then report mints anew, second path second record; patch semantics; one event per report with the precedence table (7 cases); stale at 90 s once with status kept, resumed clears it, expiry at 24 h drops the record; every emitted event validates against the schema; imports ./types.js only"
     },
     {
       "id": "PS-04",
@@ -70,9 +70,9 @@
         "validate.ts imports only ./types.js (architecture D1; threat-model control 11)"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-validate.test.ts 32/32 passed; src/modules/presence/validate.ts 98.71% lines / 97.18% branches / 100% functions; unknown status and done refused naming status (done points to /v0/sessions/end); 257 code points cut to 256, CR/LF/controls flattened, 300 emoji cut without splitting a pair; 20 needs-you lines accepted, 21 refused with too_many_lines; unknown key, missing agent key, bad checkout.path and 14 other fields refused by name; every accepted sample validates as a report and the table's record validates as a record; imports ./types.js only. Freeze point reached: the report, record and error shapes do not change without the operator"
     },
     {
       "id": "PS-05",
@@ -89,9 +89,9 @@
         "store.ts meets the 95% tier in npm run test:coverage"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05 (macOS): test/presence-store.test.ts 14 passed, 1 skipped (the Windows ACL test, which runs on windows-latest once PS-11 adds the suite to the matrix job); src/modules/presence/store.ts 100% lines / 97.95% branches / 100% functions / 100% statements, at the 95% tier now in vitest.config.ts; 0700 directory and 0600 token re-set after loosening; injected restrict failure leaves no file; rotate replaces, reuse keeps; the variable wins even when wrong; CRLF and empty files; a junction or symlink out of the store refused; server.json round-trips with no token and nine malformed variants read as null"
     },
     {
       "id": "PS-06",
@@ -109,9 +109,9 @@
         "logEvent has exactly three parameters and a captured run of report, update and end logs only event names, session references and statuses (PC-12; threat-model control 12)"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-server.test.ts 17/17 passed; auth.ts 100% (95% tier added to vitest.config.ts), log.ts 100%, server.ts 93.98% lines / 86.2% branches together with PS-07's suite; 270 unauthenticated combinations (9 paths x 6 methods x 5 header variants) all 401 with an empty body and no CORS header; foreign Host 401 without token, 200 with it; preflight 401 without CORS; token in query or cookie ignored; 65,537-byte body 413 and the service answers after; invalid JSON and bad status 400; 201/200/404 flows; route table equals the six routes; descriptor on health and snapshot; logger: three parameters, a marker in task, message and needs_you, the checkout path and the token appear in no line; service-side files import no process, git, manifest, roster or outbound module"
     },
     {
       "id": "PS-07",
@@ -128,9 +128,9 @@
         "session.stale and session.expired produced by table.sweep() reach a subscriber with the full record (PC-07, PC-08)"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-events.test.ts 9/9 passed (the feed code landed in PS-06's commit, 79632ce); server.hello carries existing sessions and validates as hello, then one event per report in order, each validating as event; reconnect with Last-Event-ID gets a fresh hello and no replay; 16 subscribers each receive all 10 events in order; 33rd subscriber 503 with Retry-After 5 and a slot frees on disconnect; keepalive comments at an injected 50 ms; descriptor and contract in hello; unauthenticated feed 401 empty without CORS; sweep's stale and expired events reach a subscriber"
     },
     {
       "id": "PS-08",
@@ -147,9 +147,9 @@
         "serve --rotate replaces the token, and a request with the previous token is 401 (PC-06)"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05 (macOS, built CLI): test/presence-lifecycle.test.ts 11/11 passed; serve --port 0 writes exactly token and server.json (0700/0600/0600), prints the URL once, removes server.json on SIGTERM and keeps the token; connection to 127.0.0.1 succeeds and to this machine's non-loopback IPv4 (3 present) fails; serve --help has no host, bind or token option; a second serve and a second serve --rotate on the busy port exit 1 naming it and leave the token byte-identical; ARCANE_PRESENCE_PORT used, --port wins, non-numeric and 99999 refused; --rotate makes the old token 401; restart starts empty; status 1 before, 0 during with URL, pid, version, sessions, 1 with a wrong ARCANE_PRESENCE_TOKEN; stop stops and exits 0, exits 0 with nothing recorded, and signals nothing for an alive pid whose port answers nothing. Windows signal path runs in the matrix after PS-11"
     },
     {
       "id": "PS-09",
@@ -168,9 +168,9 @@
         "report --help and end --help list no option that takes a token (PC-06; threat-model control 4)"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05 (macOS, built CLI and in process): test/presence-reporter.test.ts 17/17, test/presence-client.test.ts 8/8, test/presence-command.test.ts 7/7 passed; client.ts 96.42% lines / 95.45% branches, reporter.ts 96.15% lines / 80% branches, commands/presence.ts 73.33% lines in process (serve's signal path and stop's kill path run only in the spawned-CLI suites); with no server.json, report and end make no git, manifest or roster call and the built CLI prints nothing and exits 0; a running service gets a record that validates (checkout path, branch, root, name, remote with userinfo stripped); second worktree = second session, linked_worktree true, same root; silent outside git and without a manifest; wrong token file and a wrong ARCANE_PRESENCE_TOKEN beside a right file each give one stderr line with neither token nor task; a server.json url naming another host still dials 127.0.0.1; a dead pid makes no connection; no --status, unknown options and a refused status exit 0 with at most one stderr line; a service that never answers releases report at the 2 s deadline (2.1 s measured); report/end help offer no token option"
     },
     {
       "id": "PS-10",
@@ -190,9 +190,9 @@
         "agent.ts is the only file under src/modules/presence/ that imports from ../agents.js, ../state/agents.js or the agent loader, asserted by a test over the folder's imports"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-agent.test.ts 13/13, test/presence-harness.test.ts 5/5 passed (and presence-reporter 17/17 still green with the real seam wired in); agent.ts 100% lines / 88% branches, harness.ts 100%; ARC-060 decision 13 is built (amendment merged as 510f283 before this story): a v2 entry reports slug = id, name, origin repo, definition_revision sha256, ref null, aliases [], validating; no --agent gives the orchestrator as slug main and --agent main the same block; slug/origin/revision equal what collectAgents exports for every entry; an opted-in user tier gives origin user, a missing definition a null revision, no stderr; roster file byte-identical after reports; no roster, an unmatched --agent and a v3 roster refused by today's loader each give the null block with exit 0 and no stderr; in-memory v3 profiles: slug match, openclaw alias main to its slug, ambiguous alias and unknown value null, one orchestrator default; harness: other never null, --harness wins, CLAUDECODE=1 gives claude-code, the one row has its dated observation in progress.txt, copilot/codex/openclaw unobserved here and so without rows; agent.ts is the only presence file importing a roster module"
     },
     {
       "id": "PS-11",
@@ -207,9 +207,9 @@
         "The limits in the test are the literals 500 and 1000 and are not configurable from the environment"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-timing.test.ts passes locally and on all three CI runners (PR #435, CI run 42013918550). p95 over 20 runs, nearest rank: local macOS median 144 ms, p95 149 ms (limit 500); ubuntu-latest median 132 ms, p95 142 ms; macos-latest median 194 ms, p95 251 ms; windows-latest median 440 ms, p95 468 ms (first run 42013321491: median 456, p95 483) (limit 1000 on CI). A 600 ms delay injected locally failed the test at p95 766 ms and was removed. The matrix job builds and runs the store, lifecycle and timing suites, so the Windows ACL and Windows stop path ran on windows-latest (the ACL assertion was corrected after its first run, dd3f520). No split entry was needed: process start (about 0.15 s locally) dominates and every runner is well inside its budget"
     },
     {
       "id": "PS-12",
@@ -226,9 +226,9 @@
         "progress.txt records the protocol versions listed and the date the specification was read"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-mcp.test.ts 8/8 passed (3 against the built CLI over stdio, 5 in process); mcp.ts 90.51% lines / 74% branches / 95% functions; with a running service: initialize, tools/list (exactly presence_report and presence_end), both tool calls, resources/list and both resources/read, and a subscriber on /v0/events sees session.started and session.ended from the tool calls; without a service both tools and both resources return 'no presence channel is configured on this machine' as a plain result and the home gains no file; -32601 for an unknown method, -32700 for a malformed line with the process still answering ping; initialize declares only tools and resources; arcane://presence/capabilities reads { observe: true, actions: [] }; every stdout line parses as JSON-RPC 2.0; protocol versions read from modelcontextprotocol.io on 2026-11-05 and recorded in progress.txt (dual-era: modern 2026-07-28, legacy 2025-11-25, 2025-06-18, 2024-11-05)"
     },
     {
       "id": "PS-13",
@@ -243,9 +243,9 @@
         "The no-channel half of 'byte-identical to 1.17.1' is cited from PS-09's first acceptance test in the test file's header comment (architecture D19)"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-fragment.test.ts 5/5 passed; the fragment is hosted by exactly spell-open-session, spell-close-session, spell-commit-work and spell-implement; expanded verbatim in the four sources and their four root copies (fix:self-host-parity repaired 8 of 372; check passes 372/372); check:spell-catalog passes; the fragment equals the PRD's example text; it states CLI only, no token on the command line, no repository write, and its ARC-023 enforcement line; the four spells' Claude Code commands and agent skills are thin shims that point at the spell file, so they carry the fragment by reference (they hold no prose, ARC-045); git diff touches only the fragment, the four spells, their root copies and the new test; 310 prompt and spell tests still pass"
     },
     {
       "id": "PS-14",
@@ -260,9 +260,9 @@
         "A test asserts the section's heading, the fifteen surface names and the word Planned are present in the src/assets copy"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-threat-model.test.ts 4/4 passed; the section is in src/assets/.arcane/governance/threat-model.md and its root copy, identically (self-host parity 372/372); its table has the architecture's 15 surfaces in the same order, 13 Planned and the 2 accepted risks; it names the three actors, the git-hook rule, the absence of a Host check, and the two further surfaces (a port taken after a crash; a rewritten server.json) with their mitigations; it records the Windows ACL finding (SYSTEM and Administrators may keep explicit entries); check:adr-references and check:stale-claims Class A pass; the denylist scan finds nothing; the frontmatter last_updated stays the template placeholder YYYY-MM-DD, because the template is distributed with that placeholder (ARC-051), so it was not set to a date"
     },
     {
       "id": "PS-15",
@@ -278,9 +278,9 @@
         "npm run test:coverage passes with the global 80% thresholds and the 95% tier for presence/auth.ts and presence/store.ts"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-controls.test.ts 6/6 passed; controls 11 and 15: the five service-side modules import no process, git, manifest, roster, client or outbound module, and createServer( appears only in src/modules/oidc.ts and src/modules/presence/server.ts; a scratch edit adding a node:child_process import to server.ts made the test fail, and was reverted; control 8: six routes and two tools re-asserted; control 14: .husky/, every hooks directory under src/assets and the hook installers (push-safety.ts, secrets-scan.ts) never mention presence; controls 1 and 4: the help of presence and its six subcommands offers no option containing token, host or bind; controls 6 and 12: a built-CLI cycle (serve, three reports from each of two checkouts including a waiting one, end, stop) changed only .arcane/presence/{token,server.json} during the run and only the token after stop, left both checkouts clean, and serve's output carried session references and event names but never the planted marker, the token or either checkout path; header lists the suites that prove controls 2, 3, 5, 7, 9, 10 and 13. Coverage: see the full npm run test:coverage run recorded in progress.txt"
     },
     {
       "id": "PS-16",
@@ -296,9 +296,9 @@
         "The README section and the CHANGELOG entry pass the denylist scan and name no venture, customer or machine (ARC-031)"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-release.test.ts 3/3 passed (package.json dependencies equal main at 2aec288; README Presence section has the commands, the token rule, the three registrations and the three user services; the 1.18.0 CHANGELOG entry under ARC-060 records each runner's median and p95); check:changelog, check:version-bump, check:demos, check:self-host-parity (372/372), check:spell-catalog, check:stale-claims (Class A passed), check:adr-references and check:citations pass; ward gate clean; README examples checked against current docs on 2026-11-05 (sources in progress.txt); PRD frontmatter accepted/shipped, ARC-059 called Accepted in its Dependencies, every acceptance box ticked with notes on PC-05 (v3 alias at the seam) and PC-07 (tree comparison); TODO.md updated with PC-17 to PC-21, the on-disk v3 alias test, the orchestrator-default re-read, marking ARC-060 shipped after merge, and the stories-key drift, each with a Done-when line"
     }
   ]
 }

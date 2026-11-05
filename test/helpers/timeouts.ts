@@ -15,3 +15,10 @@ export const VERY_HEAVY_TEST_TIMEOUT = 30_000;
 
 /** A real network round-trip (e.g. `gh` querying GitHub) -- latency, not CPU/disk contention. */
 export const NETWORK_TEST_TIMEOUT = 20_000;
+
+/**
+ * The presence timing test (PC-14): 20 sequential CLI spawns, each awaited to
+ * its event, on the slowest CI runner (Windows process start). Generous on
+ * purpose; the latency limit itself is asserted inside the test.
+ */
+export const TIMING_TEST_TIMEOUT = 120_000;

@@ -1,0 +1,387 @@
+# Progress — the presence channel (spell presence, ARC-060)
+
+Run: autonomous, started 2026-11-05 on branch claude/feat/presence-channel from main 510f283.
+Operator's standing answers for this run (2026-11-05, in chat): commit each story, push, open one
+PR, stop at a green PR without merging; keep the two readings (a 21-line needs_you is refused
+with 400; byte-identity is tested through the reporter's silence); a story stuck after three
+attempts, or one that would need an ARC-060 change, is marked and the run continues.
+
+## Iteration 1 — PS-01 — 2026-11-05
+### What was done
+- src/modules/agent-ref.ts: createUuidV7Generator (injectable clock and random source), uuidv7,
+  mintRef / mintAgentRef / mintTemplateRef / mintSessionRef, parseRef with an optional expected
+  type, uuidV7Millis (tests and sorting only).
+- test/agent-ref.test.ts: grammar, registry, 10,000-mint ordering, one-millisecond overflow,
+  backwards clock, bit layout, twelve refusal reasons, import check.
+### What was learned
+- The 12-bit rand_a counter (RFC 9562 section 6.2 method 1) is seeded in its lower half
+  (0..0x7ff) so a millisecond has at least 2,048 increments before the timestamp carries.
+- The 48-bit timestamp is written with division, not shifts: JavaScript shifts are 32-bit.
+- tsconfig has no noUncheckedIndexedAccess, so the typed lint rejects `!` on indexed reads.
+### What to watch for
+- parseRef's "expected type" reason reads "got one of type <type>"; the server's 404 for a
+  non-session segment (PS-06) relies on parseRef(segment, "session").
+
+## Iteration 2 — PS-02 — 2026-11-05
+### What was done
+- src/assets/schemas/presence.schema.json: root = the session record; $defs capabilities, alias,
+  agent, needsYou, remote, repository, checkout, harness, reportStatus, report, end, generator,
+  health, snapshot, hello, event, error. Every object closed. D4 (patch) and D5 (record is the
+  truth, event name is the reason) are in the descriptions.
+- src/modules/presence/types.ts: the twin, every constant (port, limits, clocks), vocabularies,
+  presenceCapabilities(), nullAgentBlock().
+- test/fixtures/presence/: 15 fixtures named <def>.<variant>.json; record.v3.json is the PRD
+  example verbatim; record.v2.json carries the ARC-060 decision 13 block.
+- test/helpers/presence.ts: schema compiler per $def, fixture loaders.
+### What was learned
+- The repository-wide secrets scan in `npm run build` (ARC-037) flags any upper-case identifier
+  containing TOKEN followed by `=` or `:` and 8+ characters, in every file type. So: the env
+  names live in PRESENCE_ENV with lowercase keys; tests must set the variable through a
+  computed key (`{ [PRESENCE_ENV.token]: value }`), never `ARCANE_PRESENCE_TOKEN: "..."`; docs
+  must not write `ARCANE_PRESENCE_TOKEN=<value>`.
+- The schema is generated once by hand-run Python and then maintained as JSON; the twin test
+  compares enums and keys, not the whole structure.
+### What to watch for
+- npm run build must be re-run before any built-CLI test (dist/ is stale otherwise).
+
+## Iteration 3 — PS-03 — 2026-11-05
+### What was done
+- src/modules/presence/sessions.ts: createSessionTable({ now, mint, staleAfterMs?, expireAfterMs? })
+  with report, end, get, snapshot, count, sweep and listen. Pure; returns copies.
+- test/presence-sessions.test.ts: 25 tests over the key, the patch, the event precedence, both
+  clocks, end, ordering and the import boundary.
+### What was learned
+- listen() (a set of listeners) instead of one onEvent option: the server needs to add and
+  remove feeds, and tests need their own listener beside it.
+- Expiry is checked before stale in sweep, so a record silent past both clocks emits only
+  session.expired. An expired record carries stale: true in its last event.
+### What to watch for
+- report() trusts its input: validate.ts (PS-04) must run first. The table never sees a
+  `done` status from a report.
+
+## Iteration 4 — PS-04 — 2026-11-05
+### What was done
+- src/modules/presence/validate.ts: validateReport and validateEnd returning
+  { ok, value } or { ok: false, code, field?, message }; oneLine(). Codes: invalid_field,
+  unknown_field, missing_field, too_many_lines. Field paths are dotted (needs_you.3.action).
+- test/presence-validate.test.ts: 32 tests.
+### What was learned
+- The Write tool turns a " " escape into the literal character. U+2028 is a line
+  terminator inside a JavaScript regular-expression literal, so the regex broke the parse.
+  Build such patterns with new RegExp("...") and a doubled backslash, and grep for literal
+  U+2028 after writing.
+- The agent block's ref, origin and revision are checked inline with the schema's patterns,
+  because validate.ts may import nothing but ./types.js.
+### What to watch for
+- Contract freeze (Phase A exit): report, record, event, error shapes are fixed from here.
+
+## Iteration 5 — PS-05 — 2026-11-05
+### What was done
+- src/modules/presence/store.ts: presenceDir, tokenPath, serverInfoPath, ensureStore,
+  generateToken, ensureToken({ rotate }), readToken({ env }), writeServerInfo, readServerInfo,
+  removeServerInfo, storeExists. Every function takes { home?, restrict? }.
+- vitest.config.ts: store.ts at the 95% critical tier.
+### What was learned
+- chmodSync is called unconditionally: on Windows it only touches the read-only bit, so there
+  is no platform branch to leave uncovered, and restrictToCurrentUser is itself a POSIX no-op.
+- A directory link is made with symlinkSync(target, path, "junction"), which works on Windows
+  without privilege and is an ordinary symlink elsewhere.
+### What to watch for
+- The Windows ACL assertion has not run yet: it needs the matrix job (PS-11).
+- store.ts imports session-store.ts (and so the keychain backend) for restrictToCurrentUser;
+  if the reporter's cold start is too slow (PS-11), that import is a candidate to split.
+
+## Iteration 6 — PS-06 — 2026-11-05
+### What was done
+- src/modules/presence/auth.ts (checkBearer, SHA-256 + timingSafeEqual), log.ts (logEvent with
+  three shape-checked parameters, setLogSink for tests), server.ts (createPresenceServer:
+  auth first, PRESENCE_ROUTES, JSON routes, limits, headers).
+- server.ts also carries the event feed (GET /v0/events): it was written in one pass with the
+  JSON routes; PS-07's commit adds its tests and marks it. Recorded here so the commit split
+  does not mislead.
+- test/helpers/presence.ts: httpRequest, startPresence, openFeed (an SSE parser with waitFor).
+- vitest.config.ts: auth.ts at the 95% tier.
+### What was learned
+- The 401 sets Connection: close and drains the request, so an unread body never wedges a
+  keep-alive socket.
+- A malformed percent-escape in /v0/sessions/{session} would throw in decodeURIComponent;
+  it is caught and answered 404 like any other unknown reference.
+- `bearer` in lower case is refused: the story asks for the exact scheme.
+### What to watch for
+- The 1 MiB slow-subscriber close has no test of its own (not an acceptance criterion).
+
+## Iteration 7 — PS-07 — 2026-11-05
+### What was done
+- test/presence-events.test.ts: 9 tests over the feed that PS-06's commit added to server.ts.
+### What was learned
+- Writes to every feed happen synchronously inside the table's listener, on one event loop,
+  which is what keeps events ordered per session without any queue.
+- Slot release on disconnect is asynchronous (the socket's close event); the test polls
+  subscriberCount() for up to a second before opening the replacement feed.
+### What to watch for
+- serve (PS-08) must call closeFeeds() and server.closeAllConnections() before close(), or an
+  open feed keeps the process alive.
+
+## Iteration 8 — PS-08 — 2026-11-05
+### What was done
+- src/commands/presence.ts: resolvePort, startPresenceService (bind 127.0.0.1, then token, then
+  server.json; returns { url, port, stop }), runPresenceServe (signals), runPresenceStatus,
+  runPresenceStop. src/index.ts registers `presence serve|status|stop`.
+- src/modules/presence/client.ts (written here because status and stop need it; PS-09 adds
+  the reporter on top and its tests): pidAlive, resolveEndpoint, send, callPresence. Dials
+  127.0.0.1 only; takes the port, never the url, from server.json.
+- server.ts: `token` may be a getter, because serve binds before it writes the token.
+- test/helpers/presence.ts: presenceEnv (strips the presence variables), runSpell, spawnServe.
+### What was learned
+- On Windows a signal kills a child outright, so serve cannot remove server.json there;
+  `stop` removes it after the pid exits, and the lifecycle test uses `stop` on Windows.
+- stop keeps server.json when the service answers 401 (it is running; this shell's token is
+  just wrong), and removes it when the port answers nothing.
+### What to watch for
+- The lifecycle suite needs a fresh `npm run build`; CI's matrix job must build first (PS-11).
+
+## Iteration 9 — PS-09 — 2026-11-05
+### What was done
+- src/modules/presence/reporter.ts: parseNeedsYou, locateCheckout (rev-parse
+  --path-format=absolute --show-toplevel --git-dir --git-common-dir), sendReport, sendEnd.
+- src/commands/presence.ts: runPresenceReport / runPresenceEnd with the 2 s deadline;
+  src/index.ts registers report (required --status, repeatable --needs-you) and end, both with
+  exitOverride → exit 0.
+- Tests: presence-reporter (17), presence-client (8), presence-command (7, in-process coverage
+  of PS-08's serve/status/stop, which the spawned suite cannot measure).
+### What was learned
+- Commander's exitOverride callback must exit itself: if it returns, Commander calls
+  process.exit with the original code. `() => process.exit(0)` is the whole fix.
+- v8 coverage does not see spawned CLIs, so a command tested only through dist/ shows ~10%;
+  in-process tests of the exported functions carry the coverage, the spawned suite carries
+  the real-process behaviour.
+- `end` for a checkout with no session is a 404 from the service and silent in the reporter.
+### What to watch for
+- The agent block is the null block and the harness is the flag or `other` until PS-10.
+
+## Iteration 10 — PS-10 — 2026-11-05
+### Evidence for the harness table (architecture D8: no row without an observation)
+- Harness observation: claude-code, Claude Code 2.1.81 (desktop app 4.16336.0, macOS), `env` in its Bash tool showed CLAUDECODE=1 (and CLAUDE_CODE_ENTRYPOINT set), observed 2026-11-05.
+- Not observed, so no row: copilot and codex (neither CLI is installed on this machine: `which codex copilot` found nothing, 2026-11-05); openclaw (it runs on the operator's Ubuntu machine, not here). They report `other` until someone records an observation and adds the row.
+- cron has no marker by design; only `--harness cron` sets it.
+### What was done
+- src/modules/presence/agent.ts: ResolvedProfile, v2Profiles (over collectAgents: slug = v2 id,
+  ref null, aliases []; ARC-060 decision 13), matchAgent, defaultAgent, toAgentBlock,
+  resolveSessionAgent({ profiles?, homeDir? }).
+- src/modules/presence/harness.ts: HARNESS_TABLE (one row), detectHarness.
+- reporter.ts uses both by default.
+### What was learned
+- Q1 of the architecture was answered by an amendment before this story (ARC-060 decision 13,
+  PR #434, merged 2026-11-05 as 510f283), so the v2 path is built, not the null-only text.
+- collectAgents already swallows nothing: a roster the loader refuses throws
+  AgentConfigValidationError, which v2Profiles catches, so a v3 roster on today's loader is
+  the null block and the reporter stays silent.
+### What to watch for
+- The on-disk v3 alias test belongs to the agent-identity feature (AI-02, AI-07), which
+  replaces v2Profiles; PS-16 registers it in TODO.md.
+
+## Iteration 11 — PS-11 (code, CI pending) and the release bump — 2026-11-05
+### What was done
+- test/presence-timing.test.ts (nearest-rank p95 over 20 spawns of the built CLI's report,
+  measured to the event's arrival at a loopback subscriber; limits 500 / 1000 ms literals).
+- ci.yml: the three-OS job builds, then runs presence-store, presence-lifecycle and
+  presence-timing.
+- 1.18.0 bump (npm version minor; the README demos regenerated) and the start of the CHANGELOG
+  entry, committed separately, because the pre-push hook runs check:version-bump and every
+  push of distributable changes needs the bump.
+### Measurements
+- Local, macOS (Node 24.18, Apple silicon): runs 130–149 ms, median 144 ms, p95 149 ms.
+  `node dist/index.js --version` takes 0.14–0.15 s, so process start is most of it.
+- Regression proof: with a 600 ms delay injected before each spawn the test failed
+  (median 755 ms, p95 766 ms > 500); the delay was removed and never committed.
+- CI runners: recorded below when PR #435's checks report.
+### What was learned
+- The pre-push hook runs the full suite (2,996 tests, about 4 minutes here) and the version
+  check; push in the background.
+
+## Iteration 12 — PS-12 — 2026-11-05
+### The MCP specification, read 2026-11-05 at modelcontextprotocol.io
+- specification/versioning: the current revision is 2026-07-28. It has no initialize
+  handshake: every request carries its version in `_meta["io.modelcontextprotocol/protocolVersion"]`,
+  an unsupported version is error -32022 with data { supported, requested }, and servers
+  MUST implement `server/discover`. Revisions 2025-11-25 and earlier are "legacy"
+  (initialize-based); a "dual-era" server MAY serve both, choosing per client by how it opens.
+- specification/2025-06-18/basic/lifecycle: initialize → { protocolVersion, capabilities,
+  serverInfo }; answer the client's version when supported, else the server's latest; the
+  example error names 2024-11-05 as a supported version.
+- specification/2026-07-28 tools, resources, stdio, server/discover: results carry
+  resultType "complete"; tool execution errors are isError: true; an unknown tool and a
+  missing resource are -32602; stdout carries MCP messages only; exit on stdin end.
+### Decision taken here (reported to the operator in the PR, not an ARC-060 change)
+- ARC-060 decision 5 lists initialize, ping, tools/list, tools/call, resources/list and
+  resources/read, written against the handshake revisions. A server speaking only those
+  would fail every client on the current revision. The server is therefore dual-era: legacy
+  versions 2025-11-25, 2025-06-18, 2024-11-05 through initialize, and 2026-07-28 through
+  per-request `_meta` plus server/discover. Same two tools, same two resources, same
+  descriptor; nothing beyond decision 5's surface is offered (no prompts, no
+  subscriptions/listen, no sampling).
+- Naming impact: `arcane-presence` (serverInfo.name) appears nowhere else in the repository
+  except the architecture and the story that name it; npm has no package of that name
+  (`npm view arcane-presence` → 404). It is one more label for the Naming Test.
+### What to watch for
+- Which revision each client speaks today was not tested against real clients (Claude Code,
+  Copilot, Codex): PS-16's registration examples are the place to note it.
+
+## Iteration 13 — PS-13 — 2026-11-05
+### What was done
+- src/assets/.arcane/spells/_fragments/presence-report.md: the PRD's example text, verbatim,
+  with no trailing newline (the other fragments have none).
+- Markers in the four spells: before "Workflow" in close-session, commit-work and implement;
+  before the Drift Check in open-session (after the Mutation Guard, so a session reports once
+  it has a branch). fix:self-host-parity expanded them into the four root copies.
+### What was learned
+- The client shims (.claude/commands/*.md, .agents/skills/*/SKILL.md) are thin pointers to the
+  spell file and hold no prose, so "the generated shims carry the fragment" is true by
+  reference; the test checks each shim points at its spell.
+- Line widths: the fragment keeps the PRD's 100-column wrapping.
+### What to watch for
+- The CI full suite runs every prompt test; 310 of them were run locally against the change.
+
+## Iteration 14 — PS-14 — 2026-11-05
+### What was done
+- The template's "Local Presence Service (`spell presence`)" section: three assets, three actors,
+  the 15-row table (same names and order as the architecture's Control Traceability), the two
+  further surfaces, and a status line saying every row stays Planned until the operator verifies it.
+- test/presence-threat-model.test.ts reads the architecture's table, so the two cannot drift.
+### What was learned
+- Distributed governance may mention ARC-060 only as plain text: check:adr-references flags a
+  link to an ARC record, which would not resolve in a consumer's repository. The section also
+  avoids naming a tunnel product, in keeping with the template's generic "tunnel/VPN" wording.
+- The story asked to update last_updated; the distributed template carries the placeholder
+  YYYY-MM-DD on purpose (ARC-051 placeholder taxonomy), so it is left as a placeholder.
+- The Windows ACL finding from PS-11's CI run is written into the Token storage row.
+### What to watch for
+- The hub's own instance (a private record) has 15 rows; the two further surfaces are offered
+  to it in the PR description, not changed from here.
+
+## Iteration 15 — PS-15 — 2026-11-05
+### What was done
+- test/presence-controls.test.ts: one describe block per control it proves (1, 4, 6, 8, 11,
+  12, 14, 15), each with the hub-side manual check as its first comment; a header naming the
+  suites that prove 2, 3, 5, 7, 9, 10 and 13.
+### What was learned
+- The tree comparison takes its listings before any `git status`: git refreshes .git/index on
+  status, which would look like a write by the reporter.
+- Deliberate-failure proof: adding `import { execFile } from "node:child_process"` to server.ts
+  made the import test fail with node:child_process named; the file was restored byte-identical.
+
+## Iteration 16 — PS-11 closed — 2026-11-05
+### CI measurements (PR #435)
+- Run 42013321491 (first push): windows-latest median 456 ms, p95 483 ms. The same run failed
+  only the Windows ACL assertion (see dd3f520's message): the token file kept explicit entries
+  for SYSTEM and the Administrators group, which the corrected test allows and names.
+- Run 42013918550 (second push), all 7 checks green:
+  - ubuntu-latest: runs 123–144, median 132 ms, p95 142 ms.
+  - macos-latest: runs 143–260, median 194 ms, p95 251 ms.
+  - windows-latest: runs 361–468, median 440 ms, p95 468 ms.
+- Every runner is under its 1 s budget, Windows with the least room (468 ms). No split entry
+  was needed; the fallback in architecture D21 stays unused.
+
+## Iteration 17 — PS-16 — 2026-11-05
+### Documentation sources for the README (read 2026-11-05)
+- Claude Code: code.claude.com/docs/en/mcp — `claude mcp add [options] <name> -- <command> [args...]`,
+  `--transport stdio`, scopes local / project / user (user stored in ~/.claude.json). The page's
+  user-scope example is an HTTP server; the stdio + `--scope user` form follows its syntax line.
+- Codex CLI: learn.chatgpt.com/docs/extend/mcp?surface=cli — `codex mcp add <name> -- <command>`;
+  config.toml `[mcp_servers.<name>]` with command and args.
+- GitHub Copilot in VS Code: code.visualstudio.com/docs/agents/reference/mcp-configuration —
+  `.vscode/mcp.json` with top-level "servers" and "type": "stdio"; ~/.copilot/mcp-config.json
+  uses "mcpServers".
+- systemd: freedesktop.org systemd.unit (~/.config/systemd/user/) and systemctl (`--user`,
+  `enable --now`, `daemon-reload`).
+- launchd: Apple's "Creating Launch Daemons and Agents" (LaunchAgents, Label, ProgramArguments,
+  KeepAlive) plus this Mac's man pages, macOS 27.0.1: launchd.plist(5) RunAtLoad, launchctl(1)
+  bootstrap (load/unload are the legacy forms).
+- Windows: learn.microsoft.com schtasks create — `/sc onlogon` runs at any user's logon; the
+  README tells the reader to use an elevated prompt or the Task Scheduler window if refused,
+  because whether a standard user may create an ONLOGON task was not confirmed.
+### What was not verified
+- No MCP client was actually registered against `spell presence mcp` on this machine: the
+  registrations are documentation, checked against the docs above, not run.
+- PC-01's "every profile's install set is 1.17.1's plus the fragment" rests on the existing
+  install-set tests passing unchanged in the full suite (no snapshot was updated).
+
+## Iteration 18 — review of PR #435 — 2026-11-05
+### What was done
+- An independent subagent reviewed the branch (read-only, probes from its own scratchpad) and
+  reported seven defects; five it confirmed by probe. All seven are fixed, each with a test:
+  1. client.ts: pidAlive returned true on EPERM, so a stale server.json naming a pid now owned by
+     another account sent the token to whatever held the port. EPERM is now "not alive".
+  2. server.ts: the 1 MiB backlog cap fired right after writing server.hello, so a snapshot over
+     1 MiB dropped every new subscriber; the cap now applies before later events only. Added caps:
+     256 sessions (503 too_many_sessions) and 32 aliases (400; schema maxItems 32).
+  3. commands/presence.ts: a second serve on another port rotated the token and took over
+     server.json; serve now refuses while the recorded service (another live pid) answers.
+  4. server.ts: connectionsCheckingInterval 1 s (Node's 30 s default let idle sockets hold slots).
+  5. mcp.ts: ids must be string, number or null; a legacy version in _meta is served as legacy;
+     wrong-typed tool arguments are isError results.
+  6. stop: a live pid with no token to confirm it keeps its record.
+  7. serve: a permanent error listener after listening (logs server.error).
+- Weak tests strengthened: a slow-subscriber test (a raw socket that stops reading is closed past
+  1 MiB, the healthy feed stays); the chunked 413 path; the stop test now uses a separate
+  bystander process, not the test runner's pid.
+### What was learned
+- A lint failure in a `&&` chain skipped `npm run build`, so a built-CLI test ran the old dist/
+  and failed for the wrong reason. Build on its own line before built-CLI tests.
+- The new caps (256 sessions, 32 aliases) are additions to ARC-060 decision 3's limits; they are
+  in the PR description for the operator to confirm.
+
+## Iteration 19 — a signal race in serve — 2026-11-05
+### What happened
+- CI run 42016564388 (ubuntu, the review-fix push) failed one test: presence-lifecycle's
+  "--rotate replaces the token" saw `serve` exit by signal (exit code null) instead of 0 on
+  SIGTERM. Cause: runPresenceServe printed the "listening" line and only then installed its
+  SIGINT/SIGTERM listeners. The test waits for that line and signals at once; a signal that
+  arrives before Node has a listener takes the default action and kills the process, so
+  server.json was left behind.
+- Fix: the listeners are installed first, before startPresenceService; a signal that arrives
+  before the service is ready is remembered and stops it as soon as it is ready.
+### Honest note on the regression test
+- The added test ("a SIGTERM that arrives as soon as server.json exists...") passes against the
+  fix and, three times out of three, against the old code too: the window is microseconds and a
+  2 ms poll does not land in it here. It states the requirement; it does not reproduce the race.
+  The evidence for the fix is the cause above and the lifecycle suites passing 3/3 locally.
+
+## Correction to iteration 10 — 2026-11-05 (morning)
+- Iteration 10 said Copilot and Codex were "not installed on this machine". That was wrong. The
+  check was `which codex copilot`, which looks only at PATH. Installed here: the ChatGPT app with
+  Codex (`~/.codex`), the `openai.chatgpt` VS Code extension, Visual Studio Code (Copilot in VS
+  Code) and `/Applications/GitHub Copilot.app`. Not installed: OpenClaw (it runs on the
+  operator's Ubuntu machine).
+- What does not change: architecture D8 still admits a row only from an observation in a real
+  shell of that harness, and none has been made yet, so the table keeps one row for now.
+- The operator accepted the dual-era MCP server and the 256-session and 32-alias caps.
+
+## Iteration 20 — harness rows for Codex and Copilot — 2026-11-05
+### Evidence (architecture D8: no row without an observation)
+- Method: each harness's own agent ran `sh /tmp/presence-harness/probe.sh`, which writes the
+  environment's variable names and the values of only the marker-like names (never a name that
+  contains TOKEN, KEY, SECRET, PASS, AUTH or CRED). The operator ran the three app sessions and
+  the plain terminal; the `codex exec` run was started from an emptied environment so it could
+  not inherit Claude Code's variables. The operator also ran the two command-line tools
+  interactively in iTerm2 3.6.11.
+- Harness observation: claude-code, the Claude Code CLI 2.1.318 run interactively in iTerm2, CLAUDECODE=1 with CLAUDE_CODE_ENTRYPOINT=cli, observed 2026-11-05. The same row as the desktop app's (iteration 10); no new row.
+- Harness observation: codex, Codex 0.166.0-alpha.5.1 (the ChatGPT desktop app, `codex exec`, and the interactive CLI in iTerm2, all from the same build), CODEX_CI=1 in all three, observed 2026-11-05. All three also set CODEX_THREAD_ID and CODEX_VERSION; only the app sets CODEX_SHELL=1; CODEX_SANDBOX is set only because all three ran sandboxed, so it is not a marker.
+- Harness observation: copilot, Copilot agent mode in VS Code 1.143.1 (Copilot Chat built in), COPILOT_AGENT=1 with AI_AGENT=github_copilot_vscode_agent, observed 2026-11-05.
+- Harness observation: copilot, GitHub Copilot desktop app 1.1.34, COPILOT_CLI=1 with AI_AGENT=github_copilot_app_agent, observed 2026-11-05. The app does not set COPILOT_AGENT.
+- Control: a plain VS Code 1.143.1 terminal (no agent) set TERM_PROGRAM=vscode, VSCODE_INJECTION=1,
+  COPILOT_DEBUG_NONCE and CLAUDE_CODE_SSE_PORT (the Claude Code extension's), and none of
+  CLAUDECODE, CODEX_CI, COPILOT_AGENT, COPILOT_CLI or AI_AGENT. So TERM_PROGRAM and
+  COPILOT_DEBUG_NONCE are not Copilot markers, and a Claude Code session started in that
+  terminal still reads as claude-code.
+### What was done
+- src/modules/presence/harness.ts: rows codex CODEX_CI=1, copilot COPILOT_AGENT=1, copilot
+  COPILOT_CLI=1 after the claude-code row; the header says how a nested run resolves.
+- test/presence-harness.test.ts: one case per observed shell plus the control and the nested
+  case; the existing evidence test checks each row against the lines above.
+### Not covered
+- OpenClaw: it runs on the operator's Ubuntu machine and was not observed; it reports `other`.
+- Codex with sandboxing off (full access) was not observed; CODEX_CI was present in all three
+  sandboxed runs. The Copilot CLI on its own (outside the app) was not observed.
+- A nested run (one harness started from another's shell) resolves by table order, Claude Code
+  first; `--harness` overrides it.
