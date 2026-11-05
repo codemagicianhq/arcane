@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-11-05
+
+The local presence channel, `spell presence` ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention)): which session works on what, right now, on loopback only. This entry is completed as the feature's last stories land.
+
+### Added
+
+- **`spell presence serve | status | stop | report | end`.** An operator-started service on `127.0.0.1` that sessions report to, and the reporter that spells call. Nothing listens until `serve` runs.
+
 ## [1.17.3] - 2026-11-04
 
 The latest-version check works in an installed copy: `spell status` and `spell state --json --online` report the version npm serves.
