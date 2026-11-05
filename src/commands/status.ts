@@ -145,9 +145,11 @@ export async function runStatus(
 
   console.log("");
 
-  const latestStr = versionResult.error
-    ? "unable to check"
-    : (versions.latest ?? versions.files);
+  // A null `latest` means the lookup gave no answer: no feed URL, or a
+  // registry that could not be reached or did not name a latest version.
+  // Say so. The manifest's version is not the latest published one, and
+  // printing it here would report a failed check as a successful one.
+  const latestStr = versions.latest ?? "unable to check";
 
   let footer = `  Installed: ${versions.cli}  Latest: ${latestStr}`;
 

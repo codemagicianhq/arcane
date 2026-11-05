@@ -69,16 +69,19 @@ export async function collectVersions(
 
   if (options.online) {
     let feedUrl = options.feedUrl ?? "";
+    let feedError = "";
     if (feedUrl === "") {
       try {
         feedUrl = getFeedUrl();
-      } catch {
-        feedUrl = "";
+      } catch (error) {
+        // Keep the reason: "Feed URL unavailable" alone hid, for every
+        // installed copy, that the package's own package.json was not found.
+        feedError = `Feed URL unavailable: ${error instanceof Error ? error.message : String(error)}`;
       }
     }
     lookup = feedUrl
       ? await checkForUpdate(packageVersion, feedUrl, options.cachePath)
-      : { current: packageVersion, latest: null, updateAvailable: false, error: "Feed URL unavailable" };
+      : { current: packageVersion, latest: null, updateAvailable: false, error: feedError };
     if (lookup.latest === null) {
       warnings.push(
         `versions.latest: the npm lookup gave no answer${lookup.error ? ` (${lookup.error})` : ""}; latest and drift.cli_behind_latest are null`,

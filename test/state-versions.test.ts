@@ -112,13 +112,15 @@ describe("collectVersions (ST-03, ST-13)", () => {
     expect(result.warnings[0]).toContain("versions.latest");
   });
 
-  it("online: an unavailable feed URL reports the same error spell status shows", async () => {
+  it("online: an unavailable feed URL is reported with its reason, and no lookup runs", async () => {
     vi.mocked(versionCheck.getFeedUrl).mockImplementation(() => {
       throw new Error("publishConfig.registry is not set");
     });
     const result = await collectVersions(manifest(), "1.2.3", { online: true });
     expect(versionCheck.checkForUpdate).not.toHaveBeenCalled();
-    expect(result.lookup?.error).toBe("Feed URL unavailable");
-    expect(result.warnings[0]).toContain("Feed URL unavailable");
+    expect(result.lookup?.error).toBe("Feed URL unavailable: publishConfig.registry is not set");
+    expect(result.warnings).toEqual([
+      "versions.latest: the npm lookup gave no answer (Feed URL unavailable: publishConfig.registry is not set); latest and drift.cli_behind_latest are null",
+    ]);
   });
 });

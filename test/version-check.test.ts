@@ -230,7 +230,7 @@ describe("version-check", () => {
       expect(result.updateAvailable).toBe(false);
     });
 
-    it("sets error field on network failure without throwing", async () => {
+    it("returns latest null, with no error field, on network failure without throwing", async () => {
       vi.stubGlobal(
         "fetch",
         vi.fn().mockRejectedValue(new Error("DNS lookup failed")),
@@ -240,7 +240,10 @@ describe("version-check", () => {
       expect(result.latest).toBeNull();
       expect(result.updateAvailable).toBe(false);
       // No error field expected — network failure is handled by getLatestVersion returning null
-      // The VersionCheckResult should have latest=null
+      // The VersionCheckResult should have latest=null. Callers must read a
+      // null `latest` as "no answer", not wait for `error` (spell status once
+      // printed the manifest's version as Latest in this case).
+      expect(result.error).toBeUndefined();
       expect(result.current).toBe("1.0.0");
     });
 

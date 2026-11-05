@@ -1,22 +1,21 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
-import { createRequire } from "node:module";
+import { packageJson } from "../package-info.js";
 import type { VersionCheckResult } from "../types.js";
 
-const require = createRequire(import.meta.url);
-
-interface PackageJson {
-  publishConfig?: { registry?: string };
-}
-
-/** Read the feed URL from the package's own publishConfig.registry — never hardcoded. */
+/**
+ * Read the feed URL from the package's own publishConfig.registry — never hardcoded.
+ *
+ * The package.json comes from `package-info.ts`, the one module that knows
+ * where it is both from source and from the bundled `dist/index.js`; this
+ * file sits a folder deeper and must not resolve it by a path of its own.
+ */
 export function getFeedUrl(): string {
-  const pkg = require("../../package.json") as PackageJson;
-  const url = pkg.publishConfig?.registry;
+  const url = packageJson.publishConfig?.registry;
   if (!url) {
     throw new Error(
-      "publishConfig.registry is not set in package.json. Cannot resolve npm feed URL.",
+      "publishConfig.registry is not set in package.json, so the npm feed URL cannot be resolved",
     );
   }
   return url;

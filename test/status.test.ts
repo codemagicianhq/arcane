@@ -215,6 +215,33 @@ describe("spell status — handler", () => {
     expect(allOutput).toContain("unable to check");
   });
 
+  it("shows 'unable to check', not the manifest's version, when the lookup gives no answer", async () => {
+    // What checkForUpdate really returns when the registry cannot be reached:
+    // latest null and no error field (test/version-check.test.ts).
+    await writeManifest(tmpDir, {
+      version: "0.0.9",
+      components: [
+        {
+          name: "testing-standards",
+          files: ["governance/testing-standards.md"],
+          installedVersion: "0.0.9",
+        },
+      ],
+    });
+    vi.mocked(versionCheck.checkForUpdate).mockResolvedValue({
+      current: PACKAGE_VERSION,
+      latest: null,
+      updateAvailable: false,
+    });
+
+    await runStatus(tmpDir, PACKAGE_VERSION);
+
+    const footerLine = logSpy.mock.calls
+      .map((c) => c[0] as string)
+      .find((l) => l.includes("Installed:"));
+    expect(footerLine).toBe(`  Installed: ${PACKAGE_VERSION}  Latest: unable to check`);
+  });
+
   it("does NOT show 'spell update available' when already at latest", async () => {
     await writeManifest(tmpDir, {
       components: [
@@ -544,14 +571,27 @@ describe.skipIf(!BIN)("spell status — built CLI integration", () => {
     };
     await fs.writeFile(join(tmpDir, ".arcane.json"), JSON.stringify(manifest, null, 2));
 
+    // The built CLI resolves its feed URL and then reads the 24-hour version
+    // cache under the home directory. Give it a home of its own with a fresh
+    // cache entry: the run reaches no registry and never reads or writes the
+    // developer's real ~/.arcane. This case used to assert only "Installed:",
+    // which also passed while the bundle printed "Latest: unable to check" on
+    // every run; test/installed-cli-version-lookup.test.ts covers the lookup
+    // itself against a stub registry.
+    const home = join(tmpDir, "home");
+    await fs.mkdir(join(home, ".arcane"), { recursive: true });
+    await fs.writeFile(
+      join(home, ".arcane", "version-cache.json"),
+      JSON.stringify({ latest: "99.0.0", checkedAt: new Date().toISOString() }),
+    );
+
     const result = spawnSync("node", [BIN!, "status"], {
       cwd: tmpDir,
       encoding: "utf8",
-      // Network calls will fail but that's fine — error is caught gracefully
-      env: { ...process.env },
+      env: { ...process.env, HOME: home, USERPROFILE: home },
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("testing-standards");
-    expect(result.stdout).toContain("Installed:");
+    expect(result.stdout).toMatch(/Installed: \S+ {2}Latest: 99\.0\.0 {2}\(spell update available\)/);
   });
 });
