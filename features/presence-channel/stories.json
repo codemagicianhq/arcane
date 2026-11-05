@@ -296,9 +296,9 @@
         "The README section and the CHANGELOG entry pass the denylist scan and name no venture, customer or machine (ARC-031)"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-release.test.ts 3/3 passed (package.json dependencies equal main at 2aec288; README Presence section has the commands, the token rule, the three registrations and the three user services; the 1.18.0 CHANGELOG entry under ARC-060 records each runner's median and p95); check:changelog, check:version-bump, check:demos, check:self-host-parity (372/372), check:spell-catalog, check:stale-claims (Class A passed), check:adr-references and check:citations pass; ward gate clean; README examples checked against current docs on 2026-11-05 (sources in progress.txt); PRD frontmatter accepted/shipped, ARC-059 called Accepted in its Dependencies, every acceptance box ticked with notes on PC-05 (v3 alias at the seam) and PC-07 (tree comparison); TODO.md updated with PC-17 to PC-21, the on-disk v3 alias test, the orchestrator-default re-read, marking ARC-060 shipped after merge, and the stories-key drift, each with a Done-when line"
     }
   ]
 }

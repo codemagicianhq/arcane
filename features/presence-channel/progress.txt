@@ -281,3 +281,27 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   - windows-latest: runs 361–468, median 440 ms, p95 468 ms.
 - Every runner is under its 1 s budget, Windows with the least room (468 ms). No split entry
   was needed; the fallback in architecture D21 stays unused.
+
+## Iteration 17 — PS-16 — 2026-11-05
+### Documentation sources for the README (read 2026-11-05)
+- Claude Code: code.claude.com/docs/en/mcp — `claude mcp add [options] <name> -- <command> [args...]`,
+  `--transport stdio`, scopes local / project / user (user stored in ~/.claude.json). The page's
+  user-scope example is an HTTP server; the stdio + `--scope user` form follows its syntax line.
+- Codex CLI: learn.chatgpt.com/docs/extend/mcp?surface=cli — `codex mcp add <name> -- <command>`;
+  config.toml `[mcp_servers.<name>]` with command and args.
+- GitHub Copilot in VS Code: code.visualstudio.com/docs/agents/reference/mcp-configuration —
+  `.vscode/mcp.json` with top-level "servers" and "type": "stdio"; ~/.copilot/mcp-config.json
+  uses "mcpServers".
+- systemd: freedesktop.org systemd.unit (~/.config/systemd/user/) and systemctl (`--user`,
+  `enable --now`, `daemon-reload`).
+- launchd: Apple's "Creating Launch Daemons and Agents" (LaunchAgents, Label, ProgramArguments,
+  KeepAlive) plus this Mac's man pages, macOS 27.0.1: launchd.plist(5) RunAtLoad, launchctl(1)
+  bootstrap (load/unload are the legacy forms).
+- Windows: learn.microsoft.com schtasks create — `/sc onlogon` runs at any user's logon; the
+  README tells the reader to use an elevated prompt or the Task Scheduler window if refused,
+  because whether a standard user may create an ONLOGON task was not confirmed.
+### What was not verified
+- No MCP client was actually registered against `spell presence mcp` on this machine: the
+  registrations are documentation, checked against the docs above, not run.
+- PC-01's "every profile's install set is 1.17.1's plus the fragment" rests on the existing
+  install-set tests passing unchanged in the full suite (no snapshot was updated).

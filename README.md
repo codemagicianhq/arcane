@@ -273,6 +273,77 @@ The document is derived, never authoritative, and deterministic: two runs differ
 
 The shape is the JSON Schema at [`src/assets/schemas/state.schema.json`](src/assets/schemas/state.schema.json) (`$id` `https://arcaneai.net/schemas/state/v1`), shipped in the package as `dist/assets/schemas/state.schema.json`. Schema `1.0.0` is additive-only: a field is never removed or retyped; a breaking change is a new major version and a new decision record ([ARC-044](DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel)).
 
+### Presence
+
+`spell presence` is an optional, local presence channel: which session is working on what, right now, and whether it is waiting for you ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention); working name `arcane-mcp`). You start the service; nothing listens until you do. It binds `127.0.0.1` only, keeps sessions in memory only (stale after 90 s without a report, dropped after 24 h), writes nothing but its token and `server.json` under `~/.arcane/presence/`, and never writes a repository file. It is observation only: everything it holds is reconstructable from `spell state --json`, and no route, tool or event steers a session. Spells report through it with one fragment in `spell-open-session`, `spell-close-session`, `spell-commit-work` and `spell-implement`; with no service running they behave exactly as before.
+
+| Command | What it does |
+| --- | --- |
+| `spell presence serve [--port <n>] [--rotate]` | Runs the service in the foreground on `127.0.0.1` (port 27226, or `ARCANE_PRESENCE_PORT`) until Ctrl+C. `--rotate` replaces the token |
+| `spell presence status` | Exit 0 when the service answers this machine's token, 1 otherwise |
+| `spell presence stop` | Stops the recorded service; exit 0 either way |
+| `spell presence report --status <s> [--task ...] [--needs-you ...]` | Reports this checkout's session; silent and exit 0 with no service, never blocks |
+| `spell presence end` | Ends this checkout's session |
+| `spell presence mcp` | The same channel as an MCP server over stdio: tools `presence_report` and `presence_end`, resources `arcane://presence/sessions` and `arcane://presence/capabilities` |
+
+**The token** is `~/.arcane/presence/token` (`0600` in a `0700` directory; restricted to your account on Windows). A subscriber that cannot read the file, such as a dashboard's server, gets it from the `ARCANE_PRESENCE_TOKEN` environment variable instead. No command takes a token as an argument. **Remote access** is only ever a tunnel you put in front of the loopback port, with the token still required. The contract is HTTP plus server-sent events under `/v0/`; its JSON Schema is [`src/assets/schemas/presence.schema.json`](src/assets/schemas/presence.schema.json) (`$id` `https://arcaneai.net/schemas/presence/v0`), shipped as `dist/assets/schemas/presence.schema.json`.
+
+**Registering the MCP server** is yours; Arcane writes no client's configuration. The server accepts a `cwd` argument on both tools, because a client may launch it from any directory.
+
+```bash
+claude mcp add --transport stdio --scope user arcane-presence -- spell presence mcp   # Claude Code
+codex mcp add arcane-presence -- spell presence mcp                                  # Codex CLI
+```
+
+For GitHub Copilot in VS Code, add it to `.vscode/mcp.json` (or your user `mcp.json`):
+
+```json
+{ "servers": { "arcane-presence": { "type": "stdio", "command": "spell", "args": ["presence", "mcp"] } } }
+```
+
+**Running it as a user service** is optional. Use absolute paths from `which node` and `which spell` (`where` on Windows), because services start without your shell's `PATH`.
+
+<details>
+<summary>macOS (launchd), Linux (systemd --user), Windows (Task Scheduler)</summary>
+
+macOS: save as `~/Library/LaunchAgents/net.arcaneai.presence.plist`, then `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/net.arcaneai.presence.plist`.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>net.arcaneai.presence</string>
+  <key>ProgramArguments</key>
+  <array><string>/absolute/path/to/node</string><string>/absolute/path/to/spell</string><string>presence</string><string>serve</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+</dict>
+</plist>
+```
+
+Linux: save as `~/.config/systemd/user/arcane-presence.service`, then `systemctl --user daemon-reload` and `systemctl --user enable --now arcane-presence.service`.
+
+```ini
+[Unit]
+Description=Arcane presence service (loopback only)
+
+[Service]
+ExecStart=/absolute/path/to/node /absolute/path/to/spell presence serve
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
+Windows: a task that starts at logon. If Windows answers "Access is denied", create the same task from an elevated prompt or in Task Scheduler's window.
+
+```bat
+schtasks /create /sc onlogon /tn "Arcane presence" /tr "\"C:\path\to\spell.cmd\" presence serve"
+```
+
+</details>
+
 ### Profiles
 
 Install everything, or just the slice you want:

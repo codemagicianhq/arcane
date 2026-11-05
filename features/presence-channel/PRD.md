@@ -1,7 +1,7 @@
 ---
 title: "PRD: The presence channel — `arcane-mcp` v0"
-status: draft
-implementation_status: planned
+status: accepted
+implementation_status: shipped
 tracking:
   tracking_mode: internal
   external_provider: null
@@ -363,36 +363,36 @@ rests on.
 
 ## Acceptance Criteria
 
-- [ ] `package.json` dependencies unchanged; every profile's install set is 1.17.1's plus the
+- [x] `package.json` dependencies unchanged; every profile's install set is 1.17.1's plus the
       fragment; `spell presence report` in a fresh install is silent and exits 0 (PC-01).
-- [ ] `serve` binds loopback only, writes `token` and `server.json` with the required modes,
+- [x] `serve` binds loopback only, writes `token` and `server.json` with the required modes,
       removes `server.json` on `SIGTERM`; `status` and `stop` behave as specified (PC-02).
-- [ ] Every `/v0/` route is covered with and without the token; `413`, truncation and the line
+- [x] Every `/v0/` route is covered with and without the token; `413`, truncation and the line
       cap are tested; no CORS header is ever sent (PC-03).
-- [ ] One checkout, one session; `end` then `report` mints a new reference; a second worktree is
+- [x] One checkout, one session; `end` then `report` mints a new reference; a second worktree is
       a second session; every fixture record validates against the shipped presence schema
       (PC-04).
-- [ ] The reporter is silent and exits 0 without a channel and outside an Arcane repository;
+- [x] The reporter is silent and exits 0 without a channel and outside an Arcane repository;
       `--agent` resolves slugs and aliases; a refused report is one stderr line and exit 0
-      (PC-05).
-- [ ] Token file modes on POSIX and the ACL on Windows are asserted; the environment variable
+      (PC-05). *Note: the `openclaw` alias on a v3 roster is tested at the roster seam with resolved profiles; the on-disk v3 fixture waits for the agent-identity loader (architecture D7, `TODO.md`).*
+- [x] Token file modes on POSIX and the ACL on Windows are asserted; the environment variable
       wins over the file; `--rotate` works; no token in any log (PC-06).
-- [ ] `stale` at 90 s and expiry at 24 h under a test clock; a restart starts empty; the only
-      writes during the suite are under `~/.arcane/presence/` (PC-07).
-- [ ] `server.hello` carries the snapshot; events arrive in order; 16 subscribers each get every
+- [x] `stale` at 90 s and expiry at 24 h under a test clock; a restart starts empty; the only
+      writes during the suite are under `~/.arcane/presence/` (PC-07). *Note: "the only writes" is proved by a before-and-after tree comparison rather than a filesystem watch (architecture D22).*
+- [x] `server.hello` carries the snapshot; events arrive in order; 16 subscribers each get every
       event (PC-08).
-- [ ] The stdio MCP server passes the protocol test for both tools and both resources, with and
+- [x] The stdio MCP server passes the protocol test for both tools and both resources, with and
       without a service (PC-09).
-- [ ] `capabilities` is `{ observe: true, actions: [] }` in all four places (PC-10).
-- [ ] The fragment is in exactly the four spells and their shims; parity and the catalog pass; a
+- [x] `capabilities` is `{ observe: true, actions: [] }` in all four places (PC-10).
+- [x] The fragment is in exactly the four spells and their shims; parity and the catalog pass; a
       run without a channel is byte-identical to 1.17.1 (PC-11).
-- [ ] The leak scan passes over presence fixtures; no payload text reaches a log (PC-12).
-- [ ] Both threat-model copies carry the section; parity passes (PC-13).
-- [ ] The timing test passes on the three CI operating systems and its numbers are in the
+- [x] The leak scan passes over presence fixtures; no payload text reaches a log (PC-12).
+- [x] Both threat-model copies carry the section; parity passes (PC-13).
+- [x] The timing test passes on the three CI operating systems and its numbers are in the
       CHANGELOG (PC-14).
-- [ ] ARC-060 is in `DECISIONS.md` and accepted before the implementing pull request merges;
+- [x] ARC-060 is in `DECISIONS.md` and accepted before the implementing pull request merges;
       `check:stale-claims` Class A passes (PC-15).
-- [ ] `check:changelog`, `check:version-bump`, `check:demos`, `check:self-host-parity` and
+- [x] `check:changelog`, `check:version-bump`, `check:demos`, `check:self-host-parity` and
       `check:spell-catalog` pass (PC-16).
 
 ## Dependencies
@@ -400,7 +400,7 @@ rests on.
 - [ARC-044](../../DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) —
   decisions 2, 3 and 5 are what this builds; its open questions close here.
 - [ARC-059](../../DECISIONS.md#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export)
-  (Proposed) and [features/agent-identity/PRD.md](../agent-identity/PRD.md) — the reference
+  (Accepted 2026-11-04) and [features/agent-identity/PRD.md](../agent-identity/PRD.md) — the reference
   module (AI-01) mints `arcane:session:`; `resolveRoster`'s provenance (AI-07) and the descriptor
   (AI-08) are what the record carries. Sequencing: the hub's order is the identity ARC first; if
   2.1 starts before AI-01 has merged, 2.1 builds the shared reference module to AI-01's

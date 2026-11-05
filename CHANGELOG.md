@@ -11,11 +11,29 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [1.18.0] - 2026-11-05
 
-The local presence channel, `spell presence` ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention)): which session works on what, right now, on loopback only. This entry is completed as the feature's last stories land.
+The local presence channel, `spell presence` ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention), with its decision 13 amendment): which session works on what, right now, and whether it waits for you. Loopback only, memory only, observation only; nothing listens until the operator runs `spell presence serve`. `arcane-mcp` stays the component's working name until the Naming Test.
 
 ### Added
 
-- **`spell presence serve | status | stop | report | end`.** An operator-started service on `127.0.0.1` that sessions report to, and the reporter that spells call. Nothing listens until `serve` runs.
+- **`spell presence serve | status | stop`.** An operator-started foreground service on `127.0.0.1` (port 27226, `--port` or `ARCANE_PRESENCE_PORT`). It binds before it touches its store, writes only `~/.arcane/presence/token` (32 random bytes, `0600` in `0700`, restricted to the account on Windows; `--rotate` replaces it) and `server.json`, and removes `server.json` on a clean exit. `stop` signals the recorded process only when the service at the recorded port answers with the same start time.
+- **The `/v0/` loopback contract.** `GET /v0/health`, `POST /v0/sessions/report`, `POST /v0/sessions/end`, `GET /v0/sessions`, `GET /v0/sessions/{session}` and `GET /v0/events` (server-sent events: `server.hello` with the current sessions, then one event per change with the full record, and a keepalive every 15 s). Every route requires `Authorization: Bearer <token>`; the only unauthenticated answer is an empty `401`. No CORS headers, no `Host` check. Limits: 64 KiB bodies, 256-character lines, 20 needs-you lines (more is refused), 32 subscribers.
+- **`schemas/presence.schema.json`** (`$id` `https://arcaneai.net/schemas/presence/v0`): the session record at the root, every request and response body in `$defs`.
+- **Sessions keyed by checkout.** The first report from a worktree mints `arcane:session:<uuidv7>`; later reports patch the record; 90 s of silence marks it stale, 24 h expires it, and a restart starts empty. The agent block comes from the roster: on a v2 roster `slug` is the entry's id, with its name, origin and definition revision (ARC-060 decision 13).
+- **`spell presence report | end`.** Silent and exit 0 with no service and outside an Arcane repository; one stderr line and exit 0 when the service refuses; cut off at 2 s; never writes a file. `--harness` defaults to a table of observed markers (Claude Code today), else `other`.
+- **`spell presence mcp`.** The channel as an MCP server over stdio, hand-written with no SDK: tools `presence_report` and `presence_end`, resources `arcane://presence/sessions` and `arcane://presence/capabilities`. It serves clients that open with `initialize` (protocol 2025-11-25, 2025-06-18, 2024-11-05) and clients on the current revision, 2026-07-28, which send the version on every request and may call `server/discover`.
+- **The `arcane:<type>:<uuidv7>` reference module** (`agent`, `template`, `session`), built to the agent-identity PRD's AI-01 specification.
+- **The `presence-report` fragment** in `spell-open-session`, `spell-close-session`, `spell-commit-work` and `spell-implement`: report at the start, on a Needs you block, at a checkpoint, and end at close; with no channel the spells behave as before.
+- **A "Local Presence Service" section in the threat-model template**: the assets, three actors, fifteen surfaces with how to verify each (thirteen planned, two accepted risks), and two surfaces found in design.
+
+### Changed
+
+- CI's three-OS job builds the CLI and runs the presence store, lifecycle and timing suites.
+
+### Notes
+
+- **The latency budget's first half** (ARC-060 decision 11): from the start of `spell presence report` to its event at a loopback subscriber, p95 over 20 runs. macOS (local): median 144 ms, p95 149 ms against 500 ms. CI, against 1 s: ubuntu-latest median 132 ms, p95 142 ms; macos-latest median 194 ms, p95 251 ms; windows-latest median 440 ms, p95 468 ms.
+- On Windows the token file keeps explicit entries for SYSTEM and the Administrators group besides the account, which can override any ACL on the machine; the threat-model section and the test say so.
+- No new runtime dependency: `node:http`, `node:crypto` and the new modules carry everything.
 
 ## [1.17.3] - 2026-11-04
 
