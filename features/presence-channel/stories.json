@@ -53,9 +53,9 @@
         "The module's imports are limited to ./types.js and type-only imports, asserted by reading the file in the test (architecture D1; threat-model control 11)"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-sessions.test.ts 25/25 passed; src/modules/presence/sessions.ts 100% lines / 81.25% branches / 93.75% functions / 94.04% statements; one checkout one reference, end then report mints anew, second path second record; patch semantics; one event per report with the precedence table (7 cases); stale at 90 s once with status kept, resumed clears it, expiry at 24 h drops the record; every emitted event validates against the schema; imports ./types.js only"
     },
     {
       "id": "PS-04",

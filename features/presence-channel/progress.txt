@@ -43,3 +43,18 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   compares enums and keys, not the whole structure.
 ### What to watch for
 - npm run build must be re-run before any built-CLI test (dist/ is stale otherwise).
+
+## Iteration 3 — PS-03 — 2026-11-05
+### What was done
+- src/modules/presence/sessions.ts: createSessionTable({ now, mint, staleAfterMs?, expireAfterMs? })
+  with report, end, get, snapshot, count, sweep and listen. Pure; returns copies.
+- test/presence-sessions.test.ts: 25 tests over the key, the patch, the event precedence, both
+  clocks, end, ordering and the import boundary.
+### What was learned
+- listen() (a set of listeners) instead of one onEvent option: the server needs to add and
+  remove feeds, and tests need their own listener beside it.
+- Expiry is checked before stale in sweep, so a record silent past both clocks emits only
+  session.expired. An expired record carries stale: true in its last event.
+### What to watch for
+- report() trusts its input: validate.ts (PS-04) must run first. The table never sees a
+  `done` status from a report.
