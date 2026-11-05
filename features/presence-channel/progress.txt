@@ -179,3 +179,50 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 ### What to watch for
 - The on-disk v3 alias test belongs to the agent-identity feature (AI-02, AI-07), which
   replaces v2Profiles; PS-16 registers it in TODO.md.
+
+## Iteration 11 — PS-11 (code, CI pending) and the release bump — 2026-11-05
+### What was done
+- test/presence-timing.test.ts (nearest-rank p95 over 20 spawns of the built CLI's report,
+  measured to the event's arrival at a loopback subscriber; limits 500 / 1000 ms literals).
+- ci.yml: the three-OS job builds, then runs presence-store, presence-lifecycle and
+  presence-timing.
+- 1.18.0 bump (npm version minor; the README demos regenerated) and the start of the CHANGELOG
+  entry, committed separately, because the pre-push hook runs check:version-bump and every
+  push of distributable changes needs the bump.
+### Measurements
+- Local, macOS (Node 24.18, Apple silicon): runs 130–149 ms, median 144 ms, p95 149 ms.
+  `node dist/index.js --version` takes 0.14–0.15 s, so process start is most of it.
+- Regression proof: with a 600 ms delay injected before each spawn the test failed
+  (median 755 ms, p95 766 ms > 500); the delay was removed and never committed.
+- CI runners: recorded below when PR #435's checks report.
+### What was learned
+- The pre-push hook runs the full suite (2,996 tests, about 4 minutes here) and the version
+  check; push in the background.
+
+## Iteration 12 — PS-12 — 2026-11-05
+### The MCP specification, read 2026-11-05 at modelcontextprotocol.io
+- specification/versioning: the current revision is 2026-07-28. It has no initialize
+  handshake: every request carries its version in `_meta["io.modelcontextprotocol/protocolVersion"]`,
+  an unsupported version is error -32022 with data { supported, requested }, and servers
+  MUST implement `server/discover`. Revisions 2025-11-25 and earlier are "legacy"
+  (initialize-based); a "dual-era" server MAY serve both, choosing per client by how it opens.
+- specification/2025-06-18/basic/lifecycle: initialize → { protocolVersion, capabilities,
+  serverInfo }; answer the client's version when supported, else the server's latest; the
+  example error names 2024-11-05 as a supported version.
+- specification/2026-07-28 tools, resources, stdio, server/discover: results carry
+  resultType "complete"; tool execution errors are isError: true; an unknown tool and a
+  missing resource are -32602; stdout carries MCP messages only; exit on stdin end.
+### Decision taken here (reported to the operator in the PR, not an ARC-060 change)
+- ARC-060 decision 5 lists initialize, ping, tools/list, tools/call, resources/list and
+  resources/read, written against the handshake revisions. A server speaking only those
+  would fail every client on the current revision. The server is therefore dual-era: legacy
+  versions 2025-11-25, 2025-06-18, 2024-11-05 through initialize, and 2026-07-28 through
+  per-request `_meta` plus server/discover. Same two tools, same two resources, same
+  descriptor; nothing beyond decision 5's surface is offered (no prompts, no
+  subscriptions/listen, no sampling).
+- Naming impact: `arcane-presence` (serverInfo.name) appears nowhere else in the repository
+  except the architecture and the story that name it; npm has no package of that name
+  (`npm view arcane-presence` → 404). It is one more label for the Naming Test.
+### What to watch for
+- Which revision each client speaks today was not tested against real clients (Claude Code,
+  Copilot, Codex): PS-16's registration examples are the place to note it.

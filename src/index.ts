@@ -18,7 +18,7 @@ import { defaultLoginDeps, runLogin } from "./commands/login.js";
 import { runLogout } from "./commands/logout.js";
 import { runWhoami } from "./commands/whoami.js";
 import { runReport } from "./commands/report.js";
-import { runPresenceEnd, runPresenceReport, runPresenceServe, runPresenceStatus, runPresenceStop } from "./commands/presence.js";
+import { runPresenceEnd, runPresenceMcp, runPresenceReport, runPresenceServe, runPresenceStatus, runPresenceStop } from "./commands/presence.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import { userTierRoot } from "./modules/user-tier.js";
@@ -509,6 +509,13 @@ presenceCommand
     const run = await runPresenceEnd(process.cwd());
     process.exitCode = 0;
     if (run.timedOut) process.exit(0);
+  });
+
+presenceCommand
+  .command("mcp")
+  .description("Serve the presence channel as an MCP server over stdio (two tools, two resources). Register it in your own client; Arcane writes no client configuration")
+  .action(async () => {
+    await runPresenceMcp();
   });
 
 // Only parse argv when executed directly — not when imported in tests.

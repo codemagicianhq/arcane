@@ -1,7 +1,7 @@
 /**
  * `spell presence` (ARC-060; features/presence-channel/architecture.md).
  *
- * serve | status | stop | report | end; mcp joins them in a later story.
+ * serve | status | stop | report | end | mcp.
  * No subcommand starts the service as a side effect, and no option of any of
  * them takes a token, a host or a bind address.
  */
@@ -9,6 +9,7 @@
 import type { AddressInfo } from "node:net";
 import { mintSessionRef } from "../modules/agent-ref.js";
 import { callPresence, pidAlive } from "../modules/presence/client.js";
+import { serveMcp } from "../modules/presence/mcp.js";
 import { sendEnd, sendReport, type ReportFlags, type ReportOutcome, type ReporterDeps } from "../modules/presence/reporter.js";
 import { createPresenceServer } from "../modules/presence/server.js";
 import { createSessionTable } from "../modules/presence/sessions.js";
@@ -269,4 +270,12 @@ export async function runPresenceReport(cwd: string, flags: ReportFlags, io: Pre
 /** `spell presence end`: the same silence rule. */
 export async function runPresenceEnd(cwd: string, io: PresenceIo = consoleIo, deps: ReporterDeps = {}, deadlineMs = REPORT_DEADLINE_MS): Promise<ReportRun> {
   return finish(await withDeadline(sendEnd(cwd, deps), deadlineMs), io);
+}
+
+/**
+ * `spell presence mcp`: an MCP server over stdio (ARC-060 decision 5). stdout
+ * carries protocol messages only; it exits when stdin closes.
+ */
+export async function runPresenceMcp(): Promise<void> {
+  await serveMcp({ input: process.stdin, output: process.stdout, version: pkg.version });
 }

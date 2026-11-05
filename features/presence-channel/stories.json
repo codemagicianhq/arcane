@@ -226,9 +226,9 @@
         "progress.txt records the protocol versions listed and the date the specification was read"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-mcp.test.ts 8/8 passed (3 against the built CLI over stdio, 5 in process); mcp.ts 90.51% lines / 74% branches / 95% functions; with a running service: initialize, tools/list (exactly presence_report and presence_end), both tool calls, resources/list and both resources/read, and a subscriber on /v0/events sees session.started and session.ended from the tool calls; without a service both tools and both resources return 'no presence channel is configured on this machine' as a plain result and the home gains no file; -32601 for an unknown method, -32700 for a malformed line with the process still answering ping; initialize declares only tools and resources; arcane://presence/capabilities reads { observe: true, actions: [] }; every stdout line parses as JSON-RPC 2.0; protocol versions read from modelcontextprotocol.io on 2026-11-05 and recorded in progress.txt (dual-era: modern 2026-07-28, legacy 2025-11-25, 2025-06-18, 2024-11-05)"
     },
     {
       "id": "PS-13",
