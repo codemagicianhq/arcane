@@ -58,3 +58,19 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 ### What to watch for
 - report() trusts its input: validate.ts (PS-04) must run first. The table never sees a
   `done` status from a report.
+
+## Iteration 4 — PS-04 — 2026-11-05
+### What was done
+- src/modules/presence/validate.ts: validateReport and validateEnd returning
+  { ok, value } or { ok: false, code, field?, message }; oneLine(). Codes: invalid_field,
+  unknown_field, missing_field, too_many_lines. Field paths are dotted (needs_you.3.action).
+- test/presence-validate.test.ts: 32 tests.
+### What was learned
+- The Write tool turns a " " escape into the literal character. U+2028 is a line
+  terminator inside a JavaScript regular-expression literal, so the regex broke the parse.
+  Build such patterns with new RegExp("...") and a doubled backslash, and grep for literal
+  U+2028 after writing.
+- The agent block's ref, origin and revision are checked inline with the schema's patterns,
+  because validate.ts may import nothing but ./types.js.
+### What to watch for
+- Contract freeze (Phase A exit): report, record, event, error shapes are fixed from here.

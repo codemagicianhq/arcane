@@ -70,9 +70,9 @@
         "validate.ts imports only ./types.js (architecture D1; threat-model control 11)"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-validate.test.ts 32/32 passed; src/modules/presence/validate.ts 98.71% lines / 97.18% branches / 100% functions; unknown status and done refused naming status (done points to /v0/sessions/end); 257 code points cut to 256, CR/LF/controls flattened, 300 emoji cut without splitting a pair; 20 needs-you lines accepted, 21 refused with too_many_lines; unknown key, missing agent key, bad checkout.path and 14 other fields refused by name; every accepted sample validates as a report and the table's record validates as a record; imports ./types.js only. Freeze point reached: the report, record and error shapes do not change without the operator"
     },
     {
       "id": "PS-05",
