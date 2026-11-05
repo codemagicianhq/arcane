@@ -1,14 +1,14 @@
 /**
  * `spell presence` (ARC-060; features/presence-channel/architecture.md).
  *
- * serve | status | stop | report | end | mcp.
+ * serve | status | sessions | stop | report | end | mcp.
  * No subcommand starts the service as a side effect, and no option of any of
  * them takes a token, a host or a bind address.
  */
 
 import type { AddressInfo } from "node:net";
 import { mintSessionRef } from "../modules/agent-ref.js";
-import { callPresence, pidAlive } from "../modules/presence/client.js";
+import { callPresence, pidAlive, type ClientResult } from "../modules/presence/client.js";
 import { serveMcp } from "../modules/presence/mcp.js";
 import { sendEnd, sendReport, type ReportFlags, type ReportOutcome, type ReporterDeps } from "../modules/presence/reporter.js";
 import { logEvent } from "../modules/presence/log.js";
@@ -22,7 +22,15 @@ import {
   writeServerInfo,
   type StoreOptions,
 } from "../modules/presence/store.js";
-import { DEFAULT_PORT, LOOPBACK_HOST, PRESENCE_ENV, SWEEP_MS, type HealthDocument } from "../modules/presence/types.js";
+import {
+  DEFAULT_PORT,
+  LOOPBACK_HOST,
+  PRESENCE_ENV,
+  SWEEP_MS,
+  type HealthDocument,
+  type SessionRecord,
+  type SnapshotDocument,
+} from "../modules/presence/types.js";
 import { packageJson as pkg } from "../package-info.js";
 
 export const NOT_CONFIGURED = "No presence channel is configured on this machine.";
@@ -197,6 +205,17 @@ function isHealth(body: unknown): body is HealthDocument {
   return b !== null && typeof b === "object" && b.ok === true && b.contract === "v0" && typeof b.started_at === "string";
 }
 
+/**
+ * The line `status` and `sessions` print when the service cannot answer: one
+ * wording per failure, shared so the two commands cannot drift (architecture D24).
+ */
+export function unavailableLine(info: { url: string }, result: ClientResult): string {
+  if (result.kind === "refused" && result.status === 401) {
+    return `The presence service at ${info.url} refused this machine's token (rotated, or ${PRESENCE_ENV.token} is set to another value).`;
+  }
+  return `The presence service recorded at ${info.url} is not reachable.`;
+}
+
 /** `spell presence status`: exit 0 when the service answers with the token, 1 otherwise. */
 export async function runPresenceStatus(io: PresenceIo = consoleIo, store: StoreOptions = {}): Promise<number> {
   const info = readServerInfo(store);
@@ -212,12 +231,81 @@ export async function runPresenceStatus(io: PresenceIo = consoleIo, store: Store
     io.out(`  sessions: ${result.body.sessions}`);
     return 0;
   }
-  if (result.kind === "refused" && result.status === 401) {
-    io.out(`The presence service at ${info.url} refused this machine's token (rotated, or ${PRESENCE_ENV.token} is set to another value).`);
+  io.out(unavailableLine(info, result));
+  return 1;
+}
+
+function isSnapshot(body: unknown): body is SnapshotDocument {
+  const b = body as Partial<SnapshotDocument> | null;
+  return b !== null && typeof b === "object" && Array.isArray(b.sessions) && typeof b.generated_at === "string";
+}
+
+/** "42s", "5m", "3h", "2d": how long ago, for a human. */
+export function formatAge(fromIso: string, now: number): string {
+  const seconds = Math.max(0, Math.floor((now - Date.parse(fromIso)) / 1000));
+  if (!Number.isFinite(seconds)) return "-";
+  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 3_600) return `${Math.floor(seconds / 60)}m`;
+  if (seconds < 86_400) return `${Math.floor(seconds / 3_600)}h`;
+  return `${Math.floor(seconds / 86_400)}d`;
+}
+
+/**
+ * The snapshot as a table (architecture D24). A stale record reads `unknown`,
+ * the reporting fragment's word for a session that stopped reporting.
+ */
+export function renderSessionsTable(sessions: readonly SessionRecord[], now: number): string[] {
+  if (sessions.length === 0) return ["No session is reporting."];
+  const header = ["STATUS", "AGENT", "HARNESS", "REPOSITORY", "BRANCH", "AGE", "TASK"];
+  const rows = sessions.map((s) => [
+    s.stale ? "unknown" : s.status,
+    s.agent.slug ?? "-",
+    s.harness,
+    s.repository.name,
+    s.checkout.branch ?? "-",
+    formatAge(s.reported_at, now),
+    s.task ?? "-",
+  ]);
+  const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => r[i].length)));
+  const line = (cells: string[]) =>
+    cells
+      .map((c, i) => (i === cells.length - 1 ? c : c.padEnd(widths[i])))
+      .join("  ")
+      .trimEnd();
+  const out = [line(header)];
+  sessions.forEach((s, i) => {
+    out.push(line(rows[i]));
+    for (const n of s.needs_you) out.push(`  needs you: ${n.reason === null ? n.action : `${n.action} — ${n.reason}`}`);
+  });
+  return out;
+}
+
+/**
+ * `spell presence sessions [--json]` (PC-17): the GET /v0/sessions document,
+ * as a table or as JSON. Exit 0 with a document; 1 with status's wording.
+ */
+export async function runPresenceSessions(
+  options: { json?: boolean },
+  io: PresenceIo = consoleIo,
+  store: StoreOptions = {},
+  now: () => number = Date.now,
+): Promise<number> {
+  const info = readServerInfo(store);
+  if (info === null) {
+    io.out(NOT_CONFIGURED);
     return 1;
   }
-  io.out(`The presence service recorded at ${info.url} is not reachable.`);
-  return 1;
+  const result = await callPresence("GET", "/v0/sessions", undefined, store);
+  if (result.kind !== "ok" || !isSnapshot(result.body)) {
+    io.out(unavailableLine(info, result));
+    return 1;
+  }
+  if (options.json === true) {
+    io.out(JSON.stringify(result.body, null, 2));
+    return 0;
+  }
+  for (const line of renderSessionsTable(result.body.sessions, now())) io.out(line);
+  return 0;
 }
 
 async function waitForExit(pid: number, ms: number): Promise<boolean> {

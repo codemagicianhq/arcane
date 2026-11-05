@@ -311,9 +311,9 @@
         "`spell presence sessions --json` against the built CLI and a running `serve` prints a document with the reporting session"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: test/presence-sessions-command.test.ts 8/8 passed (6 in process, 2 against the built CLI): the two-session table (one stale, reading unknown, with its Needs you line) matches test/__snapshots__/presence/sessions-table.txt; --json validates against the schema's snapshot definition with ajv; no server.json prints 'No presence channel is configured on this machine.' and exits 1; a refused token and an unreachable port print status's own lines and exit 1; the built CLI lists the session a real report opened. presence.ts (commands) lines 94.8%."
     },
     {
       "id": "PS-18",

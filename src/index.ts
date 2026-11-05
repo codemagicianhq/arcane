@@ -18,7 +18,15 @@ import { defaultLoginDeps, runLogin } from "./commands/login.js";
 import { runLogout } from "./commands/logout.js";
 import { runWhoami } from "./commands/whoami.js";
 import { runReport } from "./commands/report.js";
-import { runPresenceEnd, runPresenceMcp, runPresenceReport, runPresenceServe, runPresenceStatus, runPresenceStop } from "./commands/presence.js";
+import {
+  runPresenceEnd,
+  runPresenceMcp,
+  runPresenceReport,
+  runPresenceServe,
+  runPresenceSessions,
+  runPresenceStatus,
+  runPresenceStop,
+} from "./commands/presence.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import { userTierRoot } from "./modules/user-tier.js";
@@ -466,6 +474,14 @@ presenceCommand
   .description("Say whether a presence service is running and answering this machine's token (exit 0) or not (exit 1)")
   .action(async () => {
     process.exitCode = await runPresenceStatus();
+  });
+
+presenceCommand
+  .command("sessions")
+  .description("List the sessions the presence service holds: a table, or the GET /v0/sessions document with --json. Exit 1 when no channel answers")
+  .option("--json", "Print the snapshot document as JSON instead of the table")
+  .action(async (opts: { json?: boolean }) => {
+    process.exitCode = await runPresenceSessions(opts);
   });
 
 presenceCommand

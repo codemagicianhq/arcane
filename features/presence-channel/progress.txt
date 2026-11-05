@@ -385,3 +385,26 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   sandboxed runs. The Copilot CLI on its own (outside the app) was not observed.
 - A nested run (one harness started from another's shell) resolves by table order, Claude Code
   first; `--harness` overrides it.
+
+## Should Haves run — 2026-11-05 (PS-17 to PS-21, 1.19.0)
+Run: a session started from the hub session, on branch sessions/2026-11-05-presence-should-haves
+cut from origin/main e4a6cd1 (1.18.0 merged), in a linked worktree because the primary checkout
+holds another session's staged change. stories.json's top-level branchName still names the
+first run's branch; these five stories were built here. Design: architecture D24 to D28.
+Commits wait for the operator's approval in chat (the repo's rule for interactive sessions), so
+the stories are committed one per story only after that approval.
+
+## Iteration 21 — PS-17 — 2026-11-05
+### What was done
+- src/commands/presence.ts: runPresenceSessions, renderSessionsTable, formatAge, and
+  unavailableLine, which status now shares so the two commands print one wording per failure.
+  src/index.ts registers `presence sessions [--json]`.
+- test/presence-sessions-command.test.ts (8): the two-session table as a file snapshot
+  (test/__snapshots__/presence/sessions-table.txt), --json against the schema's `snapshot`
+  definition, the empty listing, status's wording for a refused token and a dead port, and two
+  built-CLI runs (exit 1 with no channel; --json after a real `report`).
+### What was learned
+- POST /v0/sessions/report answers 201 when it mints a session, 200 on a patch; a test that
+  reports a fresh checkout expects 201.
+- A stale record is shown as `unknown`, the fragment's word, rather than its last status: the
+  last status is exactly what is no longer known.
