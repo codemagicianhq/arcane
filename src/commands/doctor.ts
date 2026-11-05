@@ -95,63 +95,6 @@ async function checkNodeVersion(): Promise<CheckResult> {
   };
 }
 
-/**
- * `homeDir` is resolved through `resolveHomeDir()` (os.homedir()), never from
- * `process.env.HOME` directly: HOME is routinely unset on Windows, where the
- * home directory is USERPROFILE. Reading it directly made both probe paths
- * resolve to a drive root on every ordinary Windows run, so the check fell
- * through to the `--version` probes below -- which had no timeout, and were
- * measured taking 25s+ each, twice per `spell doctor`.
- */
-export async function checkVSCodeExtension(
-  id: string,
-  label: string,
-  homeDir: string = resolveHomeDir(),
-): Promise<CheckResult> {
-  const name = `VS Code extension: ${label}`;
-  // Check extension directories on disk — more reliable than --list-extensions
-  // in child process contexts (snap binaries may not output to non-TTY stdout).
-  const flavours = [
-    { dir: join(homeDir, ".vscode", "extensions"), bin: "code" },
-    { dir: join(homeDir, ".vscode-insiders", "extensions"), bin: "code-insiders" },
-  ];
-
-  // Which binary to name in the remedy is decided from the extension
-  // directories already being read, never by spawning the binaries to ask.
-  // The old probe shelled out to `code --version` and then `code-insiders
-  // --version` on every run that got this far -- measured at 2.5s apiece on a
-  // developer machine where both answer normally, and unbounded when one does
-  // not -- to choose one word in the message of a check that is already a
-  // non-blocking warning. An existing extensions directory is the same
-  // evidence at no cost.
-  let installBin: string | null = null;
-
-  for (const flavour of flavours) {
-    let entries: string[];
-    try {
-      entries = await readdir(flavour.dir);
-    } catch {
-      continue; // That flavour of VS Code isn't installed for this user.
-    }
-    installBin ??= flavour.bin;
-
-    const prefix = id.toLowerCase() + "-";
-    const found = entries.some(
-      (e) => e.toLowerCase() === id.toLowerCase() || e.toLowerCase().startsWith(prefix),
-    );
-    if (found) {
-      return { name, passed: true, message: `${id} is installed` };
-    }
-  }
-
-  return {
-    name,
-    passed: false,
-    message: `${id} not found. Install via: ${installBin ?? "code"} --install-extension ${id}`,
-    blocking: false,
-  };
-}
-
 export async function checkArcaneManifest(targetDir: string): Promise<CheckResult> {
   const name = "Arcane manifest (.arcane.json)";
   const manifestPath = join(targetDir, ".arcane.json");
@@ -1192,7 +1135,6 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
 
   const results = await Promise.all([
     checkNodeVersion(),
-    checkVSCodeExtension("GitHub.copilot-chat", "GitHub Copilot (Chat)", resolveHomeDir()),
     checkArcaneManifest(targetDir),
     Promise.resolve(checkIncidentReleaseGate()),
     checkPullRebase(targetDir),
