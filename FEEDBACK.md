@@ -338,3 +338,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-04-symlink-write-hardening.md`, lesson "Ask for commit approval only after the commit gates have run".
+
+## Feedback — Arcane workflow (2026-11-04)
+
+**Session:** The latest-version lookup fix and the 1.17.3 release ([PR #429](https://github.com/codemagicianhq/arcane/pull/429)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- A bug that showed only in the installed, bundled CLI passed every test in every release since 0.14.0: each test imported the source module, where the path was right, or mocked it. `testing-standards.md` has no rule about testing the artefact that ships, and `spell-bug` step 5 asks only for "a test that reproduces the bug".
+- A full-suite run started in the background with its output piped through `tail` reported exit code 0, the pipe's last stage, while the suite itself had exited 1. `spell-commit-work` step 2 says to halt when tests fail, but not how the result is read.
+
+### Improvement Items
+- [ ] In `testing-standards.md`, add a rule for anything that ships as a built or packaged artefact: at least one test runs the artefact itself, from the layout users install it in. In `spell-bug` step 5, say that when a bug shows only in the built or installed artefact, the regression test must run that artefact, not the source module. <!-- upstream: queued -->
+- [ ] In `spell-commit-work` step 2, and wherever a spell runs a suite as a gate, say to read the suite's own exit code: no trailing pipe or wrapper whose exit code replaces it, or record the exit code of the stage that matters. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-04-version-lookup-fix.md`, lessons "A test of the source module cannot see a path that depends on where the file sits" and "Read the suite's own exit line, not the wrapper's exit code".
