@@ -299,6 +299,83 @@
       "passes": true,
       "assignedTo": "claude",
       "testEvidence": "2026-11-05: test/presence-release.test.ts 3/3 passed (package.json dependencies equal main at 2aec288; README Presence section has the commands, the token rule, the three registrations and the three user services; the 1.18.0 CHANGELOG entry under ARC-060 records each runner's median and p95); check:changelog, check:version-bump, check:demos, check:self-host-parity (372/372), check:spell-catalog, check:stale-claims (Class A passed), check:adr-references and check:citations pass; ward gate clean; README examples checked against current docs on 2026-11-05 (sources in progress.txt); PRD frontmatter accepted/shipped, ARC-059 called Accepted in its Dependencies, every acceptance box ticked with notes on PC-05 (v3 alias at the seam) and PC-07 (tree comparison); TODO.md updated with PC-17 to PC-21, the on-disk v3 alias test, the orchestrator-default re-read, marking ARC-060 shipped after merge, and the stories-key drift, each with a Done-when line"
+    },
+    {
+      "id": "PS-17",
+      "title": "spell presence sessions [--json]: the snapshot as a table and as the GET /v0/sessions document",
+      "description": "Should Have PC-17, architecture D24. Add runPresenceSessions to src/commands/presence.ts and register `presence sessions [--json]` in src/index.ts. It reads GET /v0/sessions through callPresence (the loopback client, so the token only ever goes to 127.0.0.1). With --json it prints the document as the service returned it, indented two spaces, and nothing else on stdout. Without --json it prints one row per session: STATUS (a stale record shows `unknown`, the fragment's word for a session that stopped reporting), AGENT (the slug, else `-`), HARNESS, REPOSITORY, BRANCH, AGE (since reported_at, from an injected clock) and TASK, then one indented `needs you:` line per needs_you entry; no session prints `No session is reporting.` and exits 0. When no channel is configured, or the service is unreachable or refuses the token, it prints the same wording `spell presence status` prints and exits 1; status and sessions share that wording through one function.",
+      "acceptanceCriteria": [
+        "A snapshot test renders the table for a fixture of two sessions, one of them stale with a needs_you line (PC-17)",
+        "--json output parses and validates against the presence schema's `snapshot` definition with ajv (PC-17)",
+        "With no server.json the command prints `No presence channel is configured on this machine.` and exits 1; a refused token and an unreachable port print status's wording and exit 1 (PC-17)",
+        "`spell presence sessions --json` against the built CLI and a running `serve` prints a document with the reporting session"
+      ],
+      "priority": 17,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "PS-18",
+      "title": "Every Needs you block reports waiting through the needs-you fragment",
+      "description": "Should Have PC-18, architecture D25. Add one bullet to src/assets/.arcane/spells/_fragments/needs-you.md, before its Enforcement bullet: when a presence channel is configured, also report the block with `spell presence report --status waiting --needs-you \"<line>\"`, one flag per line; the command is silent and exits 0 with no channel, so the block and the rest of the run are unchanged. Run npm run fix:self-host-parity so every spell and client shim that carries the fragment gets the sentence, and nothing else changes. The text names no record id beyond what the fragment already cites, and no DECISIONS link (check:adr-references).",
+      "acceptanceCriteria": [
+        "The sentence is in the fragment and in every spell source that carries the needs-you markers (PC-18)",
+        "npm run check:self-host-parity, check:spell-catalog and check:adr-references pass (PC-18)",
+        "git diff of the spell files after fix:self-host-parity contains only the added fragment line in each file (PC-18: no other spell text changes)",
+        "A test asserts that the fragment's report line is the reporter's own flag syntax (--status waiting, --needs-you)"
+      ],
+      "priority": 18,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "PS-19",
+      "title": "MCP resource subscriptions for arcane://presence/sessions, chosen per protocol era",
+      "description": "Should Have PC-19, architecture D26. Read the MCP specification on the day (resources, subscriptions, cancellation pages for 2026-07-28 and the resources page for 2025-11-25) and record what was read and when in progress.txt. In src/modules/presence/client.ts add openEventFeed: one GET /v0/events to 127.0.0.1 with the token, resolved through resolveEndpoint (pid alive, port from server.json), resolving once server.hello arrives and null when no channel is configured, unreachable, refused or full. In src/modules/presence/mcp.ts: the resources capability gains `subscribe: true` in initialize and server/discover. Legacy era: resources/subscribe and resources/unsubscribe with { uri } answer {} and notifications/resources/updated { uri } follows each change. Modern era (2026-07-28): subscriptions/listen with notifications.resourceSubscriptions; the server sends notifications/subscriptions/acknowledged first with _meta io.modelcontextprotocol/subscriptionId = the request id and the honored subset (only arcane://presence/sessions), then notifications/resources/updated carrying the same _meta; notifications/cancelled { requestId } ends it with no response; when stdin closes the server answers each open listen with a completion result and then sends notifications/cancelled for it. A method of the other era is -32601. One feed per MCP process, opened for the first subscription and closed with the last; every session.* event is one update; losing the feed and regaining it are one update each (the resource text changes); retry every 5 s while subscribed and down. The subscribe answer waits for the first feed attempt, so a report sent after it is always seen.",
+      "acceptanceCriteria": [
+        "Legacy: a protocol test subscribes to arcane://presence/sessions with resources/subscribe, reports through the loopback API, and receives notifications/resources/updated for that URI (PC-19)",
+        "Modern: a protocol test opens subscriptions/listen, receives the acknowledgment with the subscription id, reports through the loopback API and receives the update carrying that id; notifications/cancelled stops further updates (PC-19)",
+        "resources/subscribe under 2026-07-28 and subscriptions/listen under a legacy version are -32601; an unknown URI is -32602 (per-era choice)",
+        "Without a service a subscription is still accepted, and the first update arrives when a service starts (retry)",
+        "initialize and server/discover declare resources.subscribe and nothing else new; tools/list still returns exactly two tools (threat-model control 8)",
+        "progress.txt records the specification pages read and the date"
+      ],
+      "priority": 19,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "PS-20",
+      "title": "A spell doctor row for the presence service, and --fix removes only a stale server.json",
+      "description": "Should Have PC-20, architecture D27. Add checkPresenceService(options) and fixPresenceService(options) to src/commands/doctor.ts (store options injected so tests use a temporary home). The row is always non-blocking: the channel is optional. No ~/.arcane/presence directory: a silent pass. Directory present: the token file's mode on POSIX (warn when group or others have any bit; on Windows the mode is not read, because the token is restricted by icacls at write); server.json absent: pass, not running; server.json whose pid is not alive: warn, stale, `spell doctor --fix` removes it; live pid and /v0/health answers with the token: pass, reachable, with the URL, version and session count; live pid that does not answer or refuses the token: warn. --fix re-reads server.json and removes it only when it parses and its pid is still dead; it never touches the token or a file it cannot parse. runDoctor prints the row and runs the fix after the session-continuity fix.",
+      "acceptanceCriteria": [
+        "A missing presence directory is a passing row with no warning (PC-20)",
+        "A reachable service is a passing row naming its URL (PC-20)",
+        "A server.json whose pid no longer runs is a warning, and fixPresenceService removes that file and leaves the token (PC-20: --fix removes only the stale file)",
+        "fixPresenceService leaves a server.json whose pid is alive, and an unparseable one, in place",
+        "On POSIX a token file with mode 0644 is a warning naming the mode"
+      ],
+      "priority": 20,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
+    },
+    {
+      "id": "PS-21",
+      "title": "spell-open-session lists the sessions reporting from this repository's other checkouts",
+      "description": "Should Have PC-21, architecture D28. One bullet in the Workspace Health Check of src/assets/.arcane/spells/spell-open-session.md, after the isolation-primitive bullet: run `spell presence sessions --json`; when it exits 0, list each session whose repository.root is this repository's root and whose checkout.path is not this checkout (path, branch, status, task, agent slug), so the footprint check (R4) weighs work that is live now and not only the worktree list; when it exits 1 there is no channel and the bullet adds nothing. Run fix:self-host-parity.",
+      "acceptanceCriteria": [
+        "The bullet ships in spell-open-session's source, its root copy and its client shims (PC-21)",
+        "npm run check:self-host-parity, check:spell-catalog and check:adr-references pass (PC-21)",
+        "A test asserts the bullet names `spell presence sessions --json`, repository.root and checkout.path"
+      ],
+      "priority": 21,
+      "passes": false,
+      "assignedTo": "claude",
+      "testEvidence": ""
     }
   ]
 }

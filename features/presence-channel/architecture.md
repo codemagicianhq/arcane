@@ -9,7 +9,7 @@ agent block on a v2 roster). It consumes
 `resolveRoster`'s provenance.
 
 Written 2026-11-05 against `main` at `2aec288` (arcane-cli 1.17.3). Stories: [stories.json](stories.json)
-(PS-01 to PS-16). Build window: 2026-11-09 to 2026-11-20, ahead of train T3 (2026-12-02).
+(PS-01 to PS-16; the Should Haves PS-17 to PS-21, added 2026-11-05 with D24 to D28). Build window: 2026-11-09 to 2026-11-20, ahead of train T3 (2026-12-02).
 
 ## Overview
 
@@ -461,7 +461,8 @@ The reporter writes nothing anywhere. `end` runs steps 1 to 3 and posts `{ check
 PC-17 (`spell presence sessions`), PC-18 (every Needs you block reports), PC-19 (MCP resource
 subscriptions), PC-20 (a `spell doctor` row) and PC-21 (open-session reads presence) are
 "deferred, on the record" by ARC-060's consequences and are the first things the PRD's
-Constraints split off. They have no story here. Each is registered in `TODO.md` by PS-16 so the
+Constraints split off. They had no story in the first set (PS-01 to PS-16); the addendum below
+(D24 to D28) gives them PS-17 to PS-21. Each is registered in `TODO.md` by PS-16 so the
 deferral has a durable location. PC-15 (the decision record) is already met: ARC-060 was
 accepted on 2026-11-04.
 
@@ -483,6 +484,107 @@ a test, and none changes an ARC-060 decision.
   it cannot confirm for want of a token.
 - **D17:** JSON-RPC ids must be a string, a number or null; a legacy version named in `_meta` is
   served as legacy; a wrong-typed tool argument is a tool execution error (`isError`).
+
+### Addendum — the Should Haves (D24 to D28, 2026-11-05)
+
+Written for stories PS-17 to PS-21 after 1.18.0 shipped (`main` `e4a6cd1`). Each fits D1 to D22
+and none changes an ARC-060 decision. D23 deferred these; they are now in the story set.
+
+#### D24 — `spell presence sessions` reads the snapshot through the loopback client (PC-17)
+
+- **Decision:** `runPresenceSessions` calls `GET /v0/sessions` through `callPresence`, so the
+  token still only goes to `127.0.0.1` and a stale `server.json` still means no channel (D15).
+  `--json` prints the document as received (two-space indent) and nothing else on stdout. The
+  table has one row per session (`STATUS`, `AGENT`, `HARNESS`, `REPOSITORY`, `BRANCH`, `AGE`,
+  `TASK`) and one indented `needs you:` line per entry. A stale record shows `unknown`, the word
+  the reporting fragment already uses for a session that stopped reporting. `AGE` is computed
+  from an injected clock, so the table has a snapshot test.
+- **Exit codes:** 0 with a document, an empty one included. 1 with the wording `status` prints for
+  the same failure (not configured, refused token, not reachable). The two commands share one
+  function for it, so the wording cannot drift.
+- **ADR:** none (PC-17 inside ARC-060 decision 2's command group).
+
+#### D25 — The Needs you fragment reports without checking `status` first (PC-18)
+
+- **Decision:** one bullet in `needs-you.md`, before its Enforcement bullet: report the block with
+  `spell presence report --status waiting --needs-you "<line>"`, one flag per line. It does not
+  ask the agent to run `spell presence status` first, because `report` is already silent with exit
+  0 when no channel is configured (D15, D16 step 1). One command per block is cheaper than two,
+  and that silence is what keeps a spell without a channel unchanged in practice.
+- **Overlap accepted:** the four spells that carry `presence-report` say the same thing twice.
+  Fragments are independent units (ARC-039), and removing the bullet from `presence-report` would
+  change v0's four-spell text, which PC-18 says to leave alone.
+- **ADR:** none (ARC-060 decision 5's convention, extended as PC-18 specifies).
+
+#### D26 — MCP resource subscriptions, chosen per era (PC-19)
+
+The MCP specification read on 2026-11-05 (pages and quotes in `progress.txt`, PS-19): revision
+2026-07-28 replaced `resources/subscribe` with `subscriptions/listen`, a long-lived request whose
+notifications carry its id in `_meta["io.modelcontextprotocol/subscriptionId"]`. Legacy revisions
+(2025-11-25 and earlier) keep `resources/subscribe` with a plain `notifications/resources/updated`.
+The server is already dual-era (PS-12), so each era gets its own mechanism and refuses the other's:
+
+| | Legacy (`initialize`, or a legacy version in `_meta`) | Modern (2026-07-28 in `_meta`) |
+| --- | --- | --- |
+| Capability | `resources: { subscribe: true }` in `initialize` | the same in `server/discover` |
+| Open | `resources/subscribe { uri }` → `{}` | `subscriptions/listen { notifications: { resourceSubscriptions } }`, unanswered while open; `notifications/subscriptions/acknowledged` first, with the subscription id and the honored subset |
+| Update | `notifications/resources/updated { uri }` | the same, with the subscription id in `_meta` |
+| Close | `resources/unsubscribe { uri }` → `{}` | the client sends `notifications/cancelled { requestId }` (no response is sent); on stdin's end the server answers each open listen with `{ resultType: "complete" }`, then sends `notifications/cancelled` for it |
+| The other era's method | `subscriptions/listen` → `-32601` | `resources/subscribe` → `-32601` |
+
+- **What is honored:** only `arcane://presence/sessions` changes. `arcane://presence/capabilities`
+  is constant, so a legacy subscription to it is accepted and never fires, and a modern
+  acknowledgment leaves it out. The list-changed filters (`toolsListChanged` and the rest) are left
+  out of the acknowledgment because the server does not support them. An unknown URI is `-32602`
+  "Resource not found", the same as `resources/read`.
+- **The source of updates:** one `GET /v0/events` per MCP process (`openEventFeed` in
+  `client.ts`, the same endpoint resolution as every other call), opened for the first
+  subscription and closed with the last. Each `session.*` event is one update per subscription.
+  Losing the feed, and regaining it after a loss or after a first attempt that failed, is one
+  update each, because the resource's text changes between the document and "no presence channel
+  is configured". While subscribed and down, the feed is retried every 5 s. One MCP process takes
+  one of the service's 32 subscriber slots however many subscriptions it holds.
+- **Ordering:** the subscribe answer (legacy) and the acknowledgment (modern) wait for the first
+  feed attempt, which is bounded by the client's deadlines. A report sent after the answer is
+  therefore always seen.
+- **Two pages, one teardown:** the subscriptions page says a server that ends a stream SHOULD
+  answer the listen request. The cancellation page says it MUST send `notifications/cancelled`.
+  The server does both, in that order, when stdin ends.
+- **Threat model:** nothing is added that can act. The tools stay two, `actions` stays `[]`
+  (control 8). The new capability flag is read-only and reports what the service already
+  broadcasts on `/v0/events`.
+- **ADR:** none. It is ARC-060 decision 5's surface plus PC-19, under the dual-era choice the
+  operator accepted on PR #435.
+
+#### D27 — The `spell doctor` row (PC-20)
+
+- **Decision:** `checkPresenceService` adds one row, "Presence service (ARC-060)". The row is never
+  blocking, because the channel is optional:
+
+  | State | Row |
+  | --- | --- |
+  | No `~/.arcane/presence/` | pass, nothing printed (silent) |
+  | Token file readable by group or others (POSIX) | warn, naming the mode |
+  | No `server.json` | pass: not running |
+  | `server.json` whose pid is not alive | warn: stale, `spell doctor --fix` removes it |
+  | `server.json` that does not parse | warn, naming the file; `--fix` leaves it |
+  | Live pid, `/v0/health` answers with the token | pass: reachable, URL, version, session count |
+  | Live pid, refused or no answer | warn |
+
+- **`--fix`:** `fixPresenceService` reads `server.json` again and removes it only when it parses
+  and its pid is still not alive. It never touches the token, a live record or a file it cannot
+  parse. On Windows the token's mode is not read, because the token is restricted with `icacls`
+  when it is written (D13).
+- **ADR:** none.
+
+#### D28 — Open-session reads presence (PC-21)
+
+- **Decision:** one bullet in `spell-open-session`'s Workspace Health Check, after the isolation
+  bullet. It runs `spell presence sessions --json`. On exit 0 it lists the sessions whose
+  `repository.root` is this repository's and whose `checkout.path` is not this checkout. On exit 1
+  there is no channel and the bullet adds nothing. It feeds the footprint rule (ARC-028 R4) with
+  work that is live now, not only the list of worktrees.
+- **ADR:** none (prose; PC-21).
 
 ## Component Diagram
 
@@ -692,7 +794,11 @@ blocking the first consumer, and moving it is the operator's decision, not a def
 | PC-14 Budget and its test | PS-11 | |
 | PC-15 Decision record | — | met: ARC-060 Accepted 2026-11-04 |
 | PC-16 Release notes, version, README | PS-16 | |
-| PC-17 to PC-21 Should Haves | — | deferred by ARC-060's consequences (D23); registered by PS-16 |
+| PC-17 `spell presence sessions` | PS-17 | D24; deferred by D23, built after 1.18.0 |
+| PC-18 Every Needs you block reports | PS-18 | D25 |
+| PC-19 MCP resource subscriptions | PS-19 | D26, per protocol era |
+| PC-20 `spell doctor` row | PS-20 | D27 |
+| PC-21 Open-session reads presence | PS-21 | D28 |
 
 ARC-060's three deferred questions: harness detection → answered (D8), with the table's rows as
 evidence-gated story work in PS-10; the orchestrator default → kept and isolated (D9), a
