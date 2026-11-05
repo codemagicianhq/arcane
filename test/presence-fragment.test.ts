@@ -92,3 +92,18 @@ describe("the needs-you fragment reports to the presence channel (PC-18)", () =>
   });
 });
 
+// PRD PC-21, architecture D28: open-session lists the sessions in this repository's other checkouts.
+describe("spell-open-session reads presence (PC-21)", () => {
+  it("names the command, the two fields it filters on, and the footprint rule, in the source and the root copy", async () => {
+    for (const base of [SPELLS, join(ROOT, ".arcane", "spells")]) {
+      const spell = await readFile(join(base, "spell-open-session.md"), "utf8");
+      const health = spell.slice(spell.indexOf("## Workspace Health Check"), spell.indexOf("## State Snapshot"));
+      const bullet = health.split("\n").find((l) => l.includes("spell presence sessions --json"));
+      expect(bullet).toBeDefined();
+      for (const needle of ["`repository.root`", "`checkout.path`", "R4", "exits 1"]) expect({ needle, present: bullet!.includes(needle) }).toEqual({ needle, present: true });
+    }
+    for (const shim of [join(ASSETS, ".claude", "commands", "spell-open-session.md"), join(ASSETS, ".agents", "skills", "spell-open-session", "SKILL.md")]) {
+      expect(await readFile(shim, "utf8")).toContain(".arcane/spells/spell-open-session.md");
+    }
+  });
+});

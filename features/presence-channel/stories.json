@@ -373,9 +373,9 @@
         "A test asserts the bullet names `spell presence sessions --json`, repository.root and checkout.path"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: the Workspace Health Check bullet is in src/assets/.arcane/spells/spell-open-session.md and its root copy (parity repaired 1 copy; the shims point at the spell); check:self-host-parity, check:spell-catalog, check:adr-references pass; test/presence-fragment.test.ts PC-21 block passes."
     }
   ]
 }

@@ -469,3 +469,10 @@ the stories are committed one per story only after that approval.
 ### What was learned
 - A pid above 2^22 is never handed out on Linux or macOS, and an odd one never on Windows, so
   it stands in for a crashed service's pid without racing a real process.
+
+## Iteration 25 — PS-21 — 2026-11-05
+### What was done
+- src/assets/.arcane/spells/spell-open-session.md: one bullet in the Workspace Health Check
+  after the isolation bullet; parity repaired the root copy (the shims point at the spell).
+- test/presence-fragment.test.ts: the bullet names the command, repository.root,
+  checkout.path, R4 and the exit-1 case, in the source and the root copy.
