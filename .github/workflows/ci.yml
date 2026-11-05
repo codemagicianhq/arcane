@@ -178,6 +178,16 @@ jobs:
       - name: Test the state export snapshots on this OS (ST-09)
         run: npm test -- test/state-snapshot.test.ts --testTimeout=20000
 
+      # The presence channel on each OS (features/presence-channel PS-11):
+      # the token file's restriction (0600 in 0700, or the account-only ACL on
+      # Windows), serve/status/stop as real processes, and the first half of
+      # the 2-second budget, which spawns the built CLI and so needs a build.
+      - name: Build the CLI for the presence tests
+        run: npm run build
+
+      - name: Test the presence channel on this OS (PC-02, PC-06, PC-14)
+        run: npm test -- test/presence-store.test.ts test/presence-lifecycle.test.ts test/presence-timing.test.ts --testTimeout=60000
+
   # The full suite above runs only on Linux, whose temp directory is a real
   # path. macOS's is not -- /var/folders/... sits under the /var ->
   # /private/var symlink -- and git reports real paths, which failed 179 tests
