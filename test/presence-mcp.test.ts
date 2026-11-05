@@ -3,12 +3,23 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { PassThrough } from "node:stream";
 import { join } from "node:path";
-import { LEGACY_VERSIONS, MODERN_VERSIONS, NOT_CONFIGURED_TEXT, SERVER_NAME, serveMcp } from "../src/modules/presence/mcp.js";
-import type { SessionRecord } from "../src/modules/presence/types.js";
+import { CAPABILITIES_URI, LEGACY_VERSIONS, MODERN_VERSIONS, NOT_CONFIGURED_TEXT, SERVER_NAME, SESSIONS_URI, serveMcp } from "../src/modules/presence/mcp.js";
+import type { ReportBody, SessionRecord } from "../src/modules/presence/types.js";
 import { BUILT_CLI_SKIP_REASON, resolveBuiltCli } from "./helpers/resolve-cli.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
 import { VERY_HEAVY_TEST_TIMEOUT } from "./helpers/timeouts.js";
-import { arcaneRepo, openFeed, presenceEnv, recordService, spawnServe, startPresence, type RunningPresence, type ServeProcess } from "./helpers/presence.js";
+import {
+  arcaneRepo,
+  httpRequest,
+  loadPresenceFixture,
+  openFeed,
+  presenceEnv,
+  recordService,
+  spawnServe,
+  startPresence,
+  type RunningPresence,
+  type ServeProcess,
+} from "./helpers/presence.js";
 
 const BIN = resolveBuiltCli();
 if (!BIN) console.warn(`[presence-mcp.test.ts] ${BUILT_CLI_SKIP_REASON}`);
@@ -16,6 +27,8 @@ if (!BIN) console.warn(`[presence-mcp.test.ts] ${BUILT_CLI_SKIP_REASON}`);
 interface Rpc {
   jsonrpc: "2.0";
   id: string | number | null;
+  method?: string;
+  params?: Record<string, unknown>;
   result?: Record<string, unknown>;
   error?: { code: number; message: string; data?: unknown };
 }
@@ -38,10 +51,45 @@ class Client {
         this.buffer = this.buffer.slice(at + 1);
         this.lines.push(line);
         const message = JSON.parse(line) as Rpc;
-        this.waiters.get(message.id)?.(message);
-        this.waiters.delete(message.id);
+        this.messages.push(message);
+        if (message.method === undefined) {
+          this.waiters.get(message.id)?.(message);
+          this.waiters.delete(message.id);
+        }
+        for (const w of [...this.watchers]) w();
       }
     });
+  }
+  readonly messages: Rpc[] = [];
+  private watchers: Array<() => void> = [];
+  /** Server-sent notifications with this method, in arrival order. */
+  notifications(method: string): Rpc[] {
+    return this.messages.filter((m) => m.method === method);
+  }
+  /** Resolves once `count` notifications with this method have arrived. */
+  waitForNotifications(method: string, count: number, timeoutMs = 5_000): Promise<Rpc[]> {
+    return new Promise((resolve, reject) => {
+      const check = () => {
+        const found = this.notifications(method);
+        if (found.length < count) return;
+        this.watchers.splice(this.watchers.indexOf(check), 1);
+        clearTimeout(timer);
+        resolve(found);
+      };
+      const timer = setTimeout(() => {
+        this.watchers.splice(this.watchers.indexOf(check), 1);
+        reject(new Error(`expected ${count} ${method}, got ${this.notifications(method).length}`));
+      }, timeoutMs);
+      this.watchers.push(check);
+      check();
+    });
+  }
+  /** Sends a request whose answer is not awaited (a subscriptions/listen stays open). */
+  send(id: string | number, method: string, params: Record<string, unknown>): void {
+    this.input.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
+  }
+  notifyWith(method: string, params: Record<string, unknown>): void {
+    this.input.write(`${JSON.stringify({ jsonrpc: "2.0", method, params })}\n`);
   }
   raw(line: string, id: string | number | null): Promise<Rpc> {
     const reply = new Promise<Rpc>((resolve) => this.waiters.set(id, resolve));
@@ -102,7 +150,7 @@ describe.skipIf(!BIN)("spell presence mcp over stdio, against the built CLI (PC-
     start();
 
     const init = await client.call("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "test", version: "0" } });
-    expect(init.result).toEqual({ protocolVersion: "2025-06-18", capabilities: { tools: {}, resources: {} }, serverInfo: { name: SERVER_NAME, version: expect.any(String) as string } });
+    expect(init.result).toEqual({ protocolVersion: "2025-06-18", capabilities: { tools: {}, resources: { subscribe: true } }, serverInfo: { name: SERVER_NAME, version: expect.any(String) as string } });
     client.notify("notifications/initialized");
 
     const tools = await client.call("tools/list");
@@ -203,7 +251,7 @@ describe("the MCP server in process (protocol details, PC-09, PC-10)", () => {
   it("serves a modern request statelessly, with resultType complete, and refuses an unsupported version with -32022", async () => {
     const modern = MODERN_VERSIONS[0];
     const discover = await client.call("server/discover", {}, modern);
-    expect(discover.result).toMatchObject({ resultType: "complete", supportedVersions: [...MODERN_VERSIONS, ...LEGACY_VERSIONS], capabilities: { tools: {}, resources: {} } });
+    expect(discover.result).toMatchObject({ resultType: "complete", supportedVersions: [...MODERN_VERSIONS, ...LEGACY_VERSIONS], capabilities: { tools: {}, resources: { subscribe: true } } });
     const tools = await client.call("tools/list", {}, modern);
     expect(tools.result?.["resultType"]).toBe("complete");
     const bad = await client.call("tools/list", {}, "1900-01-01");
@@ -245,4 +293,192 @@ describe("the MCP server in process (protocol details, PC-09, PC-10)", () => {
     expect(r.result?.["resultType"]).toBeUndefined();
     expect(r.result?.["tools"]).toBeDefined();
   });
+});
+
+// PRD PC-19, architecture D26: resource subscriptions, chosen per protocol era.
+const UPDATED = "notifications/resources/updated";
+const ACKNOWLEDGED = "notifications/subscriptions/acknowledged";
+const SUBSCRIPTION_KEY = "io.modelcontextprotocol/subscriptionId";
+const MODERN_META = { "io.modelcontextprotocol/protocolVersion": MODERN_VERSIONS[0] };
+
+const settle = (ms = 150) => new Promise((r) => setTimeout(r, ms));
+
+async function reportThroughLoopback(svc: RunningPresence, patch: Partial<ReportBody> = {}): Promise<void> {
+  const body = { ...(await loadPresenceFixture<ReportBody>("report.full.json")), ...patch };
+  const res = await httpRequest(svc.port, { method: "POST", path: "/v0/sessions/report", token: svc.token, body: JSON.stringify(body) });
+  expect(res.status === 200 || res.status === 201).toBe(true);
+}
+
+async function waitForSubscribers(svc: RunningPresence, count: number): Promise<void> {
+  const until = Date.now() + 2_000;
+  while (svc.presence.subscriberCount() !== count && Date.now() < until) await settle(20);
+  expect(svc.presence.subscriberCount()).toBe(count);
+}
+
+describe("MCP resource subscriptions in process (PC-19)", () => {
+  let svc: RunningPresence;
+  let home: string;
+  let input: PassThrough;
+  let output: PassThrough;
+  let done: Promise<void>;
+  let client: Client;
+
+  beforeEach(async () => {
+    svc = await startPresence();
+    home = await createFixtureDir("presence-mcp-subscribe-home");
+    recordService(home, svc.port);
+    input = new PassThrough();
+    output = new PassThrough();
+    done = serveMcp({ input, output, version: "0.0.0-test", cwd: home, deps: { home, env: {} }, log: () => undefined, feedRetryMs: 50 });
+    client = new Client(input, output);
+  });
+  afterEach(async () => {
+    input.end();
+    await done;
+    await svc.close();
+    await removeFixtureDir(home);
+  });
+
+  it("legacy: resources/subscribe, a report through the loopback API, then notifications/resources/updated; unsubscribe stops them", async () => {
+    const init = await client.call("initialize", { protocolVersion: "2025-11-25", capabilities: {}, clientInfo: { name: "test", version: "0" } });
+    expect(init.result?.["capabilities"]).toEqual({ tools: {}, resources: { subscribe: true } });
+    expect((await client.call("resources/subscribe", { uri: SESSIONS_URI })).result).toEqual({});
+    expect(svc.presence.subscriberCount()).toBe(1);
+
+    await reportThroughLoopback(svc);
+    const [update] = await client.waitForNotifications(UPDATED, 1);
+    expect(update).toEqual({ jsonrpc: "2.0", method: UPDATED, params: { uri: SESSIONS_URI } });
+
+    expect((await client.call("resources/unsubscribe", { uri: SESSIONS_URI })).result).toEqual({});
+    await waitForSubscribers(svc, 0);
+    await reportThroughLoopback(svc, { status: "working" });
+    await settle();
+    expect(client.notifications(UPDATED)).toHaveLength(1);
+  });
+
+  it("legacy: a subscription to the constant capability descriptor is accepted and opens no feed", async () => {
+    expect((await client.call("resources/subscribe", { uri: CAPABILITIES_URI })).result).toEqual({});
+    expect(svc.presence.subscriberCount()).toBe(0);
+    await reportThroughLoopback(svc);
+    await settle();
+    expect(client.notifications(UPDATED)).toHaveLength(0);
+  });
+
+  it("modern: subscriptions/listen is acknowledged with its id, updates carry it, and notifications/cancelled ends it with no response", async () => {
+    const discover = await client.call("server/discover", {}, MODERN_VERSIONS[0]);
+    expect(discover.result?.["capabilities"]).toEqual({ tools: {}, resources: { subscribe: true } });
+    client.send(41, "subscriptions/listen", {
+      _meta: MODERN_META,
+      notifications: { toolsListChanged: true, resourceSubscriptions: [SESSIONS_URI, CAPABILITIES_URI, "arcane://presence/elsewhere"] },
+    });
+    const [ack] = await client.waitForNotifications(ACKNOWLEDGED, 1);
+    expect(ack.params).toEqual({ _meta: { [SUBSCRIPTION_KEY]: 41 }, notifications: { resourceSubscriptions: [SESSIONS_URI] } });
+
+    await reportThroughLoopback(svc);
+    const [update] = await client.waitForNotifications(UPDATED, 1);
+    expect(update.params).toEqual({ _meta: { [SUBSCRIPTION_KEY]: 41 }, uri: SESSIONS_URI });
+    expect(client.messages.indexOf(ack)).toBeLessThan(client.messages.indexOf(update));
+
+    client.notifyWith("notifications/cancelled", { requestId: 41, reason: "done" });
+    await waitForSubscribers(svc, 0);
+    await reportThroughLoopback(svc, { status: "working" });
+    await settle();
+    expect(client.notifications(UPDATED)).toHaveLength(1);
+    expect(client.messages.filter((m) => m.id === 41)).toEqual([]);
+  });
+
+  it("modern: a listen that asks for nothing this server honors is acknowledged empty and opens no feed", async () => {
+    client.send("quiet", "subscriptions/listen", { _meta: MODERN_META, notifications: { promptsListChanged: true } });
+    const [ack] = await client.waitForNotifications(ACKNOWLEDGED, 1);
+    expect(ack.params).toEqual({ _meta: { [SUBSCRIPTION_KEY]: "quiet" }, notifications: {} });
+    expect(svc.presence.subscriberCount()).toBe(0);
+  });
+
+  it("each era refuses the other's method with -32601, and an unknown URI or a bad filter with -32602", async () => {
+    expect((await client.call("resources/subscribe", { uri: SESSIONS_URI }, MODERN_VERSIONS[0])).error?.code).toBe(-32601);
+    expect((await client.call("resources/unsubscribe", { uri: SESSIONS_URI }, MODERN_VERSIONS[0])).error?.code).toBe(-32601);
+    expect((await client.call("subscriptions/listen", { notifications: { resourceSubscriptions: [SESSIONS_URI] } })).error?.code).toBe(-32601);
+    expect((await client.call("subscriptions/listen", { notifications: { resourceSubscriptions: [SESSIONS_URI] } }, LEGACY_VERSIONS[0])).error?.code).toBe(-32601);
+    expect((await client.call("resources/subscribe", { uri: "arcane://presence/elsewhere" })).error).toMatchObject({ code: -32602, message: "Resource not found" });
+    expect((await client.call("resources/unsubscribe", { uri: 7 })).error?.code).toBe(-32602);
+    expect((await client.call("subscriptions/listen", { notifications: { resourceSubscriptions: "all" } }, MODERN_VERSIONS[0])).error?.code).toBe(-32602);
+    expect((await client.raw(JSON.stringify({ jsonrpc: "2.0", id: null, method: "subscriptions/listen", params: { _meta: MODERN_META } }), null)).error?.code).toBe(-32600);
+    client.send(5, "subscriptions/listen", { _meta: MODERN_META, notifications: {} });
+    await client.waitForNotifications(ACKNOWLEDGED, 1);
+    const again = await client.raw(JSON.stringify({ jsonrpc: "2.0", id: 5, method: "subscriptions/listen", params: { _meta: MODERN_META, notifications: {} } }), 5);
+    expect(again.error).toMatchObject({ code: -32602, data: { id: 5 } });
+  });
+
+  it("when stdin ends, an open listen gets its completion result and then its cancellation", async () => {
+    client.send(7, "subscriptions/listen", { _meta: MODERN_META, notifications: { resourceSubscriptions: [SESSIONS_URI] } });
+    await client.waitForNotifications(ACKNOWLEDGED, 1);
+    input.end();
+    await done;
+    const closing = client.messages.slice(-2);
+    expect(closing[0]).toEqual({ jsonrpc: "2.0", id: 7, result: { resultType: "complete", _meta: { [SUBSCRIPTION_KEY]: 7 } } });
+    expect(closing[1]).toMatchObject({ method: "notifications/cancelled", params: { requestId: 7 } });
+    await waitForSubscribers(svc, 0);
+  });
+
+  it("losing the service is an update, and so is its return", async () => {
+    expect((await client.call("resources/subscribe", { uri: SESSIONS_URI })).result).toEqual({});
+    await svc.close();
+    await client.waitForNotifications(UPDATED, 1);
+    svc = await startPresence();
+    recordService(home, svc.port);
+    await client.waitForNotifications(UPDATED, 2);
+    await reportThroughLoopback(svc);
+    await client.waitForNotifications(UPDATED, 3);
+  });
+});
+
+describe("MCP subscriptions with no service yet (PC-19)", () => {
+  it("accepts the subscription, retries, and sends the first update once a service starts", async () => {
+    const home = await createFixtureDir("presence-mcp-subscribe-late");
+    const input = new PassThrough();
+    const output = new PassThrough();
+    const done = serveMcp({ input, output, version: "0.0.0-test", cwd: home, deps: { home, env: {} }, log: () => undefined, feedRetryMs: 50 });
+    const client = new Client(input, output);
+    let svc: RunningPresence | undefined;
+    try {
+      expect((await client.call("resources/subscribe", { uri: SESSIONS_URI })).result).toEqual({});
+      await settle();
+      expect(client.notifications(UPDATED)).toHaveLength(0);
+      svc = await startPresence();
+      recordService(home, svc.port);
+      await client.waitForNotifications(UPDATED, 1);
+      await reportThroughLoopback(svc);
+      await client.waitForNotifications(UPDATED, 2);
+    } finally {
+      input.end();
+      await done;
+      await svc?.close();
+      await removeFixtureDir(home);
+    }
+  });
+});
+
+describe.skipIf(!BIN)("MCP subscriptions over stdio against the built CLI (PC-19)", () => {
+  it("subscriptions/listen on a real service: acknowledged, then the update a loopback report causes", async () => {
+    const home = await createFixtureDir("presence-mcp-subscribe-cli");
+    const service = await spawnServe(BIN!, home);
+    const child = spawn(process.execPath, [BIN!, "presence", "mcp"], { cwd: home, env: presenceEnv(home), windowsHide: true });
+    const client = new Client(child.stdin, child.stdout);
+    try {
+      client.send(1, "subscriptions/listen", { _meta: MODERN_META, notifications: { resourceSubscriptions: [SESSIONS_URI] } });
+      const [ack] = await client.waitForNotifications(ACKNOWLEDGED, 1, 10_000);
+      expect(ack.params?.["notifications"]).toEqual({ resourceSubscriptions: [SESSIONS_URI] });
+      const token = readFileSync(join(home, ".arcane", "presence", "token"), "utf8").trim();
+      const body = await loadPresenceFixture<ReportBody>("report.full.json");
+      expect((await httpRequest(service.info.port, { method: "POST", path: "/v0/sessions/report", token, body: JSON.stringify(body) })).status).toBe(201);
+      const [update] = await client.waitForNotifications(UPDATED, 1, 10_000);
+      expect(update.params).toEqual({ _meta: { [SUBSCRIPTION_KEY]: 1 }, uri: SESSIONS_URI });
+    } finally {
+      child.stdin.end();
+      await new Promise((r) => child.once("exit", r));
+      service.child.kill("SIGKILL");
+      await service.exited;
+      await removeFixtureDir(home);
+    }
+  }, VERY_HEAVY_TEST_TIMEOUT);
 });

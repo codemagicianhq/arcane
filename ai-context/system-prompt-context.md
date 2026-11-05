@@ -73,3 +73,5 @@
   - For the hub, not changed from here (the hub session owns its threat model): two surfaces its fifteen rows do not name (a port taken after a crash; a rewritten `server.json`) and the Windows ACL observation (SYSTEM and Administrators keep explicit entries on the token file). Both are in PR #435's description and in the template's section.
   - The orchestrator default is live: on a v2 roster any spell run without `--agent` reports as `main` (`TODO.md`, "Presence: re-read the orchestrator default once the first consumer renders the feed.").
   - Story evidence, measurements and every deviation are in `features/presence-channel/progress.txt`, iterations 1 to 19.
+
+> ✓ Consumed: 2026-11-05

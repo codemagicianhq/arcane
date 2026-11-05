@@ -38,6 +38,17 @@ import {
 import { scanGovernancePlaceholders, PLACEHOLDER_STANDARD_FILE } from "../modules/placeholders.js";
 import { findMissingRequires, findNewlyAvailable } from "../modules/registry-changes.js";
 import { LEGACY_COMPONENT_MIGRATIONS, getComponent } from "../modules/registry.js";
+import { callPresence, pidAlive } from "../modules/presence/client.js";
+import {
+  presenceDir,
+  readServerInfo,
+  removeServerInfo,
+  serverInfoPath,
+  storeExists,
+  tokenPath,
+  type StoreOptions,
+} from "../modules/presence/store.js";
+import { statSync } from "node:fs";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -81,63 +92,6 @@ async function checkNodeVersion(): Promise<CheckResult> {
     name,
     passed: false,
     message: `${raw} — Node.js 18 or later is required`,
-  };
-}
-
-/**
- * `homeDir` is resolved through `resolveHomeDir()` (os.homedir()), never from
- * `process.env.HOME` directly: HOME is routinely unset on Windows, where the
- * home directory is USERPROFILE. Reading it directly made both probe paths
- * resolve to a drive root on every ordinary Windows run, so the check fell
- * through to the `--version` probes below -- which had no timeout, and were
- * measured taking 25s+ each, twice per `spell doctor`.
- */
-export async function checkVSCodeExtension(
-  id: string,
-  label: string,
-  homeDir: string = resolveHomeDir(),
-): Promise<CheckResult> {
-  const name = `VS Code extension: ${label}`;
-  // Check extension directories on disk — more reliable than --list-extensions
-  // in child process contexts (snap binaries may not output to non-TTY stdout).
-  const flavours = [
-    { dir: join(homeDir, ".vscode", "extensions"), bin: "code" },
-    { dir: join(homeDir, ".vscode-insiders", "extensions"), bin: "code-insiders" },
-  ];
-
-  // Which binary to name in the remedy is decided from the extension
-  // directories already being read, never by spawning the binaries to ask.
-  // The old probe shelled out to `code --version` and then `code-insiders
-  // --version` on every run that got this far -- measured at 2.5s apiece on a
-  // developer machine where both answer normally, and unbounded when one does
-  // not -- to choose one word in the message of a check that is already a
-  // non-blocking warning. An existing extensions directory is the same
-  // evidence at no cost.
-  let installBin: string | null = null;
-
-  for (const flavour of flavours) {
-    let entries: string[];
-    try {
-      entries = await readdir(flavour.dir);
-    } catch {
-      continue; // That flavour of VS Code isn't installed for this user.
-    }
-    installBin ??= flavour.bin;
-
-    const prefix = id.toLowerCase() + "-";
-    const found = entries.some(
-      (e) => e.toLowerCase() === id.toLowerCase() || e.toLowerCase().startsWith(prefix),
-    );
-    if (found) {
-      return { name, passed: true, message: `${id} is installed` };
-    }
-  }
-
-  return {
-    name,
-    passed: false,
-    message: `${id} not found. Install via: ${installBin ?? "code"} --install-extension ${id}`,
-    blocking: false,
   };
 }
 
@@ -452,6 +406,82 @@ export async function checkUserTier(
       message: `could not inspect the user tier at ${storeRoot} (${err instanceof Error ? err.message : String(err)}) — run \`spell update --user\`; if that fails too, remove the store and re-run \`spell init --user\``,
     };
   }
+}
+
+export interface PresenceCheckOptions extends StoreOptions {
+  env?: NodeJS.ProcessEnv;
+  platform?: NodeJS.Platform;
+  /** Whether a pid runs; injected so a test can stage a live record without a live service. */
+  pidAlive?: (pid: number) => boolean;
+}
+
+/**
+ * PC-20 (ARC-060; features/presence-channel/architecture.md D27). Never
+ * blocking: the presence channel is optional. No store directory is a silent
+ * pass. Otherwise it reports the token file's mode (POSIX; on Windows the
+ * token is restricted with icacls when written, so the mode is not read),
+ * then whether the recorded service answers, or a server.json whose process
+ * no longer runs, which `spell doctor --fix` removes.
+ */
+export async function checkPresenceService(options: PresenceCheckOptions = {}): Promise<CheckResult> {
+  const name = "Presence service (ARC-060)";
+  if (!storeExists(options)) {
+    return { name, passed: true, blocking: false, message: "no presence channel on this machine (optional — `spell presence serve` starts one)" };
+  }
+  const alive = options.pidAlive ?? pidAlive;
+  const problems: string[] = [];
+  if ((options.platform ?? process.platform) !== "win32") {
+    try {
+      const mode = statSync(tokenPath(options)).mode & 0o777;
+      if ((mode & 0o077) !== 0) {
+        problems.push(`the token file ${tokenPath(options)} has mode ${mode.toString(8).padStart(4, "0")}; run \`chmod 600\` on it, or restart \`spell presence serve\`, which re-sets it`);
+      }
+    } catch {
+      // No token yet: serve writes it on its first start.
+    }
+  }
+
+  const warn = (state: string): CheckResult => ({ name, passed: false, blocking: false, message: [state, ...problems].join("; ") });
+  let recorded: boolean;
+  try {
+    statSync(serverInfoPath(options));
+    recorded = true;
+  } catch {
+    recorded = false;
+  }
+  if (!recorded) {
+    return problems.length > 0 ? warn("not running") : { name, passed: true, blocking: false, message: `not running (store at ${presenceDir(options)})` };
+  }
+  const info = readServerInfo(options);
+  if (info === null) return warn(`${serverInfoPath(options)} is not a record this CLI wrote; remove it if no service is running`);
+  if (!alive(info.pid)) {
+    return warn(`stale: ${serverInfoPath(options)} names pid ${info.pid}, which is not running — \`spell doctor --fix\` removes the file (the token stays)`);
+  }
+  const health = await callPresence("GET", "/v0/health", undefined, { ...options, env: options.env ?? process.env });
+  if (health.kind === "ok") {
+    const body = health.body as { generator?: { version?: unknown }; sessions?: unknown };
+    const version = typeof body.generator?.version === "string" ? `v${body.generator.version}` : "unknown version";
+    const sessions = typeof body.sessions === "number" ? `, ${body.sessions} session(s)` : "";
+    if (problems.length > 0) return warn(`reachable at ${info.url}`);
+    return { name, passed: true, blocking: false, message: `reachable at ${info.url} (pid ${info.pid}, ${version}${sessions})` };
+  }
+  if (health.kind === "refused" && health.status === 401) {
+    return warn(`the service at ${info.url} refused this machine's token (rotated, or ARCANE_PRESENCE_TOKEN is set to another value)`);
+  }
+  return warn(`not reachable: ${info.url} (pid ${info.pid} is running but does not answer)`);
+}
+
+/**
+ * `spell doctor --fix` for PC-20: removes server.json only when it is a record
+ * this CLI wrote and its pid is still not running, re-checked here rather than
+ * trusted from the check. Never the token, a live record or a file it cannot
+ * read. Returns the removed path, or null.
+ */
+export function fixPresenceService(options: PresenceCheckOptions = {}): string | null {
+  const info = readServerInfo(options);
+  if (info === null || (options.pidAlive ?? pidAlive)(info.pid)) return null;
+  removeServerInfo(options);
+  return serverInfoPath(options);
 }
 
 /**
@@ -1105,7 +1135,6 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
 
   const results = await Promise.all([
     checkNodeVersion(),
-    checkVSCodeExtension("GitHub.copilot-chat", "GitHub Copilot (Chat)", resolveHomeDir()),
     checkArcaneManifest(targetDir),
     Promise.resolve(checkIncidentReleaseGate()),
     checkPullRebase(targetDir),
@@ -1119,6 +1148,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkGovernancePlaceholders(targetDir),
     checkComponentRequires(targetDir),
     checkNewlyAvailableComponents(targetDir),
+    checkPresenceService(),
   ]);
 
   // Add session continuity checks
@@ -1178,5 +1208,11 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     }
   } else if (hasMissingSession && !options.fix) {
     console.log("  💡 Run `spell doctor --fix` to create missing session files.\n");
+  }
+
+  // --fix for the presence row (PC-20): only a server.json whose process is gone.
+  if (options.fix) {
+    const removed = fixPresenceService();
+    if (removed !== null) console.log(`  🔧 Removed the stale presence record ${removed} (the token stays).\n`);
   }
 }

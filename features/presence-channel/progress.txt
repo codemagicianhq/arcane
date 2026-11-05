@@ -385,3 +385,94 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   sandboxed runs. The Copilot CLI on its own (outside the app) was not observed.
 - A nested run (one harness started from another's shell) resolves by table order, Claude Code
   first; `--harness` overrides it.
+
+## Should Haves run — 2026-11-05 (PS-17 to PS-21, 1.19.0)
+Run: a session started from the hub session, on branch sessions/2026-11-05-presence-should-haves
+cut from origin/main e4a6cd1 (1.18.0 merged), in a linked worktree because the primary checkout
+holds another session's staged change. stories.json's top-level branchName still names the
+first run's branch; these five stories were built here. Design: architecture D24 to D28.
+Commits wait for the operator's approval in chat (the repo's rule for interactive sessions), so
+the stories are committed one per story only after that approval.
+
+## Iteration 21 — PS-17 — 2026-11-05
+### What was done
+- src/commands/presence.ts: runPresenceSessions, renderSessionsTable, formatAge, and
+  unavailableLine, which status now shares so the two commands print one wording per failure.
+  src/index.ts registers `presence sessions [--json]`.
+- test/presence-sessions-command.test.ts (8): the two-session table as a file snapshot
+  (test/__snapshots__/presence/sessions-table.txt), --json against the schema's `snapshot`
+  definition, the empty listing, status's wording for a refused token and a dead port, and two
+  built-CLI runs (exit 1 with no channel; --json after a real `report`).
+### What was learned
+- POST /v0/sessions/report answers 201 when it mints a session, 200 on a patch; a test that
+  reports a fresh checkout expects 201.
+- A stale record is shown as `unknown`, the fragment's word, rather than its last status: the
+  last status is exactly what is no longer known.
+
+## Iteration 22 — PS-18 — 2026-11-05
+### What was done
+- src/assets/.arcane/spells/_fragments/needs-you.md: one bullet before the Enforcement bullet.
+  `npm run fix:self-host-parity` repaired 36 of 372 (18 spell sources, 18 root copies); each
+  spell file gained exactly one line (git diff --numstat: 1 0 for every spell file).
+- test/presence-fragment.test.ts: the report line uses the reporter's flags as registered in
+  src/index.ts, and every spell that hosts the fragment carries it in source and root copy.
+### What was learned
+- In some spells the fragment sits inside a list and is expanded indented; the parity tool
+  handles it, and a substring test still finds the line.
+- The four spells with presence-report now say the waiting report twice (D25, accepted).
+
+## Iteration 23 — PS-19 — 2026-11-05
+### The MCP specification, read 2026-11-05 at modelcontextprotocol.io
+- specification/2026-07-28/server/resources: capability `resources.subscribe` means
+  "resource-specific update notifications for resources requested through subscriptions/listen
+  using the resourceSubscriptions filter"; updates are notifications/resources/updated with
+  `_meta["io.modelcontextprotocol/subscriptionId"]` and `uri`; an unknown resource is -32602.
+- specification/2026-07-28/basic/patterns/subscriptions: subscriptions/listen "replaces the
+  former resources/subscribe RPC"; params.notifications filter (toolsListChanged,
+  promptsListChanged, resourcesListChanged, resourceSubscriptions); the server MUST send
+  notifications/subscriptions/acknowledged first, carrying the subscription id (= the listen
+  request's JSON-RPC id) and the honored subset; on stdio the client cancels with
+  notifications/cancelled; a server ending a subscription SHOULD answer the listen request with
+  { resultType: "complete", _meta: { subscriptionId } }.
+- specification/2026-07-28/basic/patterns/cancellation: notifications/cancelled { requestId,
+  reason? }; a server MUST send it referencing a subscriptions/listen id when it tears that
+  stream down; a cancelled request gets no response.
+- specification/2025-11-25/server/resources (legacy): resources/subscribe { uri }, then
+  notifications/resources/updated { uri }; capability `subscribe: true`.
+### Decision taken here (architecture D26, not an ARC-060 change)
+- Per era: legacy gets resources/subscribe and resources/unsubscribe; 2026-07-28 gets
+  subscriptions/listen; each era's method is -32601 in the other. Only the sessions resource is
+  honored (the capability descriptor is constant). On stdin's end the server answers each open
+  listen and then sends notifications/cancelled, which satisfies both pages.
+### What was done
+- client.ts: openEventFeed (GET /v0/events on loopback, resolves at server.hello, null when no
+  channel, refused, full or slow). mcp.ts: the subscription state, one feed per process, retry
+  every FEED_RETRY_MS (5 s), updates on every session.* event and on losing or regaining the
+  feed. The subscribe answer and the acknowledgment wait for the first feed attempt.
+- test/presence-mcp.test.ts: +8 (legacy subscribe/unsubscribe with a loopback report; the
+  constant resource; modern listen, acknowledgment, update with its id, cancellation; an empty
+  filter; per-era refusals and bad filters; teardown on stdin's end; losing and regaining the
+  service; a subscription before any service exists; and one over stdio against the built CLI).
+  The two existing capability assertions now expect resources.subscribe.
+### What to watch for
+- Real clients' subscription behaviour (Claude Code, Codex, Copilot) was not tested; the
+  protocol tests use a hand-written client that follows the pages above.
+
+## Iteration 24 — PS-20 — 2026-11-05
+### What was done
+- src/commands/doctor.ts: checkPresenceService and fixPresenceService; runDoctor adds the row
+  and runs the fix under --fix; the --fix help text names it.
+- test/presence-doctor.test.ts (8): no directory (silent pass), reachable, stale record and
+  --fix removing only server.json (token unchanged), --fix leaving a live record and an
+  unparseable file, a live pid that does not answer or refuses the token, store without a
+  record, token mode 0644 and 0640 on POSIX, and no mode read on Windows.
+### What was learned
+- A pid above 2^22 is never handed out on Linux or macOS, and an odd one never on Windows, so
+  it stands in for a crashed service's pid without racing a real process.
+
+## Iteration 25 — PS-21 — 2026-11-05
+### What was done
+- src/assets/.arcane/spells/spell-open-session.md: one bullet in the Workspace Health Check
+  after the isolation bullet; parity repaired the root copy (the shims point at the spell).
+- test/presence-fragment.test.ts: the bullet names the command, repository.root,
+  checkout.path, R4 and the exit-1 case, in the source and the root copy.

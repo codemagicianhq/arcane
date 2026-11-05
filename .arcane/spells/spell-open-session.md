@@ -127,6 +127,7 @@ Then produce output in this exact structure:
 - **Never only among optional steps.** An action required for correctness is never listed only under next steps, suggestions, `Carry Forward` or `What's Next?`. It may be repeated there, but it always appears in this block.
 - **Omit it when empty.** When nothing needs the operator, leave the block out entirely: no heading and no "None" line.
 - **Every final report.** The block belongs in whatever report ends the run, including a report written when the spell stops early.
+- **Report it to the presence channel.** When the block is not empty, also run `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line of the block; with no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
 - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
 <!-- fragment:needs-you:end -->
 
@@ -145,6 +146,7 @@ Before anything else, check:
   - **Otherwise** → **primary checkout on a session branch** (R2). This is the default and it is deliberately the do-nothing path: one actor, one checkout, no new tooling.
   - **Footprint overlap overrides the choice (R4).** If this session's work touches the same files or the same shared sequence (migration numbers, generated indexes, lockfiles) as work already running in another primitive, do **not** isolate it — serialize instead: wait, or re-scope to a disjoint footprint first. Isolation does not prevent those collisions, it hides them until merge review.
   - Working in a linked worktree changes two things later in the session and nothing else: `spell-close-session` must not check out `main` (see git-conventions.md's Post-Merge Cleanup section), and the worktree contains no untracked tooling state — budget for `npm install` or equivalent in a code repo. Branch naming, attribution, and the PR gate are identical from every primitive (R8).
+- **Live sessions in this repository's other checkouts (presence):** run `spell presence sessions --json`; when it exits 0, list each session whose `repository.root` is this repository's root and whose `checkout.path` is not this checkout (its path, branch, status, task and `agent.slug`), so the footprint rule (R4 above) weighs work that is running now and not only the worktree list; when it exits 1, no presence channel is configured and this bullet adds nothing to the output.
 - **Session branch naming compliance:** judge the current branch against the branch-naming rule (Mutation Guard section above), including a branch a worktree or a parallel subagent created:
   - If it is noncompliant and no active PR depends on it, record the required rename for the Mutation Guard. Do not rename during a read-only session.
   - If an active PR uses the old branch name, do not force-delete the old remote branch; flag it and continue with a follow-up rename plan.

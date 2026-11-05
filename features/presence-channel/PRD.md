@@ -395,6 +395,21 @@ rests on.
 - [x] `check:changelog`, `check:version-bump`, `check:demos`, `check:self-host-parity` and
       `check:spell-catalog` pass (PC-16).
 
+Should Have (built after 1.18.0 as stories PS-17 to PS-21, architecture D24 to D28; 1.19.0):
+
+- [x] `spell presence sessions` renders a two-session fixture as a snapshotted table, and `--json`
+      validates against the schema's `snapshot` definition (PC-17).
+- [x] The `needs-you` fragment carries the `waiting` report line; parity and the catalog pass; the
+      only change to each spell is that line (PC-18).
+- [x] The protocol test subscribes to `arcane://presence/sessions`, reports through the loopback
+      API and receives `notifications/resources/updated`, in both MCP eras (PC-19). *Note: the
+      2026-07-28 revision subscribes with `subscriptions/listen`, legacy revisions with
+      `resources/subscribe`; the server serves each era its own (architecture D26).*
+- [x] The `spell doctor` row's three states have tests; `--fix` removes only a stale
+      `server.json` (PC-20).
+- [x] `spell-open-session`'s Workspace Health Check lists the sessions from this repository's
+      other checkouts; parity passes (PC-21).
+
 ## Dependencies
 
 - [ARC-044](../../DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) —

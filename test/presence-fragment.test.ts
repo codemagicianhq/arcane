@@ -60,3 +60,50 @@ describe("the presence-report fragment (PC-11, ARC-060 decision 5)", () => {
     expect(await readFile(FRAGMENT, "utf8")).toBe(example);
   });
 });
+
+// PRD PC-18, architecture D25: every Needs you block reports `waiting`.
+describe("the needs-you fragment reports to the presence channel (PC-18)", () => {
+  const NEEDS_YOU = join(SPELLS, "_fragments", "needs-you.md");
+  const LINE = 'spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"';
+
+  it("carries one report line in the reporter's own flag syntax, and says it is silent without a channel", async () => {
+    const fragment = await readFile(NEEDS_YOU, "utf8");
+    expect(fragment.split(LINE)).toHaveLength(2);
+    expect(fragment.replace(/\s+/g, " ")).toContain("with no presence channel configured on this machine the command prints nothing and exits 0");
+    const cli = await readFile(join(ROOT, "src", "index.ts"), "utf8");
+    expect(cli).toContain('.option("--needs-you <line>"');
+    expect(cli).toContain('.requiredOption("--status <status>", "working | waiting | blocked | idle")');
+  });
+
+  it("reaches every spell that renders the block, in its source and its root copy", async () => {
+    const fragment = await readFile(NEEDS_YOU, "utf8");
+    const hosts: string[] = [];
+    for (const file of (await readdir(SPELLS)).filter((f) => f.endsWith(".md")).sort()) {
+      if (referencesFragment(await readFile(join(SPELLS, file), "utf8"), "needs-you")) hosts.push(file);
+    }
+    expect(hosts.length).toBeGreaterThanOrEqual(18);
+    for (const file of hosts) {
+      for (const base of [SPELLS, join(ROOT, ".arcane", "spells")]) {
+        const content = await readFile(join(base, file), "utf8");
+        expect({ file, base, inSync: expandFragment(content, "needs-you", fragment) === content }).toEqual({ file, base, inSync: true });
+        expect(content).toContain(LINE);
+      }
+    }
+  });
+});
+
+// PRD PC-21, architecture D28: open-session lists the sessions in this repository's other checkouts.
+describe("spell-open-session reads presence (PC-21)", () => {
+  it("names the command, the two fields it filters on, and the footprint rule, in the source and the root copy", async () => {
+    for (const base of [SPELLS, join(ROOT, ".arcane", "spells")]) {
+      const spell = await readFile(join(base, "spell-open-session.md"), "utf8");
+      const health = spell.slice(spell.indexOf("## Workspace Health Check"), spell.indexOf("## State Snapshot"));
+      const bullet = health.split("\n").find((l) => l.includes("spell presence sessions --json"));
+      expect(bullet).toBeDefined();
+      for (const needle of ["`repository.root`", "`checkout.path`", "R4", "exits 1"]) expect({ needle, present: bullet!.includes(needle) }).toEqual({ needle, present: true });
+    }
+    for (const shim of [join(ASSETS, ".claude", "commands", "spell-open-session.md"), join(ASSETS, ".agents", "skills", "spell-open-session", "SKILL.md")]) {
+      expect(await readFile(shim, "utf8")).toContain(".arcane/spells/spell-open-session.md");
+    }
+  });
+});

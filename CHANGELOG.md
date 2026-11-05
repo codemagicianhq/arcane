@@ -9,6 +9,25 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-11-05
+
+The presence channel's five deferred Should Haves (PRD PC-17 to PC-21, [ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention)'s consequences): a sessions listing, Needs you reports from every spell, MCP resource subscriptions, a `spell doctor` row and live sessions in `spell-open-session`.
+
+### Added
+
+- **`spell presence sessions [--json]`.** The sessions the service holds, as a table (status, agent, harness, repository, branch, age, task, and each Needs you line; a stale session reads `unknown`) or as the `GET /v0/sessions` document. Exit 1 with `spell presence status`'s wording when no channel answers.
+- **MCP resource subscriptions on `arcane://presence/sessions`.** `spell presence mcp` declares `resources.subscribe` and sends `notifications/resources/updated` on every session event. Clients on the 2026-07-28 revision open `subscriptions/listen` (acknowledged with the subscription id, which every update carries, and ended by `notifications/cancelled`); clients on 2025-11-25 and earlier call `resources/subscribe` and `resources/unsubscribe`. Each era's method is refused in the other. One `/v0/events` feed per MCP process, retried every 5 s while the service is down; losing and regaining the service are updates too.
+- **A "Presence service" row in `spell doctor`.** Never blocking: no presence directory is a silent pass; otherwise it reports the token file's mode (POSIX), whether the recorded service answers, and a `server.json` whose process is gone, which `spell doctor --fix` removes (never the token, a live record or a file it cannot read).
+
+### Changed
+
+- **The `needs-you` fragment** gains one line: when the block is not empty, also run `spell presence report --status waiting --needs-you "<line>"`, one flag per line. Every spell that renders the block carries it; with no channel the command is silent and the spells behave as before.
+- **`spell-open-session`'s Workspace Health Check** lists the sessions reporting from the repository's other checkouts (`spell presence sessions --json`, filtered by `repository.root` and `checkout.path`), so the footprint rule weighs work that is running now.
+
+### Removed
+
+- **`spell doctor`'s "VS Code extension: GitHub Copilot (Chat)" row.** Current VS Code ships Copilot Chat inside the application (observed 2026-11-05: VS Code 1.143.1 bundles `GitHub.copilot-chat` 0.71.0), while the check looked only in `~/.vscode/extensions`, so it warned on machines that had Copilot and advised installing what was already there. Copilot is one optional client among several, so the row is removed rather than taught a per-OS path to the application bundle.
+
 ## [1.18.0] - 2026-11-05
 
 The local presence channel, `spell presence` ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention), with its decision 13 amendment): which session works on what, right now, and whether it waits for you. Loopback only, memory only, observation only; nothing listens until the operator runs `spell presence serve`. `arcane-mcp` stays the component's working name until the Naming Test.

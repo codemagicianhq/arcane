@@ -238,6 +238,7 @@ so they need no edit.
 - **Never only among optional steps.** An action required for correctness is never listed only under next steps, suggestions, `Carry Forward` or `What's Next?`. It may be repeated there, but it always appears in this block.
 - **Omit it when empty.** When nothing needs the operator, leave the block out entirely: no heading and no "None" line.
 - **Every final report.** The block belongs in whatever report ends the run, including a report written when the spell stops early.
+- **Report it to the presence channel.** When the block is not empty, also run `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line of the block; with no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
 - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
 <!-- fragment:needs-you:end -->
 
