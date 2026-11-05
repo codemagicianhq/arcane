@@ -9,6 +9,23 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.17.3] - 2026-11-04
+
+The latest-version check works in an installed copy: `spell status` and `spell state --json --online` report the version npm serves.
+
+### Fixed
+
+- **The latest-version lookup never ran in an installed copy.** `getFeedUrl()` (`src/modules/version-check.ts`) read the package's own `package.json` as `../../package.json`. That is right from `src/modules/`, and one folder too high from the published bundle, `dist/index.js`, where it names a file in the folder that holds the package. Nothing is there, so the read threw and the lookup was skipped. The line dates from 0.14.0: an installed copy's `spell status` printed `Latest: unable to check` on every run, and since 1.17.0 `spell state --json --online` reported `versions.latest: null` and `drift.cli_behind_latest: null` with the warning `Feed URL unavailable`, which left `spell-open-session`'s check of the installed CLI against the latest published version with nothing to compare. The package's `package.json` is now read in one module, `src/package-info.ts`, which the CLI's version and the registry both come from. The feed URL is still `publishConfig.registry`, never hardcoded.
+- **`spell status` no longer prints the manifest's version as `Latest` when the registry gives no answer.** A lookup that could not reach the registry, or got a reply naming no latest version, reports no error, and the footer then fell back to the version recorded in `.arcane.json`. That path could not run while the lookup itself never ran. The footer now says `Latest: unable to check` whenever the lookup has no answer, and `spell state --json --online` keeps its `versions.latest` warning.
+
+### Changed
+
+- **The state export's warning says why the feed URL is unavailable**: `versions.latest: the npm lookup gave no answer (Feed URL unavailable: <reason>); latest and drift.cli_behind_latest are null`, where it said only `(Feed URL unavailable)`.
+
+### Notes
+
+- Why no test caught it: every test of the lookup imported the source module, where the path is right, or mocked it, and the one test that ran the built CLI's `spell status` asserted only that the footer contained `Installed:`. `test/installed-cli-version-lookup.test.ts` now copies the built bundle into the layout `npm install` produces, beside a `package.json` whose `publishConfig.registry` is a registry on loopback, and checks both commands against it; it fails on the 1.17.2 bundle.
+
 ## [1.17.2] - 2026-11-04
 
 A link at a file Arcane writes can no longer take the write outside the repository, and a roster can no longer name paths elsewhere ([#422](https://github.com/codemagicianhq/arcane/pull/422)).
