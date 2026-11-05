@@ -3,7 +3,7 @@ title: Arcane Framework — Architecture Decision Records
 audience: both
 status: active
 tags: [decisions, ARC, framework, arcane]
-last_updated: 2026-11-04
+last_updated: 2026-11-05
 ---
 
 # Arcane Framework — Architecture Decision Records (ARC)
@@ -3698,7 +3698,7 @@ The two lists differ in kind. A newly available component is a preference: nothi
 ## ARC-060 — The Presence Channel: One Package Behind `spell presence`, a Loopback Contract, Checkout-Keyed Sessions, and a Prompt-Driven Reporting Convention
 
 **Date:** 2026-11-04
-**Status:** Accepted — operator, 2026-11-04, as written. Drafted 2026-11-04 from [features/presence-channel/PRD.md](features/presence-channel/PRD.md), whose six open questions the operator decided on 2026-11-04 and which are folded in below; the hub's roadmap item 2.1 (a private record) is the intake. Nothing here is built yet; the implementing pull request cites this record.
+**Status:** Accepted — operator, 2026-11-04, as written. Drafted 2026-11-04 from [features/presence-channel/PRD.md](features/presence-channel/PRD.md), whose six open questions the operator decided on 2026-11-04 and which are folded in below; the hub's roadmap item 2.1 (a private record) is the intake. Shipped in 1.18.0 ([PR #435](https://github.com/codemagicianhq/arcane/pull/435), merged 2026-11-05 as `e4a6cd1`), with the 2026-11-05 amendment (decision 13) and the three implementation choices the operator reviewed on that PR. Those choices are an MCP server that serves both the legacy handshake and the 2026-07-28 revision, caps of 256 sessions and 32 aliases, and a harness table of observed markers only.
 **Related:** [ARC-044](#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel) (decisions 2, 3 and 5 are what this builds; its three open questions close here), [ARC-059](#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export) (the `session` reference type it reserved for this channel, the capability descriptor, provenance and context-qualified aliases this consumes), [ARC-040](#arc-040--session-handoff-durability-pointer-never-sole-carrier) (pointer, never sole carrier: the rule decision 7 applies to presence), [ARC-028](#arc-028--concurrency-and-isolation-model-for-parallel-work) (one checkout, one unit of work: the session key), [ARC-054](#arc-054--sign-in-from-the-cli-standard-openid-client-keychain-first-storage-split-session-token) (decision 3's file rule, reused for the token), [ARC-057](#arc-057--managed-paths-stay-inside-the-target-directory-by-real-path) (real paths), [ARC-039](#arc-039--build-time-spell-compiler-generated-client-stubs-and-shared-prose-fragments) (the fragment), [ARC-031](#arc-031--fictional-venture-names-for-examples-and-a-repository-wide-privacy-gate) / [ARC-037](#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop) (the gates and the zero-extra-install posture), [ARC-023](#arc-023--normative-controls-require-inline-enforcement-contracts) (the enforcement lines)
 **Design:** [features/presence-channel/PRD.md](features/presence-channel/PRD.md) (PC-01 to PC-21)
 
