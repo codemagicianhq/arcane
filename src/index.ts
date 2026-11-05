@@ -18,7 +18,7 @@ import { defaultLoginDeps, runLogin } from "./commands/login.js";
 import { runLogout } from "./commands/logout.js";
 import { runWhoami } from "./commands/whoami.js";
 import { runReport } from "./commands/report.js";
-import { runPresenceServe, runPresenceStatus, runPresenceStop } from "./commands/presence.js";
+import { runPresenceEnd, runPresenceReport, runPresenceServe, runPresenceStatus, runPresenceStop } from "./commands/presence.js";
 import { agentsTargetDir, runAgentsInit, runAgentsList, runAgentsSync } from "./modules/agents.js";
 import { printWelcome } from "./modules/banner.js";
 import { userTierRoot } from "./modules/user-tier.js";
@@ -473,6 +473,42 @@ presenceCommand
   .description("Stop the presence service this machine recorded; exits 0 whether or not one was running")
   .action(async () => {
     process.exitCode = await runPresenceStop();
+  });
+
+function collectLine(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
+
+// report and end never exit non-zero, a usage error included: a failing
+// command inside a prompt-driven spell makes the session stop to debug it,
+// which is the blocking the silence rule forbids (architecture D15).
+const exitZero = (): never => process.exit(0);
+
+presenceCommand
+  .command("report")
+  .description("Report this checkout's session to the presence service. Silent, exit 0, when no channel is configured; never blocks")
+  .requiredOption("--status <status>", "working | waiting | blocked | idle")
+  .option("--task <line>", "What the session is doing, in one line")
+  .option("--spell <id>", "The spell running, e.g. spell-implement")
+  .option("--message <line>", "A free one-line note; an empty value clears it")
+  .option("--needs-you <line>", "One line of a Needs you block, '<action> — <reason>'; repeat per line", collectLine, [])
+  .option("--agent <slug>", "The roster agent this session reports as (a slug or an alias); default: the orchestrator")
+  .option("--harness <id>", "claude-code | copilot | codex | openclaw | cron | other; default: detected, else other")
+  .exitOverride(exitZero)
+  .action(async (opts: { status: string; task?: string; spell?: string; message?: string; needsYou: string[]; agent?: string; harness?: string }) => {
+    const run = await runPresenceReport(process.cwd(), opts);
+    process.exitCode = 0;
+    if (run.timedOut) process.exit(0);
+  });
+
+presenceCommand
+  .command("end")
+  .description("End this checkout's session on the presence service. Silent, exit 0, when there is none")
+  .exitOverride(exitZero)
+  .action(async () => {
+    const run = await runPresenceEnd(process.cwd());
+    process.exitCode = 0;
+    if (run.timedOut) process.exit(0);
   });
 
 // Only parse argv when executed directly — not when imported in tests.

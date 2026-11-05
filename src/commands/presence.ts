@@ -1,7 +1,7 @@
 /**
  * `spell presence` (ARC-060; features/presence-channel/architecture.md).
  *
- * serve | status | stop here; report | end | mcp join them in later stories.
+ * serve | status | stop | report | end; mcp joins them in a later story.
  * No subcommand starts the service as a side effect, and no option of any of
  * them takes a token, a host or a bind address.
  */
@@ -9,6 +9,7 @@
 import type { AddressInfo } from "node:net";
 import { mintSessionRef } from "../modules/agent-ref.js";
 import { callPresence, pidAlive } from "../modules/presence/client.js";
+import { sendEnd, sendReport, type ReportFlags, type ReportOutcome, type ReporterDeps } from "../modules/presence/reporter.js";
 import { createPresenceServer } from "../modules/presence/server.js";
 import { createSessionTable } from "../modules/presence/sessions.js";
 import {
@@ -232,4 +233,40 @@ export async function runPresenceStop(io: PresenceIo = consoleIo, store: StoreOp
   removeServerInfo(store);
   io.out("No presence service was answering; removed its stale record.");
   return 0;
+}
+
+/** The whole `report` or `end` command is cut off here and exits 0 (architecture D15). */
+export const REPORT_DEADLINE_MS = 2_000;
+
+export interface ReportRun {
+  outcome: ReportOutcome | null;
+  timedOut: boolean;
+}
+
+async function withDeadline(work: Promise<ReportOutcome>, ms: number): Promise<ReportRun> {
+  let timer: NodeJS.Timeout | undefined;
+  const deadline = new Promise<ReportRun>((resolve) => {
+    timer = setTimeout(() => resolve({ outcome: null, timedOut: true }), ms);
+  });
+  const run = await Promise.race([work.then((outcome) => ({ outcome, timedOut: false })).catch(() => ({ outcome: null, timedOut: false })), deadline]);
+  clearTimeout(timer);
+  return run;
+}
+
+function finish(run: ReportRun, io: PresenceIo): ReportRun {
+  if (run.outcome?.kind === "refused") io.err(run.outcome.line);
+  return run;
+}
+
+/**
+ * `spell presence report`: silent with no channel, one stderr line when the
+ * service refuses, never a non-zero exit (the caller sets none).
+ */
+export async function runPresenceReport(cwd: string, flags: ReportFlags, io: PresenceIo = consoleIo, deps: ReporterDeps = {}, deadlineMs = REPORT_DEADLINE_MS): Promise<ReportRun> {
+  return finish(await withDeadline(sendReport(cwd, flags, deps), deadlineMs), io);
+}
+
+/** `spell presence end`: the same silence rule. */
+export async function runPresenceEnd(cwd: string, io: PresenceIo = consoleIo, deps: ReporterDeps = {}, deadlineMs = REPORT_DEADLINE_MS): Promise<ReportRun> {
+  return finish(await withDeadline(sendEnd(cwd, deps), deadlineMs), io);
 }

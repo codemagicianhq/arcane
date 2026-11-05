@@ -168,9 +168,9 @@
         "report --help and end --help list no option that takes a token (PC-06; threat-model control 4)"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05 (macOS, built CLI and in process): test/presence-reporter.test.ts 17/17, test/presence-client.test.ts 8/8, test/presence-command.test.ts 7/7 passed; client.ts 96.42% lines / 95.45% branches, reporter.ts 96.15% lines / 80% branches, commands/presence.ts 73.33% lines in process (serve's signal path and stop's kill path run only in the spawned-CLI suites); with no server.json, report and end make no git, manifest or roster call and the built CLI prints nothing and exits 0; a running service gets a record that validates (checkout path, branch, root, name, remote with userinfo stripped); second worktree = second session, linked_worktree true, same root; silent outside git and without a manifest; wrong token file and a wrong ARCANE_PRESENCE_TOKEN beside a right file each give one stderr line with neither token nor task; a server.json url naming another host still dials 127.0.0.1; a dead pid makes no connection; no --status, unknown options and a refused status exit 0 with at most one stderr line; a service that never answers releases report at the 2 s deadline (2.1 s measured); report/end help offer no token option"
     },
     {
       "id": "PS-10",

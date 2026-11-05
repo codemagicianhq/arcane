@@ -11,6 +11,9 @@ import { mintSessionRef } from "../../src/modules/agent-ref.js";
 import { execFile, spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { PRESENCE_ENV, type ServerInfo } from "../../src/modules/presence/types.js";
+import { writeFileSync } from "node:fs";
+import { ensureStore, tokenPath, writeServerInfo } from "../../src/modules/presence/store.js";
+import { commitFiles, repoWithOneCommit } from "./state-fixtures.js";
 
 export const PRESENCE_SCHEMA_PATH = join(REPO_ROOT, "src/assets", PRESENCE_SCHEMA_ASSET_PATH);
 export const PRESENCE_FIXTURE_DIR = join(REPO_ROOT, "test/fixtures/presence");
@@ -285,4 +288,31 @@ export async function spawnServe(bin: string, home: string, args: string[] = ["-
     }
     await new Promise((r) => setTimeout(r, 25));
   }
+}
+
+// ── Fixture repositories and recorded services ───────────────────────────────
+
+export const FIXTURE_MANIFEST = JSON.stringify({ version: "1.17.3", profile: "lite", installedAt: "2026-11-01T12:00:00.000Z", components: [] }, null, 2);
+
+/** A git repository with one commit and an Arcane manifest at its root. */
+export async function arcaneRepo(prefix: string): Promise<string> {
+  const dir = await repoWithOneCommit(prefix);
+  await commitFiles(dir, "test: install arcane", { ".arcane.json": `${FIXTURE_MANIFEST}\n` });
+  return dir;
+}
+
+/** Records a service in `home`'s store as `serve` would: the token file and server.json. */
+export function recordService(home: string, port: number, options: { pid?: number; token?: string; url?: string } = {}): void {
+  ensureStore({ home });
+  writeFileSync(tokenPath({ home }), `${options.token ?? testToken}\n`, { mode: 0o600 });
+  writeServerInfo(
+    {
+      url: options.url ?? `http://127.0.0.1:${port}`,
+      pid: options.pid ?? process.pid,
+      port,
+      started_at: "2026-11-12T14:58:00.000Z",
+      generator: { name: "arcane-cli", version: "0.0.0-test" },
+    },
+    { home },
+  );
 }

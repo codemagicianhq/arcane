@@ -139,3 +139,22 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   just wrong), and removes it when the port answers nothing.
 ### What to watch for
 - The lifecycle suite needs a fresh `npm run build`; CI's matrix job must build first (PS-11).
+
+## Iteration 9 — PS-09 — 2026-11-05
+### What was done
+- src/modules/presence/reporter.ts: parseNeedsYou, locateCheckout (rev-parse
+  --path-format=absolute --show-toplevel --git-dir --git-common-dir), sendReport, sendEnd.
+- src/commands/presence.ts: runPresenceReport / runPresenceEnd with the 2 s deadline;
+  src/index.ts registers report (required --status, repeatable --needs-you) and end, both with
+  exitOverride → exit 0.
+- Tests: presence-reporter (17), presence-client (8), presence-command (7, in-process coverage
+  of PS-08's serve/status/stop, which the spawned suite cannot measure).
+### What was learned
+- Commander's exitOverride callback must exit itself: if it returns, Commander calls
+  process.exit with the original code. `() => process.exit(0)` is the whole fix.
+- v8 coverage does not see spawned CLIs, so a command tested only through dist/ shows ~10%;
+  in-process tests of the exported functions carry the coverage, the spawned suite carries
+  the real-process behaviour.
+- `end` for a checkout with no session is a 404 from the service and silent in the reporter.
+### What to watch for
+- The agent block is the null block and the harness is the flag or `other` until PS-10.
