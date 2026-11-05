@@ -356,3 +356,32 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 - What does not change: architecture D8 still admits a row only from an observation in a real
   shell of that harness, and none has been made yet, so the table keeps one row for now.
 - The operator accepted the dual-era MCP server and the 256-session and 32-alias caps.
+
+## Iteration 20 — harness rows for Codex and Copilot — 2026-11-05
+### Evidence (architecture D8: no row without an observation)
+- Method: each harness's own agent ran `sh /tmp/presence-harness/probe.sh`, which writes the
+  environment's variable names and the values of only the marker-like names (never a name that
+  contains TOKEN, KEY, SECRET, PASS, AUTH or CRED). The operator ran the three app sessions and
+  the plain terminal; the `codex exec` run was started from an emptied environment so it could
+  not inherit Claude Code's variables. The operator also ran the two command-line tools
+  interactively in iTerm2 3.6.11.
+- Harness observation: claude-code, the Claude Code CLI 2.1.318 run interactively in iTerm2, CLAUDECODE=1 with CLAUDE_CODE_ENTRYPOINT=cli, observed 2026-11-05. The same row as the desktop app's (iteration 10); no new row.
+- Harness observation: codex, Codex 0.166.0-alpha.5.1 (the ChatGPT desktop app, `codex exec`, and the interactive CLI in iTerm2, all from the same build), CODEX_CI=1 in all three, observed 2026-11-05. All three also set CODEX_THREAD_ID and CODEX_VERSION; only the app sets CODEX_SHELL=1; CODEX_SANDBOX is set only because all three ran sandboxed, so it is not a marker.
+- Harness observation: copilot, Copilot agent mode in VS Code 1.143.1 (Copilot Chat built in), COPILOT_AGENT=1 with AI_AGENT=github_copilot_vscode_agent, observed 2026-11-05.
+- Harness observation: copilot, GitHub Copilot desktop app 1.1.34, COPILOT_CLI=1 with AI_AGENT=github_copilot_app_agent, observed 2026-11-05. The app does not set COPILOT_AGENT.
+- Control: a plain VS Code 1.143.1 terminal (no agent) set TERM_PROGRAM=vscode, VSCODE_INJECTION=1,
+  COPILOT_DEBUG_NONCE and CLAUDE_CODE_SSE_PORT (the Claude Code extension's), and none of
+  CLAUDECODE, CODEX_CI, COPILOT_AGENT, COPILOT_CLI or AI_AGENT. So TERM_PROGRAM and
+  COPILOT_DEBUG_NONCE are not Copilot markers, and a Claude Code session started in that
+  terminal still reads as claude-code.
+### What was done
+- src/modules/presence/harness.ts: rows codex CODEX_CI=1, copilot COPILOT_AGENT=1, copilot
+  COPILOT_CLI=1 after the claude-code row; the header says how a nested run resolves.
+- test/presence-harness.test.ts: one case per observed shell plus the control and the nested
+  case; the existing evidence test checks each row against the lines above.
+### Not covered
+- OpenClaw: it runs on the operator's Ubuntu machine and was not observed; it reports `other`.
+- Codex with sandboxing off (full access) was not observed; CODEX_CI was present in all three
+  sandboxed runs. The Copilot CLI on its own (outside the app) was not observed.
+- A nested run (one harness started from another's shell) resolves by table order, Claude Code
+  first; `--harness` overrides it.
