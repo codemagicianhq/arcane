@@ -17,9 +17,9 @@
         "src/modules/agent-ref.ts has at least 80% line, branch, function and statement coverage; lint, typecheck and typecheck:all pass"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/agent-ref.test.ts 21/21 passed; src/modules/agent-ref.ts 100% lines / 100% branches / 100% functions / 100% statements; 10,000 mints unique and strictly increasing, including 10,000 forced into one millisecond (prefix carried forward past the 12-bit counter); imports node:crypto only; lint, typecheck, typecheck:all green"
     },
     {
       "id": "PS-02",

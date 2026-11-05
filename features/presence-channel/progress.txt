@@ -1,0 +1,23 @@
+# Progress — the presence channel (spell presence, ARC-060)
+
+Run: autonomous, started 2026-11-05 on branch claude/feat/presence-channel from main 510f283.
+Operator's standing answers for this run (2026-11-05, in chat): commit each story, push, open one
+PR, stop at a green PR without merging; keep the two readings (a 21-line needs_you is refused
+with 400; byte-identity is tested through the reporter's silence); a story stuck after three
+attempts, or one that would need an ARC-060 change, is marked and the run continues.
+
+## Iteration 1 — PS-01 — 2026-11-05
+### What was done
+- src/modules/agent-ref.ts: createUuidV7Generator (injectable clock and random source), uuidv7,
+  mintRef / mintAgentRef / mintTemplateRef / mintSessionRef, parseRef with an optional expected
+  type, uuidV7Millis (tests and sorting only).
+- test/agent-ref.test.ts: grammar, registry, 10,000-mint ordering, one-millisecond overflow,
+  backwards clock, bit layout, twelve refusal reasons, import check.
+### What was learned
+- The 12-bit rand_a counter (RFC 9562 section 6.2 method 1) is seeded in its lower half
+  (0..0x7ff) so a millisecond has at least 2,048 increments before the timestamp carries.
+- The 48-bit timestamp is written with division, not shifts: JavaScript shifts are 32-bit.
+- tsconfig has no noUncheckedIndexedAccess, so the typed lint rejects `!` on indexed reads.
+### What to watch for
+- parseRef's "expected type" reason reads "got one of type <type>"; the server's 404 for a
+  non-session segment (PS-06) relies on parseRef(segment, "session").
