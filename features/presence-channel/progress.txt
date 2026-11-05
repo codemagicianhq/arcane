@@ -226,3 +226,18 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
 ### What to watch for
 - Which revision each client speaks today was not tested against real clients (Claude Code,
   Copilot, Codex): PS-16's registration examples are the place to note it.
+
+## Iteration 13 — PS-13 — 2026-11-05
+### What was done
+- src/assets/.arcane/spells/_fragments/presence-report.md: the PRD's example text, verbatim,
+  with no trailing newline (the other fragments have none).
+- Markers in the four spells: before "Workflow" in close-session, commit-work and implement;
+  before the Drift Check in open-session (after the Mutation Guard, so a session reports once
+  it has a branch). fix:self-host-parity expanded them into the four root copies.
+### What was learned
+- The client shims (.claude/commands/*.md, .agents/skills/*/SKILL.md) are thin pointers to the
+  spell file and hold no prose, so "the generated shims carry the fragment" is true by
+  reference; the test checks each shim points at its spell.
+- Line widths: the fragment keeps the PRD's 100-column wrapping.
+### What to watch for
+- The CI full suite runs every prompt test; 310 of them were run locally against the change.

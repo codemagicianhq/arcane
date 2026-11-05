@@ -243,9 +243,9 @@
         "The no-channel half of 'byte-identical to 1.17.1' is cited from PS-09's first acceptance test in the test file's header comment (architecture D19)"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": null
+      "testEvidence": "2026-11-05: test/presence-fragment.test.ts 5/5 passed; the fragment is hosted by exactly spell-open-session, spell-close-session, spell-commit-work and spell-implement; expanded verbatim in the four sources and their four root copies (fix:self-host-parity repaired 8 of 372; check passes 372/372); check:spell-catalog passes; the fragment equals the PRD's example text; it states CLI only, no token on the command line, no repository write, and its ARC-023 enforcement line; the four spells' Claude Code commands and agent skills are thin shims that point at the spell file, so they carry the fragment by reference (they hold no prose, ARC-045); git diff touches only the fragment, the four spells, their root copies and the new test; 310 prompt and spell tests still pass"
     },
     {
       "id": "PS-14",
