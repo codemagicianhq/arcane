@@ -83,3 +83,5 @@
   - npm listed 1.17.3 as `latest` about four minutes before its tarball could be downloaded (journal, "npm lists a new version before its tarball can be downloaded"). After a publish, check with an install or a request for the tarball, not only `npm view`. Tracked in `TODO.md` ("MEDIUM (release): a green Publish run means "uploaded", not "installable".").
   - The hub's threat-model section for the presence service is registered in the hub's own TODO (2026-11-04).
   - A Dependabot `minimatch` run failed again on `main` at `459894d` (2026-11-05 02:35Z). It is unrelated and was not investigated.
+
+> ✓ Consumed: 2026-11-05
