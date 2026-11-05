@@ -29,13 +29,19 @@ export interface ClientOptions extends StoreOptions {
   responseTimeoutMs?: number;
 }
 
-/** True when a process with this pid exists (EPERM means it exists but is not ours to signal). */
+/**
+ * True when a process with this pid exists and this account may signal it.
+ * EPERM (the pid belongs to another account) counts as not alive: the
+ * service always runs as the reporter's own account, so such a pid can never
+ * be it, and treating it as alive would hand the token to whatever now holds
+ * the recorded port.
+ */
 export function pidAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
+  } catch {
+    return false;
   }
 }
 

@@ -180,8 +180,14 @@ export function serveMcp(options: McpOptions): Promise<void> {
       case "tools/call": {
         const name = params["name"];
         const args = isObject(params["arguments"]) ? params["arguments"] : {};
-        if (name === "presence_report") return report(args);
-        if (name === "presence_end") return end(args);
+        try {
+          if (name === "presence_report") return await report(args);
+          if (name === "presence_end") return await end(args);
+        } catch (error) {
+          // A wrong-typed argument is something the model can fix: a tool execution error, not a protocol error.
+          if (error instanceof RpcError && error.code === -32602) return text(error.message, true);
+          throw error;
+        }
         throw new RpcError(-32602, `Unknown tool: ${String(name)}`);
       }
       case "resources/list":
@@ -208,7 +214,12 @@ export function serveMcp(options: McpOptions): Promise<void> {
     }
     const method = message["method"];
     const hasId = "id" in message;
-    const id = (message["id"] ?? null) as Id;
+    const rawId = message["id"];
+    if (hasId && rawId !== null && typeof rawId !== "string" && typeof rawId !== "number") {
+      fail(null, { code: -32600, message: "Invalid Request" });
+      return;
+    }
+    const id = (rawId ?? null) as Id;
     const params = isObject(message["params"]) ? message["params"] : {};
     if (!hasId) return; // A notification: nothing to answer.
 
@@ -221,8 +232,8 @@ export function serveMcp(options: McpOptions): Promise<void> {
       }
       const meta = isObject(params["_meta"]) ? params["_meta"] : {};
       const requested = meta[VERSION_KEY];
-      const modern = requested !== undefined;
-      if (modern && (typeof requested !== "string" || !SUPPORTED_VERSIONS.includes(requested))) {
+      const modern = typeof requested === "string" && (MODERN_VERSIONS as readonly string[]).includes(requested);
+      if (requested !== undefined && (typeof requested !== "string" || !SUPPORTED_VERSIONS.includes(requested))) {
         fail(id, { code: -32022, message: "Unsupported protocol version", data: { supported: SUPPORTED_VERSIONS, requested } });
         return;
       }

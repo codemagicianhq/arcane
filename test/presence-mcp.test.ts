@@ -222,7 +222,8 @@ describe("the MCP server in process (protocol details, PC-09, PC-10)", () => {
     const badNeeds = await client.call("tools/call", { name: "presence_report", arguments: { status: "working", needs_you: [1] } });
     expect(badNeeds.result?.["isError"]).toBe(true);
     const badType = await client.call("tools/call", { name: "presence_report", arguments: { status: "working", task: 7 } });
-    expect(badType.error?.code).toBe(-32602);
+    expect(badType.error).toBeUndefined();
+    expect(badType.result?.["isError"]).toBe(true);
   });
 
   it("is silent-but-truthful outside a repository, and ending with no session says so", async () => {
@@ -236,5 +237,12 @@ describe("the MCP server in process (protocol details, PC-09, PC-10)", () => {
     expect((await client.call("tools/call", { name: "steer_session", arguments: {} })).error?.code).toBe(-32602);
     expect((await client.call("resources/read", { uri: "arcane://presence/elsewhere" })).error).toMatchObject({ code: -32602, message: "Resource not found" });
     expect((await client.raw(JSON.stringify({ jsonrpc: "1.0", id: 9, method: "ping" }), 9)).error?.code).toBe(-32600);
+    expect((await client.raw(JSON.stringify({ jsonrpc: "2.0", id: { a: 1 }, method: "ping" }), null)).error?.code).toBe(-32600);
+  });
+
+  it("serves a legacy version named in _meta as legacy, without resultType (review of PR #435)", async () => {
+    const r = await client.call("tools/list", {}, LEGACY_VERSIONS[1]);
+    expect(r.result?.["resultType"]).toBeUndefined();
+    expect(r.result?.["tools"]).toBeDefined();
   });
 });

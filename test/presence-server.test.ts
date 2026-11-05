@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { checkBearer } from "../src/modules/presence/auth.js";
 import { logEvent, setLogSink } from "../src/modules/presence/log.js";
 import { PRESENCE_ROUTES } from "../src/modules/presence/server.js";
-import { MAX_BODY_BYTES, type SessionRecord } from "../src/modules/presence/types.js";
+import { request } from "node:http";
+import { MAX_BODY_BYTES, MAX_SESSIONS, type SessionRecord } from "../src/modules/presence/types.js";
 import { REPO_ROOT } from "./helpers/state-schema.js";
 import { compilePresenceSchema, httpRequest, loadPresenceFixture, startPresence, type HttpResult, type RunningPresence } from "./helpers/presence.js";
 
@@ -86,6 +87,33 @@ describe("limits (PC-03; threat-model control 10)", () => {
     const res = await httpRequest(svc.port, { method: "POST", path: "/v0/sessions/report", token: svc.token, body });
     expect(res.status).toBe(413);
     expect((await httpRequest(svc.port, { path: "/v0/health", token: svc.token })).status).toBe(200);
+  });
+
+  it("answers 413 to a chunked body that grows past the cap without a Content-Length", async () => {
+    const res = await new Promise<number>((resolve, reject) => {
+      const req = request(
+        { host: "127.0.0.1", port: svc.port, method: "POST", path: "/v0/sessions/report", headers: { Authorization: `Bearer ${svc.token}`, "Transfer-Encoding": "chunked" }, agent: false },
+        (r) => {
+          r.resume();
+          resolve(r.statusCode ?? 0);
+        },
+      );
+      req.on("error", reject);
+      for (let i = 0; i < 70; i += 1) req.write("x".repeat(1024));
+      req.end();
+    });
+    expect(res).toBe(413);
+    expect((await httpRequest(svc.port, { path: "/v0/health", token: svc.token })).status).toBe(200);
+  });
+
+  it("refuses a report that would mint session 257 with 503, and still updates an existing one (review of PR #435)", async () => {
+    const full = await loadPresenceFixture<Record<string, unknown>>("report.full.json");
+    const checkout = full["checkout"] as Record<string, unknown>;
+    for (let i = 0; i < MAX_SESSIONS; i += 1) svc.table.report({ ...(full as object), checkout: { ...checkout, path: `/c/${i}` } } as never);
+    const refused = await report({ ...full, checkout: { ...checkout, path: "/c/one-more" } });
+    expect(refused.status).toBe(503);
+    expect((JSON.parse(refused.body) as { error: { code: string } }).error.code).toBe("too_many_sessions");
+    expect((await report({ ...full, checkout: { ...checkout, path: "/c/0" } })).status).toBe(200);
   });
 
   it("answers 400 invalid_json to a body that is not JSON, and 400 naming the field for a bad status", async () => {

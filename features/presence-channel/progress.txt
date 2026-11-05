@@ -305,3 +305,28 @@ attempts, or one that would need an ARC-060 change, is marked and the run contin
   registrations are documentation, checked against the docs above, not run.
 - PC-01's "every profile's install set is 1.17.1's plus the fragment" rests on the existing
   install-set tests passing unchanged in the full suite (no snapshot was updated).
+
+## Iteration 18 — review of PR #435 — 2026-11-05
+### What was done
+- An independent subagent reviewed the branch (read-only, probes from its own scratchpad) and
+  reported seven defects; five it confirmed by probe. All seven are fixed, each with a test:
+  1. client.ts: pidAlive returned true on EPERM, so a stale server.json naming a pid now owned by
+     another account sent the token to whatever held the port. EPERM is now "not alive".
+  2. server.ts: the 1 MiB backlog cap fired right after writing server.hello, so a snapshot over
+     1 MiB dropped every new subscriber; the cap now applies before later events only. Added caps:
+     256 sessions (503 too_many_sessions) and 32 aliases (400; schema maxItems 32).
+  3. commands/presence.ts: a second serve on another port rotated the token and took over
+     server.json; serve now refuses while the recorded service (another live pid) answers.
+  4. server.ts: connectionsCheckingInterval 1 s (Node's 30 s default let idle sockets hold slots).
+  5. mcp.ts: ids must be string, number or null; a legacy version in _meta is served as legacy;
+     wrong-typed tool arguments are isError results.
+  6. stop: a live pid with no token to confirm it keeps its record.
+  7. serve: a permanent error listener after listening (logs server.error).
+- Weak tests strengthened: a slow-subscriber test (a raw socket that stops reading is closed past
+  1 MiB, the healthy feed stays); the chunked 413 path; the stop test now uses a separate
+  bystander process, not the test runner's pid.
+### What was learned
+- A lint failure in a `&&` chain skipped `npm run build`, so a built-CLI test ran the old dist/
+  and failed for the wrong reason. Build on its own line before built-CLI tests.
+- The new caps (256 sessions, 32 aliases) are additions to ARC-060 decision 3's limits; they are
+  in the PR description for the operator to confirm.

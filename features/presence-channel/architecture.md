@@ -465,6 +465,25 @@ Constraints split off. They have no story here. Each is registered in `TODO.md` 
 deferral has a durable location. PC-15 (the decision record) is already met: ARC-060 was
 accepted on 2026-11-04.
 
+### Amendments from the review of PR #435 (2026-11-05)
+
+An independent review of the implementation found seven defects; each is fixed on the branch with
+a test, and none changes an ARC-060 decision.
+
+- **D15:** `pidAlive` treats `EPERM` (a pid owned by another account) as not alive. Before, a
+  stale `server.json` whose pid had been reused by another account's process made the reporter
+  send the token to whatever held the recorded port.
+- **D11, D12:** the 1 MiB backlog cap is checked before each event after the first, never on
+  `server.hello`, which can be large by itself; new caps of 256 sessions (`503 too_many_sessions`)
+  and 32 aliases per agent block (`400`, and `maxItems` in the schema); `connectionsCheckingInterval`
+  is 1 s so the header and request timeouts bite quickly.
+- **D13, D14:** `serve` refuses to start when `server.json` names another live process whose
+  service answers, so a second `serve` on another port cannot rotate the token or take the record;
+  a server error after listening is logged, not a crash; `stop` keeps the record of a live process
+  it cannot confirm for want of a token.
+- **D17:** JSON-RPC ids must be a string, a number or null; a legacy version named in `_meta` is
+  served as legacy; a wrong-typed tool argument is a tool execution error (`isError`).
+
 ## Component Diagram
 
 ```mermaid

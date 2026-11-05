@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { TIMING_TEST_TIMEOUT } from "./helpers/timeouts.js";
 import { STALE_AFTER_MS, EXPIRE_AFTER_MS, type SessionRecord } from "../src/modules/presence/types.js";
 import { compilePresenceSchema, httpRequest, loadPresenceFixture, openFeed, startPresence, type Feed, type RunningPresence } from "./helpers/presence.js";
 
@@ -132,6 +133,43 @@ describe("the event feed (PC-08, ARC-060 decision 3)", () => {
     expect((events[2]?.data as SessionRecord).session).toBe(record.session);
     expect((events[2]?.data as SessionRecord).stale).toBe(true);
   });
+
+  it("delivers a server.hello larger than the 1 MiB backlog cap to a new subscriber (review of PR #435)", async () => {
+    svc = await startPresence();
+    const s = svc;
+    const base = await loadPresenceFixture<Record<string, unknown>>("report.full.json");
+    const aliases = Array.from({ length: 32 }, (_, i) => ({ value: `${"v".repeat(250)}${i}`, context: "slug" }));
+    const agent = { ...(base["agent"] as object), aliases };
+    const count = 160;
+    for (let i = 0; i < count; i += 1) s.table.report({ ...(base as object), agent, checkout: { path: `/c/${i}`, branch: "main", linked_worktree: false } } as never);
+    const f = await feed(s);
+    const [hello] = await f.waitFor(1, 15_000);
+    expect(JSON.stringify(hello?.data).length).toBeGreaterThan(1_048_576);
+    expect((hello?.data as { sessions: unknown[] }).sessions).toHaveLength(count);
+  });
+
+  it("closes a subscriber that stops reading once its backlog passes 1 MiB, and keeps serving the others", async () => {
+    svc = await startPresence();
+    const s = svc;
+    const { connect } = await import("node:net");
+    const stuck = connect({ host: "127.0.0.1", port: s.port });
+    await new Promise<void>((r) => stuck.once("connect", () => r()));
+    stuck.write(`GET /v0/events HTTP/1.1\r\nHost: x\r\nAuthorization: Bearer ${s.token}\r\n\r\n`);
+    stuck.pause();
+    for (let i = 0; i < 50 && s.presence.subscriberCount() < 1; i += 1) await new Promise((r) => setTimeout(r, 20));
+    expect(s.presence.subscriberCount()).toBe(1);
+    const healthy = await feed(s);
+    await healthy.waitFor(1);
+    const base = await loadPresenceFixture<Record<string, unknown>>("report.full.json");
+    const big = { ...(base as object), message: "m".repeat(250), needs_you: Array.from({ length: 20 }, () => ({ action: "a".repeat(256), reason: "r".repeat(256) })) };
+    for (let i = 0; i < 600 && s.presence.subscriberCount() > 1; i += 1) {
+      s.table.report(big as never);
+      if (i % 25 === 0) await new Promise((r) => setTimeout(r, 5));
+    }
+    expect(s.presence.subscriberCount()).toBe(1);
+    expect((await httpRequest(s.port, { path: "/v0/health", token: s.token })).status).toBe(200);
+    stuck.destroy();
+  }, TIMING_TEST_TIMEOUT);
 
   it("closeFeeds ends every open feed", async () => {
     svc = await startPresence();

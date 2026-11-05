@@ -211,7 +211,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/alias"
-          }
+          },
+          "maxItems": 32
         }
       }
     },

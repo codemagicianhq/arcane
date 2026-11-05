@@ -14,6 +14,7 @@
 import {
   ALIAS_CONTEXTS,
   HARNESSES,
+  MAX_ALIASES,
   MAX_LINE_CHARS,
   MAX_NEEDS_YOU,
   REPORT_STATUSES,
@@ -109,6 +110,7 @@ function agent(value: unknown): AgentBlock {
     throw new Refusal("invalid_field", "agent.definition_revision", "agent.definition_revision must be sha256:<64 hex> or null");
   }
   if (!Array.isArray(a["aliases"])) throw new Refusal("invalid_field", "agent.aliases", "agent.aliases must be a list");
+  if (a["aliases"].length > MAX_ALIASES) throw new Refusal("invalid_field", "agent.aliases", `agent.aliases carries at most ${MAX_ALIASES} entries`);
   const aliases: AgentAlias[] = a["aliases"].map((item: unknown, i) => {
     const field = `agent.aliases.${i}`;
     const alias = closed(item, field, ["value", "context"]);

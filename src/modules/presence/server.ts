@@ -20,11 +20,13 @@ import { checkBearer } from "./auth.js";
 import { logEvent } from "./log.js";
 import type { SessionTable } from "./sessions.js";
 import {
+  CONNECTIONS_CHECK_MS,
   HEADERS_TIMEOUT_MS,
   HELLO_EVENT,
   KEEPALIVE_MS,
   MAX_BODY_BYTES,
   MAX_CONNECTIONS,
+  MAX_SESSIONS,
   MAX_SUBSCRIBER_BUFFER_BYTES,
   MAX_SUBSCRIBERS,
   PRESENCE_CONTRACT,
@@ -188,9 +190,18 @@ export function createPresenceServer(options: PresenceServerOptions): PresenceSe
     sessions: table.snapshot(),
   });
 
+  /**
+   * A subscriber whose backlog is already over the cap is too slow and is
+   * closed before the next event; the first write (server.hello, which can be
+   * large on its own) is never judged by the cap.
+   */
   const writeEvent = (res: ServerResponse, name: string, data: unknown): void => {
+    if (res.writableLength > MAX_SUBSCRIBER_BUFFER_BYTES) {
+      res.destroy();
+      feeds.delete(res);
+      return;
+    }
     res.write(`event: ${name}\ndata: ${JSON.stringify(data)}\n\n`);
-    if (res.writableLength > MAX_SUBSCRIBER_BUFFER_BYTES) res.destroy();
   };
 
   table.listen((e: SessionEvent) => {
@@ -210,7 +221,7 @@ export function createPresenceServer(options: PresenceServerOptions): PresenceSe
     });
     feeds.add(res);
     const hello: HelloDocument = { contract: PRESENCE_CONTRACT, capabilities: presenceCapabilities(), sessions: table.snapshot() };
-    writeEvent(res, HELLO_EVENT, hello);
+    res.write(`event: ${HELLO_EVENT}\ndata: ${JSON.stringify(hello)}\n\n`);
     const keepalive = setInterval(() => res.write(": keepalive\n\n"), keepaliveMs);
     keepalive.unref();
     const drop = () => {
@@ -259,6 +270,10 @@ export function createPresenceServer(options: PresenceServerOptions): PresenceSe
     if (path === "/v0/sessions/report") {
       const result = validateReport(json.value);
       if (!result.ok) return error(res, 400, result.code, result.message, result.field);
+      const isNew = table.snapshot().every((r) => r.checkout.path !== result.value.checkout.path);
+      if (isNew && table.count() >= MAX_SESSIONS) {
+        return error(res, 503, "too_many_sessions", `at most ${MAX_SESSIONS} sessions are held at once`, undefined, { "Retry-After": "60" });
+      }
       const { record, created } = table.report(result.value);
       return send(res, created ? 201 : 200, record);
     }
@@ -269,7 +284,9 @@ export function createPresenceServer(options: PresenceServerOptions): PresenceSe
     return send(res, 200, ended);
   };
 
-  const server = createServer((req, res) => {
+  // headersTimeout and requestTimeout are enforced on this interval (Node's default is 30 s), so a
+  // process without the token cannot hold all MAX_CONNECTIONS slots open for long.
+  const server = createServer({ connectionsCheckingInterval: CONNECTIONS_CHECK_MS }, (req, res) => {
     handle(req, res).catch(() => {
       if (!res.headersSent) error(res, 500, "internal", "the service could not answer");
       else res.destroy();

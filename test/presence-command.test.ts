@@ -90,6 +90,15 @@ describe("runPresenceStatus and runPresenceStop in process", () => {
     expect(out.lines[0]).toContain("not reachable");
   });
 
+  it("stop keeps the record of a live process when there is no token to confirm it (review of PR #435)", async () => {
+    service = await startPresenceService({ port: "0" }, { env: {}, store: { home } });
+    writeFileSync(tokenPath({ home }), "");
+    const out = capture();
+    expect(await runPresenceStop(out.io, { home })).toBe(0);
+    expect(out.lines[0]).toContain("no token here to confirm it");
+    expect(existsSync(serverInfoPath({ home }))).toBe(true);
+  });
+
   it("stop: nothing recorded, a refused token keeps the record, an unreachable one is removed", async () => {
     const none = capture();
     expect(await runPresenceStop(none.io, { home })).toBe(0);

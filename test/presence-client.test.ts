@@ -45,6 +45,14 @@ describe("pidAlive", () => {
 });
 
 describe("resolveEndpoint (architecture D15)", () => {
+  it.skipIf(process.platform === "win32")("treats a pid owned by another account (EPERM) as no service, so the token is never sent (review of PR #435)", async () => {
+    expect(pidAlive(1)).toBe(false);
+    recordService(home, port, { pid: 1 });
+    expect(resolveEndpoint({ home, env: {} })).toBeNull();
+    expect(await callPresence("GET", "/v0/health", undefined, { home, env: {} })).toEqual({ kind: "not-configured" });
+    expect(seen).toEqual([]);
+  });
+
   it("is null with no record, with a dead pid, and with no token", () => {
     expect(resolveEndpoint({ home, env: {} })).toBeNull();
     recordService(home, port, { pid: spawnSync(process.execPath, ["-e", ""]).pid });

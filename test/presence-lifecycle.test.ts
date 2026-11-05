@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { connect } from "node:net";
+import { spawn } from "node:child_process";
 import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 import { BUILT_CLI_SKIP_REASON, resolveBuiltCli } from "./helpers/resolve-cli.js";
@@ -198,14 +199,32 @@ describe.skipIf(!BIN)("spell presence status and stop (PC-02, architecture D14)"
 
   it("stop signals nothing when the recorded pid is alive but its port answers nothing, and removes the stale record", async () => {
     const s = await serve();
-    // Point the record at this test's own (alive) process and a port nothing serves.
-    const info = { ...s.info, pid: process.pid, port: 1 };
-    writeFileSync(join(store(), "server.json"), JSON.stringify(info));
-    const res = await runSpell(BIN!, ["presence", "stop"], { cwd: home, home });
-    expect(res.code).toBe(0);
-    expect(res.stdout).toContain("stale record");
-    expect(existsSync(join(store(), "server.json"))).toBe(false);
-    // The real service was not signalled.
-    expect(s.child.exitCode).toBeNull();
+    // A separate, live bystander process: if stop signalled the recorded pid, this would die.
+    const bystander = spawn(process.execPath, ["-e", "setTimeout(() => {}, 60000)"], { windowsHide: true });
+    const bystanderExit = new Promise<void>((r) => bystander.once("exit", () => r()));
+    try {
+      writeFileSync(join(store(), "server.json"), JSON.stringify({ ...s.info, pid: bystander.pid, port: 1 }));
+      const res = await runSpell(BIN!, ["presence", "stop"], { cwd: home, home });
+      expect(res.code).toBe(0);
+      expect(res.stdout).toContain("stale record");
+      expect(existsSync(join(store(), "server.json"))).toBe(false);
+      expect(bystander.exitCode).toBeNull();
+      expect(bystander.signalCode).toBeNull();
+      expect(s.child.exitCode).toBeNull();
+    } finally {
+      bystander.kill("SIGKILL");
+      await bystanderExit;
+    }
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("a second serve on another port is refused while the recorded service answers, and leaves its token and record alone (review of PR #435)", async () => {
+    const s = await serve();
+    const token = readFileSync(join(store(), "token"), "utf8");
+    const record = readFileSync(join(store(), "server.json"), "utf8");
+    const second = await runSpell(BIN!, ["presence", "serve", "--port", "0", "--rotate"], { cwd: home, home });
+    expect(second.code).toBe(1);
+    expect(second.stderr).toContain(`pid ${s.info.pid}`);
+    expect(readFileSync(join(store(), "token"), "utf8")).toBe(token);
+    expect(readFileSync(join(store(), "server.json"), "utf8")).toBe(record);
   }, VERY_HEAVY_TEST_TIMEOUT);
 });

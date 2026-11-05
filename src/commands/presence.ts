@@ -11,6 +11,7 @@ import { mintSessionRef } from "../modules/agent-ref.js";
 import { callPresence, pidAlive } from "../modules/presence/client.js";
 import { serveMcp } from "../modules/presence/mcp.js";
 import { sendEnd, sendReport, type ReportFlags, type ReportOutcome, type ReporterDeps } from "../modules/presence/reporter.js";
+import { logEvent } from "../modules/presence/log.js";
 import { createPresenceServer } from "../modules/presence/server.js";
 import { createSessionTable } from "../modules/presence/sessions.js";
 import {
@@ -110,6 +111,18 @@ export async function startPresenceService(
 
   const actualPort = (server.address() as AddressInfo).port;
   const url = `http://${LOOPBACK_HOST}:${actualPort}`;
+
+  // Bind-before-write protects the same port only; a service already recorded on another port and
+  // still answering keeps its token and its record (review of PR #435).
+  const recorded = readServerInfo(store);
+  if (recorded !== null && recorded.pid !== process.pid && pidAlive(recorded.pid)) {
+    const health = await callPresence("GET", "/v0/health", undefined, { ...store, env });
+    if (health.kind === "ok" || (health.kind === "refused" && health.status === 401)) {
+      await closeServer();
+      throw new ServeError(`A presence service is already running at ${recorded.url} (pid ${recorded.pid}). Stop it first: spell presence stop`);
+    }
+  }
+
   try {
     token = ensureToken({ ...store, rotate: options.rotate === true });
     writeServerInfo({ url, pid: process.pid, port: actualPort, started_at: startedAt, generator: { name: "arcane-cli", version: context.version ?? pkg.version } }, store);
@@ -117,6 +130,9 @@ export async function startPresenceService(
     await closeServer();
     throw new ServeError(error instanceof PresenceStoreError ? error.message : `Could not write the presence store: ${String(error)}`);
   }
+
+  // A server error after listening (an accept failure such as EMFILE) is logged, never a crash.
+  server.on("error", () => logEvent("server.error", null, null));
 
   const sweep = setInterval(() => table.sweep(), SWEEP_MS);
   sweep.unref();
@@ -229,6 +245,10 @@ export async function runPresenceStop(io: PresenceIo = consoleIo, store: StoreOp
   }
   if (result.kind === "refused" && result.status === 401) {
     io.out(`The presence service at ${info.url} refused this machine's token, so it was not stopped.`);
+    return 0;
+  }
+  if (result.kind === "not-configured" && pidAlive(info.pid)) {
+    io.out(`The presence service recorded at ${info.url} (pid ${info.pid}) is running, but there is no token here to confirm it, so it was not stopped.`);
     return 0;
   }
   removeServerInfo(store);

@@ -30,6 +30,11 @@ export const MAX_NEEDS_YOU = 20;
 export const MAX_SUBSCRIBERS = 32;
 export const MAX_SUBSCRIBER_BUFFER_BYTES = 1_048_576;
 export const MAX_CONNECTIONS = 128;
+/** Sessions held at once; a report that would mint the next one is 503 (review of PR #435). */
+export const MAX_SESSIONS = 256;
+/** Aliases on one agent block (review of PR #435). */
+export const MAX_ALIASES = 32;
+export const CONNECTIONS_CHECK_MS = 1_000;
 export const HEADERS_TIMEOUT_MS = 5_000;
 export const REQUEST_TIMEOUT_MS = 10_000;
 

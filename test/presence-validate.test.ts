@@ -81,6 +81,12 @@ describe("validateReport: the needs-you cap is refused, never cut (PC-03; threat
     expect(refusal(validateReport({ ...(await full()), needs_you: Array.from({ length: 21 }, () => line) }))).toEqual({ code: "too_many_lines", field: "needs_you" });
   });
 
+  it("refuses an agent block with more than 32 aliases (review of PR #435)", async () => {
+    const body = await full();
+    const aliases = Array.from({ length: 33 }, (_, i) => ({ value: `a${i}`, context: "slug" }));
+    expect(refusal(validateReport({ ...body, agent: { ...(body["agent"] as object), aliases } }))).toEqual({ code: "invalid_field", field: "agent.aliases" });
+  });
+
   it("refuses an empty action", async () => {
     expect(refusal(validateReport({ ...(await full()), needs_you: [{ action: " ", reason: null }] }))).toEqual({ code: "invalid_field", field: "needs_you.0.action" });
   });
