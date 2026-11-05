@@ -124,3 +124,108 @@ export async function callPresence(method: string, path: string, body: unknown, 
   if (endpoint === null) return { kind: "not-configured" };
   return send(endpoint.info.port, endpoint.token, method, path, body, options);
 }
+
+/** An open subscription to `/v0/events`. */
+export interface EventFeed {
+  /** Closes the stream; `onClose` is not called for a close asked for here. */
+  close(): void;
+}
+
+export interface EventFeedCallbacks {
+  /** Each event after `server.hello`, in the order the service sent it. */
+  onEvent(name: string, data: unknown): void;
+  /** The stream ended or failed after it had opened. Called at most once. */
+  onClose(): void;
+}
+
+/**
+ * Subscribes to the service's feed on 127.0.0.1 (architecture D26). Resolves
+ * once `server.hello` has arrived, or null when no channel is configured, the
+ * port does not answer in time, the token is refused or the feed is full. The
+ * token goes where every other call sends it: the recorded port on loopback.
+ */
+export function openEventFeed(callbacks: EventFeedCallbacks, options: ClientOptions = {}): Promise<EventFeed | null> {
+  const endpoint = resolveEndpoint(options);
+  if (endpoint === null) return Promise.resolve(null);
+  const deadline = (options.connectTimeoutMs ?? CONNECT_TIMEOUT_MS) + (options.responseTimeoutMs ?? RESPONSE_TIMEOUT_MS);
+  return new Promise((resolve) => {
+    let opened = false;
+    let settled = false;
+    let closedHere = false;
+    let closeReported = false;
+    const settle = (feed: EventFeed | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (feed === null) req.destroy();
+      resolve(feed);
+    };
+    const ended = () => {
+      if (!opened) {
+        settle(null);
+        return;
+      }
+      if (closedHere || closeReported) return;
+      closeReported = true;
+      callbacks.onClose();
+    };
+    const feed: EventFeed = {
+      close() {
+        closedHere = true;
+        req.destroy();
+      },
+    };
+    const req = request(
+      {
+        host: LOOPBACK_HOST,
+        port: endpoint.info.port,
+        method: "GET",
+        path: "/v0/events",
+        headers: { Authorization: `Bearer ${endpoint.token}`, Accept: "text/event-stream" },
+        agent: false,
+      },
+      (res) => {
+        if (res.statusCode !== 200) {
+          res.resume();
+          settle(null);
+          return;
+        }
+        res.setEncoding("utf8");
+        let buffer = "";
+        res.on("data", (chunk: string) => {
+          buffer += chunk.replace(/\r\n?/g, "\n");
+          let at: number;
+          while ((at = buffer.indexOf("\n\n")) >= 0) {
+            const block = buffer.slice(0, at);
+            buffer = buffer.slice(at + 2);
+            const name = /^event: ?(.*)$/m.exec(block)?.[1];
+            const data = /^data: ?(.*)$/m.exec(block)?.[1];
+            if (name === undefined || data === undefined) continue; // a keepalive comment
+            let parsed: unknown;
+            try {
+              parsed = JSON.parse(data) as unknown;
+            } catch {
+              continue;
+            }
+            if (!opened) {
+              if (name !== "server.hello") {
+                settle(null);
+                return;
+              }
+              opened = true;
+              settle(feed);
+              continue;
+            }
+            if (!closedHere) callbacks.onEvent(name, parsed);
+          }
+        });
+        res.on("end", ended);
+        res.on("close", ended);
+        res.on("error", ended);
+      },
+    );
+    const timer = setTimeout(() => settle(null), deadline);
+    req.on("error", ended);
+    req.end();
+  });
+}

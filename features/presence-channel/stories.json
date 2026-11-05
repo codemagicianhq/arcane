@@ -343,9 +343,9 @@
         "progress.txt records the specification pages read and the date"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: specification read at modelcontextprotocol.io (2026-07-28 resources, subscriptions, cancellation; 2025-11-25 resources), recorded in progress.txt iteration 23; test/presence-mcp.test.ts 18/18 (8 new), stable over 3 more runs: legacy resources/subscribe + a loopback POST report → notifications/resources/updated { uri }, unsubscribe stops them and frees the feed; modern subscriptions/listen → acknowledged with subscriptionId 41 and only the sessions URI, update carries id 41, notifications/cancelled stops them with no response; cross-era methods -32601, unknown URI and bad filter -32602; stdin end answers the open listen then cancels it; service loss and return are updates; a subscription made before any service gets its first update once one starts; over stdio against the built CLI the listen is acknowledged and receives the update. initialize and server/discover declare resources.subscribe; tools/list unchanged. mcp.ts 94.3% lines, client.ts 91.1%."
     },
     {
       "id": "PS-20",

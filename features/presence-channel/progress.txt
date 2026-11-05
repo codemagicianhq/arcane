@@ -420,3 +420,40 @@ the stories are committed one per story only after that approval.
 - In some spells the fragment sits inside a list and is expanded indented; the parity tool
   handles it, and a substring test still finds the line.
 - The four spells with presence-report now say the waiting report twice (D25, accepted).
+
+## Iteration 23 — PS-19 — 2026-11-05
+### The MCP specification, read 2026-11-05 at modelcontextprotocol.io
+- specification/2026-07-28/server/resources: capability `resources.subscribe` means
+  "resource-specific update notifications for resources requested through subscriptions/listen
+  using the resourceSubscriptions filter"; updates are notifications/resources/updated with
+  `_meta["io.modelcontextprotocol/subscriptionId"]` and `uri`; an unknown resource is -32602.
+- specification/2026-07-28/basic/patterns/subscriptions: subscriptions/listen "replaces the
+  former resources/subscribe RPC"; params.notifications filter (toolsListChanged,
+  promptsListChanged, resourcesListChanged, resourceSubscriptions); the server MUST send
+  notifications/subscriptions/acknowledged first, carrying the subscription id (= the listen
+  request's JSON-RPC id) and the honored subset; on stdio the client cancels with
+  notifications/cancelled; a server ending a subscription SHOULD answer the listen request with
+  { resultType: "complete", _meta: { subscriptionId } }.
+- specification/2026-07-28/basic/patterns/cancellation: notifications/cancelled { requestId,
+  reason? }; a server MUST send it referencing a subscriptions/listen id when it tears that
+  stream down; a cancelled request gets no response.
+- specification/2025-11-25/server/resources (legacy): resources/subscribe { uri }, then
+  notifications/resources/updated { uri }; capability `subscribe: true`.
+### Decision taken here (architecture D26, not an ARC-060 change)
+- Per era: legacy gets resources/subscribe and resources/unsubscribe; 2026-07-28 gets
+  subscriptions/listen; each era's method is -32601 in the other. Only the sessions resource is
+  honored (the capability descriptor is constant). On stdin's end the server answers each open
+  listen and then sends notifications/cancelled, which satisfies both pages.
+### What was done
+- client.ts: openEventFeed (GET /v0/events on loopback, resolves at server.hello, null when no
+  channel, refused, full or slow). mcp.ts: the subscription state, one feed per process, retry
+  every FEED_RETRY_MS (5 s), updates on every session.* event and on losing or regaining the
+  feed. The subscribe answer and the acknowledgment wait for the first feed attempt.
+- test/presence-mcp.test.ts: +8 (legacy subscribe/unsubscribe with a loopback report; the
+  constant resource; modern listen, acknowledgment, update with its id, cancellation; an empty
+  filter; per-era refusals and bad filters; teardown on stdin's end; losing and regaining the
+  service; a subscription before any service exists; and one over stdio against the built CLI).
+  The two existing capability assertions now expect resources.subscribe.
+### What to watch for
+- Real clients' subscription behaviour (Claude Code, Codex, Copilot) was not tested; the
+  protocol tests use a hand-written client that follows the pages above.
