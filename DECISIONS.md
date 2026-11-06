@@ -94,6 +94,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-060](#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention) | The Presence Channel: One Package Behind `spell presence`, a Loopback Contract, Checkout-Keyed Sessions, and a Prompt-Driven Reporting Convention | 2026-11-04 | Accepted |
 | [ARC-061](#arc-061--scoped-temporary-run-grants-unattended-preflight-and-authority-accounting) | Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting | 2026-11-05 | Accepted |
 | [ARC-062](#arc-062--repository-declared-commit-attribution) | Repository-Declared Commit Attribution | 2026-11-06 | Accepted |
+| [ARC-063](#arc-063--unattended-run-entry-point) | Unattended Run Entry Point | 2026-11-06 | Accepted |
 
 ---
 
@@ -3813,3 +3814,19 @@ The two lists differ in kind. A newly available component is a preference: nothi
 **Alternatives:** Inferring from past commits is unreliable; changing the default for every repository would break existing analytics and provenance conventions. A free-form shell command would create an injection risk.
 
 **Related:** [[features/issues-448-454/PRD]], [[.arcane/governance/git-conventions]].
+
+
+---
+
+## ARC-063 — Unattended Run Entry Point
+
+**Date:** 2026-11-06
+**Status:** Accepted. The operator approved the prepared spell and authorized shipping it.
+
+**Context:** Operators currently assemble an unattended delivery prompt for issue sets and application briefs. Existing full-cycle owns one implementation loop, while readiness, bounded authority and recovery need a discoverable entry point.
+
+**Decision:** Add `spell-unattended-run` to spells-build. It composes open-session, planning/scoping/architecture, existing shared preflight and authority fragments, milestone full-cycle execution and close-session. It owns finite scope, decisions before departure, evidence, recovery and scoped cleanup, not a scheduler or executor. Invocation confers no authority; missing host continuity or consent is an explicit gate. The descriptive name follows the naming test and existing unattended terminology.
+
+**Alternatives:** Lore and cruise-control names obscure the technical purpose. Duplicating full-cycle would create divergent implementation gates. A persistent runner is a separate runtime capability, not something a prompt can promise.
+
+**Related:** [[features/unattended-run-spell/PRD]], [[features/unattended-run-spell/authoring-review]].

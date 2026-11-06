@@ -80,6 +80,8 @@ a privileged executor or a cryptographic proof of consent.
 Related: [[.arcane/governance/agent-policies]].
 <!-- fragment:run-grant-authority:end -->
 
+For unattended application or multi-issue delivery, start with [spell-unattended-run](spell-unattended-run.md): it settles scope, readiness, authority and recovery before delegating milestones here. When invoked by that spell for an approved milestone, execute the milestone here rather than restarting its intake.
+
 ## Required Inputs
 
 Before proceeding, confirm you have all three:

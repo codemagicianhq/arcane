@@ -167,6 +167,7 @@ describe("spell-authoring-standards documents the convention (UP04-B-01)", () =>
 // text the span must follow (it sits where the spell describes its final
 // report) -- see the story's testEvidence for why each spell is in or out.
 const CHOSEN: Record<string, string> = {
+    "spell-unattended-run": "## Final report and acceptance",
     "spell-open-session": "Then produce output in this exact structure:",
     "spell-close-session": "Output format:\n",
     "spell-commit-work": "Output format after execution:",
