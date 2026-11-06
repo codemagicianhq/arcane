@@ -272,6 +272,41 @@
       ],
       "status": "active",
       "revocation": "Ends on verified merge, release verification and deletion of this run's merged remote branch, or at expiresAt, whichever comes first. No unrelated branch deletion, force-push, settings change or manual publish. Set status to revoked or remove the entry to revoke earlier."
+    },
+    {
+      "id": "issues-448-454-2026-11-06",
+      "grantedBy": "payini",
+      "operatorWords": "I authorize you to create, record, and commit a NEW scoped run grant,\nincluding the grant record’s own commit. Scope it to this repository,\nthese issues, and a deterministic session branch prefix.\n\nPermitted actions:\ncommit, push, create-pr, assign-pr, complete-pr, delete-remote-branch.\n\nAssign PRs to payini. This authority ends when this work and cleanup\nfinish, with a maximum of 24 hours from now. Do not renew it yourself\nor reuse a previous session’s grant.\n\nResolve routine technical details autonomously. Once blocking\nquestions are answered, implement, test, review, commit, push, create\nPRs, and enable auto-merge using an allowed non-squash strategy.\nSerialize changes that overlap.\n\nPreserve hooks, required checks, independent reviews, and push policy.\nExclude force-push, production deployment, platform settings changes,\nand approval under my identity.\n\nall of them in this url: [https://github.com/codemagicianhq/arcane/issues](https://github.com/codemagicianhq/arcane/issues)",
+      "grantedAt": "2026-11-06T09:14:29.248Z",
+      "expiresAt": "2026-11-07T08:00:00.000Z",
+      "scope": {
+        "repository": "github.com/codemagicianhq/arcane",
+        "task": "issues-448-454",
+        "branchPrefix": "sessions/2026-11-06-issues-448-454"
+      },
+      "permittedActions": [
+        "commit",
+        "push",
+        "create-pr",
+        "assign-pr",
+        "complete-pr",
+        "delete-remote-branch"
+      ],
+      "excludedActions": [
+        "force-push",
+        "production-deploy",
+        "settings-change",
+        "approve-pr",
+        "run-dev-pipeline"
+      ],
+      "requiredChecks": [
+        "Lint, typecheck, test, build",
+        "PR branch is rebased on target",
+        "Review round clear",
+        "Fixture tests (macos-latest)"
+      ],
+      "status": "active",
+      "revocation": "Set status to revoked or remove this entry; commit the change."
     }
   ]
 }
