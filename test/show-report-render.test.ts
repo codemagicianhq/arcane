@@ -145,8 +145,13 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
   it("renders the explicit empty state when nothing needs the operator", async () => {
     const template = await readFile(TEMPLATE_PATH, "utf8");
     const html = renderShowReport(minimalModel(), template);
-    expect(html).toContain("Nothing needs you");
+    // arcane-ui 2.16.0 renders the section as "Action required" / "No action
+    // required" (features/action-required/PRD.md AR-04); earlier templates said
+    // "Needs you" / "Nothing needs you". Accept either, so a vendoring PR can
+    // land without editing this test.
+    expect(html).toMatch(/Nothing needs you|No action required/);
     expect(html).not.toContain("Needs you:");
+    expect(html).not.toMatch(/<h2[^>]*>(?:Needs you|Action required)<\/h2>/);
   });
 
   it("renders a Needs-you block with the count when queue items are open", async () => {
@@ -155,10 +160,10 @@ describe("show-report render: renderShowReport against the vendored arcane-ui te
       minimalModel({ needsYou: [{ id: "Q-001", title: "Merge it", reason: "It is the grant." }] }),
       template,
     );
-    expect(html).toContain("Needs you");
+    expect(html).toMatch(/<h2[^>]*>(?:Needs you|Action required)<\/h2>/);
     expect(html).toContain("1 open");
     expect(html).toContain("Merge it");
-    expect(html).not.toContain("Nothing needs you");
+    expect(html).not.toMatch(/Nothing needs you|No action required/);
   });
 
   it("renders an unwritten description visibly as 'unwritten', never as a faked sentence", async () => {
