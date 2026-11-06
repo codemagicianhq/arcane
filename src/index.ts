@@ -11,6 +11,7 @@ import { runStatus } from "./commands/status.js";
 import { runState } from "./commands/state.js";
 import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
+import { runGrantCheck } from "./commands/grant.js";
 import { runWardCli } from "./commands/ward.js";
 import { runUnblockPush } from "./commands/unblock-push.js";
 import { runBlockPush } from "./commands/block-push.js";
@@ -450,6 +451,18 @@ agentsCommand
     const scope: InstallScope = opts.user ? "user" : "repo";
     await runAgentsList(agentsTargetDir(scope, process.cwd()), scope);
   });
+
+// ─── spell grant: read-only record checks (ARC-061) ──────────────────────────
+
+program.command("grant")
+  .description("Read-only run-grant record checks; operator consent and execution/platform gates remain")
+  .command("check")
+  .requiredOption("--id <id>", "Run grant ID")
+  .requiredOption("--repository <repository>", "Exact repository identity recorded in scope")
+  .requiredOption("--task <task>", "Exact approved task ID")
+  .requiredOption("--branch <branch>", "Current source branch")
+  .requiredOption("--action <action>", "Action to check (for example commit or complete-pr)")
+  .action(runGrantCheck);
 
 // ─── spell presence ───────────────────────────────────────────────────────────
 // ARC-060: the local presence channel. Loopback only, observation only, memory

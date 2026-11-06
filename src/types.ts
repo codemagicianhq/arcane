@@ -490,4 +490,6 @@ export interface Delegation {
 
 export interface DelegationsFile {
   delegations: Delegation[];
+  /** Temporary records are validated separately; legacy entries never grant run authority. */
+  runGrants?: import("./modules/run-grants.js").RunGrant[];
 }
