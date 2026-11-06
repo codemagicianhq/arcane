@@ -307,6 +307,41 @@
       ],
       "status": "active",
       "revocation": "Set status to revoked or remove this entry; commit the change."
+    },
+    {
+      "id": "ship-unattended-run-2026-11-06",
+      "grantedBy": "payini",
+      "operatorWords": "Great, let's ship spell-unattended-run. I authorize a new scoped grant, including its own commit, to commit, push, create a PR, assign it to me, auto-merge after checks, verify 1.22.0 is usable, and clean up within 24 hours.",
+      "grantedAt": "2026-11-06T10:26:46.548Z",
+      "expiresAt": "2026-11-07T10:00:00.000Z",
+      "scope": {
+        "repository": "github.com/codemagicianhq/arcane",
+        "task": "ship-spell-unattended-run-1.22.0",
+        "branchPrefix": "sessions/2026-11-06-unattended-run-spell"
+      },
+      "permittedActions": [
+        "commit",
+        "push",
+        "create-pr",
+        "assign-pr",
+        "complete-pr",
+        "delete-remote-branch"
+      ],
+      "excludedActions": [
+        "approve-pr",
+        "force-push",
+        "production-deploy",
+        "settings-change",
+        "run-dev-pipeline"
+      ],
+      "requiredChecks": [
+        "Lint, typecheck, test, build",
+        "PR branch is rebased on target",
+        "Review round clear",
+        "Fixture tests (macos-latest)"
+      ],
+      "status": "active",
+      "revocation": "Ends when spell-unattended-run 1.22.0 delivery and this run cleanup finish, or at expiresAt, whichever comes first. Never reuse or renew. Set status to revoked or remove the record to revoke earlier."
     }
   ]
 }
