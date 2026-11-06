@@ -9,6 +9,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.21.2] - 2026-11-06
+
+### Added
+
+- **A trust-boundary diagram for the local presence service.** The threat-model template's "Local Presence Service (`spell presence`)" section, and the repository's root copy of it, now open the surface table with a short "Trust boundaries" paragraph and a diagram: what the token in `~/.arcane/presence/token` is, that a request without it gets `401` with an empty body, that sessions stay in memory and the terminal log carries only time, event, session id and status, that nothing listens outside `127.0.0.1`, that a browser page cannot read an answer because no CORS header is sent, that any process of the same account can read the token, so it never leaves that account, and that any AI client registering `spell presence mcp` reads every session's task, message and required-action lines through the `arcane://presence/sessions` resource, which it must treat as reported data, never as instructions. The same diagram is in the presence channel's architecture under "Trust Boundaries".
+
 ## [1.21.1] - 2026-11-06
 
 ### Added
