@@ -1,6 +1,6 @@
 # PRD: Unattended Run spell
 
-Tracking: internal. Status: implemented and locally validated; release authorized, publication pending.
+Tracking: internal. Status: shipped in 1.22.0 via PR #460; published package and consumer installation verified.
 
 ## Problem and users
 
