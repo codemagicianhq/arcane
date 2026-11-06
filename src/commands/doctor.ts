@@ -66,6 +66,8 @@ interface CheckResult {
    * `passed: true`.
    */
   skipped?: boolean;
+  /** Show useful inventory even when this check passes. */
+  showDetails?: boolean;
 }
 
 // ─── Runtime validation helpers ───────────────────────────────────────────────
@@ -896,7 +898,7 @@ export async function checkRunGrants(targetDir: string, now = new Date()): Promi
       && Date.parse(g.grantedAt) <= now.getTime() && now.getTime() < Date.parse(g.expiresAt));
     const inactive = grants.length - active.length;
     return {
-      name, passed: true, blocking: false,
+      name, passed: true, blocking: false, showDetails: grants.length > 0,
       message: grants.length === 0 ? "no run grants recorded"
         : `${active.length} active run grant(s): ${active.map((g) => `${g.id} (expires ${g.expiresAt}; task: ${g.scope.task}; branch: ${g.scope.branchPrefix})`).join("; ")}; ${inactive} expired, future or revoked`,
     };
@@ -1188,7 +1190,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
           ? "warn"
           : "FAIL";
     console.log(`  ${icon} [${label}] ${result.name}`);
-    if (!result.passed || skipped) {
+    if (!result.passed || skipped || result.showDetails === true) {
       console.log(`         ${result.message}`);
     }
     if (!result.passed && result.blocking !== false) {

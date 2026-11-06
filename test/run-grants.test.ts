@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { evaluateRunGrant, isRunGrant, parseRunGrants, readRunGrants, type RunGrant, type RunGrantRequest } from "../src/modules/run-grants.js";
-import { checkRunGrants } from "../src/commands/doctor.js";
+import { checkRunGrants, runDoctor } from "../src/commands/doctor.js";
 import { checkRunGrant, runGrantCheck } from "../src/commands/grant.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
 
@@ -18,7 +18,7 @@ const request: RunGrantRequest = {
 };
 const dirs: string[] = [];
 afterEach(async () => {
-  vi.restoreAllMocks(); process.exitCode = 0;
+  vi.restoreAllMocks(); vi.useRealTimers(); process.exitCode = 0;
   await Promise.all(dirs.splice(0).map(removeFixtureDir));
 });
 async function fixture(value?: unknown) {
@@ -103,6 +103,14 @@ describe("run grant authority records", () => {
     expect((await checkRunGrants(dir, new Date("2026-01-01"))).message).toContain("0 active");
     expect((await checkRunGrants(await fixture())).message).toBe("no run grants recorded");
     expect((await checkRunGrants(await fixture("bad JSON"))).passed).toBe(false);
+  });
+  it("renders active grant expiry in the actual doctor output, even when the check passes", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(request.now);
+    const dir = await fixture({ delegations: [], runGrants: [grant] });
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    await runDoctor(dir);
+    expect(log.mock.calls.map(String).join("\n")).toContain(`test-run (expires ${grant.expiresAt}`);
+    expect(log.mock.calls.map(String).join("\n")).not.toContain(grant.operatorWords);
   });
   it("the command fails closed and never logs the grant's operator words", async () => {
     expect((await checkRunGrant(await fixture("bad JSON"), request)).matches).toBe(false);
