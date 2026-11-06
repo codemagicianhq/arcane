@@ -236,7 +236,7 @@
           "id": "spell-full-cycle",
           "shortName": "full-cycle",
           "name": "Spell — Full Cycle",
-          "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time",
+          "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with explicit per-action authority and optional scoped run grants",
           "tagline": "Run the whole loop end-to-end"
         },
         {
@@ -778,7 +778,7 @@
       "id": "spell-full-cycle",
       "shortName": "full-cycle",
       "name": "Spell — Full Cycle",
-      "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with one human approval gate at merge time",
+      "description": "End-to-end autonomous Spell Loop — chains plan, architect, implement, test, review, and ship into a single invocation with explicit per-action authority and optional scoped run grants",
       "tagline": "Run the whole loop end-to-end",
       "claudeDescription": "Use PROACTIVELY for an end-to-end feature request that should chain plan, architect, implement, test, review, and ship.",
       "argumentHint": "Feature description, optional work item ID, target repo (e.g., 'Add user auth to the mobile app, #507, {REPO_ORG}/{REPO_NAME}')",
@@ -786,7 +786,7 @@
       "executiveSummary": [
         "This prompt chains all Spell Loop phases into a single autonomous pipeline.",
         "Includes optional PRD enchantment (spell-enchant) between Plan and Architect for quality enhancement.",
-        "Only one human touchpoint: approving the PR at ship time.",
+        "Without a matching run grant, the human touchpoint is approving the PR at ship time; a scoped grant can authorize completion after all checks.",
         "Delegates each phase to the appropriate specialized agent role (research, architecture, build, QA, marketing review) — **in practice, a single agent switches hats per phase** unless a real per-tool subagent registry is configured (e.g. `.claude/agents/` for Claude Code); this framework ships no such registry by default, so \"delegates\" names the intended role model, not a literal handoff between separately running agents (2026-07-22 dogfooding finding). Resolve concrete personas from [agent-policies](../../.arcane/governance/agent-policies.md) / [naming-conventions](../../.arcane/governance/naming-conventions.md); if neither is present, proceed with role names directly.",
         "If any phase fails, the pipeline halts and reports the blocker — no silent failures."
       ]
@@ -1001,7 +1001,7 @@
       "executiveSummary": [
         "This spell lets one **orchestrator** session farm independent slices of a larger plan out to **worker** sessions, so the slices are prepared in parallel while the protocols run once, at the top of the stack.",
         "Workers do the work only. Each leaves a **prep branch** plus a short **note** in a shared notes folder and reports back. They never touch the shared files, the stack branches, a pull request, a pipeline or the docs.",
-        "The orchestrator owns the plan, every shared file (version bump, changelog, decision records, progress and architecture notes, lint scope lists, counters), the merge order and every protocol step. When the stack reaches a slice it rebases the prep branch, applies the listed shared-file edits, runs the full checks and the reviews, fixes every finding, commits through `spell-commit-work` and opens the pull request. The operator approves and merges; the orchestrator never does.",
+        "The orchestrator owns the plan, every shared file (version bump, changelog, decision records, progress and architecture notes, lint scope lists, counters), the merge order and every protocol step. When the stack reaches a slice it rebases the prep branch, applies the listed shared-file edits, runs the full checks and the reviews, fixes every finding, commits through `spell-commit-work` and opens the pull request. The operator approves and merges by default; an explicitly scoped `complete-pr` run grant can authorize the orchestrator to complete instead (ARC-061).",
         "It produces a plan with a footprint comparison, one brief per worker, one note per slice, a slice ledger, and one pull request per slice.",
         "**Why:** parallel speed without every worker paying the token cost of the full protocols. The protocols are paid once per slice, by the session that owns the shared state.",
         "**Not this spell:** `spell-full-cycle` and `spell-implement` build a feature end to end in one workspace and serialize by default. `spell-review-batch` reviews many pull requests that already exist. Subagents inside one session are a different mechanism with a different cost model; this spell is for separate sessions with their own context and worktree. OP1[\"Operator<br/>approves plan and merge order\"] --> ORCH[\"Orchestrator<br/>plan, shared files, merge order,<br/>every protocol\"] ORCH -->|\"brief + worktree from stack tip\"| W[\"Workers A, B, ...<br/>one per slice, in parallel\"] W -->|\"prepares\"| PB[(\"Prep branch<br/>per slice\")] W -->|\"writes\"| NOTES[\"One note per slice<br/>in the shared notes folder\"] W -.->|\"report: READY, BLOCKED or PARTIAL\"| ORCH PB --> INT NOTES --> INT ORCH -->|\"when the stack reaches the slice\"| INT[\"Integrate<br/>rebase, shared-file edits, full checks,<br/>review, security review, pull request\"] INT --> OP2[\"Operator<br/>approves and merges\"] OP2 -.->|\"next slice\"| INT"

@@ -1,7 +1,7 @@
 ---
 title: "PRD: Scoped authority for unattended runs"
 status: approved
-implementation_status: planned
+implementation_status: in_progress
 created: 2026-11-05
 tracking:
   tracking_mode: internal
@@ -92,14 +92,14 @@ and reviewers who need evidence of the authority used for each action.
 
 ## Acceptance Criteria
 
-- [ ] A scoped active grant permits commit without inventing autonomous status.
-- [ ] Completion is denied without `complete-pr`, even when commit is permitted.
-- [ ] Expired, revoked, malformed, excluded and mismatched grants fail closed.
-- [ ] Doctor lists valid active grants with expiry and preserves legacy output.
-- [ ] All three orchestrating spells contain the same compiled preflight.
-- [ ] Preflight covers both providers, validation, review restrictions and merge
+- [x] A scoped active grant permits commit without inventing autonomous status.
+- [x] Completion is denied without `complete-pr`, even when commit is permitted.
+- [x] Expired, revoked, malformed, excluded and mismatched grants fail closed.
+- [x] Doctor lists valid active grants with expiry and preserves legacy output.
+- [x] All three orchestrating spells contain the same compiled preflight.
+- [x] Preflight covers both providers, validation, review restrictions and merge
       methods, and explicitly lists actions waiting for the operator.
-- [ ] Close accounts for every earlier and final commit/PR action; absent
+- [x] Close accounts for every earlier and final commit/PR action; absent
       authority appears under Action required and remains visible in the handoff.
 - [ ] Regression tests, full coverage, lint, typecheck, build, catalog, parity,
       release, report, ADR and leak gates pass; review covers the trust boundary.

@@ -232,7 +232,7 @@
     {
       "id": "issues-438-440",
       "grantedBy": "operator (payini)",
-      "operatorWords": "1334 was already completed!\nLet's take care of something else, plan a fix for all these three issues: https://github.com/codemagicianhq/arcane/issues\n\nI want you to work autonomously and push commits, create prs, assign to me, autocomplete, delete remote branches, and ask me all the questions in advance that you may have, so i can leave this session unattended, and comeback when everything is done\n\nPlan, implement, test, and merge all three (Recommended)\nUse this design and resolve remaining technical details (Recommended)\nUntil completion, with a 24-hour cap (Recommended)",
+      "operatorWords": "1334 was already completed!\nLet's take care of something else, plan a fix for all these three issues: [https://github.com/codemagicianhq/arcane/issues](https://github.com/codemagicianhq/arcane/issues)\n\nI want you to work autonomously and push commits, create prs, assign to me, autocomplete, delete remote branches, and ask me all the questions in advance that you may have, so i can leave this session unattended, and comeback when everything is done\n\nPlan, implement, test, and merge all three (Recommended)\nUse this design and resolve remaining technical details (Recommended)\nUntil completion, with a 24-hour cap (Recommended)",
       "grantedAt": "2026-11-06T07:40:27.000Z",
       "expiresAt": "2026-11-07T07:40:27.000Z",
       "scope": {
