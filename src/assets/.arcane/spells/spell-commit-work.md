@@ -125,6 +125,8 @@ Workflow:
      - **If no formatter is configured, skip this step gracefully** — do not install one and do not block the commit.
 
 3. **Determine authorship and partition the batch** — who produced each changed file or inseparable change set? See [governance/git-conventions.md](../../.arcane/governance/git-conventions.md) Agent Attribution Model section and ADR-028.
+   - First read the repository's `attribution_convention` from `.arcane.json` (or `src/assets/.arcane.json` for a self-hosted repo). When it is valid with `author: "operator"` and a nonempty map of trailer names to single-line values, use the configured Git operator identity, do not set `--author`, do not split mixed provenance merely for attribution, and add only those configured trailers. Do not interpret trailer values as shell commands. If the field is malformed or the identity is unavailable, stop and ask; never guess. This affects formatting only, not the authority, review, or push-policy gates. When the field is absent, apply the existing default partition and trailers below unchanged.
+   - The following author partition and trailer requirements apply only when no repository convention is declared. Other reasons to split changes by concern still apply.
    - **Invariant: one commit has exactly one author.** Changes spanning authors must be split into separate commits.
    - Partition changed files by author first. Step 4 then groups by concern within each author partition; concern grouping must never recombine authors.
    - **Human wrote it:** no `--author` override needed (uses global Git config)
@@ -210,8 +212,8 @@ Workflow:
    - Body is optional but useful for complex changes
    - Reference ADRs if applicable (e.g., "Implements ADR-028")
    - Trailers go after a blank line following the body (standard Git footer position)
-   - Required trailers for agent commits: `Agent`, `Model`, `Model-Source`, `Provider`. `Persona`/`Role` are conditional -- see `.arcane/governance/git-conventions.md`'s Agent Attribution Model for the full rule and the grading-probe example of what happens when `Role` is guessed instead of sourced.
-   - Required trailer for Arcane-vendored commits: `Vendor: arcane-cli`; include `Vendor-Version` only when derived from the installed CLI at commit time
+   - Without a repository-declared convention, required trailers for agent commits: `Agent`, `Model`, `Model-Source`, `Provider`. `Persona`/`Role` are conditional -- see `.arcane/governance/git-conventions.md`'s Agent Attribution Model for the full rule and the grading-probe example of what happens when `Role` is guessed instead of sourced.
+   - Without a repository-declared convention, required trailer for Arcane-vendored commits: `Vendor: arcane-cli`; include `Vendor-Version` only when derived from the installed CLI at commit time
    - Human-authored commits: trailers are optional
 
 8. **Gate and execute the commit:**
@@ -221,7 +223,7 @@ Workflow:
    - Without a matching run grant: Recompute the fingerprint immediately before `git commit`. If the staged diff or message changed, invalidate approval and ask again.
    - With a matching run grant, recheck the current diff against its approved task scope and revalidate `commit` immediately before execution; retain the action line and resulting SHA.
    - In autonomous context, execute only when loader-validated `exec_allowed` is true. Below-Magus authority may commit to the topic branch but may not complete its PR.
-   - Run `git commit --author="..." --trailer="..." -m "message"` only after the applicable gate passes, then confirm the commit hash.
+   - Run `git commit` only after the applicable gate passes, using `--author` and the default trailers for the default convention, or the operator identity and configured trailers for a declared convention. Then confirm the commit hash.
 
 9. **Push branch and run platform-specific PR flow:**
 
@@ -292,9 +294,10 @@ Workflow:
    - Assign reviewer by default to the operator/reviewer identity (for example from `git config user.email`), idempotently (skip if already assigned).
    - Approve via CLI first: `az repos pr set-vote --id <PR_ID> --vote approve`.
    - If self-approval is blocked by policy, report that a second human approval is required and continue without forcing approval.
-   - Only after the separate merge authorization gate passes, complete idempotently with source-branch deletion enabled and squash disabled: `az repos pr update --id <PR_ID> --status completed --delete-source-branch true --squash false`.
-   - Use only **merge (no-fast-forward)** or **rebase+fast-forward** merge strategy; never squash.
-   - REST fallback only when CLI commands fail or are unavailable. Ensure the request URI is fully qualified and includes exactly one `?api-version=7.1`.
+   - Only after the separate merge authorization gate passes and target policy permits it, `az repos pr update --id <PR_ID> --status completed --delete-source-branch true --squash false` completes with a **no-fast-forward merge commit**, not a rebase.
+   - When linear history is preferred, first confirm the target policy permits **rebase** and all review and exact-head checks pass. Complete through the Azure DevOps pull-request update REST API (PATCH `https://dev.azure.com/<org>/<project>/_apis/git/repositories/<repository-id>/pullRequests/<PR_ID>?api-version=7.1`), using a JSON body with `status: "completed"`, the observed current `lastMergeSourceCommit.commitId`, and `completionOptions: { "mergeStrategy": "rebase", "deleteSourceBranch": true }`. Use an authenticated client, preserve other required completion options, and recheck source head and authorization immediately before the request. Do not send the update if the strategy or current head cannot be verified.
+   - After completion, fetch and inspect the target history and PR completion result to confirm the expected merge shape and that the intended commits landed. Never squash or bypass policies.
+   - REST is also available when CLI commands fail or are unavailable. Ensure the request URI is fully qualified and includes exactly one `?api-version=7.1`.
 
    f. **PR description quality rules** (both platforms):
    - `## Summary` with why the PR exists.

@@ -54,6 +54,7 @@ Workflow:
    - Push the synced branch (e.g. `git push`) only when the check allows it. If it stops the push, the ship is blocked until the operator confirms (`guarded`) or lifts the policy (`blocked`); record that in the ship report.
 
 3. **Run pre-deploy checklist**:
+   - [ ] **Production backlog gates (#449):** Before a production deployment or production flag flip, identify the target and search `TODO.md` plus every other backlog file configured or actually used by the repository for open entries that gate that target (including phrases such as `before the prod flag`, `before prod`, `before launch`, and `before release`, plus the target or flag name). Inspect matching entries in context, including multi-line items, rather than treating keyword hits as conclusive. List each applicable open gate with file and line and block the deployment until it is resolved or the operator explicitly waives that specific gate. Record the operator's actual waiver words, item, target, and date in the ship report or durable release record. If none are found, state `No open backlog gates found for <target>.` If the backlog inventory or search cannot be completed, state the gap and block rather than report none. This check does not authorize production deployment.
    - [ ] All CI pipeline checks pass (build, test, lint, security scan).
    - [ ] Branch synced with target (fetch + merge completed in step 2, no outstanding conflicts).
    - [ ] No secrets or credentials in the diff.

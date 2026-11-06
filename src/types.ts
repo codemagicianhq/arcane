@@ -85,6 +85,8 @@ export interface ArcaneManifest {
    * permanently -- that is the part this deliberately does NOT change.
    */
   default_spell_scope?: InstallScope;
+  /** Optional repository-owned commit attribution convention (#450). */
+  attribution_convention?: { author: "operator"; trailers: Record<string, string> };
   tracking_mode?: TrackingMode;
   external_provider?: ExternalProvider | null;
   /**

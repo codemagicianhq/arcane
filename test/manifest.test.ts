@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   readManifest,
+  validateManifestFields,
   writeManifest,
   createManifest,
   addComponent,
@@ -26,6 +27,26 @@ describe("manifest", () => {
 
   afterEach(async () => {
     await removeFixtureDir(tempDir);
+  });
+
+  describe("repository attribution convention (#450)", () => {
+    it("accepts a configured operator convention and preserves the absent default", () => {
+      expect(() => validateManifestFields({}, "fixture")).not.toThrow();
+      expect(() => validateManifestFields({ attribution_convention: {
+        author: "operator", trailers: { "Co-Authored-By": "Codex <codex@example.org>" },
+      } }, "fixture")).not.toThrow();
+    });
+
+    it("rejects missing, malformed, or multiline trailers", () => {
+      for (const value of [
+        { author: "operator", trailers: {} },
+        { author: "agent", trailers: { Agent: "codex" } },
+        { author: "operator", trailers: { Agent: "codex\nOther: fake" } },
+        { author: "operator", trailers: { "Bad Key": "value" } },
+      ]) {
+        expect(() => validateManifestFields({ attribution_convention: value } as unknown as Partial<ArcaneManifest>, "fixture")).toThrow(ManifestInvalidFieldError);
+      }
+    });
   });
 
   // ─── createManifest ───────────────────────────────────────────────────────

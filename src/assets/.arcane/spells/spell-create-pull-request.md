@@ -189,6 +189,8 @@ Format: `type(scope): summary`
 
 Write the body to a **temp file** and pass it to the provider CLI by file reference — never pass multiline content as a shell argument (this avoids shell/PowerShell truncation, quoting, and newline-mangling). Resolve the scratch path with `git rev-parse --git-dir` (handles worktrees and non-default `.git` locations) and write to `<git-dir>/arcane-pr-body.md`, with the first line `<!-- arcane-pr-body: <current-branch> -->` naming the branch it was written for (a leftover body from another branch in the same checkout must never be reused). The `.git` directory is never committed, so the body file is safe and ignored. Delete it after a successful create (Step 6).
 
+**Establish PR validation before writing Testing (#453).** Inspect the target branch's enabled, applicable Azure DevOps build-validation policies, or GitHub's effective required status checks and `pull_request` workflows (including target and path filters). Distinguish a policy that actually applies to this change from a pipeline that only runs after merge. If no PR validation applies, describe the checks actually run locally and their results, or write `No CI runs on this pull request.` Never direct a reviewer to CI results that do not exist. If policy or workflow access fails or applicability is unknown, say validation is unknown and report known local evidence; do not infer that CI runs. A configured workflow is not proof that a run has completed.
+
 Standard template:
 
 ```markdown
@@ -209,7 +211,7 @@ Standard template:
 
 ## Testing
 
-- <coverage / test status if known, else "See CI pipeline results.">
+- <actual local checks and results, and applicable PR validation when verified; otherwise state that validation is unknown or that no CI runs on this pull request>
 
 ## For the record
 
