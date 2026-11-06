@@ -9,6 +9,19 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.21.1] - 2026-11-06
+
+### Added
+
+- Repositories may declare an operator-authored commit attribution convention with explicit trailers (#450).
+- Production shipping checks open backlog gates for the target and records explicit waivers (#449).
+
+### Fixed
+
+- Session opening names the repository update command and avoids consuming an older trunk handoff while a newer one is on an open session PR (#448, #452).
+- Pull-request testing descriptions distinguish applicable CI from local evidence, and Azure DevOps completion guidance explains merge commits and policy-permitted rebase completion (#453, #454).
+- `spell update` distinguishes changed files from unchanged files in normal and dry-run summaries (#451).
+
 ## [1.21.0] - 2026-11-05
 
 ### Added
