@@ -372,3 +372,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-05-presence-channel.md`, lessons "The current MCP revision had moved on from the record" and "The repository-wide secrets scan reads identifiers, not values".
+
+## Feedback — Arcane workflow (2026-11-05)
+
+**Session:** The presence Should Haves and the Action required block ([PR #437](https://github.com/codemagicianhq/arcane/pull/437), [PR #441](https://github.com/codemagicianhq/arcane/pull/441)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The plan for the Action required block included edits to the Show Report template. That file is vendored from `arcane-ui` by an automated pipeline, and its keys are the contract between the two repositories. Nothing in `spell-plan` or `spell-architect` checks where a file it plans to edit comes from, so this surfaced only when the edit began, and a story had to move to another repository mid-build.
+- `spell-implement` asks for one commit per story, but a vocabulary rename split into stories by file type (the spell fragment in one story, the CLI flag in another) produced stories whose commits could not each pass. Each half's text named the other's new name, so four stories landed as one commit, a recorded deviation.
+
+### Improvement Items
+- [ ] In `spell-plan` and `spell-architect`, before a requirement or story commits to editing a file, read that file's history (`git log`) for an automated author or a vendoring commit. Route the change for a generated or vendored file to the place it is generated from, and name that place in the plan. <!-- upstream: queued -->
+- [ ] In `spell-architect`'s story rules, say that a rename of a shared name and every text that names it belong in one story, so that the story's commit passes on its own; split by dependency, never by file type. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-05-should-haves-and-action-required.md`, lessons "A vendored file looks like a source file until its history is read" and "A rename that crosses two fragments cannot be split into per-story commits that each pass".
