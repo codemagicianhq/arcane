@@ -54,6 +54,9 @@ export default defineConfig({
         branches: 80,
         functions: 80,
         statements: 80,
+        "src/modules/run-grants.ts": {
+          lines: 95, branches: 95, functions: 95, statements: 95,
+        },
         "src/commands/login.ts": {
           lines: 95,
           branches: 95,
