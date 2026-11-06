@@ -8,7 +8,7 @@ passes. This is not an independent human review or a GitHub approval.
 | Correctness | PASS | Scope is exact for repository/task; branch extensions require a delimiter; expiry is exclusive; exclusions win; completion permission is explicit. |
 | Security | PASS for change; dependency WARN | File contents cannot authenticate consent. No command text from grants executes. Explicit execution denials and platform gates remain. No new dependency; audit reports 10 moderate advisories, no high/critical, in the unchanged dependency tree. |
 | Performance | PASS | One small local JSON read and linear grant scan per action; no daemon or network request in record checking. |
-| Tests | PASS | 3,107 passing tests, six existing skips; 93.74% overall line coverage; new validator and command handler 100% lines, branches and functions. |
+| Tests | PASS | 3,108 passing tests, six existing skips; 93.74% overall line coverage; new validator and command handler 100% lines, branches and functions. |
 | Naming/clarity | PASS | The command says record match rather than authorization; grant and standing delegation meanings stay distinct. |
 | Architecture | PASS | One validator, shared compiled fragments, legacy compatibility, no standing power or platform-setting change. |
 
@@ -28,6 +28,10 @@ passes. This is not an independent human review or a GitHub approval.
   permissions, preventing the issue's examples (force-push/production/settings)
   from being recorded explicitly. Accept nonempty exclusion labels while keeping
   the permission allowlist closed; test that excluded operations remain ungrantable.
+
+- **R5, Medium:** doctor produced expiry details but its renderer hid messages
+  for successful checks. Add explicit inventory-detail rendering and verify the
+  actual doctor output, rather than only testing the returned check result.
 
 ## Trust boundary
 
