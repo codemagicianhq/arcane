@@ -123,7 +123,7 @@ Agent autonomy is assigned per agent × per repo using gamified power levels. Se
 | 1     | **Apprentice** | Agent suggests; human executes                          | Human pushes all                            |
 | 2     | **Wizard**     | Scoped autonomous edits in approved paths               | Agent pushes branch; PRs queued for review  |
 | 3     | **Sorcerer**   | Autonomous topic-branch work                            | Agent pushes and creates PR; human approves |
-| 4     | **Magus**      | Self-merge within approved scope — the "Magus+" gate    | Agent merges (fast-forward only)            |
+| 4     | **Magus**      | Self-merge within approved scope — the "Magus+" gate    | Agent merges (never squash)                 |
 | 5     | **Archmage**   | Broadest autonomous authority within an approved repo   | Agent drives; human approves policy changes |
 
 A common starting policy: cap ops/docs repos at **Wizard**, allow app repos up to **Archmage**, and keep repo creation at **Spectator** (human only).
