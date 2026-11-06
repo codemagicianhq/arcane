@@ -342,8 +342,29 @@ describe("spell update — handler", () => {
     await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Updated 1 files"),
+      expect.stringContaining("1 files changed"),
     );
+  });
+
+  it.each([false, true])("reports changed and unchanged bytes in update and dry run (dryRun=%s)", async (dryRun) => {
+    const files = [".arcane/governance/testing-standards.md", ".arcane/governance/git-conventions.md", ".arcane/governance/naming-conventions.md"];
+    const names = ["testing-standards", "git-conventions", "naming-conventions"];
+    await writeManifest(tmpDir, {
+      version: OLD_VERSION,
+      components: files.map((file, index) => ({
+        name: names[index],
+        files: [file], installedVersion: OLD_VERSION,
+      })),
+    });
+    await seedComponentFile(tmpDir, files[0], await fs.readFile(join(ASSETS_DIR, files[0]), "utf8"));
+    await seedComponentFile(tmpDir, files[1], "old content");
+    await seedComponentFile(tmpDir, files[2], await fs.readFile(join(ASSETS_DIR, files[2]), "utf8"));
+    const consoleSpy = vi.spyOn(console, "log");
+    await runUpdate({ dryRun }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(
+      dryRun ? "Would change 1 files, 2 unchanged" : "1 files changed, 2 unchanged",
+    ));
+    if (dryRun) expect(await fs.readFile(join(tmpDir, files[1]), "utf8")).toBe("old content");
   });
 
   // ─── Multiple components ───────────────────────────────────────────────────
@@ -371,7 +392,7 @@ describe("spell update — handler", () => {
     await runUpdate({}, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     // Success message shows total count
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Updated 2 files"));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("2 files changed"));
   });
 
   it("does not touch files not in the manifest", async () => {
@@ -495,6 +516,25 @@ describe("spell update — handler", () => {
     expect(merged).toContain("OPERATOR EDITED THIS FIRST LINE");
     expect(merged).toContain("VENDOR EDITED THIS LAST LINE");
     expect(merged).not.toContain("<<<<<<<");
+  });
+
+  it.each([true, false])("dry-run reports merge availability without writing (base available=%s)", async (available) => {
+    const base = "first\nsecond\nthird\n";
+    const oldAssetsDir = await isolatedAssetsDir(base);
+    await writeManifest(tmpDir, { components: [{
+      name: "testing-standards", files: [managedFile], installedVersion: OLD_VERSION,
+      fileHashes: { [managedFile]: await hashFile(join(oldAssetsDir, managedFile)) },
+    }] });
+    const edited = "operator\nsecond\nthird\n";
+    await seedComponentFile(tmpDir, managedFile, edited);
+    fetchPublishedFileMock.mockResolvedValue(available ? base : undefined);
+    const newAssetsDir = await isolatedAssetsDir("first\nsecond\nvendor\n");
+    const consoleSpy = vi.spyOn(console, "log");
+    await runUpdate({ dryRun: true }, tmpDir, newAssetsDir, "0.2.0");
+    expect(await fs.readFile(join(tmpDir, managedFile), "utf8")).toBe(edited);
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(
+      available ? "Would change 1 files, 0 unchanged" : "it would be left untouched",
+    ));
   });
 
   it("writes standard conflict markers, and reports the file, when both sides edit the same line (ARC-038)", async () => {
@@ -761,7 +801,7 @@ describe("spell update — handler", () => {
 
     // The gate counted one file, and exactly one file was written.
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 tracked file is missing — restoring"));
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Updated 1 files"));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 files changed"));
     await expect(fs.readFile(join(tmpDir, commandShimFile), "utf8")).resolves.toBe(NEW_COMMAND_STUB);
     // Present files: untouched, not merged, not re-hashed.
     await expect(fs.readFile(join(tmpDir, canonicalFile), "utf8")).resolves.toBe(editedCanonical);
@@ -882,7 +922,7 @@ describe("spell update — handler", () => {
     await runUpdate({ dryRun: true }, tmpDir, ASSETS_DIR, PACKAGE_VERSION);
 
     const summaryLog = consoleSpy.mock.calls.find((c) =>
-      (c[0] as string).includes("Would update") && (c[0] as string).includes("files"),
+      (c[0] as string).includes("Would change") && (c[0] as string).includes("files"),
     );
     expect(summaryLog).toBeDefined();
     expect(summaryLog![0]).toContain("1 files");
@@ -918,7 +958,7 @@ describe("spell update — handler", () => {
       expect.stringContaining("not in registry — skipping"),
     );
     // Still updates the known component
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Updated"));
+    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("files changed"));
   });
 
   it("skips removed component in dry-run mode", async () => {
@@ -1045,7 +1085,7 @@ describe("spell update — handler", () => {
 
       expect(fetchPublishedFileMock).not.toHaveBeenCalled();
       expect(consoleSpy).not.toHaveBeenCalledWith(expect.stringContaining("Merged your edits"));
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Updated 1 files"));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1 files changed"));
       expect(await fs.readFile(join(tmpDir, file), "utf8")).toBe(asset);
     });
 
@@ -1542,7 +1582,7 @@ describe("spell update — handler", () => {
       await runUpdate({ user: true, dryRun: true }, storeRoot, ASSETS_DIR, "0.2.0");
 
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("[dry-run] Would write 1 client file(s)"));
-      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("[dry-run] Would update"));
+      expect(console.log).toHaveBeenCalledWith(expect.stringContaining("[dry-run] Would change"));
       await expect(fs.access(join(home, claudeFile))).rejects.toThrow();
       expect(await readManifestFile(storeRoot)).toEqual(before);
     });
