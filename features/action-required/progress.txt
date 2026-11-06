@@ -1,0 +1,27 @@
+# Progress — Action required (the Needs you block's replacement)
+
+Run: started 2026-11-05 on branch sessions/2026-11-05-action-required from main ad0d963 (1.19.0),
+in a linked worktree. Operator's answers, 2026-11-05: heading '🚧 Action required', rules above and
+below, wire names required_actions / --required-action / session.action_required, tiers and
+persistence in this PR.
+
+## Naming — spell-scry, 2026-11-05
+### Scry verdict: Action required — PASS-WITH-DISCLOSURE
+- Inward: no identifier, config key or schema field used `action_required`, `actionRequired` or
+  `action-required` before this run. The prose phrase "action required" appears in the block's own
+  rules ("An action required for correctness ...") and in spell-security-review's dependency audit
+  template ("Action required: [list]"), adjacent. `capabilities.actions` in the presence record
+  (the steering actions, always []) is the one same-space neighbour, a reason not to call the list
+  field `action_required` (it sits next to `actions` and reads like a yes/no flag).
+- Outward (sources read 2026-11-05): GitHub's checks API has the conclusion `action_required`,
+  meaning a human must act (docs.github.com, "Using the REST API to interact with checks"): the
+  same meaning, adjacent. No trademark for the phrase was found in a trademark search. The phrase
+  is a well-known phishing subject line (Expel, "top phishing keywords"; Abnormal, "most popular
+  phishing themes"; Total Defense, subject-line red flags), which is first-association salience in
+  email. That is the disclosure; it was accepted because the block appears in spell output and
+  pull requests, not email.
+### Rendering, checked 2026-11-05 through GitHub's markdown API (gh api /markdown, mode gfm)
+- A rule above and below plus the heading render as <hr>, <h2>, list, <hr>.
+- `> [!IMPORTANT]` wrapping the heading renders an alert, but adds its own "Important" title
+  above the heading; in a terminal it is raw text. The operator chose the rules.
+
