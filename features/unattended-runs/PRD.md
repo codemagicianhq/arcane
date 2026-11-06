@@ -1,7 +1,7 @@
 ---
 title: "PRD: Scoped authority for unattended runs"
 status: approved
-implementation_status: in_progress
+implementation_status: shipped
 created: 2026-11-05
 tracking:
   tracking_mode: internal
@@ -101,7 +101,7 @@ and reviewers who need evidence of the authority used for each action.
       methods, and explicitly lists actions waiting for the operator.
 - [x] Close accounts for every earlier and final commit/PR action; absent
       authority appears under Action required and remains visible in the handoff.
-- [ ] Regression tests, full coverage, lint, typecheck, build, catalog, parity,
+- [x] Regression tests, full coverage, lint, typecheck, build, catalog, parity,
       release, report, ADR and leak gates pass; review covers the trust boundary.
 
 ## Dependencies
