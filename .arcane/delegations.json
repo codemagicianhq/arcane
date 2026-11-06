@@ -227,5 +227,51 @@
       "revokedAt": "2026-10-22",
       "revocationReason": "Wave complete: PR #392 merged by the operator on 2026-10-22 (2026-10-23T00:55Z); issues #375 and #376 confirmed closed; 1.12.3 published (npm latest, gitHead ef254a7)."
     }
+  ],
+  "runGrants": [
+    {
+      "id": "issues-438-440",
+      "grantedBy": "operator (payini)",
+      "operatorWords": "1334 was already completed!\nLet's take care of something else, plan a fix for all these three issues: https://github.com/codemagicianhq/arcane/issues\n\nI want you to work autonomously and push commits, create prs, assign to me, autocomplete, delete remote branches, and ask me all the questions in advance that you may have, so i can leave this session unattended, and comeback when everything is done\n\nPlan, implement, test, and merge all three (Recommended)\nUse this design and resolve remaining technical details (Recommended)\nUntil completion, with a 24-hour cap (Recommended)",
+      "grantedAt": "2026-11-06T07:40:27.000Z",
+      "expiresAt": "2026-11-07T07:40:27.000Z",
+      "scope": {
+        "repository": "github.com/codemagicianhq/arcane",
+        "task": "issues-438-440",
+        "branchPrefix": "sessions/2026-11-05-unattended-run-authority"
+      },
+      "permittedActions": [
+        "commit",
+        "push",
+        "create-pr",
+        "assign-pr",
+        "complete-pr",
+        "delete-remote-branch"
+      ],
+      "excludedActions": [
+        "approve-pr",
+        "run-dev-pipeline"
+      ],
+      "requiredChecks": [
+        "lint",
+        "typecheck",
+        "typecheck:all",
+        "test:coverage",
+        "build",
+        "check:self-host-parity",
+        "check:spell-catalog",
+        "check:changelog",
+        "check:adr-references",
+        "check:stale-claims",
+        "check:report-template",
+        "check:report",
+        "check:demos",
+        "platform-required-checks",
+        "review",
+        "security-review"
+      ],
+      "status": "active",
+      "revocation": "Ends on verified merge, release verification and deletion of this run's merged remote branch, or at expiresAt, whichever comes first. No unrelated branch deletion, force-push, settings change or manual publish. Set status to revoked or remove the entry to revoke earlier."
+    }
   ]
 }
