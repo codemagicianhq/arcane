@@ -275,7 +275,7 @@ export function renderSessionsTable(sessions: readonly SessionRecord[], now: num
   const out = [line(header)];
   sessions.forEach((s, i) => {
     out.push(line(rows[i]));
-    for (const n of s.needs_you) out.push(`  needs you: ${n.reason === null ? n.action : `${n.action} — ${n.reason}`}`);
+    for (const n of s.required_actions) out.push(`  action required: ${n.reason === null ? n.action : `${n.action} — ${n.reason}`}`);
   });
   return out;
 }

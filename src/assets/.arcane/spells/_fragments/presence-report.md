@@ -5,7 +5,7 @@ in the user store opens it. Report with the CLI only; never pass a token on the 
 never write a repository file to report.
 
 - At the start of this spell: `spell presence report --spell <spell-id> --status working --task "<the task in one line>"`.
-- When this spell's output carries a `## ⚠ Needs you` block: `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line; the block itself is unchanged.
+- When this spell's output carries a `## 🚧 Action required` block with open **Now** items: `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open Now line; the block itself is unchanged.
 - At a checkpoint worth showing (a commit made, a story passed): `spell presence report --status working --task "<what is now happening>"`.
 - When the session closes: `spell presence end`.
 

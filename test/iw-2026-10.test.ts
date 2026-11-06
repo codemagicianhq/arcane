@@ -159,7 +159,7 @@ describe("#324 one closing keyword per issue, and each issue's state confirmed a
     it("Step 6 confirms each named issue's state after the merge", () => {
         const report = createPr.slice(createPr.indexOf("## Step 6 — Report"));
         const bullet = blockContaining(report, "**Issues the body closes:**");
-        expectProseToContain(bullet, "add one line to the `Needs you` block");
+        expectProseToContain(bullet, "add one line to the **Now** tier of the `Action required` block");
         expect(bullet).toContain("gh issue view <number> --json state");
         // ...and close-session step 10 actually runs the check once the merge is confirmed.
         const step10 = closeSession.slice(closeSession.indexOf("10. **Synchronize the configured integration branch"));

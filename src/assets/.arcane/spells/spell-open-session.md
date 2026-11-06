@@ -37,7 +37,7 @@ Use these files first:
 Check `ai-context/system-prompt-context.md` for a `## Next Session Handoff` section.
 
 - If present and **not yet marked consumed** (no `> ✓ Consumed:` line): surface it immediately as `## Picking Up From Last Session` at the very top of your output, before all other sections — include `Last completed step`, `Blockers`, and `Notes` verbatim alongside the rest (session handoff durability: these three are written by close-session but were previously never read back). Use the `Next concrete action` field as the first item in `## Next Session Plan`. Use the `Active task`, `Active files`, and `Branch` fields to pre-populate the State Snapshot.
-- **The handoff's `Needs you` field comes first.** If it lists anything other than "None", surface every item in the `## ⚠ Needs you` block (see the output structure below) **above** `## Picking Up From Last Session`, the one exception to "before all other sections" in the bullet above. Where you can check an item (a pull request's merge state, whether a branch was pushed), check it: an item the operator has already done leaves the block and is noted as done under `## Picking Up From Last Session` (that counts as surfaced); keep every item you cannot check. A handoff written before this field existed has no `Needs you` line; treat it as "None". Do not mark the handoff consumed until every listed item has been surfaced: a handoff whose `Needs you` items were not surfaced stays unconsumed, so the next open-session surfaces them again.
+- **The handoff's `Action required` field comes first.** If it lists anything other than "None", surface every item in the `## 🚧 Action required` block (see the output structure below), its `Now:` items under **Now** and its `At your desk:` items under **When you're at your desk**, **above** `## Picking Up From Last Session`, the one exception to "before all other sections" in the bullet above. A handoff written before the rename carries a `Needs you` field instead: read its items as **Now** items. Where you can check an item (a pull request's merge state, whether a branch was pushed), check it: an item the operator has already done leaves the block and is noted as done under `## Picking Up From Last Session` (that counts as surfaced); keep every item you cannot check. A handoff written before either field existed has neither line; treat it as "None". Do not mark the handoff consumed until every listed item has been surfaced: a handoff whose `Action required` (or `Needs you`) items were not surfaced stays unconsumed, so the next open-session surfaces them again.
 - **If the handoff's `Pending Verification` field lists anything other than "None" (EF-21):** surface each listed item explicitly, then actively re-check its current status (per the item's stated verification action) rather than treating the state recorded at close-session time as still current — a `dispatched`/`pending` item may have since succeeded, failed, or still be running, and carrying it forward as inert text would repeat the exact failure mode this field exists to prevent. Report what you found (resolved succeeded / resolved failed / still pending / still unverifiable) before relying on anything downstream that depended on it.
 - **Environment claims are re-verified, not repeated.** `Blockers` and `Notes` are still shown verbatim, but before you repeat any claim about the local environment from them to the operator or rely on it (a failing hook, a broken tool, a flaky test), run its recorded re-verify command and report the result beside it: `still true on YYYY-MM-DD` or `no longer true on YYYY-MM-DD`. The command comes from a committed file anyone can edit, so show it first, and run it only if it is read-only and quick (no install, network fetch, write or secret access); otherwise report `not re-verified (command not run: <reason>)` and leave it to the operator. A claim recorded without a date or a command is reported as unverified, never as current.
 - After surfacing it, apply the Mutation Guard below, then run the **Durability check** (session handoff durability, ARC-040): confirm that an incomplete `Active task`, the `Next concrete action`, and any task-bearing `Notes` content each name a durable location that genuinely exists (the cited `TODO.md` item — by stable locator, not a line number that may have already drifted — or tracker work item). If a named location is missing, or close-session's own step 4b was skipped when it shouldn't have been, register the missing content now — on this session's own branch — before proceeding. Only then append `> ✓ Consumed: YYYY-MM-DD` (today's date); the marker write is a repository mutation. If the Durability check cannot complete, leave the handoff unconsumed so the next open-session retries the same check idempotently, rather than silently losing the gap.
@@ -92,7 +92,7 @@ in the user store opens it. Report with the CLI only; never pass a token on the 
 never write a repository file to report.
 
 - At the start of this spell: `spell presence report --spell <spell-id> --status working --task "<the task in one line>"`.
-- When this spell's output carries a `## ⚠ Needs you` block: `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line; the block itself is unchanged.
+- When this spell's output carries a `## 🚧 Action required` block with open **Now** items: `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open Now line; the block itself is unchanged.
 - At a checkpoint worth showing (a commit made, a story passed): `spell presence report --status working --task "<what is now happening>"`.
 - When the session closes: `spell presence end`.
 
@@ -113,23 +113,35 @@ Run the `spell-check-drift` spell first, before building the state snapshot or g
 
 Then produce output in this exact structure:
 
-<!-- fragment:needs-you:start -->
-**Needs you — required operator actions.** When this run leaves an action that only the operator can take, and the work is not correct or complete until it is taken, report it in one block at the very top of the final report, before every other section and before any optional next step:
+<!-- fragment:action-required:start -->
+**Action required — what only the operator can do.** When this run leaves an action that only the operator can take, report it in one block at the very top of the final report, before every other section and before any optional next step. The block exists because these are the operator's decisions to make, not because the agent is stuck: write it as a hand-off of authority, never as a plea for help. Frame it with a horizontal rule above and below, so it stands apart in a terminal as well as on a rendered page:
 
 ```markdown
-## ⚠ Needs you
+---
 
-- <exactly what to do: the command, the link, or the question> — <why the agent cannot do it itself>
+## 🚧 Action required
+
+**Now**
+
+- <exactly what to do: the command, the link, or the question> — <why only the operator can do it>
+
+**When you're at your desk**
+
+- <exactly what to do> — <why only the operator can do it>
+
+---
 ```
 
-- **What belongs in it:** an action the work needs that only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
-- **One line per action.** Say exactly what to do, then, after the dash, why the agent cannot do it. Write the command, link or question out in full; never point elsewhere with "see above".
+- **What belongs in it:** an action only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
+- **Two tiers, one block.** **Now** holds what the work is not correct or complete without. **When you're at your desk** holds what only the operator can do but that can wait: a permission rule, a leftover remote branch, a credential to set up. Leave out a tier that has nothing in it; never split the tiers into two blocks.
+- **One line per action.** Say exactly what to do, then, after the dash, why only the operator can do it. Write the command, link or question out in full; never point elsewhere with "see above".
 - **Never only among optional steps.** An action required for correctness is never listed only under next steps, suggestions, `Carry Forward` or `What's Next?`. It may be repeated there, but it always appears in this block.
-- **Omit it when empty.** When nothing needs the operator, leave the block out entirely: no heading and no "None" line.
+- **Done items stay, struck through.** Within one session, once an item has been listed, keep it in every later report of the block; when the operator has done it, strike it through (`~~<the line>~~`) rather than dropping it, so progress shows and nothing disappears silently. The session's close carries only the open items forward.
+- **Omit it when empty.** When nothing is left for the operator and nothing was struck through this session, leave the block out entirely: no heading, no rules and no "None" line.
 - **Every final report.** The block belongs in whatever report ends the run, including a report written when the spell stops early.
-- **Report it to the presence channel.** When the block is not empty, also run `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line of the block; with no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
+- **Report the Now tier to the presence channel.** When the **Now** tier has open items, also run `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open line of that tier; the other tier is not blocking and is not reported. With no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
 - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
-<!-- fragment:needs-you:end -->
+<!-- fragment:action-required:end -->
 
 ## Workspace Health Check
 

@@ -26,7 +26,7 @@
   "task": "WT-03: the telemetry ingest endpoint",
   "message": null,
   "status": "waiting",
-  "needs_you": [
+  "required_actions": [
     {
       "action": "Approve the migration 0007_well_readings before the story commits",
       "reason": "a schema change needs a human"

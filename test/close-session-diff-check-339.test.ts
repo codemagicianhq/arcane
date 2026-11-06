@@ -35,7 +35,7 @@ describe("#339 close-session checks each closed issue's change is in the merged 
         const step = closeSession.slice(start, closeSession.indexOf("**Determine the isolation primitive first", start));
         expectProseToContain(step, "confirm the merged diff contains the change that issue asked for");
         expectProseToContain(step, "reopen the issue with a comment naming the merged PR");
-        expectProseToContain(step, "under the closure report's `## ⚠ Needs you`");
+        expectProseToContain(step, "under the closure report's `## 🚧 Action required`");
         expectProseToContain(step, "`gh pr diff <number>`");
         expectProseToContain(step, "never counts as the change");
         expectProseToContain(step, "its state reason is `completed`");

@@ -14,9 +14,9 @@
         "The fragment test asserts the heading, the two rules, both tiers, the struck-through persistence rule and the Now-only presence line"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: test/action-required.test.ts 109/109 (the fragment's heading, rules above and below, two tiers, struck-through persistence and Now-only presence line; all 18 hosts carry the action-required span verbatim, in source and root copy); check:self-host-parity 372/372; check:spell-catalog passes."
     },
     {
       "id": "AR-02",
@@ -26,9 +26,9 @@
         "The standard's test passes against the new section"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: the standard's section 'Required operator actions: the Action required block' passes its block in test/action-required.test.ts."
     },
     {
       "id": "AR-03",
@@ -39,9 +39,9 @@
         "A test asserts open-session reads a legacy Needs you field as Now items"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: test/up04-b-handoff.test.ts passes under the Action required field, with a new test for open-session's legacy Needs you reading; close-session-diff-check-339 and iw-2026-10 pass with the renamed block."
     },
     {
       "id": "AR-05",
@@ -53,9 +53,9 @@
         "Every presence fixture validates against the schema"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: the presence suites pass under required_actions / session.action_required / --required-action. presence-validate covers the legacy needs_you body (accepted, its own refusals named), both names (400 naming needs_you) and the schema's deprecated property. presence-sessions-command covers --required-action plus the hidden --needs-you against the built CLI, absent from --help. Every presence fixture validates."
     },
     {
       "id": "AR-06",

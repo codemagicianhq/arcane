@@ -15,7 +15,7 @@
     "task",
     "message",
     "status",
-    "needs_you",
+    "required_actions",
     "started_at",
     "reported_at",
     "ended_at",
@@ -73,11 +73,11 @@
       ],
       "description": "working: a spell is running; waiting: the session asked the operator for something; blocked: cannot proceed for an external reason; idle: open, no spell running; done: ended (set by end only)."
     },
-    "needs_you": {
+    "required_actions": {
       "type": "array",
       "maxItems": 20,
       "items": {
-        "$ref": "#/$defs/needsYou"
+        "$ref": "#/$defs/requiredAction"
       }
     },
     "started_at": {
@@ -216,7 +216,7 @@
         }
       }
     },
-    "needsYou": {
+    "requiredAction": {
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -227,7 +227,7 @@
         "action": {
           "type": "string",
           "maxLength": 256,
-          "description": "Exactly what the operator must do: one line of a '## ⚠ Needs you' block.",
+          "description": "Exactly what the operator must do: one line of a '## 🚧 Action required' block.",
           "minLength": 1
         },
         "reason": {
@@ -390,14 +390,33 @@
           "maxLength": 256,
           "description": "Absent keeps the stored value; null clears it."
         },
+        "required_actions": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "$ref": "#/$defs/requiredAction"
+          },
+          "description": "Replaces the stored list on every report; absent means []. More than 20 entries is refused with 400, never cut."
+        },
         "needs_you": {
           "type": "array",
           "maxItems": 20,
           "items": {
-            "$ref": "#/$defs/needsYou"
+            "$ref": "#/$defs/requiredAction"
           },
-          "description": "Replaces the stored list on every report; absent means []. More than 20 entries is refused with 400, never cut."
+          "deprecated": true,
+          "description": "The name of required_actions before 1.20 (ARC-060 decision 14), accepted as required_actions for the 1.20 series. Never sent together with required_actions: a body with both is refused with 400 naming needs_you."
         }
+      },
+      "not": {
+        "properties": {
+          "required_actions": true,
+          "needs_you": true
+        },
+        "required": [
+          "required_actions",
+          "needs_you"
+        ]
       }
     },
     "end": {
@@ -528,7 +547,7 @@
       }
     },
     "event": {
-      "description": "One change on GET /v0/events: the event name and the full record after the change. Exactly one event per accepted report, by the precedence started > resumed > needs_you > updated (architecture D5). The record is the truth and the event name is why it was sent: a consumer that alerts on 'needs you' reads the record's needs_you, because a first or a resumed report can carry lines under another event name.",
+      "description": "One change on GET /v0/events: the event name and the full record after the change. Exactly one event per accepted report, by the precedence started > resumed > action_required > updated (architecture D5). The record is the truth and the event name is why it was sent: a consumer that alerts on 'action required' reads the record's required_actions, because a first or a resumed report can carry lines under another event name.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -540,7 +559,7 @@
           "enum": [
             "session.started",
             "session.updated",
-            "session.needs_you",
+            "session.action_required",
             "session.stale",
             "session.resumed",
             "session.ended",

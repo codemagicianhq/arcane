@@ -156,10 +156,10 @@ describe.skipIf(!BIN)("spell presence mcp over stdio, against the built CLI (PC-
     const tools = await client.call("tools/list");
     expect((tools.result?.["tools"] as Array<{ name: string }>).map((t) => t.name)).toEqual(["presence_report", "presence_end"]);
 
-    const reported = await client.call("tools/call", { name: "presence_report", arguments: { status: "waiting", task: "WT-03", needs_you: ["Approve the migration — a schema change"] } });
+    const reported = await client.call("tools/call", { name: "presence_report", arguments: { status: "waiting", task: "WT-03", required_actions: ["Approve the migration — a schema change"] } });
     expect(reported.result?.["isError"]).toBe(false);
     const record = reported.result?.["structuredContent"] as SessionRecord;
-    expect(record.needs_you).toEqual([{ action: "Approve the migration", reason: "a schema change" }]);
+    expect(record.required_actions).toEqual([{ action: "Approve the migration", reason: "a schema change" }]);
 
     const resources = await client.call("resources/list");
     expect((resources.result?.["resources"] as Array<{ uri: string }>).map((r) => r.uri)).toEqual(["arcane://presence/sessions", "arcane://presence/capabilities"]);
@@ -267,7 +267,7 @@ describe("the MCP server in process (protocol details, PC-09, PC-10)", () => {
     expect(contentText(refused)).toContain("HTTP 400");
     const missing = await client.call("tools/call", { name: "presence_report", arguments: {} });
     expect(missing.result?.["isError"]).toBe(true);
-    const badNeeds = await client.call("tools/call", { name: "presence_report", arguments: { status: "working", needs_you: [1] } });
+    const badNeeds = await client.call("tools/call", { name: "presence_report", arguments: { status: "working", required_actions: [1] } });
     expect(badNeeds.result?.["isError"]).toBe(true);
     const badType = await client.call("tools/call", { name: "presence_report", arguments: { status: "working", task: 7 } });
     expect(badType.error).toBeUndefined();

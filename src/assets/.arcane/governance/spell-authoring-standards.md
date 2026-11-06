@@ -231,40 +231,52 @@ Arcane's own repository, a test (`test/up02-d-runtime-placeholders.test.ts`) fai
 `status: active` governance document uses a token that is not in this list. Whether an agent actually
 resolves a listed token from the named source is explicitly advisory prose: no check exercises it.**
 
-## Required operator actions: the `Needs you` block
+## Required operator actions: the `Action required` block
 
 Some runs end with an action only the operator can take: approving or merging a pull request,
 accepting a decision record, answering a question the work is waiting on, confirming a `guarded`
 push, running an interactive command such as `spell unblock-push`, or a step on an external platform
 the agent cannot reach. Listed among optional next steps, such an action gets skimmed past. A spell
-whose output can carry one reports it in one fixed block instead:
+whose output can carry one reports it in one fixed block instead. The block hands over authority:
+these are the operator's decisions, so it never reads as the agent asking for help.
 
-- **One fixed heading,** `## ⚠ Needs you`, at the very top of the final report, before every other
-  section and before any optional next step.
-- **One line per action:** exactly what to do, then why the agent cannot do it itself.
+- **One fixed heading,** `## 🚧 Action required`, at the very top of the final report, before every
+  other section and before any optional next step, framed by a horizontal rule above and below so it
+  stands apart in a terminal as well as on a rendered page.
+- **Two tiers in one block:** **Now** for what the work is not correct or complete without, and
+  **When you're at your desk** for what only the operator can do but that can wait. An empty tier is
+  left out; the tiers are never split into two blocks.
+- **One line per action:** exactly what to do, then why only the operator can do it.
 - **Never only among optional steps:** an action required for correctness may be repeated under next
   steps or suggestions, but it always appears in the block.
-- **Omitted when empty:** when nothing needs the operator, the block is left out entirely, never
-  printed as an empty heading or a "None" line.
+- **Done items stay, struck through:** within a session, a listed item stays in every later report of
+  the block, struck through once done, so progress shows and nothing disappears silently.
+- **Omitted when empty:** when nothing is left for the operator and nothing was struck through, the
+  block is left out entirely, never printed as an empty heading or a "None" line.
 
-The block's wording lives in one shared prose fragment (ARC-039), `needs-you`, kept in Arcane's
+The block's wording lives in one shared prose fragment (ARC-039), `action-required`, kept in Arcane's
 source under `.arcane/spells/_fragments/` and never shipped on its own. A spell carries it as a
-`<!-- fragment:needs-you:start -->` / `<!-- fragment:needs-you:end -->` marker pair placed where the
-spell describes its final output or report, and `npm run fix:self-host-parity` expands the fragment
-between the markers. Edit the fragment, never an expanded copy, and never restate its rules by hand
-in a spell body. Any shipped Markdown file can host a fragment the same way, not only a spell: the
-`branch-naming` fragment is expanded into `git-conventions.md` and the Copilot instruction file as
-well as into spells, and `spell agents sync` renders it into every client instruction file, so the
-branch formats are written in exactly one place. Required actions also survive the end of a session: `spell-close-session` writes
-the open items into the handoff's `Needs you` field, and `spell-open-session` surfaces that field
-first, above the rest of the handoff, and does not mark the handoff consumed until it has.
+`<!-- fragment:action-required:start -->` / `<!-- fragment:action-required:end -->` marker pair placed
+where the spell describes its final output or report, and `npm run fix:self-host-parity` expands the
+fragment between the markers. Edit the fragment, never an expanded copy, and never restate its rules
+by hand in a spell body. Any shipped Markdown file can host a fragment the same way, not only a
+spell: the `branch-naming` fragment is expanded into `git-conventions.md` and the Copilot instruction
+file as well as into spells, and `spell agents sync` renders it into every client instruction file,
+so the branch formats are written in exactly one place. Required actions also survive the end of a
+session: `spell-close-session` writes the open items into the handoff's `Action required` field, in
+its `Now` and `At your desk` lines, and `spell-open-session` surfaces that field first, above the
+rest of the handoff, and does not mark the handoff consumed until it has. A handoff written before
+the rename carries a `Needs you` field instead; open-session reads its items as **Now** items.
+
+When a presence channel is configured, the **Now** tier is also reported as `waiting`, one
+`--required-action` line per open item; the other tier is never sent.
 
 **Enforcement: executable check (ARC-023) for the wording — in Arcane's own repository,
 `npm run check:self-host-parity` fails CI when a spell's expanded span differs from the fragment, and
-a test (`test/up04-b-needs-you.test.ts`) fails when the fragment loses its heading, placement or
-omit-when-empty rule, or when a spell in the chosen set loses its span. Which spells carry the span
-is decided by an author's judgment, and whether an agent actually emits the block is explicitly
-advisory prose: no check reads a spell's output.**
+a test (`test/action-required.test.ts`) fails when the fragment loses its heading, frame, tiers,
+placement or omit-when-empty rule, or when a spell in the chosen set loses its span. Which spells
+carry the span is decided by an author's judgment, and whether an agent actually emits the block is
+explicitly advisory prose: no check reads a spell's output.**
 
 ## How to audit a spell
 

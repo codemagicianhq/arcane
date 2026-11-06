@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { oneLine, validateEnd, validateReport } from "../src/modules/presence/validate.js";
 import { createSessionTable } from "../src/modules/presence/sessions.js";
 import { mintSessionRef } from "../src/modules/agent-ref.js";
-import { MAX_LINE_CHARS, MAX_NEEDS_YOU } from "../src/modules/presence/types.js";
+import { MAX_LINE_CHARS, MAX_REQUIRED_ACTIONS } from "../src/modules/presence/types.js";
 import { REPO_ROOT } from "./helpers/state-schema.js";
 import { compilePresenceSchema, loadPresenceFixture } from "./helpers/presence.js";
 
@@ -58,27 +58,27 @@ describe("validateReport: one-line strings (PC-03 truncation; threat-model contr
       ...body,
       spell: long,
       message: long,
-      needs_you: [{ action: long, reason: long }],
+      required_actions: [{ action: long, reason: long }],
       checkout: { ...(body["checkout"] as object), branch: long },
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    for (const value of [result.value.spell, result.value.message, result.value.needs_you?.[0]?.action, result.value.needs_you?.[0]?.reason, result.value.checkout.branch]) {
+    for (const value of [result.value.spell, result.value.message, result.value.required_actions?.[0]?.action, result.value.required_actions?.[0]?.reason, result.value.checkout.branch]) {
       expect(value).not.toMatch(/[\r\n]/);
       expect(Array.from(value ?? "").length).toBeLessThanOrEqual(256);
     }
   });
 });
 
-describe("validateReport: the needs-you cap is refused, never cut (PC-03; threat-model control 10; architecture D11)", () => {
+describe("validateReport: the required-action cap is refused, never cut (PC-03; threat-model control 10; architecture D11)", () => {
   const line = { action: "Approve the plan", reason: null };
   it("accepts 20 lines", async () => {
-    const result = validateReport({ ...(await full()), needs_you: Array.from({ length: 20 }, () => line) });
-    expect(result.ok && result.value.needs_you).toHaveLength(MAX_NEEDS_YOU);
+    const result = validateReport({ ...(await full()), required_actions: Array.from({ length: 20 }, () => line) });
+    expect(result.ok && result.value.required_actions).toHaveLength(MAX_REQUIRED_ACTIONS);
   });
 
-  it("refuses 21 lines with field needs_you", async () => {
-    expect(refusal(validateReport({ ...(await full()), needs_you: Array.from({ length: 21 }, () => line) }))).toEqual({ code: "too_many_lines", field: "needs_you" });
+  it("refuses 21 lines with field required_actions", async () => {
+    expect(refusal(validateReport({ ...(await full()), required_actions: Array.from({ length: 21 }, () => line) }))).toEqual({ code: "too_many_lines", field: "required_actions" });
   });
 
   it("refuses an agent block with more than 32 aliases (review of PR #435)", async () => {
@@ -88,7 +88,7 @@ describe("validateReport: the needs-you cap is refused, never cut (PC-03; threat
   });
 
   it("refuses an empty action", async () => {
-    expect(refusal(validateReport({ ...(await full()), needs_you: [{ action: " ", reason: null }] }))).toEqual({ code: "invalid_field", field: "needs_you.0.action" });
+    expect(refusal(validateReport({ ...(await full()), required_actions: [{ action: " ", reason: null }] }))).toEqual({ code: "invalid_field", field: "required_actions.0.action" });
   });
 });
 
@@ -135,7 +135,7 @@ describe("validateReport: closed shape (PC-03)", () => {
     ["repository.name", { repository: { root: "/r", name: "", remote: null } }],
     ["repository.root", { repository: { root: "", name: "r", remote: null } }],
     ["checkout.linked_worktree", { checkout: { path: "/r", branch: null, linked_worktree: "no" } }],
-    ["needs_you", { needs_you: "approve" }],
+    ["required_actions", { required_actions: "approve" }],
     ["task", { task: 5 }],
   ])("refuses a bad %s", async (field, patch) => {
     expect(refusal(validateReport({ ...(await full()), ...patch })).field).toBe(field);
@@ -147,7 +147,7 @@ describe("validateReport: closed shape (PC-03)", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect("task" in result.value).toBe(false);
-    expect("needs_you" in result.value).toBe(false);
+    expect("required_actions" in result.value).toBe(false);
     const cleared = validateReport({ ...minimal, task: null });
     expect(cleared.ok && cleared.value.task).toBeNull();
   });
@@ -170,7 +170,7 @@ describe("validated reports produce schema-valid bodies and records (PC-04)", ()
       await full(),
       await loadPresenceFixture("report.minimal.json"),
       await loadPresenceFixture("report.clearing.json"),
-      { ...(await full()), task: "z\n".repeat(400), needs_you: Array.from({ length: 20 }, (_, i) => ({ action: `line ${i}\r`, reason: null })) },
+      { ...(await full()), task: "z\n".repeat(400), required_actions: Array.from({ length: 20 }, (_, i) => ({ action: `line ${i}\r`, reason: null })) },
     ];
     for (const sample of samples) {
       const result = validateReport(sample);
@@ -187,5 +187,38 @@ describe("validate.ts does no I/O (architecture D1; threat-model control 11)", (
   it("imports only ./types.js", async () => {
     const source = await readFile(join(REPO_ROOT, "src/modules/presence/validate.ts"), "utf8");
     expect([...source.matchAll(/from "([^"]+)";/g)].map((m) => m[1])).toEqual(["./types.js"]);
+  });
+});
+
+// ARC-060 decision 14 (features/action-required/PRD.md AR-05): `needs_you`
+// is the field's name before 1.20, still accepted on input for the 1.20 series.
+describe("validateReport: the pre-1.20 name needs_you (ARC-060 decision 14)", () => {
+  it("accepts needs_you as required_actions, so an older reporter keeps working", async () => {
+    const body = await full();
+    const { required_actions: lines, ...rest } = body;
+    const result = validateReport({ ...rest, needs_you: lines });
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.value.required_actions).toEqual(lines);
+    expect(result.ok && "needs_you" in result.value).toBe(false);
+  });
+
+  it("names needs_you in its own refusals", async () => {
+    const rest = await full();
+    delete rest["required_actions"];
+    const line = { action: "Approve the plan", reason: null };
+    expect(refusal(validateReport({ ...rest, needs_you: Array.from({ length: 21 }, () => line) }))).toEqual({ code: "too_many_lines", field: "needs_you" });
+  });
+
+  it("refuses a body that sends both names, naming needs_you", async () => {
+    const body = await full();
+    expect(refusal(validateReport({ ...body, needs_you: body["required_actions"] }))).toEqual({ code: "invalid_field", field: "needs_you" });
+  });
+
+  it("the schema documents needs_you as deprecated and refuses both names together", async () => {
+    const validate = await compilePresenceSchema();
+    const body = await full();
+    const { required_actions: lines, ...rest } = body;
+    expect(validate("report", { ...rest, needs_you: lines })).toEqual([]);
+    expect(validate("report", { ...body, needs_you: lines })).not.toEqual([]);
   });
 });

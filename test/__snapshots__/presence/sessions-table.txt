@@ -1,4 +1,4 @@
 STATUS   AGENT   HARNESS      REPOSITORY      BRANCH                              AGE  TASK
 unknown  merlin  claude-code  geothermal-api  sessions/2026-11-12-well-telemetry  2m   WT-03: the telemetry ingest endpoint
-  needs you: Approve the migration 0007_well_readings before the story commits — a schema change needs a human
+  action required: Approve the migration 0007_well_readings before the story commits — a schema change needs a human
 working  main    codex        geothermal-api  sessions/2026-11-12-dashboard       30s  PS-17: the sessions table

@@ -59,7 +59,7 @@ describe("spell presence sessions in process (PC-17)", () => {
       checkout: { path: `${waiting.repository.root}.worktrees/dashboard`, branch: "sessions/2026-11-12-dashboard", linked_worktree: true },
       spell: "spell-implement",
       task: "PS-17: the sessions table",
-      needs_you: [],
+      required_actions: [],
     };
     expect((await httpRequest(svc.port, { method: "POST", path: "/v0/sessions/report", token: svc.token, body: JSON.stringify(working) })).status).toBe(201);
     svc.table.sweep();
@@ -72,7 +72,7 @@ describe("spell presence sessions in process (PC-17)", () => {
     expect(await runPresenceSessions({}, out.io, { home }, () => ms)).toBe(0);
     await expect(`${out.lines.join("\n")}\n`).toMatchFileSnapshot(join(SNAPSHOT_DIR, "sessions-table.txt"));
     expect(out.lines[1]).toMatch(/^unknown\s+merlin\s+claude-code/);
-    expect(out.lines[2]).toBe("  needs you: Approve the migration 0007_well_readings before the story commits — a schema change needs a human");
+    expect(out.lines[2]).toBe("  action required: Approve the migration 0007_well_readings before the story commits — a schema change needs a human");
   });
 
   it("--json prints the snapshot document, valid against the schema's snapshot definition", async () => {
@@ -131,7 +131,7 @@ describe("the sessions table's pieces", () => {
           task: null,
           message: null,
           status: "blocked",
-          needs_you: [{ action: "Merge the pull request", reason: null }],
+          required_actions: [{ action: "Merge the pull request", reason: null }],
           started_at: "2026-11-12T15:00:00.000Z",
           reported_at: "2026-11-12T15:00:00.000Z",
           ended_at: null,
@@ -141,7 +141,7 @@ describe("the sessions table's pieces", () => {
       T0 + 5_000,
     );
     expect(lines[1]).toMatch(/^blocked\s+-\s+other\s+geothermal-api\s+-\s+5s\s+-$/);
-    expect(lines[2]).toBe("  needs you: Merge the pull request");
+    expect(lines[2]).toBe("  action required: Merge the pull request");
   });
 });
 
@@ -188,5 +188,20 @@ describe.skipIf(!BIN)("spell presence sessions against the built CLI (PC-17)", (
     const table = await runSpell(BIN!, ["presence", "sessions"], { cwd: repo, home });
     expect(table.stdout.split("\n")[0]).toMatch(/^STATUS\s+AGENT\s+HARNESS\s+REPOSITORY\s+BRANCH\s+AGE\s+TASK$/);
     expect(table.stdout).toContain("PS-17");
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("--required-action reports Now lines, and the hidden pre-1.20 --needs-you still works (ARC-060 decision 14)", async () => {
+    service = await spawnServe(BIN!, home);
+    const report = await runSpell(BIN!, ["presence", "report", "--status", "waiting", "--required-action", "Merge the pull request — merges are yours", "--needs-you", "Accept the amendment — decisions are yours"], { cwd: repo, home });
+    expect(report.code).toBe(0);
+    const run = await runSpell(BIN!, ["presence", "sessions", "--json"], { cwd: repo, home });
+    const doc = JSON.parse(run.stdout) as SnapshotDocument;
+    expect(doc.sessions[0]?.required_actions).toEqual([
+      { action: "Merge the pull request", reason: "merges are yours" },
+      { action: "Accept the amendment", reason: "decisions are yours" },
+    ]);
+    const help = await runSpell(BIN!, ["presence", "report", "--help"], { cwd: repo, home });
+    expect(help.stdout).toContain("--required-action <line>");
+    expect(help.stdout).not.toContain("--needs-you");
   }, VERY_HEAVY_TEST_TIMEOUT);
 });

@@ -25,3 +25,42 @@ persistence in this PR.
 - `> [!IMPORTANT]` wrapping the heading renders an alert, but adds its own "Important" title
   above the heading; in a terminal it is raw text. The operator chose the rules.
 
+## Iteration 1 — AR-01, AR-02 — 2026-11-05
+- The fragment was renamed `action-required` (markers renamed in every host, the compiler comment
+  and the standard). It carries the heading, the rules above and below, two tiers, struck-through
+  persistence, and Now-only presence reporting. fix:self-host-parity repaired 36 (18 spells and
+  their root copies).
+- spell-authoring-standards.md's section was rewritten; test/up04-b-needs-you.test.ts became
+  test/action-required.test.ts with new assertions (frame, tiers, persistence, Now-only line).
+  109 tests pass.
+
+## Iteration 2 — AR-03 — 2026-11-05
+- The handoff field `Needs you` became `Action required` with `Now:` and `At your desk:` sub-lines
+  (close-session template and the ai-context scaffold). Open-session reads the new field and a
+  legacy `Needs you` field as Now items. The block was renamed in close-session (three places),
+  create-pull-request, sync-pull-request, parallel-workers (two), review and app-store-accounts.
+- Tests: up04-b-handoff (with a new legacy-reading test), close-session-diff-check-339, iw-2026-10.
+
+## Iteration 3 — AR-04 moved — 2026-11-05
+- Found: src/assets/report/show-report.template.html is vendored from arcane-ui (commit a0466a2,
+  "vendor arcane-ui v2.15.0 template", opened by arcane-ui's pipeline). Its `needsYou` and
+  `needsYouCount` keys are the contract between the two repositories, so an edit here would be
+  overwritten and a key rename here would break the vendored template. Left unchanged; registered
+  in TODO.md ("Show Report: the Action required section, in arcane-ui").
+
+## Iteration 4 — AR-05 — 2026-11-05
+- Renamed: needs_you → required_actions, session.needs_you → session.action_required,
+  --needs-you → --required-action, MAX_NEEDS_YOU → MAX_REQUIRED_ACTIONS, the NeedsYou type →
+  RequiredAction, $defs/needsYou → $defs/requiredAction, and the table's "needs you:" line →
+  "action required:". This covered src/modules/presence, src/commands/presence.ts, src/index.ts,
+  the schema, the fixtures, the snapshot and the presence tests.
+- Compatibility for the 1.20 series (ARC-060 decision 14):
+  - validateReport accepts `needs_you` as `required_actions`, and its own refusals name it.
+  - A body with both names is 400 naming needs_you. The schema documents needs_you as deprecated
+    and refuses both together (a `not` whose `required` keys are declared inside it, which ajv's
+    strict mode requires).
+  - `--needs-you` is a hidden option merged into `--required-action`.
+- presence-report fragment and its PRD twin: the line names the Action required block's open Now
+  items. The presence PRD's example record uses `required_actions`, with a note after it.
+- Threat-model template rows say "required-action lines". The README names `--required-action`.
+

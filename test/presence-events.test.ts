@@ -39,10 +39,10 @@ describe("the event feed (PC-08, ARC-060 decision 3)", () => {
     expect((hello?.data as { sessions: SessionRecord[] }).sessions.map((r) => r.session)).toEqual([existing.session]);
 
     await report(svc, { task: "two" });
-    await report(svc, { needs_you: [] });
+    await report(svc, { required_actions: [] });
     await report(svc, {}, "/home/operator/ventures/ordovica/geothermal-api-second");
     const events = await f.waitFor(4);
-    expect(events.slice(1).map((e) => e.event)).toEqual(["session.updated", "session.needs_you", "session.started"]);
+    expect(events.slice(1).map((e) => e.event)).toEqual(["session.updated", "session.action_required", "session.started"]);
     for (const e of events.slice(1)) expect(validate("event", e)).toEqual([]);
     expect((events[1]?.data as SessionRecord).task).toBe("two");
   });
@@ -161,7 +161,7 @@ describe("the event feed (PC-08, ARC-060 decision 3)", () => {
     const healthy = await feed(s);
     await healthy.waitFor(1);
     const base = await loadPresenceFixture<Record<string, unknown>>("report.full.json");
-    const big = { ...(base as object), message: "m".repeat(250), needs_you: Array.from({ length: 20 }, () => ({ action: "a".repeat(256), reason: "r".repeat(256) })) };
+    const big = { ...(base as object), message: "m".repeat(250), required_actions: Array.from({ length: 20 }, () => ({ action: "a".repeat(256), reason: "r".repeat(256) })) };
     for (let i = 0; i < 600 && s.presence.subscriberCount() > 1; i += 1) {
       s.table.report(big as never);
       if (i % 25 === 0) await new Promise((r) => setTimeout(r, 5));

@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { createServer, type Server, type Socket } from "node:net";
 import { join } from "node:path";
 import { runPresenceEnd, runPresenceReport } from "../src/commands/presence.js";
-import { parseNeedsYou, sendEnd, sendReport, type ReporterDeps } from "../src/modules/presence/reporter.js";
+import { parseRequiredAction, sendEnd, sendReport, type ReporterDeps } from "../src/modules/presence/reporter.js";
 import { PRESENCE_ENV, type SessionRecord } from "../src/modules/presence/types.js";
 import { runGit as fixtureGit } from "./helpers/git-fixture.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/fixture-dir.js";
@@ -91,11 +91,11 @@ describe("reporting to a running service (PC-04, PC-05)", () => {
     expect(record.harness).toBe("other");
     expect(record.agent).toEqual({ ref: null, slug: null, name: null, origin: null, definition_revision: null, aliases: [] });
 
-    const second = await sendReport(repo, { status: "waiting", needsYou: ["Approve the migration — a schema change needs a human"] }, deps());
+    const second = await sendReport(repo, { status: "waiting", requiredActions: ["Approve the migration — a schema change needs a human"] }, deps());
     const updated = (second as { record: SessionRecord }).record;
     expect(updated.session).toBe(record.session);
     expect(updated.task).toBe("WT-03");
-    expect(updated.needs_you).toEqual([{ action: "Approve the migration", reason: "a schema change needs a human" }]);
+    expect(updated.required_actions).toEqual([{ action: "Approve the migration", reason: "a schema change needs a human" }]);
 
     const ended = await sendEnd(repo, deps());
     expect((ended as { record: SessionRecord }).record.status).toBe("done");
@@ -238,8 +238,8 @@ describe.skipIf(!BIN)("the built CLI never exits non-zero and never blocks (PC-0
 
 describe("needs-you lines", () => {
   it("split on the first ' — ' into action and reason", () => {
-    expect(parseNeedsYou("Merge PR 12 — merges are the operator's — always")).toEqual({ action: "Merge PR 12", reason: "merges are the operator's — always" });
-    expect(parseNeedsYou("Answer the question")).toEqual({ action: "Answer the question", reason: null });
+    expect(parseRequiredAction("Merge PR 12 — merges are the operator's — always")).toEqual({ action: "Merge PR 12", reason: "merges are the operator's — always" });
+    expect(parseRequiredAction("Answer the question")).toEqual({ action: "Answer the question", reason: null });
   });
 });
 
