@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.20.1] - 2026-11-06
+
+The Show Report template is updated from arcane-ui v2.16.0.
+
+### Changed
+
+- **The Show Report template is vendored from arcane-ui v2.16.0.** The committed reports are regenerated from it. Opened automatically by the arcane-ui pipeline because the compiled template changed.
+
 ## [1.20.0] - 2026-11-05
 
 The `## ⚠ Needs you` block is now `## 🚧 Action required`: a hand-off of the operator's authority, not a plea for help, with two tiers and done items kept in view ([features/action-required/PRD.md](features/action-required/PRD.md)). The presence channel's names follow it ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention) decision 14).
