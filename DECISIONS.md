@@ -92,6 +92,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-058](#arc-058--readme-demos-are-generated-from-the-built-cli-as-animated-svg) | README Demos Are Generated From the Built CLI, as Animated SVG | 2026-11-03 | Accepted |
 | [ARC-059](#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export) | Agent Identity: Opaque Typed References, Roster v3 by Write Path Only, and a Neutral Identity Export | 2026-11-04 | Accepted |
 | [ARC-060](#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention) | The Presence Channel: One Package Behind `spell presence`, a Loopback Contract, Checkout-Keyed Sessions, and a Prompt-Driven Reporting Convention | 2026-11-04 | Accepted |
+| [ARC-061](#arc-061--scoped-temporary-run-grants-unattended-preflight-and-authority-accounting) | Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting | 2026-11-05 | Accepted |
 
 ---
 
@@ -3777,6 +3778,7 @@ The two lists differ in kind. A newly available component is a preference: nothi
 
 ## ARC-061 — Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting
 
+**Date:** 2026-11-05
 **Status:** Accepted (2026-11-05). The operator approved the proposed temporary-grant design, delegated remaining technical details, and requested implementation through merge.
 
 **Context:** Issues [#438](https://github.com/codemagicianhq/arcane/issues/438), [#439](https://github.com/codemagicianhq/arcane/issues/439) and [#440](https://github.com/codemagicianhq/arcane/issues/440) identify one gap: an interactive operator can authorize unattended work, but per-artifact approval cannot be bound to future commits; platform restrictions are discovered late and closure does not report earlier authority.

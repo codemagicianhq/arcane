@@ -77,7 +77,7 @@ describe("spell-parallel-workers.md", () => {
     }
     expect(rules).toContain("Do not run the session, commit, review or pull-request spells");
     const integrate = section("### Step 6 — Integrate when the stack reaches the slice");
-    for (const owned of ["**Rebase**", "**Apply the shared-file edits**", "**Run the full checks**", "`spell-security-review`", "**Fix every finding.**", "The operator approves and merges."]) {
+    for (const owned of ["**Rebase**", "**Apply the shared-file edits**", "**Run the full checks**", "`spell-security-review`", "**Fix every finding.**", "The operator approves and merges by default."]) {
       expect(integrate).toContain(owned);
     }
   });
@@ -88,11 +88,12 @@ describe("spell-parallel-workers.md", () => {
     expect(integrate.indexOf("`spell-security-review`")).toBeLessThan(integrate.indexOf("**Open the pull request**"));
   });
 
-  it("never passes commit authority along in a brief, and never lets the orchestrator merge", () => {
+  it("never passes commit authority along in a brief, and requires an explicit grant for orchestrator completion", () => {
     const step2 = section("### Step 2 — Ask the operator");
     expect(step2).toContain("Commit authority is not passed along in a brief");
     expect(step2).toContain("leaves its changes uncommitted");
-    expect(section("### Step 6 — Integrate when the stack reaches the slice")).toContain("You never merge.");
+    expect(section("### Step 6 — Integrate when the stack reaches the slice")).toContain("you never merge without that authority");
+    expect(section("### Step 6 — Integrate when the stack reaches the slice")).toContain("matching `complete-pr` run grant");
     expect(spell).not.toContain("separate merge authority");
   });
 

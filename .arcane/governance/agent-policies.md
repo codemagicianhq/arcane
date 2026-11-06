@@ -50,7 +50,7 @@ Agent autonomy is gamified into ascending power levels. Each level grants broade
 | Magus     | Self-merge within approved scope (never squash).                           |
 | Archmage  | Broadest autonomous authority within an approved repo.                     |
 
-Assign a default power level per agent × per repo. **Enforcement: explicitly advisory prose (ARC-023) — no check verifies a level was assigned for every agent × repo pair.** Human approval and commit governance still apply in interactive sessions. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s execution-authority table requires exact operator approval for any interactive-context commit regardless of power level, gated by an approval-fingerprint check before `git commit` runs.**
+Assign a default power level per agent × per repo. **Enforcement: explicitly advisory prose (ARC-023) — no check verifies a level was assigned for every agent × repo pair.** Human approval and commit governance still apply in interactive sessions; Temporary Run Grants below provide an action-specific alternative when explicitly authorized (ARC-061). **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s execution-authority table requires exact operator approval for any interactive-context commit regardless of power level, gated by an approval-fingerprint check before `git commit` runs.**
 
 **Notes:**
 
@@ -99,7 +99,93 @@ For exactly this case, record the grant explicitly instead, in `.arcane/delegati
 - **No scaffold is shipped.** A delegation record is inherently repo-specific and starts empty for a
   fresh install — there is nothing generic to seed.
 - **Does not replace the roster-based matrix.** A repo with an installed roster still uses per-agent
-  power levels for standing authority; this is the parallel, lighter-weight path for repos without one. **Enforcement: explicitly advisory prose (ARC-023) — these notes describe the mechanism's scope; `.arcane/delegations.json` is parsed with an unchecked type assertion, not a runtime-validated schema, so nothing constrains a delegation's claimed scope or actions.**
+  power levels for standing authority; this is the parallel, lighter-weight path for repos without one. **Enforcement: explicitly advisory prose (ARC-023) — these notes describe the mechanism's scope; legacy delegation entries are shape-checked for display, but their free-form scope/actions do not authorize execution; the separate Temporary Run Grants below have runtime validation.**
+
+---
+
+## Temporary Run Grants (ARC-061)
+
+An operator present in an interactive session may authorize a bounded unattended
+run without changing roster power or pretending the session is autonomous. This
+is distinct from the legacy standing `delegations` above: add `runGrants` beside
+that array in `.arcane/delegations.json`. It works with or without a roster.
+
+```json
+{
+  "delegations": [],
+  "runGrants": [{
+    "id": "example-run",
+    "grantedBy": "operator",
+    "operatorWords": "Implement task-1, commit, push, create its PR and complete it after checks pass.",
+    "grantedAt": "2026-11-05T08:00:00.000Z",
+    "expiresAt": "2026-11-06T08:00:00.000Z",
+    "scope": {
+      "repository": "github.com/example/project",
+      "task": "task-1",
+      "branchPrefix": "sessions/2026-11-05-task-1"
+    },
+    "permittedActions": ["commit", "push", "create-pr", "complete-pr"],
+    "excludedActions": ["approve-pr", "run-dev-pipeline"],
+    "requiredChecks": ["lint", "typecheck", "test", "build"],
+    "status": "active",
+    "revocation": "Set status to revoked or remove this entry; commit the change."
+  }]
+}
+```
+
+- **Scope and lifetime:** repository and task match exactly. Derive repository
+  identity from the observed remote (for GitHub, `github.com/<owner>/<repo>`;
+  for ADO, `dev.azure.com/<org>/<project>/_git/<repo>`), not from the grant.
+  Use canonical UTC ISO timestamps with milliseconds. Expiry must be after grant
+  time, is exclusive, and is checked again before each action. The branch must
+  equal `branchPrefix`, or extend it at `-` or `/`; a prefix already ending in
+  one of those delimiters matches directly. Exclusions override permissions.
+- **Explicit actions:** only `commit`, `push`, `create-pr`, `assign-pr`,
+  `approve-pr`, `complete-pr`, `delete-remote-branch`, `run-dev-pipeline` are
+  recognized. Unknown actions fail validation. Completion needs `complete-pr`
+  and a nonempty list of required check names. Check names are evidence labels,
+  never command text to execute; resolve actual checks from the approved plan.
+  A commit-only grant cannot complete a PR. No action grants force-push, settings
+  changes, production deployment or permission to delete unmerged work.
+- **Consent and bootstrap:** record the operator's words verbatim while present,
+  including their authorization to commit the grant record. Apply the existing
+  exact approval gate to that commit unless the operator explicitly authorizes
+  recording and committing this scope. A file or tool match cannot prove consent.
+  Agents never mint, renew, widen or backdate their own authority. Later evidence
+  cannot authorize a past action. The run ends on completion even if time remains.
+- **Additive path:** a matching, active grant supplies only the named action's
+  authority, including in a rosterless or below-Magus interactive session. The
+  default fingerprint/PR-bound/Magus paths elsewhere in this document remain for
+  actions without a matching grant. Explicit `exec_allowed: false` remains a
+  denial; a present roster that cannot be validated also stops execution. A grant
+  does not change standing power or global tool/MCP configuration.
+- **Platform gates stay:** push policy, required checks, review rounds, independent
+  reviewers, provider permissions and allowed merge methods still apply. Revalidate
+  the exact PR head and required checks before completion; a head change invalidates
+  prior check evidence. GitHub PR authors cannot approve their own PR. Azure DevOps
+  creator voting depends on policy. Neither is bypassed by `approve-pr` permission.
+- **Visibility and revocation:** `spell doctor` lists active grants with expiry;
+  expired, future and revoked records are inactive. Revoke by changing status or
+  removing the record. Existing standing-delegation output is preserved. No generic
+  grant is installed, and a grant is not silently seeded from a roster or chat.
+- **Per-action evidence:** print `Acting under grant <id>: <action> PR <id> @ <head SHA>`
+  (branch/head for a commit or push), record the resulting commit, and retain it
+  for close-session's Authority used table. A missing/invalid/expired/revoked or
+  out-of-scope grant uses the existing visible authorization downgrade. Auto-merge
+  cannot remain armed past expiry; monitor/cancel it, or wait for checks and then
+  revalidate before direct completion. Grant-file edits remain scoped and do not
+  themselves renew authorization.
+
+`spell grant check --id <id> --repository <repository> --task <task> --branch <branch> --action <action>`
+returns JSON and exits 0 for a matching record, 1 otherwise. It writes nothing and
+never executes grant content. **Enforcement: executable check (ARC-023)** — the
+shared `run-grants.ts` validator evaluates shape, action, time and scope; doctor
+only displays it. **Enforcement: structured spell gate (ARC-023)** — the shared
+run-grant fragment verifies operator provenance, execution denials, head-bound
+checks, per-action evidence and completion restrictions. This is a prompt-governed
+authority path, not a signed capability or a privileged execution boundary.
+
+Related: [[DECISIONS]], [[.arcane/spells/spell-full-cycle]].
 
 ---
 

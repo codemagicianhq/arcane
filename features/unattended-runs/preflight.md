@@ -12,7 +12,7 @@ Observed 2026-11-05 (UTC 2026-11-06). Target: `github.com/codemagicianhq/arcane`
   0, no code-owner or last-push review requirement, strict status checks and
   merge/rebase as allowed methods. Four required checks: Lint, typecheck, test,
   build; PR branch is rebased on target; Review round clear; Fixture tests
-  (macos-latest). Read classic protection as well before completion.
+  (macos-latest). Classic protection returned 404 (no classic policy); Rulesets still apply.
 - Repository tracking is internal; push policy is absent, therefore open under
   ARC-049. No installed roster; no standing power is claimed.
 - Grant: `issues-438-440`, expiry `2026-11-07T07:40:27.000Z`, stops earlier on

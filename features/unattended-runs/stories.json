@@ -12,9 +12,13 @@
         "UR-01/UR-03 acceptance criteria in PRD.md hold"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "assignedTo": "codex",
-      "testEvidence": null
+      "testEvidence": {
+        "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
+        "fullSuite": "3106 passed, 6 skipped",
+        "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
+      }
     },
     {
       "id": "UR-02",
@@ -24,9 +28,13 @@
         "UR-02 acceptance criteria in PRD.md hold"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "assignedTo": "codex",
-      "testEvidence": null
+      "testEvidence": {
+        "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
+        "fullSuite": "3106 passed, 6 skipped",
+        "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
+      }
     },
     {
       "id": "UR-03",
@@ -36,9 +44,13 @@
         "UR-04 acceptance criteria in PRD.md hold"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "assignedTo": "codex",
-      "testEvidence": null
+      "testEvidence": {
+        "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
+        "fullSuite": "3106 passed, 6 skipped",
+        "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
+      }
     },
     {
       "id": "UR-04",
@@ -48,9 +60,13 @@
         "UR-05 acceptance criteria in PRD.md hold"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "assignedTo": "codex",
-      "testEvidence": null
+      "testEvidence": {
+        "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
+        "fullSuite": "3106 passed, 6 skipped",
+        "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
+      }
     },
     {
       "id": "UR-05",
