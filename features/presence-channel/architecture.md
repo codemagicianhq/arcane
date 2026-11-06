@@ -618,6 +618,49 @@ flowchart LR
   CTL["spell presence status · stop"] --> CL
 ```
 
+## Trust Boundaries
+
+The security view of the same parts: what the token is and what a `401` means. The token is a
+local bearer secret that every client reads from `~/.arcane/presence/token`, or from
+`ARCANE_PRESENCE_TOKEN` when that variable is set (D13). Without it every route answers `401`
+with an empty body (D12). Nothing listens beyond `127.0.0.1` (D14), no answer carries a CORS
+header (D12), and any process of the operator's account can read the token, which is why it
+never leaves that account ([Security Considerations](#security-considerations)). The
+`arcane://presence/sessions` MCP resource gives every session's task, message and
+required-action lines to any AI client that registers `spell presence mcp` (D17), so readers must
+treat that text as reported data, never as instructions. The same
+diagram opens the surface table of the threat-model template's
+[Local Presence Service section](../../src/assets/.arcane/governance/threat-model.md#local-presence-service-spell-presence).
+
+```mermaid
+flowchart LR
+  subgraph host["One machine, one user account"]
+    token[("~/.arcane/presence/token<br/>0600 in a 0700 folder")]
+    reporters["AI sessions<br/>spell presence report, MCP presence_report"]
+    readers["Readers<br/>spell presence sessions, AI clients via MCP resources, a dashboard"]
+    sameuser["Any other process of the same account<br/>can read the token too"]
+    page["Any web page in a browser"]
+    other["Another local user"]
+    subgraph svc["spell presence serve on 127.0.0.1:27226"]
+      auth{"Bearer token<br/>matches?"}
+      store[("Memory only<br/>stale at 90 s, dropped at 24 h")]
+      out["Terminal lines:<br/>time, event, session id, status"]
+    end
+    token -.->|read| reporters
+    token -.->|read| readers
+    token -.->|read| sameuser
+    reporters -->|"POST /v0/sessions/report"| auth
+    readers -->|"GET /v0/sessions, /v0/events"| auth
+    page -->|"no token; no CORS headers come back"| auth
+    other -->|"no token; cannot read the file"| auth
+    auth -->|match| store
+    auth -->|"no match"| denied["401, empty body"]
+    store --> out
+  end
+  peer["Another device on the network"] -->|"port 27226 on a non-loopback address"| refused["Connection refused:<br/>nothing listens there"]
+  tunnel["A tunnel or VPN the operator adds"] -.->|"optional; token still required"| auth
+```
+
 ## Data Flow
 
 A report, from the prompt to a subscriber:

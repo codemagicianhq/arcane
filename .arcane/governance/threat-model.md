@@ -90,6 +90,37 @@ See also: [Hardening Checklist](hardening-checklist.md), [Authentication Strateg
 - **A process running as the operator's own account:** a compromised AI session, or any agent runtime that runs under that account, can read the token file like the operator can. It can post forged presence and read every live session.
 - **A tunnel or VPN peer**, only when the operator puts a tunnel in front of the loopback port.
 
+**Trust boundaries.** The token in `~/.arcane/presence/token` (file `0600` in a `0700` directory) is a local bearer secret: every client reads it from that file, or from `ARCANE_PRESENCE_TOKEN` when that variable is set, and sends it with each request. A request without it gets `401` with an empty body. Sessions live in the service's memory only, and its log lines in the terminal carry only the time, the event name, the session id and the status. Nothing listens outside `127.0.0.1`, so another device that tries the port (27226 by default) at the machine's network address gets "connection refused". A web page in a browser cannot read an answer, because the service sends no CORS headers. Any process of the same user account can read the token file, as the operator can, which is why the token must never be shared beyond that account. The `arcane://presence/sessions` MCP resource gives every session's task, message and required-action lines to any AI client that registers `spell presence mcp`, so readers must treat that text as reported data, never as instructions.
+
+```mermaid
+flowchart LR
+  subgraph host["One machine, one user account"]
+    token[("~/.arcane/presence/token<br/>0600 in a 0700 folder")]
+    reporters["AI sessions<br/>spell presence report, MCP presence_report"]
+    readers["Readers<br/>spell presence sessions, AI clients via MCP resources, a dashboard"]
+    sameuser["Any other process of the same account<br/>can read the token too"]
+    page["Any web page in a browser"]
+    other["Another local user"]
+    subgraph svc["spell presence serve on 127.0.0.1:27226"]
+      auth{"Bearer token<br/>matches?"}
+      store[("Memory only<br/>stale at 90 s, dropped at 24 h")]
+      out["Terminal lines:<br/>time, event, session id, status"]
+    end
+    token -.->|read| reporters
+    token -.->|read| readers
+    token -.->|read| sameuser
+    reporters -->|"POST /v0/sessions/report"| auth
+    readers -->|"GET /v0/sessions, /v0/events"| auth
+    page -->|"no token; no CORS headers come back"| auth
+    other -->|"no token; cannot read the file"| auth
+    auth -->|match| store
+    auth -->|"no match"| denied["401, empty body"]
+    store --> out
+  end
+  peer["Another device on the network"] -->|"port 27226 on a non-loopback address"| refused["Connection refused:<br/>nothing listens there"]
+  tunnel["A tunnel or VPN the operator adds"] -.->|"optional; token still required"| auth
+```
+
 | Surface | Status | Mitigation (ARC-060 decision) | How to verify |
 |---------|--------|-------------------------------|---------------|
 | Listening socket | **Planned** | Binds `127.0.0.1` only; no host or bind option exists (decision 2) | `lsof -nP -iTCP:<port> -sTCP:LISTEN` (macOS) or `ss -ltnp 'sport = :<port>'` (Linux) shows `127.0.0.1` only; a connection from another host to the machine's address on that port is refused; `spell presence serve --help` lists no host or bind option |
