@@ -872,7 +872,21 @@ export async function runUpdate(
     return;
   }
 
-  let fileCount = 0;
+  const changedFiles = new Set<string>();
+  const unchangedFiles = new Set<string>();
+  const recordComparison = (file: string, changed: boolean) => {
+    if (changed) {
+      changedFiles.add(file);
+      unchangedFiles.delete(file);
+    } else if (!changedFiles.has(file)) {
+      unchangedFiles.add(file);
+    }
+  };
+  const differsFromDisk = async (file: string, next: Buffer | string): Promise<boolean> => {
+    const target = join(targetDir, file);
+    if (!(await fileExists(target))) return true;
+    return !(await readFile(target)).equals(Buffer.isBuffer(next) ? next : Buffer.from(next));
+  };
   const updatedComponents: InstalledComponent[] = [];
   // ARC-038 decision 1: files whose merge produced genuine conflict markers,
   // collected across every component so the operator gets one summary at the
@@ -1083,12 +1097,28 @@ export async function runUpdate(
           `  ${options.dryRun ? "[dry-run] Would keep" : "Kept"} customized (not merged): ${file}`,
         );
       } else if (options.dryRun) {
-        console.log(
-          `  [dry-run] Would ${linkShape !== null ? "convert to a regular file (it is a symlink, or a link written out as text)" : sameVersionRestore ? "restore missing" : "update"}: ${file}`,
-        );
-        fileCount++;
+        if (editedByOperator) {
+          const oldVendorContent = await fetchPublishedFile(
+            installed.installedVersion, component.sourceOverrides?.[file] ?? file,
+          );
+          if (oldVendorContent !== undefined) {
+            console.log(`  [dry-run] Would merge edits into: ${file}`);
+            const currentContent = await readFile(join(targetDir, file), "utf-8");
+            const newContent = await readFile(srcPath, "utf-8");
+            recordComparison(file, await differsFromDisk(file, merge3(oldVendorContent, currentContent, newContent).content));
+          } else {
+            console.log(`  ! Could not fetch the previously published version of ${file}; it would be left untouched.`);
+          }
+        } else {
+          console.log(
+            `  [dry-run] Would ${linkShape !== null ? "convert to a regular file (it is a symlink, or a link written out as text)" : sameVersionRestore ? "restore missing" : "update"}: ${file}`,
+          );
+          recordComparison(file, linkShape !== null || await differsFromDisk(file, await readFile(srcPath)));
+        }
       } else {
         let handled = false;
+        let wroteFile = false;
+        const beforeContent = targetExists && linkShape === null ? await readFile(join(targetDir, file)) : null;
 
         if (editedByOperator) {
           // Fetch by the ASSET path: the published tarball holds the source
@@ -1115,6 +1145,7 @@ export async function runUpdate(
             ]);
             const result = merge3(oldVendorContent, currentContent, newContent);
             await writeManagedFile(targetDir, file, result.content, { linkTracked, conversions, followDirectoryLinks });
+            wroteFile = true;
             // Record the VENDOR content's hash, not the merged file's. The
             // recorded hash means "what a clean install of this version
             // wrote"; recording the merged content made the next update read
@@ -1133,6 +1164,7 @@ export async function runUpdate(
         }
 
         if (!handled) {
+          wroteFile = true;
           fileHashes[file] = await copyFile(srcPath, targetDir, file, {
             force: true,
             linkTracked,
@@ -1144,7 +1176,10 @@ export async function runUpdate(
           if (linkShape === "path-body") conversions.push({ file, shape: "path-body" });
           if (sameVersionRestore) console.log(`  Restored missing: ${file}`);
         }
-        fileCount++;
+        if (wroteFile) {
+          const afterContent = await readFile(join(targetDir, file));
+          recordComparison(file, beforeContent === null || !beforeContent.equals(afterContent));
+        }
       }
 
       // Only record a preserved file if Arcane installed it in the first
@@ -1160,6 +1195,11 @@ export async function runUpdate(
     // Also copy directories
     for (const dir of component.directories ?? []) {
       const srcDirPath = join(assetsDir, dir);
+      const directoryFiles = await listDirectoryFiles(srcDirPath, dir);
+      for (const file of directoryFiles) {
+        const linkShape = await managedPathLinkShape(targetDir, file, linkTracked, isClientShimPath(file));
+        recordComparison(file, linkShape !== null || await differsFromDisk(file, await readFile(join(assetsDir, file))));
+      }
       if (options.dryRun) {
         console.log(`  [dry-run] Would update directory: ${dir}/`);
       } else {
@@ -1176,7 +1216,6 @@ export async function runUpdate(
           updatedFiles.push(copiedPath);
           fileHashes[copiedPath] = hash;
         }
-        fileCount += copied.length;
       }
     }
 
@@ -1311,7 +1350,7 @@ export async function runUpdate(
 
   if (options.dryRun) {
     console.log(
-      `\n[dry-run] Would update ${fileCount} files.`,
+      `\n[dry-run] Would change ${changedFiles.size} files, ${unchangedFiles.size} unchanged.`,
     );
     if (Object.keys(flagPatch).length > 0) reportFlagPatch(flagPatch, manifest, answered, true);
     const applicableRetrofits =
@@ -1368,7 +1407,7 @@ export async function runUpdate(
   await writeManifest(targetDir, updated, { followLinks: scope === "user" });
 
   console.log(
-    `\n\u2713 Updated ${fileCount} files.`,
+    `\n\u2713 ${changedFiles.size} files changed, ${unchangedFiles.size} unchanged.`,
   );
 
   if (Object.keys(flagPatch).length > 0) {
