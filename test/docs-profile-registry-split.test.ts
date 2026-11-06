@@ -329,8 +329,9 @@ describe("backwards compatibility of the split", () => {
   //     Google Play Console account enrollment; the account-creation prelude to spell-eas-store-deploy).
   // 42: spell-parallel-workers joined spells-build (2026-11-02, orchestrator and worker sessions
   //     that prepare disjoint slices in parallel and integrate them in order).
+  // 43: spell-unattended-run joined spells-build (2026-11-06), bounded delivery orchestration.
   it.each(["lite", "methodology"] as const)(
-    "%s still ships the 42 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in every format",
+    "%s still ships the 43 spells the monolith + spells-build/spells-delivery/spells-capture growth hold, in every format",
     (profileId) => {
       const files = getProfile(profileId).flatMap((c) => c.files);
       // LH-05: deliberately NOT derived from the registry -- see the comment
@@ -341,13 +342,13 @@ describe("backwards compatibility of the split", () => {
       // cases apart -- a registry-derived count cannot, since both look
       // identical from the registry's own point of view.
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(42);
+      expect(files.filter((f) => f.startsWith(".arcane/spells/"))).toHaveLength(43);
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(42);
+      expect(files.filter((f) => f.startsWith(".github/prompts/"))).toHaveLength(43);
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(42);
+      expect(files.filter((f) => f.startsWith(".claude/commands/"))).toHaveLength(43);
       // eslint-disable-next-line no-restricted-syntax
-      expect(files.filter((f) => f.startsWith(".agents/skills/"))).toHaveLength(42);
+      expect(files.filter((f) => f.startsWith(".agents/skills/"))).toHaveLength(43);
     },
   );
 
