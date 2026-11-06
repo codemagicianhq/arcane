@@ -56,6 +56,12 @@ describe("run grant authority records", () => {
     expect(evaluateRunGrant([grant, grant], request).matches).toBe(false);
     expect(evaluateRunGrant([{ ...grant, excludedActions: ["commit"] }], request).reason).toBe("excluded action");
   });
+  it("can explicitly exclude never-permitted operations without making them grantable", () => {
+    const restricted = { ...grant, excludedActions: ["force-push", "production-deploy", "settings-change"] };
+    expect(isRunGrant(restricted)).toBe(true);
+    expect(evaluateRunGrant([restricted], { ...request, action: "force-push" }).reason).toBe("excluded action");
+    expect(isRunGrant({ ...grant, permittedActions: ["force-push"] })).toBe(false);
+  });
   it("matches deliberate branch boundaries, including trailing delimiters", () => {
     for (const branch of ["sessions/test-run", "sessions/test-run-fix", "sessions/test-run/worker"]) {
       expect(evaluateRunGrant([grant], { ...request, branch }).matches).toBe(true);

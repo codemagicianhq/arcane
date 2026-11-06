@@ -16,7 +16,7 @@
       "assignedTo": "codex",
       "testEvidence": {
         "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
-        "fullSuite": "3106 passed, 6 skipped",
+        "fullSuite": "3107 passed, 6 skipped",
         "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
       }
     },
@@ -32,7 +32,7 @@
       "assignedTo": "codex",
       "testEvidence": {
         "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
-        "fullSuite": "3106 passed, 6 skipped",
+        "fullSuite": "3107 passed, 6 skipped",
         "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
       }
     },
@@ -48,7 +48,7 @@
       "assignedTo": "codex",
       "testEvidence": {
         "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
-        "fullSuite": "3106 passed, 6 skipped",
+        "fullSuite": "3107 passed, 6 skipped",
         "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
       }
     },
@@ -64,7 +64,7 @@
       "assignedTo": "codex",
       "testEvidence": {
         "tests": "test/run-grants.test.ts; test/prompt-autonomy-gates.test.ts; test/unattended-run-preflight.test.ts; test/parallel-workers.test.ts; legacy delegation tests",
-        "fullSuite": "3106 passed, 6 skipped",
+        "fullSuite": "3107 passed, 6 skipped",
         "coverage": "93.74% overall lines; run-grants.ts and grant.ts 100% lines/branches/functions"
       }
     },
