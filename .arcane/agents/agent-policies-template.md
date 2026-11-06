@@ -46,7 +46,7 @@ Agent autonomy is gamified into ascending power levels. Each level grants broade
 | Apprentice | Read and propose; changes queued for human merge.                         |
 | Wizard    | Scoped autonomous edits in approved paths; PRs queued for review.          |
 | Sorcerer  | Autonomous topic-branch work; PRs queued for review.                       |
-| Magus     | Self-merge within approved scope (fast-forward only).                      |
+| Magus     | Self-merge within approved scope (never squash).                           |
 | Archmage  | Broadest autonomous authority within an approved repo.                     |
 
 Assign a default power level per agent × per repo. Human approval and commit governance still apply in interactive sessions.
@@ -275,8 +275,10 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 4. **Push the branch** to origin (after rebase).
 
-5. **Merge or queue** based on your power level:
-   - **Magus+ power level:** self-merge via `git merge --ff-only`, push main, delete branch.
+5. **Merge or queue** based on your power level — and merge by the mechanism your repository type and working tree allow:
+   - **Magus+ power level, in a code repository:** self-merge by completing the PR on the platform, by rebase and fast-forward or merge without fast-forward, never squash. A code repository requires a PR and rejects direct pushes to `main`, so this holds in every working tree.
+   - **Magus+ power level, in a docs-only repository's primary checkout:** self-merge via `git merge --ff-only`, push main, delete branch.
+   - **Magus+ power level, in a linked worktree or a clone:** self-merge through the platform's PR merge instead. The authority is identical; only the mechanism changes, because a local ff-merge requires checking out `main` and another working tree already holds it.
    - **Below Magus:** push the branch, report the branch name, and queue for human merge.
 
 6. **Delete the branch** (local and remote) after merge.
@@ -285,7 +287,7 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 - Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc.
 
-**What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry:
+**What happens if ff-only fails** (a docs-only repository's local merge): Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry, from the primary checkout, since this block checks out `main`:
 
 ```bash
 git fetch origin
@@ -293,6 +295,8 @@ git rebase origin/main
 git checkout main
 git merge --ff-only {your-slug}/type/short-description
 ```
+
+From a linked worktree or a clone, stop after the rebase and merge through the platform's PR instead. `git checkout main` there fails with `fatal: 'main' is already used by worktree at '<path>'`.
 
 ### Multi-Agent Concurrency Rules
 

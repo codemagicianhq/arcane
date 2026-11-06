@@ -289,7 +289,11 @@ Create the session branch as the **first action** of any session, before any fil
    stale divergence. Resolve conflicts locally — never push a branch with known merge conflicts.
 4. **Push the branch to origin** (after rebase).
 5. **Merge or queue for review** based on power level:
-   - **Magus+ agents, working in the primary checkout:** self-merge via `git merge --ff-only`, then push main
+   - **Magus+ agents, in a code repository:** self-merge by completing the PR on the platform, by
+     rebase and fast-forward or merge without fast-forward, never squash (ARC-009 §7). A code
+     repository requires a PR and rejects direct pushes to `main` (Merge Strategy by Repo Risk,
+     below), so this holds in every working tree.
+   - **Magus+ agents in a docs-only repository, working in the primary checkout:** self-merge via `git merge --ff-only`, then push main
    - **Magus+ agents, working in a linked worktree or a clone:** self-merge through the platform's PR
      merge instead (ARC-028 R1). The authority is the same; only the mechanism changes, because a
      local ff-merge requires checking out `main` and the primary checkout already holds it. Power

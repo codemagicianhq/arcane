@@ -47,7 +47,7 @@ Agent autonomy is gamified into ascending power levels. Each level grants broade
 | Apprentice | Read and propose; changes queued for human merge.                         |
 | Wizard    | Scoped autonomous edits in approved paths; PRs queued for review.          |
 | Sorcerer  | Autonomous topic-branch work; PRs queued for review.                       |
-| Magus     | Self-merge within approved scope (fast-forward only).                      |
+| Magus     | Self-merge within approved scope (never squash).                           |
 | Archmage  | Broadest autonomous authority within an approved repo.                     |
 
 Assign a default power level per agent × per repo. **Enforcement: explicitly advisory prose (ARC-023) — no check verifies a level was assigned for every agent × repo pair.** Human approval and commit governance still apply in interactive sessions. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s execution-authority table requires exact operator approval for any interactive-context commit regardless of power level, gated by an approval-fingerprint check before `git commit` runs.**
@@ -326,8 +326,9 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 4. **Push the branch** to origin (after rebase).
 
-5. **Merge or queue** based on your power level — and merge by the mechanism your isolation primitive allows (ARC-028 R1):
-   - **Magus+ power level, in the primary checkout:** self-merge via `git merge --ff-only`, push main, delete branch.
+5. **Merge or queue** based on your power level — and merge by the mechanism your repository type and isolation primitive allow (ARC-009 §7, ARC-028 R1):
+   - **Magus+ power level, in a code repository:** self-merge by completing the PR on the platform, by rebase and fast-forward or merge without fast-forward, never squash (ARC-009 §7). A code repository requires a PR and rejects direct pushes to `main` (`git-conventions.md` → Merge Strategy by Repo Risk), so this holds in every working tree. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work` Step 9 completes a PR only by merge (no fast-forward) or rebase and fast-forward, with squash disabled; the refusal of a direct push to `main` is the platform's branch protection, which no Arcane code path verifies.**
+   - **Magus+ power level, in a docs-only repository's primary checkout:** self-merge via `git merge --ff-only`, push main, delete branch.
    - **Magus+ power level, in a linked worktree or a clone:** self-merge through the platform's PR merge instead. The authority is identical; only the mechanism changes, because a local ff-merge requires checking out `main` and another working tree already holds it. Power level decides *whether* you may merge without review; the isolation primitive decides *how*.
    - **Below Magus:** push the branch, report the branch name, and queue for human merge. **Enforcement: structured spell gate (ARC-023) — `spell-commit-work`'s execution-authority table and its Step 9 merge-authorization gate (and `spell-create-pull-request`'s Authorization Gate) resolve power level and `exec_allowed` through the EF-27 loader-validated roster before permitting self-merge; below-Magus or unresolved authority always downgrades to human completion.**
 
@@ -337,7 +338,7 @@ If an agent encounters a situation outside its defined parameters, it should:
 
 - Use standard commit types: `feat`, `fix`, `docs`, `refactor`, `chore`, etc. **Enforcement: explicitly advisory prose (ARC-023) — no check in this repo validates an autonomous agent's branch name against that rule; the rename gate in `git-conventions.md` → Branch Naming runs only in interactive sessions.**
 
-**What happens if ff-only fails:** Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry — **from the primary checkout**, since this block checks out `main`:
+**What happens if ff-only fails** (a docs-only repository's local merge): Another actor merged to main first. This should not happen if you followed step 3. If it does, rebase and retry — **from the primary checkout**, since this block checks out `main`:
 
 ```bash
 git fetch origin

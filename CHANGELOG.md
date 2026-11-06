@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.20.2] - 2026-11-06
+
+### Fixed
+
+- **How a Magus agent merges, stated the same way everywhere.** The power-level ladder (`naming-conventions.md`, `agent-policies.md` and the agent policy template) said a Magus agent merges "fast-forward only", while `spell-commit-work` completes a PR by merge without fast-forward or rebase and fast-forward, as ARC-009 §7 allows. The ladder now says "never squash".
+- **A Magus agent in a code repository merges through the PR.** Branch Discipline step 5 (`agent-policies.md`, `git-conventions.md` and the template) told a Magus agent in the primary checkout to merge locally and push `main`, which a code repository's branch protection refuses; the same documents require a PR there. The local fast-forward is now scoped to docs-only repositories.
+- **The agent policy template gets the linked-worktree path.** Its step 5 and its ff-only recovery block still read as if every agent held `main`; they now say what to do from a linked worktree or a clone, as `agent-policies.md` has since ARC-028.
+
 ## [1.20.1] - 2026-11-06
 
 The Show Report template is updated from arcane-ui v2.16.0.
