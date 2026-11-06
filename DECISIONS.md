@@ -92,6 +92,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-058](#arc-058--readme-demos-are-generated-from-the-built-cli-as-animated-svg) | README Demos Are Generated From the Built CLI, as Animated SVG | 2026-11-03 | Accepted |
 | [ARC-059](#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export) | Agent Identity: Opaque Typed References, Roster v3 by Write Path Only, and a Neutral Identity Export | 2026-11-04 | Accepted |
 | [ARC-060](#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention) | The Presence Channel: One Package Behind `spell presence`, a Loopback Contract, Checkout-Keyed Sessions, and a Prompt-Driven Reporting Convention | 2026-11-04 | Accepted |
+| [ARC-061](#arc-061--scoped-temporary-run-grants-unattended-preflight-and-authority-accounting) | Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting | 2026-11-05 | Accepted |
 
 ---
 
@@ -3773,3 +3774,25 @@ The two lists differ in kind. A newly available component is a preference: nothi
 **Naming impact:** `spell presence`, `presence-report`, `arcane:session:`, `~/.arcane/presence/`, `ARCANE_PRESENCE_TOKEN`, `ARCANE_PRESENCE_PORT`, `presence_report`, `presence_end`, `/v0/` and `schemas/presence.schema.json` were grepped across the repository on 2026-11-04: the only hit is `features/agent-identity/PRD.md`'s sentence reserving `arcane:session:`. The word `presence` occurs in governance and spell prose only in the sense of a web presence. No collision with an existing command, field, flag, file or fragment.
 
 ---
+
+
+## ARC-061 — Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting
+
+**Date:** 2026-11-05
+**Status:** Accepted (2026-11-05). The operator approved the proposed temporary-grant design, delegated remaining technical details, and requested implementation through merge.
+
+**Context:** Issues [#438](https://github.com/codemagicianhq/arcane/issues/438), [#439](https://github.com/codemagicianhq/arcane/issues/439) and [#440](https://github.com/codemagicianhq/arcane/issues/440) identify one gap: an interactive operator can authorize unattended work, but per-artifact approval cannot be bound to future commits; platform restrictions are discovered late and closure does not report earlier authority.
+
+**Decision:**
+
+1. Add an optional `runGrants` array beside legacy `delegations` in `.arcane/delegations.json`. Its strict records include grantor, verbatim operator words, canonical UTC grant/expiry timestamps, exact repository/task and delimited branch-prefix scope, explicit permitted/excluded actions, named required completion checks, status and revocation. Existing delegations remain display-only and retain their meaning. No scaffold, implicit grant, dependency or standing power change is introduced.
+2. A shared runtime validator and read-only `spell grant check` evaluate shape, scope, time and action. An active grant is an additive path for interactive sessions with or without rosters, including below Magus. `complete-pr` must be explicit. Explicit `exec_allowed: false`, unresolved installed rosters, push policy, required reviewers/checks, open review rounds and merge methods remain binding. Without a matching grant, today's fingerprint/PR-bound/autonomous gates remain. A record match cannot establish consent.
+3. The operator authorizes the record and its bootstrap commit while present, via exact approval or an explicit instruction to record and commit that scope. The shared run-grant fragment in commit, create-PR, full-cycle and close-session verifies provenance and rechecks immediately before each action. No agent may widen, renew, backdate or self-issue authority. Print grant ID/action/PR/head before acting; completion checks bind to that exact head. Auto-merge must not outlive expiry: cancel before expiry or wait and revalidate before direct completion.
+4. One shared preflight in full-cycle, implement and parallel-workers batches blocking questions, inspects GitHub or ADO effective policy (reviews/self-approval, PR validation and merge methods), records grant/checks and explicitly reports actions that wait for the operator. Unknown policy is unknown, never permission. With no applicable PR validation, the approved local checks must pass against each exact completion head. Parallel workers cannot expand the orchestrator's grant.
+5. Close-session reconstructs every session commit range and completed PR, records the authority and contemporaneous evidence, and reconciles its own final actions. Missing authority is `none`, is surfaced under Action required and carried in the handoff. Reporting it never retroactively grants consent.
+
+**Alternatives:** Reusing legacy free-text delegation entries would silently confer new power; perpetual roster promotion would exceed one run; a separate signed capability service exceeds this prompt-governed iteration. Separate run-grant files add another discovery path without improving trust.
+
+**Enforcement:** executable record validation and doctor visibility; structured spell gates for provenance, per-action checks and closure accounting (ARC-023). The JSON file is editable data, not a cryptographic authentication mechanism. Prompt tests verify distribution; runtime tests verify refusal boundaries. This amends interactive authority requirements only for explicitly granted actions, and preserves ARC-035/049 constraints.
+
+**Related:** [[features/unattended-runs/PRD]], [[features/unattended-runs/architecture]], [[.arcane/governance/agent-policies]].

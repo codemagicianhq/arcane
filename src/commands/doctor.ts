@@ -49,6 +49,7 @@ import {
   type StoreOptions,
 } from "../modules/presence/store.js";
 import { statSync } from "node:fs";
+import { readRunGrants } from "../modules/run-grants.js";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -65,6 +66,8 @@ interface CheckResult {
    * `passed: true`.
    */
   skipped?: boolean;
+  /** Show useful inventory even when this check passes. */
+  showDetails?: boolean;
 }
 
 // ─── Runtime validation helpers ───────────────────────────────────────────────
@@ -886,6 +889,24 @@ export async function checkDelegations(targetDir: string): Promise<CheckResult> 
   };
 }
 
+/** Record visibility only; a grant file is never proof of operator consent. */
+export async function checkRunGrants(targetDir: string, now = new Date()): Promise<CheckResult> {
+  const name = "Run grants (ARC-061)";
+  try {
+    const grants = await readRunGrants(targetDir);
+    const active = grants.filter((g) => g.status === "active"
+      && Date.parse(g.grantedAt) <= now.getTime() && now.getTime() < Date.parse(g.expiresAt));
+    const inactive = grants.length - active.length;
+    return {
+      name, passed: true, blocking: false, showDetails: grants.length > 0,
+      message: grants.length === 0 ? "no run grants recorded"
+        : `${active.length} active run grant(s): ${active.map((g) => `${g.id} (expires ${g.expiresAt}; task: ${g.scope.task}; branch: ${g.scope.branchPrefix})`).join("; ")}; ${inactive} expired, future or revoked`,
+    };
+  } catch {
+    return { name, passed: false, blocking: false, message: "run grant file unreadable or invalid; no run authority can be inferred" };
+  }
+}
+
 /**
  * T11/BC-17. Verifies the live platform branch/merge policy matches the
  * declared ladder (git-conventions.md: merge + rebase sanctioned, squash
@@ -1141,6 +1162,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkPushPolicy(targetDir),
     checkPlatformBranchPolicy(targetDir),
     checkDelegations(targetDir),
+    checkRunGrants(targetDir),
     checkMcpConfig(targetDir),
     checkUserTier(resolveHomeDir(), options.packageVersion),
     checkSpellScope(targetDir),
@@ -1168,7 +1190,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
           ? "warn"
           : "FAIL";
     console.log(`  ${icon} [${label}] ${result.name}`);
-    if (!result.passed || skipped) {
+    if (!result.passed || skipped || result.showDetails === true) {
       console.log(`         ${result.message}`);
     }
     if (!result.passed && result.blocking !== false) {

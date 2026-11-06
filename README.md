@@ -83,6 +83,16 @@ npm install -g arcane-cli   #  then:  spell init
 
 ---
 
+### Scoped unattended runs
+
+An operator can authorize a temporary run grant covering a repository, task,
+branch prefix, explicit actions and expiry. `spell-full-cycle` and `spell-implement`
+batch blocking questions and inspect platform policy before the operator leaves.
+`spell grant check` checks the record without claiming to authenticate consent;
+`spell doctor` lists grants and expiry. Commit and PR spells preserve push policy,
+required checks and independent reviews, and close-session reports authority used.
+See [.arcane/governance/agent-policies.md](.arcane/governance/agent-policies.md#temporary-run-grants-arc-061).
+
 ## The problem
 
 AI coding agents are great at *generating code*. They're terrible at *shipping software*.

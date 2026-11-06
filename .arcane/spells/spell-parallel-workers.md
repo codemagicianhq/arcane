@@ -11,7 +11,7 @@ agent: agent
 
 - This spell lets one **orchestrator** session farm independent slices of a larger plan out to **worker** sessions, so the slices are prepared in parallel while the protocols run once, at the top of the stack.
 - Workers do the work only. Each leaves a **prep branch** plus a short **note** in a shared notes folder and reports back. They never touch the shared files, the stack branches, a pull request, a pipeline or the docs.
-- The orchestrator owns the plan, every shared file (version bump, changelog, decision records, progress and architecture notes, lint scope lists, counters), the merge order and every protocol step. When the stack reaches a slice it rebases the prep branch, applies the listed shared-file edits, runs the full checks and the reviews, fixes every finding, commits through `spell-commit-work` and opens the pull request. The operator approves and merges; the orchestrator never does.
+- The orchestrator owns the plan, every shared file (version bump, changelog, decision records, progress and architecture notes, lint scope lists, counters), the merge order and every protocol step. When the stack reaches a slice it rebases the prep branch, applies the listed shared-file edits, runs the full checks and the reviews, fixes every finding, commits through `spell-commit-work` and opens the pull request. The operator approves and merges by default; an explicitly scoped `complete-pr` run grant can authorize the orchestrator to complete instead (ARC-061).
 - It produces a plan with a footprint comparison, one brief per worker, one note per slice, a slice ledger, and one pull request per slice.
 - **Why:** parallel speed without every worker paying the token cost of the full protocols. The protocols are paid once per slice, by the session that owns the shared state.
 - **Not this spell:** `spell-full-cycle` and `spell-implement` build a feature end to end in one workspace and serialize by default. `spell-review-batch` reviews many pull requests that already exist. Subagents inside one session are a different mechanism with a different cost model; this spell is for separate sessions with their own context and worktree.
@@ -48,6 +48,8 @@ Footprint overlap is cheap to find now and expensive to find at merge review. St
 
 ## Roles
 
+The matrix below is the default without a run grant. A matching grant can authorize the orchestrator's commits and completion through the commit/PR spells; it never grants workers additional authority.
+
 | Role | Does | Never does |
 | --- | --- | --- |
 | **Operator** | Approves the slice plan, the merge order and each commit; reviews and merges each pull request. | — |
@@ -67,6 +69,60 @@ One worktree per slice, cut from the current stack tip. The prep branch is its w
 This spell works in a repository with none of these: everything it needs is in the plan you write in Step 1.
 
 ---
+
+<!-- fragment:unattended-run-preflight:start -->
+**Unattended-run preflight (ARC-061).** Run before the operator leaves when they
+request unattended execution; otherwise skip. An earlier preflight can be reused
+only for the same approved plan, checkout, scope and unchanged policy. The
+orchestrator owns it; workers receive only a narrower, explicit brief.
+
+1. Gather **every blocking question in one batch**: scope, unresolved product/ADR
+   decisions, action permissions, expiry, required checks and any access gaps.
+   Use the harness question UI when available. Continue independent work while
+   waiting; unanswered required questions never become consent by timeout.
+2. Inspect the authenticated CLI identity, PR author identity, repository, target
+   branch, effective policies and allowed merge strategies. Report unknown on
+   an auth/network/parse failure; do not infer permission from tool availability.
+   - **GitHub:** read the repository merge settings, effective branch Rulesets
+     (`gh api repos/<owner>/<repo>/rules/branches/<branch>`) **and** classic branch
+     protection when present; include inherited rules. Read required approvals,
+     code-owner/last-push review constraints and required status checks. PR authors
+     cannot approve their own PRs: a grant cannot supply an independent review.
+     Check `gh pr checks` and current review decisions before completion. Honor
+     linear-history constraints when choosing merge or rebase; never squash.
+   - **Azure DevOps:** read target-scoped enabled policy configurations with
+     `az repos policy list --repository-id <id> --branch <branch> --org <url> --project <project>`.
+     Inspect minimum reviewers (`creatorVoteCounts`, last-pusher/iteration vote
+     restrictions), required reviewer policies, build validation and allowed merge
+     types. Only an explicitly permitted creator vote may count; other required
+     reviewers still wait for those reviewers. Read the PR's policy evaluations
+     before completion. Optional or path-filtered validation is not blanket proof.
+   - **Validation:** state whether required PR validation exists and covers this
+     change. If it does not, identify and run the repository's approved local
+     checks against each exact completion head. A green old head is insufficient.
+3. Record the run grant while the operator is present, through the existing
+   commit approval gate or an explicit operator instruction authorizing the grant
+   record's own commit. Verify provenance and every field per agent-policies.md.
+   Repos with and without a roster use the same temporary grant format. Do not
+   change standing power or loosen push policy to make a run possible.
+4. Save a **Preflight result** with repository/branch/head, identity, policy sources
+   and observation time, grant ID/expiry, required checks, and an action table:
+
+   | Action | Will run unattended | Will wait for operator / reason |
+   | --- | --- | --- |
+   | Commit, push, PR creation/assignment | List exactly which are authorized | List each missing grant/access/push confirmation |
+   | Approval, completion, branch deletion | List exactly which are possible under policy | Name each required independent review or other blocker |
+
+   Say explicitly **what will run unattended and what will wait for the operator**.
+   Put every operator-only action in the Action required block. Before arming
+   auto-merge, finish review and ensure it cannot outlive the grant; otherwise
+   monitor checks and revalidate before completing. Recheck policies if changed.
+
+Enforcement: structured spell gate (ARC-023); prompt-contract tests verify that
+all three orchestrating spells contain this shared preflight. No settings mutate.
+
+Related: [[.arcane/governance/agent-policies]].
+<!-- fragment:unattended-run-preflight:end -->
 
 ## Orchestrator workflow
 
@@ -129,7 +185,7 @@ The integration checklist, one slice at a time, in merge order:
 7. **Review:** `spell-review`, then `spell-security-review`, on the slice's diff against the stack tip. Docs updates belong here too.
 8. **Fix every finding.** Every review and security finding is fixed, or deferred only with the operator's say-so recorded; none is waved through because a worker "already checked". Commit the fixes, then re-run the checks and the reviews.
 9. **Open the pull request** with `spell-create-pull-request`, head branch the prep branch, base as the plan's definition of the stack says. The body is yours: what the slice does, the checks you ran, the findings and how each was fixed. Include nothing from a worker's note that you did not verify.
-10. **The operator approves and merges.** Report the pull request in the `Action required` block. You never merge.
+10. **The operator approves and merges by default.** With a matching `complete-pr` run grant, follow `spell-create-pull-request`'s run-grant gate before completion. Otherwise report the pull request in the `Action required` block; you never merge without that authority.
 11. **After the merge:** mark the slice `merged`; remove the worker's worktree and delete the merged prep branch using the content-verified deletion procedure in `git-conventions.md`. Slices still waiting are rebased at their own turn (item 4), not now.
 
 ### Step 7 — Close out

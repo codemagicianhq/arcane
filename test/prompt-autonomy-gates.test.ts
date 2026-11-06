@@ -19,6 +19,15 @@ beforeAll(async () => {
 });
 
 describe("commit and merge autonomy gates", () => {
+  it("allows interactive grants for commits, requires complete-pr for completion, and downgrades expiry", () => {
+    for (const spell of [commitWork, createPullRequest, fullCycle, closeSession]) {
+      expect(spell).toContain("Interactive, active grant covering the action");
+      expect(spell).toContain("Completion requires `complete-pr`");
+      expect(spell).toContain("expired, revoked, excluded or out-of-scope grant fails closed");
+      expect(spell).toContain("Acting under grant <id>: <action> PR <id> @ <head SHA>");
+      expect(spell).toContain("`exec_allowed: false` always denies execution");
+    }
+  });
   it("partitions by author before grouping by concern", () => {
     const authorshipStep = commitWork.indexOf("3. **Determine authorship and partition the batch**");
     const groupingStep = commitWork.indexOf("4. **Analyze and group changes within each author partition**");
