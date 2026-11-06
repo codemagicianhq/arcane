@@ -65,9 +65,9 @@
         "check:changelog, check:version-bump, check:demos and check:stale-claims pass"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "assignedTo": "claude",
-      "testEvidence": ""
+      "testEvidence": "2026-11-05: 1.20.0 with the CHANGELOG entry; check:changelog, check:demos, check:stale-claims (Class A), check:citations, check:report and check:report-template pass; full suite 3072 passed with coverage thresholds met."
     }
   ]
 }

@@ -9,6 +9,29 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-11-05
+
+The `## ⚠ Needs you` block is now `## 🚧 Action required`: a hand-off of the operator's authority, not a plea for help, with two tiers and done items kept in view ([features/action-required/PRD.md](features/action-required/PRD.md)). The presence channel's names follow it ([ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention) decision 14).
+
+### Changed
+
+- **The block every spell ends with when only the operator can act.**
+  - It is headed `## 🚧 Action required` and framed by a horizontal rule above and below, so it stands apart in a terminal as well as on GitHub.
+  - It has two tiers in one block: **Now**, which the work is not correct or complete without, and **When you're at your desk**, which only the operator can do but can wait.
+  - Within a session, a done item stays listed, struck through, until the session closes.
+  - The fragment is renamed `action-required`, and all 18 spells that carry it are regenerated.
+- **The session handoff's `Needs you` field is now `Action required`,** with `Now:` and `At your desk:` lines. `spell-open-session` still reads a handoff written with the old field, as Now items.
+- **Presence channel names (ARC-060 decision 14).**
+  - The record and report field `needs_you` is now `required_actions`.
+  - The event `session.needs_you` is now `session.action_required`.
+  - `spell presence report --needs-you` is now `--required-action`, and the MCP tool argument is `required_actions`.
+  - Only the block's Now tier is reported, as `waiting`.
+  - For the 1.20 series, the service still accepts `needs_you` in a report body, and the CLI still accepts `--needs-you` (hidden from help), so a reporter one release older keeps working. A body that sends both names is refused with `400` naming `needs_you`.
+
+### Notes
+
+- The Show Report's section still reads "Needs you" until `arcane-ui`, where its template is built, ships the new labels and the caution-tape stripes (`TODO.md`, "Show Report: the Action required section, in arcane-ui").
+
 ## [1.19.0] - 2026-11-05
 
 The presence channel's five deferred Should Haves (PRD PC-17 to PC-21, [ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention)'s consequences): a sessions listing, Needs you reports from every spell, MCP resource subscriptions, a `spell doctor` row and live sessions in `spell-open-session`.

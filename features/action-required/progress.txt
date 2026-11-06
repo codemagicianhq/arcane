@@ -64,3 +64,9 @@ persistence in this PR.
   items. The presence PRD's example record uses `required_actions`, with a note after it.
 - Threat-model template rows say "required-action lines". The README names `--required-action`.
 
+## Commits — 2026-11-05
+- Three commits instead of one per story, a recorded deviation from spell-implement. The new
+  fragment (AR-01) already names `--required-action` (AR-05), and the presence-report fragment
+  (AR-05) names the new block (AR-01). Neither half passes its tests without the other, so
+  AR-01, AR-02, AR-03 and AR-05 land as one feature commit, between the plan commit and the
+  release commit.
