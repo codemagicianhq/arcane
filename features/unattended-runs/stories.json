@@ -76,9 +76,14 @@
         "UR-06 acceptance criteria in PRD.md hold"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "assignedTo": "codex",
-      "testEvidence": null
+      "testEvidence": {
+        "local": "3108 passed, 6 existing skips; 93.74% lines; new validator/command 100%",
+        "ci": "PR #447 final head CI 42185384786; main CI 42186023740; release drift 42186023737; Publish 42186053963 all succeeded",
+        "release": "Published 1.21.0 tarball downloaded and installed in /tmp; version, positive grant check, negative scope/action checks and doctor expiry output verified",
+        "review": "features/unattended-runs/review.md R1..R5 resolved; ADO live voting not exercised"
+      }
     }
   ]
 }
