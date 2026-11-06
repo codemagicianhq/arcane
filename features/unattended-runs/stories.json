@@ -1,0 +1,68 @@
+{
+  "feature": "Scoped authority for unattended runs",
+  "branchName": "sessions/2026-11-05-unattended-run-authority",
+  "assignedAgent": "codex",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "UR-01",
+      "title": "Validate and expose scoped expiring run-grant records",
+      "description": "Implement UR-01/UR-03 from PRD.md with refusal cases and distribution checks.",
+      "acceptanceCriteria": [
+        "UR-01/UR-03 acceptance criteria in PRD.md hold"
+      ],
+      "priority": 1,
+      "passes": false,
+      "assignedTo": "codex",
+      "testEvidence": null
+    },
+    {
+      "id": "UR-02",
+      "title": "Honor grants in action-specific commit and completion gates",
+      "description": "Implement UR-02 from PRD.md with refusal cases and distribution checks.",
+      "acceptanceCriteria": [
+        "UR-02 acceptance criteria in PRD.md hold"
+      ],
+      "priority": 2,
+      "passes": false,
+      "assignedTo": "codex",
+      "testEvidence": null
+    },
+    {
+      "id": "UR-03",
+      "title": "Compile the platform and question preflight into orchestrating spells",
+      "description": "Implement UR-04 from PRD.md with refusal cases and distribution checks.",
+      "acceptanceCriteria": [
+        "UR-04 acceptance criteria in PRD.md hold"
+      ],
+      "priority": 3,
+      "passes": false,
+      "assignedTo": "codex",
+      "testEvidence": null
+    },
+    {
+      "id": "UR-04",
+      "title": "Report authority for the whole session at closure",
+      "description": "Implement UR-05 from PRD.md with refusal cases and distribution checks.",
+      "acceptanceCriteria": [
+        "UR-05 acceptance criteria in PRD.md hold"
+      ],
+      "priority": 4,
+      "passes": false,
+      "assignedTo": "codex",
+      "testEvidence": null
+    },
+    {
+      "id": "UR-05",
+      "title": "Validate, review and release the coordinated change",
+      "description": "Implement UR-06 from PRD.md with refusal cases and distribution checks.",
+      "acceptanceCriteria": [
+        "UR-06 acceptance criteria in PRD.md hold"
+      ],
+      "priority": 5,
+      "passes": false,
+      "assignedTo": "codex",
+      "testEvidence": null
+    }
+  ]
+}
