@@ -1,0 +1,99 @@
+{
+  "feature": "Issues 448–454",
+  "branchName": "sessions/2026-11-06-issues-448-454",
+  "assignedAgent": "codex",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "ISSUE-448",
+      "title": "Clarify repository update warning",
+      "description": "Specify plain repository-scoped spell update and clean-tree prerequisite.",
+      "acceptanceCriteria": [
+        "Specify plain repository-scoped spell update and clean-tree prerequisite.",
+        "Issue #448 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 1,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    },
+    {
+      "id": "ISSUE-452",
+      "title": "Protect newer PR handoffs",
+      "description": "Inspect session PR handoffs and surface a newer one without consuming trunk.",
+      "acceptanceCriteria": [
+        "Inspect session PR handoffs and surface a newer one without consuming trunk.",
+        "Issue #452 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 2,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    },
+    {
+      "id": "ISSUE-453",
+      "title": "Report actual PR validation",
+      "description": "Determine PR validation availability and report local checks or absence truthfully.",
+      "acceptanceCriteria": [
+        "Determine PR validation availability and report local checks or absence truthfully.",
+        "Issue #453 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 3,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    },
+    {
+      "id": "ISSUE-454",
+      "title": "Document Azure completion strategy",
+      "description": "Explain merge-commit behavior and policy-permitted REST rebase completion and verification.",
+      "acceptanceCriteria": [
+        "Explain merge-commit behavior and policy-permitted REST rebase completion and verification.",
+        "Issue #454 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 4,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    },
+    {
+      "id": "ISSUE-449",
+      "title": "Gate production on backlog prerequisites",
+      "description": "Search open relevant backlog gates and record any operator waiver verbatim.",
+      "acceptanceCriteria": [
+        "Search open relevant backlog gates and record any operator waiver verbatim.",
+        "Issue #449 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 5,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    },
+    {
+      "id": "ISSUE-450",
+      "title": "Support declared attribution convention",
+      "description": "Honor an explicit repository attribution convention and preserve existing defaults and governance.",
+      "acceptanceCriteria": [
+        "Honor an explicit repository attribution convention and preserve existing defaults and governance.",
+        "Issue #450 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 6,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    },
+    {
+      "id": "ISSUE-451",
+      "title": "Count changed update files",
+      "description": "Report changed and unchanged files accurately in real and dry-run updates, including directories and customized files.",
+      "acceptanceCriteria": [
+        "Report changed and unchanged files accurately in real and dry-run updates, including directories and customized files.",
+        "Issue #451 acceptance criteria are met with regression evidence."
+      ],
+      "priority": 7,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Local full suite: 3,120 passed, 6 skipped; 93.73% lines. Focused evidence and remaining CI gates in assessments/review-2026-11-06.md."
+    }
+  ]
+}
