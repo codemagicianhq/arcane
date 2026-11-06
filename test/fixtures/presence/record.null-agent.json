@@ -23,7 +23,7 @@
   "task": null,
   "message": null,
   "status": "idle",
-  "needs_you": [],
+  "required_actions": [],
   "started_at": "2026-11-12T15:02:11Z",
   "reported_at": "2026-11-12T15:19:40Z",
   "ended_at": null,

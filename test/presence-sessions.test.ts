@@ -76,7 +76,7 @@ describe("session table: one checkout, one session (PC-04, ARC-060 decision 4)",
   it("every record and event validates against the schema", async () => {
     const validate = await compilePresenceSchema();
     const h = harness();
-    h.table.report(report(undefined, { spell: "spell-implement", task: "WT-03", needs_you: [{ action: "Approve", reason: null }], status: "waiting" }));
+    h.table.report(report(undefined, { spell: "spell-implement", task: "WT-03", required_actions: [{ action: "Approve", reason: null }], status: "waiting" }));
     h.advance(STALE_AFTER_MS);
     h.table.sweep();
     h.table.report(report());
@@ -86,15 +86,15 @@ describe("session table: one checkout, one session (PC-04, ARC-060 decision 4)",
 });
 
 describe("session table: a report is a patch (architecture D4)", () => {
-  it("keeps an absent task, clears needs_you when it is not sent, clears message on null", () => {
+  it("keeps an absent task, clears required_actions when it is not sent, clears message on null", () => {
     const h = harness();
     h.table.report(report(undefined, { task: "WT-03", message: "warming up", spell: "spell-implement" }));
-    const waiting = h.table.report(report(undefined, { status: "waiting", needs_you: [{ action: "Approve the migration", reason: "a schema change" }] }));
+    const waiting = h.table.report(report(undefined, { status: "waiting", required_actions: [{ action: "Approve the migration", reason: "a schema change" }] }));
     expect(waiting.record.task).toBe("WT-03");
     expect(waiting.record.spell).toBe("spell-implement");
-    expect(waiting.record.needs_you).toHaveLength(1);
+    expect(waiting.record.required_actions).toHaveLength(1);
     const working = h.table.report(report(undefined, { message: null }));
-    expect(working.record.needs_you).toEqual([]);
+    expect(working.record.required_actions).toEqual([]);
     expect(working.record.message).toBeNull();
     expect(working.record.task).toBe("WT-03");
   });
@@ -112,9 +112,9 @@ describe("session table: a report is a patch (architecture D4)", () => {
     const h = harness();
     const { record } = h.table.report(report(undefined, { task: "original" }));
     record.task = "mutated";
-    record.needs_you.push({ action: "x", reason: null });
+    record.required_actions.push({ action: "x", reason: null });
     expect(h.table.snapshot()[0]?.task).toBe("original");
-    expect(h.table.snapshot()[0]?.needs_you).toEqual([]);
+    expect(h.table.snapshot()[0]?.required_actions).toEqual([]);
   });
 });
 
@@ -122,11 +122,11 @@ describe("session table: exactly one event per report, by precedence (PC-08, arc
   type Setup = (h: ReturnType<typeof harness>) => void;
   const needs = [{ action: "Approve", reason: null }];
   const cases: Array<[string, Setup, Partial<ReportBody>, SessionEventName]> = [
-    ["a first report with needs-you lines is started", () => undefined, { needs_you: needs }, "session.started"],
-    ["resumed beats needs_you after a stale record", (h) => { h.table.report(report()); h.advance(STALE_AFTER_MS); h.table.sweep(); }, { needs_you: needs }, "session.resumed"],
+    ["a first report with needs-you lines is started", () => undefined, { required_actions: needs }, "session.started"],
+    ["resumed beats required_actions after a stale record", (h) => { h.table.report(report()); h.advance(STALE_AFTER_MS); h.table.sweep(); }, { required_actions: needs }, "session.resumed"],
     ["resumed without a change", (h) => { h.table.report(report()); h.advance(STALE_AFTER_MS); h.table.sweep(); }, {}, "session.resumed"],
-    ["needs_you beats updated", (h) => { h.table.report(report()); }, { needs_you: needs, task: "changed" }, "session.needs_you"],
-    ["clearing needs_you is a needs_you change", (h) => { h.table.report(report(undefined, { needs_you: needs })); }, {}, "session.needs_you"],
+    ["required_actions beats updated", (h) => { h.table.report(report()); }, { required_actions: needs, task: "changed" }, "session.action_required"],
+    ["clearing required_actions is a required_actions change", (h) => { h.table.report(report(undefined, { required_actions: needs })); }, {}, "session.action_required"],
     ["an identical report is updated", (h) => { h.table.report(report()); }, {}, "session.updated"],
     ["a status change alone is updated", (h) => { h.table.report(report()); }, { status: "blocked" }, "session.updated"],
   ];

@@ -34,7 +34,7 @@ in the user store opens it. Report with the CLI only; never pass a token on the 
 never write a repository file to report.
 
 - At the start of this spell: `spell presence report --spell <spell-id> --status working --task "<the task in one line>"`.
-- When this spell's output carries a `## ⚠ Needs you` block: `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line; the block itself is unchanged.
+- When this spell's output carries a `## 🚧 Action required` block with open **Now** items: `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open Now line; the block itself is unchanged.
 - At a checkpoint worth showing (a commit made, a story passed): `spell presence report --status working --task "<what is now happening>"`.
 - When the session closes: `spell presence end`.
 
@@ -140,7 +140,7 @@ In `ai-context/system-prompt-context.md`, replace the existing `## Next Session 
 - **Branch:** Output of `git branch --show-current`.
 - **Blockers:** Known unresolved blockers or dependencies. Write "None" if clear. Write any claim about the local environment (a failing hook, a broken tool, a flaky test) with the date it was observed and a one-line, read-only command that re-verifies it (no install, network fetch, write or secret access): `<claim> — observed YYYY-MM-DD — re-verify: <command>`. An undated environment claim reads as a standing fact, and the next session repeats it after it stops being true.
 - **Pending Verification:** One line per non-`succeeded` item from step 1b: `<what> — <state> — <verification action>`. States: `dispatched`, `pending`, `failed`, `unverifiable` (never list a `succeeded` item here — it belongs in `Last completed step` / TODO.md / the journal instead, worded per the gating above). The verification action is required for `dispatched`, `pending`, and `unverifiable` — "N/A" is only valid for `failed`, where the state is already resolved and there is nothing left to check. Write "None" only if step 1b found every dispatched item resolved to `succeeded` or `failed` before this handoff was written.
-- **Needs you:** One line per action only the operator can take that this session leaves open: `<what to do> — <why the agent cannot do it>`. This block is committed before steps 9–10 run, so write it with them in view and name now the actions they will leave open: the pull request step 9c opens needs a human merge, and when `push_policy` (read it now, per step 9c's push-policy check) is `blocked`, or `guarded` in an autonomous run, the push itself waits on the operator. The closure report's `## ⚠ Needs you` block (step 11) lists the same items, plus any that arose after this handoff was committed. Write "None" when nothing needs the operator. Never leave such an action only in `Blockers`, `Notes` or `Carry Forward`; it may be repeated there, but it always appears here.
+- **Action required:** The open items of this session's `## 🚧 Action required` block, on two sub-lines: `Now: <what to do> — <why only the operator can do it>` for what the work is not correct or complete without, and `At your desk: <what to do> — <why only the operator can do it>` for what can wait; separate several items in one tier with `; `, and leave out a tier that has none. Struck-through (done) items are not carried. This block is committed before steps 9–10 run, so write it with them in view and name now the actions they will leave open: the pull request step 9c opens needs a human merge, and when `push_policy` (read it now, per step 9c's push-policy check) is `blocked`, or `guarded` in an autonomous run, the push itself waits on the operator. The closure report's `## 🚧 Action required` block (step 11) lists the same items, plus any that arose after this handoff was committed. Write "None" when nothing is left for the operator. Never leave such an action only in `Blockers`, `Notes` or `Carry Forward`; it may be repeated there, but it always appears here.
 - **Notes:** Anything time-sensitive, fragile, or contextual that would be lost if not stated explicitly. Never the sole carrier of durable content (session handoff durability) — if it names unfinished work, that work must also be registered per step 4b; name its location here. An environment claim here follows the `Blockers` rule: date it and give its re-verify command.
 ```
 
@@ -196,7 +196,7 @@ Rules:
    - Timeout, cancellation, fallback, or delegated response is not approval. Print the visible authorization downgrade and halt without committing.
 
    c. **Push and open a PR through `spell-commit-work` step 9, including its separate merge gate:**
-   - Run the push-policy check before the push. `spell-commit-work` step 9a runs the same check; run it once per push, not twice. It also governs step 10's remote branch deletions. If it stops the push, end the session with the commits local and report them in the PR Readiness section as not pushed, and in the step 11 report's `## ⚠ Needs you` block.
+   - Run the push-policy check before the push. `spell-commit-work` step 9a runs the same check; run it once per push, not twice. It also governs step 10's remote branch deletions. If it stops the push, end the session with the commits local and report them in the PR Readiness section as not pushed, and in the step 11 report's `## 🚧 Action required` block.
 
      <!-- fragment:push-policy-check:start -->
      **Push-policy check (ARC-049) — before any push.** Read `push_policy` from the repository's `.arcane.json` at the repository root (a self-hosted source repository with no root manifest keeps it in `src/assets/.arcane.json` when that file declares `selfHosted: true`). An absent file or an absent field means `open`. The check covers every push this spell makes: a branch push, a `--force-with-lease` push, and a remote branch deletion (`git push <remote> --delete <branch>`).
@@ -217,13 +217,13 @@ Rules:
    - Skip this entire step for local-only and read-only sessions.
    - Resolve `<remote>` and `<trunk>` from observed Git/provider state: use the usable authenticated remote selected in step 9 and the merged PR's target branch (falling back to that remote's default branch). Never assume `origin` or `main`.
    - Verify through the detected provider that the PR is merged before changing branches.
-   - Then confirm each issue the PR closed is closed. That is every issue its body names after a closing keyword, every issue named after a closing keyword in its commit messages (`git log <base>..<merge-sha> --format=%B`), and every issue GitHub links to it (`gh pr view <number> --json closingIssuesReferences`). Check each one's state with `gh issue view <number> --json state,stateReason`. If GraphQL is unavailable, use REST: `gh api repos/<owner>/<repo>/issues/<number> --jq '.state,.state_reason'` for the state. Then treat as linked every issue that follows a closing keyword in the PR body (ignore any negation) and any issue the PR references whose `closed` event (`gh api repos/<owner>/<repo>/issues/<number>/events`) falls within a minute of the PR's `merged_at`. A merge closes every issue that directly follows a closing keyword, even inside a negation: "does not close #N" closes #N. List any issue still open under the closure report's `## ⚠ Needs you`, or, once the diff check below passes, close it with a comment naming the merged PR.
+   - Then confirm each issue the PR closed is closed. That is every issue its body names after a closing keyword, every issue named after a closing keyword in its commit messages (`git log <base>..<merge-sha> --format=%B`), and every issue GitHub links to it (`gh pr view <number> --json closingIssuesReferences`). Check each one's state with `gh issue view <number> --json state,stateReason`. If GraphQL is unavailable, use REST: `gh api repos/<owner>/<repo>/issues/<number> --jq '.state,.state_reason'` for the state. Then treat as linked every issue that follows a closing keyword in the PR body (ignore any negation) and any issue the PR references whose `closed` event (`gh api repos/<owner>/<repo>/issues/<number>/events`) falls within a minute of the PR's `merged_at`. A merge closes every issue that directly follows a closing keyword, even inside a negation: "does not close #N" closes #N. List any issue still open under the closure report's `## 🚧 Action required`, or, once the diff check below passes, close it with a comment naming the merged PR.
    - **A closed issue is not evidence its change shipped.** For each issue above, confirm the merged diff contains the change that issue asked for:
      - Read the issue (`gh issue view <number> --json title,body`, or REST), then the diff (`gh pr diff <number>`).
      - Name the file that carries the requested change. If you cannot name one, treat the change as missing.
      - A diff that touches only tracking files (`FEEDBACK.md`, the journal, the handoff, `CHANGELOG.md`, `.arcane/delegations.json`) never counts as the change.
      - Reopen the issue only when all of these hold: its `closed` event falls within a minute of this PR's merge; its state reason is `completed`; and the change is not already on `<trunk>` from an earlier PR (`git log <trunk> --grep '#<number>'`). When they hold, reopen the issue with a comment naming the merged PR and listing what is missing, or which part, if only part shipped.
-     - When you cannot reopen it (permissions), list it under the closure report's `## ⚠ Needs you` instead.
+     - When you cannot reopen it (permissions), list it under the closure report's `## 🚧 Action required` instead.
      - Never report such an issue as done.
    - **Determine the isolation primitive first (ARC-028 R8).** Run both of these and compare:
      ```bash
@@ -254,23 +254,35 @@ Rules:
 
 Output format:
 
-<!-- fragment:needs-you:start -->
-**Needs you — required operator actions.** When this run leaves an action that only the operator can take, and the work is not correct or complete until it is taken, report it in one block at the very top of the final report, before every other section and before any optional next step:
+<!-- fragment:action-required:start -->
+**Action required — what only the operator can do.** When this run leaves an action that only the operator can take, report it in one block at the very top of the final report, before every other section and before any optional next step. The block exists because these are the operator's decisions to make, not because the agent is stuck: write it as a hand-off of authority, never as a plea for help. Frame it with a horizontal rule above and below, so it stands apart in a terminal as well as on a rendered page:
 
 ```markdown
-## ⚠ Needs you
+---
 
-- <exactly what to do: the command, the link, or the question> — <why the agent cannot do it itself>
+## 🚧 Action required
+
+**Now**
+
+- <exactly what to do: the command, the link, or the question> — <why only the operator can do it>
+
+**When you're at your desk**
+
+- <exactly what to do> — <why only the operator can do it>
+
+---
 ```
 
-- **What belongs in it:** an action the work needs that only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
-- **One line per action.** Say exactly what to do, then, after the dash, why the agent cannot do it. Write the command, link or question out in full; never point elsewhere with "see above".
+- **What belongs in it:** an action only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
+- **Two tiers, one block.** **Now** holds what the work is not correct or complete without. **When you're at your desk** holds what only the operator can do but that can wait: a permission rule, a leftover remote branch, a credential to set up. Leave out a tier that has nothing in it; never split the tiers into two blocks.
+- **One line per action.** Say exactly what to do, then, after the dash, why only the operator can do it. Write the command, link or question out in full; never point elsewhere with "see above".
 - **Never only among optional steps.** An action required for correctness is never listed only under next steps, suggestions, `Carry Forward` or `What's Next?`. It may be repeated there, but it always appears in this block.
-- **Omit it when empty.** When nothing needs the operator, leave the block out entirely: no heading and no "None" line.
+- **Done items stay, struck through.** Within one session, once an item has been listed, keep it in every later report of the block; when the operator has done it, strike it through (`~~<the line>~~`) rather than dropping it, so progress shows and nothing disappears silently. The session's close carries only the open items forward.
+- **Omit it when empty.** When nothing is left for the operator and nothing was struck through this session, leave the block out entirely: no heading, no rules and no "None" line.
 - **Every final report.** The block belongs in whatever report ends the run, including a report written when the spell stops early.
-- **Report it to the presence channel.** When the block is not empty, also run `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line of the block; with no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
+- **Report the Now tier to the presence channel.** When the **Now** tier has open items, also run `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open line of that tier; the other tier is not blocking and is not reported. With no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
 - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
-<!-- fragment:needs-you:end -->
+<!-- fragment:action-required:end -->
 
 ## Session Closure
 

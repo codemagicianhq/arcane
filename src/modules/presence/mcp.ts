@@ -65,7 +65,7 @@ export const PRESENCE_TOOLS = [
         task: { ...LINE, description: "What the session is doing, in one line." },
         spell: { ...LINE, description: "The spell running, e.g. spell-implement." },
         message: { ...LINE, description: "A free one-line note; an empty string clears it." },
-        needs_you: { type: "array", maxItems: 20, items: { type: "string" }, description: "Lines of a Needs you block, '<action> — <reason>'." },
+        required_actions: { type: "array", maxItems: 20, items: { type: "string" }, description: "Lines of the Now tier of an Action required block, '<action> — <reason>'." },
         agent: { type: "string", description: "The roster agent (a slug or an alias); default: the orchestrator." },
         harness: { type: "string", enum: [...HARNESSES] },
         cwd: { type: "string", description: "The checkout to report for; default: the server's working directory." },
@@ -147,16 +147,16 @@ export function serveMcp(options: McpOptions): Promise<void> {
   const report = async (args: Record<string, unknown>): Promise<Record<string, unknown>> => {
     const status = stringArg(args, "status");
     if (status === undefined) return text("status is required: one of working, waiting, blocked, idle.", true);
-    const needs = args["needs_you"];
+    const needs = args["required_actions"];
     if (needs !== undefined && (!Array.isArray(needs) || needs.some((n) => typeof n !== "string"))) {
-      return text("needs_you must be a list of strings.", true);
+      return text("required_actions must be a list of strings.", true);
     }
     const flags: ReportFlags = { status };
     for (const key of ["task", "spell", "message", "agent", "harness"] as const) {
       const v = stringArg(args, key);
       if (v !== undefined) flags[key] = v;
     }
-    if (Array.isArray(needs)) flags.needsYou = needs as string[];
+    if (Array.isArray(needs)) flags.requiredActions = needs as string[];
     if (resolveEndpoint(deps) === null) return text(NOT_CONFIGURED_TEXT);
     const where = stringArg(args, "cwd") ?? cwd;
     const outcome = await sendReport(where, flags, deps);

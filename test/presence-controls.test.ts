@@ -169,7 +169,7 @@ describe.skipIf(!BIN)("controls 1, 4, 6 and 12 — against the built CLI", () =>
 
     for (const cwd of [repo, tree]) {
       await runSpell(BIN!, ["presence", "report", "--status", "working", "--spell", "spell-implement", "--task", `${marker} task`], { cwd, home });
-      await runSpell(BIN!, ["presence", "report", "--status", "waiting", "--needs-you", `${marker} action — ${marker} reason`], { cwd, home });
+      await runSpell(BIN!, ["presence", "report", "--status", "waiting", "--required-action", `${marker} action — ${marker} reason`], { cwd, home });
       await runSpell(BIN!, ["presence", "report", "--status", "working", "--message", `${marker} message`], { cwd, home });
     }
     const during = { home: list(home) };
@@ -191,7 +191,7 @@ describe.skipIf(!BIN)("controls 1, 4, 6 and 12 — against the built CLI", () =>
     expect(output).not.toContain(repo);
     expect(output).not.toContain(tree);
     expect(output).toMatch(/presence session\.started arcane:session:[0-9a-f-]{36} working/);
-    expect(output).toContain("session.needs_you");
+    expect(output).toContain("session.action_required");
     expect(output).toContain("session.ended");
   }, TIMING_TEST_TIMEOUT);
 });

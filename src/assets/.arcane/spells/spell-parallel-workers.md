@@ -129,7 +129,7 @@ The integration checklist, one slice at a time, in merge order:
 7. **Review:** `spell-review`, then `spell-security-review`, on the slice's diff against the stack tip. Docs updates belong here too.
 8. **Fix every finding.** Every review and security finding is fixed, or deferred only with the operator's say-so recorded; none is waved through because a worker "already checked". Commit the fixes, then re-run the checks and the reviews.
 9. **Open the pull request** with `spell-create-pull-request`, head branch the prep branch, base as the plan's definition of the stack says. The body is yours: what the slice does, the checks you ran, the findings and how each was fixed. Include nothing from a worker's note that you did not verify.
-10. **The operator approves and merges.** Report the pull request in the `Needs you` block. You never merge.
+10. **The operator approves and merges.** Report the pull request in the `Action required` block. You never merge.
 11. **After the merge:** mark the slice `merged`; remove the worker's worktree and delete the merged prep branch using the content-verified deletion procedure in `git-conventions.md`. Slices still waiting are rebased at their own turn (item 4), not now.
 
 ### Step 7 — Close out
@@ -250,7 +250,7 @@ The worker writes one per slice in the shared notes folder, named `YYYY-MM-DD-<t
 | **Two workers collide** | Found at Step 5 (overlapping changed files) or at rebase. The earlier slice in the merge order keeps the file; the later slice's overlapping hunk is redone on top of it, by the orchestrator when small, by a re-briefed worker when not. Record it as a plan error and serialize those two slices from now on. A collision on an identifier both picked is the same failure: counters belong to the orchestrator, so give each slice its own range. |
 | **A prep branch goes stale** | The stack tip moved while the worker worked. Rebase at Step 6; re-run every check on the rebased tree. If the new tip changed files in the slice's footprint, that is a plan violation: if conflicts are small and inside the footprint, resolve them; otherwise start a new worker from the new tip with the old note attached. Never merge a result that was tested before the rebase. |
 | **A slice's gates differ from the plan** | The worker records the difference under "Gate differences" and does not alter a gate to make it pass. The orchestrator runs the gates that actually apply at integration, updates the plan for the slices still waiting, and treats a gate that cannot pass without a shared-file change as the shared-file case. |
-| **A worker went out of scope** (edited a shared file, committed to a stack branch, pushed, opened a pull request) | Do not integrate the out-of-scope parts: revert them on the prep branch, or discard the branch and restart the slice (discarding goes through the content-verified deletion procedure in `git-conventions.md`, after the operator confirms). Anything already outward-facing (a pushed shared branch, an open pull request) goes in the `Needs you` block for the operator to resolve. Record it so the next brief says the rule louder. |
+| **A worker went out of scope** (edited a shared file, committed to a stack branch, pushed, opened a pull request) | Do not integrate the out-of-scope parts: revert them on the prep branch, or discard the branch and restart the slice (discarding goes through the content-verified deletion procedure in `git-conventions.md`, after the operator confirms). Anything already outward-facing (a pushed shared branch, an open pull request) goes in the `Action required` block for the operator to resolve. Record it so the next brief says the rule louder. |
 | **No note, or the worker ended early** | Inspect the worktree read-only. Without a note the slice is unverified. (On a re-run, a slice marked `launched` with no note gets this check before anything is restarted, so a second worker never collides with the first one's branch.) Either write the note yourself from the diff, marked "written by the orchestrator from the diff", and verify the branch fully at Step 6, or restart the slice. Never integrate on a worker's chat summary alone. |
 | **The orchestrator's checks fail where the worker's passed** | The orchestrator's result governs. Fix it at integration, or send the slice back with the failing output. |
 | **The plan changes mid-run** | Message the affected workers with the change; a worker whose slice was dropped stops and reports. Update the ledger. |
@@ -272,23 +272,35 @@ The orchestrator keeps one ledger and updates it at every state change.
 
 Every report the orchestrator ends a turn with leads with the ledger, then what changed since the last report, then any open failure case with the decision it needs.
 
-<!-- fragment:needs-you:start -->
-**Needs you — required operator actions.** When this run leaves an action that only the operator can take, and the work is not correct or complete until it is taken, report it in one block at the very top of the final report, before every other section and before any optional next step:
+<!-- fragment:action-required:start -->
+**Action required — what only the operator can do.** When this run leaves an action that only the operator can take, report it in one block at the very top of the final report, before every other section and before any optional next step. The block exists because these are the operator's decisions to make, not because the agent is stuck: write it as a hand-off of authority, never as a plea for help. Frame it with a horizontal rule above and below, so it stands apart in a terminal as well as on a rendered page:
 
 ```markdown
-## ⚠ Needs you
+---
 
-- <exactly what to do: the command, the link, or the question> — <why the agent cannot do it itself>
+## 🚧 Action required
+
+**Now**
+
+- <exactly what to do: the command, the link, or the question> — <why only the operator can do it>
+
+**When you're at your desk**
+
+- <exactly what to do> — <why only the operator can do it>
+
+---
 ```
 
-- **What belongs in it:** an action the work needs that only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
-- **One line per action.** Say exactly what to do, then, after the dash, why the agent cannot do it. Write the command, link or question out in full; never point elsewhere with "see above".
+- **What belongs in it:** an action only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
+- **Two tiers, one block.** **Now** holds what the work is not correct or complete without. **When you're at your desk** holds what only the operator can do but that can wait: a permission rule, a leftover remote branch, a credential to set up. Leave out a tier that has nothing in it; never split the tiers into two blocks.
+- **One line per action.** Say exactly what to do, then, after the dash, why only the operator can do it. Write the command, link or question out in full; never point elsewhere with "see above".
 - **Never only among optional steps.** An action required for correctness is never listed only under next steps, suggestions, `Carry Forward` or `What's Next?`. It may be repeated there, but it always appears in this block.
-- **Omit it when empty.** When nothing needs the operator, leave the block out entirely: no heading and no "None" line.
+- **Done items stay, struck through.** Within one session, once an item has been listed, keep it in every later report of the block; when the operator has done it, strike it through (`~~<the line>~~`) rather than dropping it, so progress shows and nothing disappears silently. The session's close carries only the open items forward.
+- **Omit it when empty.** When nothing is left for the operator and nothing was struck through this session, leave the block out entirely: no heading, no rules and no "None" line.
 - **Every final report.** The block belongs in whatever report ends the run, including a report written when the spell stops early.
-- **Report it to the presence channel.** When the block is not empty, also run `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line of the block; with no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
+- **Report the Now tier to the presence channel.** When the **Now** tier has open items, also run `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open line of that tier; the other tier is not blocking and is not reported. With no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
 - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
-<!-- fragment:needs-you:end -->
+<!-- fragment:action-required:end -->
 
 ## Rules
 

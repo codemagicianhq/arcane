@@ -542,7 +542,7 @@ tracking:
   "task": "WT-03: the telemetry ingest endpoint",
   "message": null,
   "status": "waiting",
-  "needs_you": [
+  "required_actions": [
     { "action": "Approve the migration 0007_well_readings before the story commits", "reason": "a schema change needs a human" }
   ],
   "started_at": "2026-11-12T15:02:11Z",
@@ -551,6 +551,10 @@ tracking:
   "stale": false
 }
 ```
+
+> Since 1.20 (ARC-060 decision 14) the record's `needs_you` is named `required_actions` and the
+> event `session.needs_you` is `session.action_required`. The requirement text above keeps the names
+> it was accepted with; this example uses the current ones.
 
 ## Example: the reporting fragment (PC-11)
 
@@ -563,7 +567,7 @@ in the user store opens it. Report with the CLI only; never pass a token on the 
 never write a repository file to report.
 
 - At the start of this spell: `spell presence report --spell <spell-id> --status working --task "<the task in one line>"`.
-- When this spell's output carries a `## ⚠ Needs you` block: `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line; the block itself is unchanged.
+- When this spell's output carries a `## 🚧 Action required` block with open **Now** items: `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open Now line; the block itself is unchanged.
 - At a checkpoint worth showing (a commit made, a story passed): `spell presence report --status working --task "<what is now happening>"`.
 - When the session closes: `spell presence end`.
 

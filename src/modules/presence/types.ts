@@ -26,7 +26,7 @@ export const LOOPBACK_HOST = "127.0.0.1";
 // ── Limits (ARC-060 decision 3; architecture D11) ─────────────────────────────
 export const MAX_BODY_BYTES = 65_536;
 export const MAX_LINE_CHARS = 256;
-export const MAX_NEEDS_YOU = 20;
+export const MAX_REQUIRED_ACTIONS = 20;
 export const MAX_SUBSCRIBERS = 32;
 export const MAX_SUBSCRIBER_BUFFER_BYTES = 1_048_576;
 export const MAX_CONNECTIONS = 128;
@@ -64,7 +64,7 @@ export type AliasContext = (typeof ALIAS_CONTEXTS)[number];
 export const SESSION_EVENTS = [
   "session.started",
   "session.updated",
-  "session.needs_you",
+  "session.action_required",
   "session.stale",
   "session.resumed",
   "session.ended",
@@ -106,7 +106,7 @@ export function nullAgentBlock(): AgentBlock {
   return { ref: null, slug: null, name: null, origin: null, definition_revision: null, aliases: [] };
 }
 
-export interface NeedsYou {
+export interface RequiredAction {
   action: string;
   reason: string | null;
 }
@@ -136,7 +136,7 @@ export interface SessionRecord {
   task: string | null;
   message: string | null;
   status: Status;
-  needs_you: NeedsYou[];
+  required_actions: RequiredAction[];
   started_at: string;
   reported_at: string;
   ended_at: string | null;
@@ -146,7 +146,7 @@ export interface SessionRecord {
 /**
  * `POST /v0/sessions/report` (architecture D4): a patch on the checkout's
  * record. An absent `spell`, `task` or `message` keeps the stored value and
- * `null` clears it; `needs_you` replaces the stored list (absent means `[]`).
+ * `null` clears it; `required_actions` replaces the stored list (absent means `[]`).
  */
 export interface ReportBody {
   status: ReportStatus;
@@ -157,7 +157,7 @@ export interface ReportBody {
   spell?: string | null;
   task?: string | null;
   message?: string | null;
-  needs_you?: NeedsYou[];
+  required_actions?: RequiredAction[];
 }
 
 export interface EndBody {

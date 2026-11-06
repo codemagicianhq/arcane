@@ -61,7 +61,7 @@ describe("presence schema: the TypeScript twin agrees (architecture D3)", () => 
     const schema = await loadPresenceSchema();
     const record: Record<keyof SessionRecord, true> = {
       session: true, agent: true, harness: true, repository: true, checkout: true, spell: true, task: true,
-      message: true, status: true, needs_you: true, started_at: true, reported_at: true, ended_at: true, stale: true,
+      message: true, status: true, required_actions: true, started_at: true, reported_at: true, ended_at: true, stale: true,
     };
     expect(schema.required).toEqual(Object.keys(record));
     const props = schema.properties as Record<string, { enum?: unknown[] }>;
@@ -135,8 +135,8 @@ describe("presence schema: refusals (PC-03, PC-04)", () => {
     expect(validate("report", { ...report, status: "thinking" }).length).toBeGreaterThan(0);
     expect(validate("report", { ...report, status: "done" }).length).toBeGreaterThan(0);
     const line = { action: "Approve the plan", reason: null };
-    expect(validate("report", { ...report, needs_you: Array.from({ length: 20 }, () => line) })).toEqual([]);
-    expect(validate("report", { ...report, needs_you: Array.from({ length: 21 }, () => line) }).join("\n")).toContain("must NOT have more than 20 items");
+    expect(validate("report", { ...report, required_actions: Array.from({ length: 20 }, () => line) })).toEqual([]);
+    expect(validate("report", { ...report, required_actions: Array.from({ length: 21 }, () => line) }).join("\n")).toContain("must NOT have more than 20 items");
   });
 
   it("refuses a session reference of another type and a 257-character task", async () => {

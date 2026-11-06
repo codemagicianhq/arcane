@@ -3,7 +3,7 @@
  *
  * One function with three parameters: an event name, a session reference and
  * a status. There is no free-text parameter, so a task, a message, a
- * needs-you line, a path or a token cannot reach a log line through it. Each
+ * required-action line, a path or a token cannot reach a log line through it. Each
  * value is checked against its own shape and replaced by "-" when it does not
  * match, so even a wrong caller cannot widen what is written.
  */

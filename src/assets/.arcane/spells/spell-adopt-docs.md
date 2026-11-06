@@ -135,23 +135,35 @@ Hard rules for this phase:
 
 ## Phase 4 — Report
 
-<!-- fragment:needs-you:start -->
-**Needs you — required operator actions.** When this run leaves an action that only the operator can take, and the work is not correct or complete until it is taken, report it in one block at the very top of the final report, before every other section and before any optional next step:
+<!-- fragment:action-required:start -->
+**Action required — what only the operator can do.** When this run leaves an action that only the operator can take, report it in one block at the very top of the final report, before every other section and before any optional next step. The block exists because these are the operator's decisions to make, not because the agent is stuck: write it as a hand-off of authority, never as a plea for help. Frame it with a horizontal rule above and below, so it stands apart in a terminal as well as on a rendered page:
 
 ```markdown
-## ⚠ Needs you
+---
 
-- <exactly what to do: the command, the link, or the question> — <why the agent cannot do it itself>
+## 🚧 Action required
+
+**Now**
+
+- <exactly what to do: the command, the link, or the question> — <why only the operator can do it>
+
+**When you're at your desk**
+
+- <exactly what to do> — <why only the operator can do it>
+
+---
 ```
 
-- **What belongs in it:** an action the work needs that only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
-- **One line per action.** Say exactly what to do, then, after the dash, why the agent cannot do it. Write the command, link or question out in full; never point elsewhere with "see above".
+- **What belongs in it:** an action only the operator can take — approving or merging a pull request, accepting a decision record, answering a question the work is waiting on, confirming a `guarded` push, running an interactive command such as `spell unblock-push`, or a step on an external platform the agent cannot reach. An optional suggestion, a next spell to run, or anything the agent could do itself is not a required action and stays out of the block.
+- **Two tiers, one block.** **Now** holds what the work is not correct or complete without. **When you're at your desk** holds what only the operator can do but that can wait: a permission rule, a leftover remote branch, a credential to set up. Leave out a tier that has nothing in it; never split the tiers into two blocks.
+- **One line per action.** Say exactly what to do, then, after the dash, why only the operator can do it. Write the command, link or question out in full; never point elsewhere with "see above".
 - **Never only among optional steps.** An action required for correctness is never listed only under next steps, suggestions, `Carry Forward` or `What's Next?`. It may be repeated there, but it always appears in this block.
-- **Omit it when empty.** When nothing needs the operator, leave the block out entirely: no heading and no "None" line.
+- **Done items stay, struck through.** Within one session, once an item has been listed, keep it in every later report of the block; when the operator has done it, strike it through (`~~<the line>~~`) rather than dropping it, so progress shows and nothing disappears silently. The session's close carries only the open items forward.
+- **Omit it when empty.** When nothing is left for the operator and nothing was struck through this session, leave the block out entirely: no heading, no rules and no "None" line.
 - **Every final report.** The block belongs in whatever report ends the run, including a report written when the spell stops early.
-- **Report it to the presence channel.** When the block is not empty, also run `spell presence report --status waiting --needs-you "<line 1>" --needs-you "<line 2>"`, one flag per line of the block; with no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
+- **Report the Now tier to the presence channel.** When the **Now** tier has open items, also run `spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"`, one flag per open line of that tier; the other tier is not blocking and is not reported. With no presence channel configured on this machine the command prints nothing and exits 0, so the block itself and the rest of the run are unchanged.
 - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
-<!-- fragment:needs-you:end -->
+<!-- fragment:action-required:end -->
 
 Output:
 

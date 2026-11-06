@@ -347,7 +347,7 @@ export function referencesFragment(content: string, name: string): boolean {
  * True when `content` HOSTS the named fragment: its start marker stands on a
  * line of its own (leading whitespace allowed), the way every consuming span
  * is authored. A file that merely mentions a marker in prose -- the authoring
- * standard quotes `<!-- fragment:needs-you:start -->` inside backticks to
+ * standard quotes `<!-- fragment:action-required:start -->` inside backticks to
  * explain the mechanism -- references the fragment without hosting it, and
  * must not be expanded. The parity script asks this, not `referencesFragment`,
  * now that every Markdown asset is a candidate consumer, not only spells.

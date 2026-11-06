@@ -1,0 +1,73 @@
+{
+  "feature": "action-required",
+  "branchName": "sessions/2026-11-05-action-required",
+  "assignedAgent": "claude",
+  "trackingMode": "internal",
+  "externalProvider": null,
+  "stories": [
+    {
+      "id": "AR-01",
+      "title": "The action-required fragment: heading, frame, two tiers, persistence",
+      "description": "AR-01. Rename src/assets/.arcane/spells/_fragments/needs-you.md to action-required.md and every host's markers from needs-you to action-required. The block is framed by a horizontal rule above and below and headed '## 🚧 Action required'; two tiers in one block ('**Now**' and '**When you're at your desk**'); a done item stays listed, struck through, until the session closes; only Now items are reported to the presence channel with spell presence report --status waiting --required-action. Keep the other rules unchanged. Run fix:self-host-parity. Replace test/up04-b-needs-you.test.ts's fragment assertions.",
+      "acceptanceCriteria": [
+        "Every former needs-you host carries the action-required markers; check:self-host-parity and check:spell-catalog pass",
+        "The fragment test asserts the heading, the two rules, both tiers, the struck-through persistence rule and the Now-only presence line"
+      ],
+      "priority": 1,
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "2026-11-05: test/action-required.test.ts 109/109 (the fragment's heading, rules above and below, two tiers, struck-through persistence and Now-only presence line; all 18 hosts carry the action-required span verbatim, in source and root copy); check:self-host-parity 372/372; check:spell-catalog passes."
+    },
+    {
+      "id": "AR-02",
+      "title": "The authoring standard describes the Action required block",
+      "description": "AR-02. Rewrite the 'Required operator actions' section of src/assets/.arcane/governance/spell-authoring-standards.md for the new heading, frame, tiers, persistence and the action-required fragment; update its test.",
+      "acceptanceCriteria": [
+        "The standard's test passes against the new section"
+      ],
+      "priority": 2,
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "2026-11-05: the standard's section 'Required operator actions: the Action required block' passes its block in test/action-required.test.ts."
+    },
+    {
+      "id": "AR-03",
+      "title": "The handoff field and every spell sentence that names the block",
+      "description": "AR-03. close-session's handoff template and the ai-context scaffold carry '- **Action required:**' with 'Now:' and 'At your desk:' sub-lines (None when empty); open-session surfaces it first and reads a legacy '- **Needs you:**' field as Now items; rename the block in every other spell sentence (close-session, create-pull-request, sync-pull-request, parallel-workers, app-store-accounts). Update the handoff tests and add one for the legacy reading.",
+      "acceptanceCriteria": [
+        "The handoff tests pass under the new field",
+        "A test asserts open-session reads a legacy Needs you field as Now items"
+      ],
+      "priority": 3,
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "2026-11-05: test/up04-b-handoff.test.ts passes under the Action required field, with a new test for open-session's legacy Needs you reading; close-session-diff-check-339 and iw-2026-10 pass with the renamed block."
+    },
+    {
+      "id": "AR-05",
+      "title": "Presence wire names: required_actions, --required-action, session.action_required",
+      "description": "AR-05, ARC-060 decision 14. Rename in the schema ($defs needsYou → requiredAction, property required_actions), types (MAX_REQUIRED_ACTIONS), validate (accept legacy needs_you for the 1.20 series, 400 naming needs_you when both are sent), sessions (event session.action_required), reporter and CLI (--required-action, hidden --needs-you alias), MCP tool argument (required_actions; an MCP client reads the tool schema from tools/list, so no legacy name is kept there), the sessions table line ('action required:'), presence-report fragment, threat-model row and README. Update fixtures and the presence suites; add tests for the legacy body, both names, and the hidden flag.",
+      "acceptanceCriteria": [
+        "The presence suites pass under the new names",
+        "A legacy needs_you body is accepted; a body with both names is 400 naming needs_you; --needs-you still works",
+        "Every presence fixture validates against the schema"
+      ],
+      "priority": 5,
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "2026-11-05: the presence suites pass under required_actions / session.action_required / --required-action. presence-validate covers the legacy needs_you body (accepted, its own refusals named), both names (400 naming needs_you) and the schema's deprecated property. presence-sessions-command covers --required-action plus the hidden --needs-you against the built CLI, absent from --help. Every presence fixture validates."
+    },
+    {
+      "id": "AR-06",
+      "title": "Release 1.20.0",
+      "description": "AR-06. CHANGELOG entry, minor bump, tick TODO.md's 'Revisit the ## ⚠ Needs you block' item with evidence, and set the PRD's implementation_status to shipped.",
+      "acceptanceCriteria": [
+        "check:changelog, check:version-bump, check:demos and check:stale-claims pass"
+      ],
+      "priority": 6,
+      "passes": true,
+      "assignedTo": "claude",
+      "testEvidence": "2026-11-05: 1.20.0 with the CHANGELOG entry; check:changelog, check:demos, check:stale-claims (Class A), check:citations, check:report and check:report-template pass; full suite 3072 passed with coverage thresholds met."
+    }
+  ]
+}

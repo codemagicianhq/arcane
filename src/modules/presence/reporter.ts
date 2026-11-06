@@ -20,14 +20,14 @@ import { remoteProvider, stripUserinfo } from "../state/git.js";
 import { resolveSessionAgent } from "./agent.js";
 import { resolveEndpoint, send, type ClientOptions, type ClientResult } from "./client.js";
 import { detectHarness as defaultDetectHarness } from "./harness.js";
-import { nullAgentBlock, type AgentBlock, type CheckoutInfo, type Harness, type NeedsYou, type ReportBody, type RepositoryInfo, type SessionRecord } from "./types.js";
+import { nullAgentBlock, type AgentBlock, type CheckoutInfo, type Harness, type RequiredAction, type ReportBody, type RepositoryInfo, type SessionRecord } from "./types.js";
 
 export interface ReportFlags {
   status?: string;
   task?: string;
   spell?: string;
   message?: string;
-  needsYou?: string[];
+  requiredActions?: string[];
   agent?: string;
   harness?: string;
 }
@@ -46,13 +46,13 @@ export interface Located {
   checkout: CheckoutInfo;
 }
 
-/** The separator a `## ⚠ Needs you` line uses between the action and the reason. */
-const NEEDS_YOU_SEPARATOR = " — ";
+/** The separator a `## 🚧 Action required` line uses between the action and the reason. */
+const REQUIRED_ACTION_SEPARATOR = " — ";
 
-export function parseNeedsYou(line: string): NeedsYou {
-  const at = line.indexOf(NEEDS_YOU_SEPARATOR);
+export function parseRequiredAction(line: string): RequiredAction {
+  const at = line.indexOf(REQUIRED_ACTION_SEPARATOR);
   if (at < 0) return { action: line, reason: null };
-  return { action: line.slice(0, at), reason: line.slice(at + NEEDS_YOU_SEPARATOR.length) };
+  return { action: line.slice(0, at), reason: line.slice(at + REQUIRED_ACTION_SEPARATOR.length) };
 }
 
 async function quiet<T>(fn: () => Promise<T>): Promise<T | null> {
@@ -117,7 +117,7 @@ export async function sendReport(cwd: string, flags: ReportFlags, deps: Reporter
     agent,
     repository: located.repository,
     checkout: located.checkout,
-    needs_you: (flags.needsYou ?? []).map(parseNeedsYou),
+    required_actions: (flags.requiredActions ?? []).map(parseRequiredAction),
   };
   if (flags.spell !== undefined) body["spell"] = flags.spell;
   if (flags.task !== undefined) body["task"] = flags.task;

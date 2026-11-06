@@ -9,10 +9,10 @@
  *   path; this module never resolves one, because the service reads no file.
  * - A report is a patch (D4): `status`, `harness`, `agent`, `repository` and
  *   `checkout` are replaced; `spell`, `task` and `message` are replaced when
- *   present (null clears) and kept when absent; `needs_you` is replaced on
+ *   present (null clears) and kept when absent; `required_actions` is replaced on
  *   every report (absent means []).
  * - Exactly one event per accepted report (D5), by the precedence
- *   started > resumed > needs_you > updated.
+ *   started > resumed > action_required > updated.
  * - `end` sets `done`, emits `session.ended` and drops the record (D6);
  *   `sweep` marks `stale` at 90 s and expires at 24 h, both from `reported_at`.
  */
@@ -20,7 +20,7 @@
 import {
   EXPIRE_AFTER_MS,
   STALE_AFTER_MS,
-  type NeedsYou,
+  type RequiredAction,
   type ReportBody,
   type SessionEvent,
   type SessionEventName,
@@ -66,7 +66,7 @@ function copy(record: SessionRecord): SessionRecord {
   return structuredClone(record);
 }
 
-function sameNeedsYou(a: NeedsYou[], b: NeedsYou[]): boolean {
+function sameRequiredActions(a: RequiredAction[], b: RequiredAction[]): boolean {
   if (a.length !== b.length) return false;
   return a.every((item, i) => item.action === b[i]?.action && item.reason === b[i]?.reason);
 }
@@ -95,7 +95,7 @@ export function createSessionTable(options: SessionTableOptions): SessionTable {
       const ms = now();
       const at = new Date(ms).toISOString();
       const key = body.checkout.path;
-      const needsYou = (body.needs_you ?? []).map((n) => ({ action: n.action, reason: n.reason }));
+      const requiredActions = (body.required_actions ?? []).map((n) => ({ action: n.action, reason: n.reason }));
       const existing = entries.get(key);
 
       if (existing === undefined) {
@@ -109,7 +109,7 @@ export function createSessionTable(options: SessionTableOptions): SessionTable {
           task: body.task ?? null,
           message: body.message ?? null,
           status: body.status,
-          needs_you: needsYou,
+          required_actions: requiredActions,
           started_at: at,
           reported_at: at,
           ended_at: null,
@@ -122,7 +122,7 @@ export function createSessionTable(options: SessionTableOptions): SessionTable {
 
       const record = existing.record;
       const wasStale = record.stale;
-      const needsChanged = !sameNeedsYou(record.needs_you, needsYou);
+      const needsChanged = !sameRequiredActions(record.required_actions, requiredActions);
       record.agent = structuredClone(body.agent);
       record.harness = body.harness;
       record.repository = structuredClone(body.repository);
@@ -131,12 +131,12 @@ export function createSessionTable(options: SessionTableOptions): SessionTable {
       if (body.task !== undefined) record.task = body.task;
       if (body.message !== undefined) record.message = body.message;
       record.status = body.status;
-      record.needs_you = needsYou;
+      record.required_actions = requiredActions;
       record.reported_at = at;
       record.stale = false;
       existing.reportedMs = ms;
 
-      const event: SessionEventName = wasStale ? "session.resumed" : needsChanged ? "session.needs_you" : "session.updated";
+      const event: SessionEventName = wasStale ? "session.resumed" : needsChanged ? "session.action_required" : "session.updated";
       emit(event, record);
       return { record: copy(record), created: false, event };
     },

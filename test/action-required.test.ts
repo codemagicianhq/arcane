@@ -5,12 +5,14 @@ import { expandFragment, referencesFragment } from "../src/modules/spell-compile
 
 // UP04-B-01 (PRD D-13 / R-266, #266): required operator actions get lost
 // among optional next steps. One ARC-039 fragment defines a single,
-// unmistakable `## ⚠ Needs you` block: fixed heading, top of the final
-// report, one line per action, never only among optional steps, and omitted
-// entirely when nothing needs the operator.
+// unmistakable block: fixed heading, top of the final report, one line per
+// action, never only among optional steps, and omitted entirely when nothing
+// is left for the operator. Renamed from `## ⚠ Needs you` to
+// `## 🚧 Action required` (features/action-required/PRD.md AR-01, AR-02):
+// a frame of rules, two tiers, struck-through persistence.
 
-const FRAGMENT = "needs-you";
-const HEADING = "## ⚠ Needs you";
+const FRAGMENT = "action-required";
+const HEADING = "## 🚧 Action required";
 const ASSETS = join(process.cwd(), "src", "assets");
 const SPELLS = join(ASSETS, ".arcane", "spells");
 const STANDARDS = join(ASSETS, ".arcane", "governance", "spell-authoring-standards.md");
@@ -23,9 +25,11 @@ beforeAll(async () => {
     standards = await readFile(STANDARDS, "utf8");
 });
 
-describe("the needs-you fragment (UP04-B-01)", () => {
-    it("defines one fixed heading inside the block template", () => {
-        expect(fragment).toContain("```markdown\n## ⚠ Needs you\n");
+describe("the action-required fragment (UP04-B-01, AR-01)", () => {
+    it("defines one fixed heading inside the block template, framed by a rule above and below", () => {
+        expect(fragment).toContain("```markdown\n---\n\n## 🚧 Action required\n");
+        expect(fragment).toContain("— <why only the operator can do it>\n\n---\n```");
+        expect(fragment).not.toContain("Needs you");
         // Exactly one heading: the block is one block, not a pattern of several.
         expect(fragment.split(HEADING)).toHaveLength(2);
     });
@@ -36,12 +40,33 @@ describe("the needs-you fragment (UP04-B-01)", () => {
         );
     });
 
-    it("asks for one line per action naming what to do and why the agent cannot", () => {
+    it("asks for one line per action naming what to do and why only the operator can", () => {
         expect(fragment).toContain("**One line per action.**");
-        expect(fragment).toContain("why the agent cannot do it");
+        expect(fragment).toContain("why only the operator can do it");
         expect(fragment).toContain(
-            "- <exactly what to do: the command, the link, or the question> — <why the agent cannot do it itself>",
+            "- <exactly what to do: the command, the link, or the question> — <why only the operator can do it>",
         );
+    });
+
+    it("frames the block as authority handed over, not a plea for help", () => {
+        expect(fragment).toContain("write it as a hand-off of authority, never as a plea for help");
+    });
+
+    it("has two tiers in one block, Now and When you're at your desk, never two blocks", () => {
+        expect(fragment).toContain("**Now**\n\n- <exactly what to do");
+        expect(fragment).toContain("**When you're at your desk**\n\n- <exactly what to do>");
+        expect(fragment).toContain("**Two tiers, one block.**");
+        expect(fragment).toContain("never split the tiers into two blocks");
+    });
+
+    it("keeps a done item struck through until the session closes", () => {
+        expect(fragment).toContain("**Done items stay, struck through.**");
+        expect(fragment).toContain("strike it through (`~~<the line>~~`) rather than dropping it");
+    });
+
+    it("reports only the open Now items to the presence channel", () => {
+        expect(fragment).toContain('spell presence report --status waiting --required-action "<line 1>" --required-action "<line 2>"');
+        expect(fragment).toContain("the other tier is not blocking and is not reported");
     });
 
     it("never lets a required action appear only among optional steps", () => {
@@ -53,7 +78,7 @@ describe("the needs-you fragment (UP04-B-01)", () => {
 
     it("omits the block entirely when nothing needs the operator", () => {
         expect(fragment).toContain("**Omit it when empty.**");
-        expect(fragment).toContain("leave the block out entirely: no heading and no \"None\" line");
+        expect(fragment).toContain("leave the block out entirely: no heading, no rules and no \"None\" line");
     });
 
     it("names the operator-only action classes from #266, and excludes optional suggestions", () => {
@@ -101,7 +126,7 @@ describe("the needs-you fragment (UP04-B-01)", () => {
 
 describe("spell-authoring-standards documents the convention (UP04-B-01)", () => {
     const section = (): string => {
-        const start = standards.indexOf("## Required operator actions: the `Needs you` block");
+        const start = standards.indexOf("## Required operator actions: the `Action required` block");
         const end = standards.indexOf("## How to audit a spell");
         expect(start).toBeGreaterThan(-1);
         expect(end).toBeGreaterThan(start);
@@ -110,7 +135,10 @@ describe("spell-authoring-standards documents the convention (UP04-B-01)", () =>
 
     it("states the heading, placement, one-line, never-only-optional and omit-when-empty rules", () => {
         const text = section();
-        expect(text).toContain("`## ⚠ Needs you`, at the very top of the final report");
+        expect(text).toContain("`## 🚧 Action required`, at the very top of the final report");
+        expect(text).toContain("framed by a horizontal rule above and below");
+        expect(text).toContain("**Two tiers in one block:**");
+        expect(text).toContain("**Done items stay, struck through:**");
         expect(text).toContain("before any optional next step");
         expect(text).toContain("**One line per action:**");
         expect(text).toContain("**Never only among optional steps:**");
@@ -119,14 +147,14 @@ describe("spell-authoring-standards documents the convention (UP04-B-01)", () =>
 
     it("names the fragment and its marker pair (ARC-039)", () => {
         const text = section();
-        expect(text).toContain("`<!-- fragment:needs-you:start -->` / `<!-- fragment:needs-you:end -->`");
+        expect(text).toContain("`<!-- fragment:action-required:start -->` / `<!-- fragment:action-required:end -->`");
         expect(text).toContain("ARC-039");
     });
 
     it("carries an ARC-023 enforcement annotation", () => {
         const text = section();
         expect(text).toContain("**Enforcement: executable check (ARC-023) for the wording");
-        expect(text).toContain("explicitly\nadvisory prose: no check reads a spell's output.**");
+        expect(text.replace(/\s+/g, " ")).toContain("explicitly advisory prose: no check reads a spell's output.**");
     });
 
     it("introduces no {UPPER_SNAKE} token", () => {
@@ -172,7 +200,7 @@ const END = `<!-- fragment:${FRAGMENT}:end -->`;
 const ROOT_SPELLS = join(process.cwd(), ".arcane", "spells");
 const OTHER_FRAGMENTS = ["push-policy-check", "tracking-mode-declaration"];
 
-describe.each(Object.keys(CHOSEN))("%s carries the needs-you block (UP04-B-02)", (id) => {
+describe.each(Object.keys(CHOSEN))("%s carries the action-required block (UP04-B-02)", (id) => {
     let content: string;
     let root: string;
 
@@ -189,7 +217,7 @@ describe.each(Object.keys(CHOSEN))("%s carries the needs-you block (UP04-B-02)",
 
     it("is fully expanded (re-expanding changes nothing)", () => {
         expect(expandFragment(content, FRAGMENT, fragment)).toBe(content);
-        expect(content).toContain("## ⚠ Needs you");
+        expect(content).toContain("## 🚧 Action required");
     });
 
     it("places the span where the spell describes its final output", () => {

@@ -222,7 +222,7 @@ describe("the logger (PC-12; threat-model control 12)", () => {
     try {
       const full = await loadPresenceFixture<Record<string, unknown>>("report.full.json");
       const marker = "PRIVATE-MARKER-ordovica-undisclosed-partner";
-      const body = { ...full, task: marker, message: marker, needs_you: [{ action: marker, reason: marker }] };
+      const body = { ...full, task: marker, message: marker, required_actions: [{ action: marker, reason: marker }] };
       const created = JSON.parse((await report(body)).body) as SessionRecord;
       await report({ ...body, status: "working" });
       await httpRequest(svc.port, { method: "POST", path: "/v0/sessions/end", token: svc.token, body: JSON.stringify({ checkout: { path: created.checkout.path } }) });

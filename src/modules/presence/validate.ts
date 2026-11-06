@@ -6,8 +6,11 @@
  * - One-line strings have every control character (CR and LF included)
  *   replaced by a space and are then cut to 256 code points, never splitting
  *   a surrogate pair.
- * - `needs_you` over 20 entries is refused, never cut: a silently dropped
- *   "needs you" line is the one loss an operator cannot see.
+ * - `required_actions` over 20 entries is refused, never cut: a silently dropped
+ *   required-action line is the one loss an operator cannot see.
+ * - `needs_you`, the field's name before 1.20 (ARC-060 decision 14), is
+ *   accepted as `required_actions` for the 1.20 series, so an older reporter
+ *   keeps working; a body that sends both names is refused, naming `needs_you`.
  * - `done` is not a report status: a session ends through `end` (D6).
  */
 
@@ -16,14 +19,14 @@ import {
   HARNESSES,
   MAX_ALIASES,
   MAX_LINE_CHARS,
-  MAX_NEEDS_YOU,
+  MAX_REQUIRED_ACTIONS,
   REPORT_STATUSES,
   type AgentAlias,
   type AgentBlock,
   type CheckoutInfo,
   type EndBody,
   type Harness,
-  type NeedsYou,
+  type RequiredAction,
   type ReportBody,
   type ReportStatus,
   type RepositoryInfo,
@@ -145,13 +148,16 @@ function checkout(value: unknown): CheckoutInfo {
   return { path: nonEmpty(c["path"], "checkout.path"), branch: line(c["branch"], "checkout.branch", true), linked_worktree: c["linked_worktree"] };
 }
 
-function needsYou(value: unknown): NeedsYou[] {
-  if (!Array.isArray(value)) throw new Refusal("invalid_field", "needs_you", "needs_you must be a list");
-  if (value.length > MAX_NEEDS_YOU) {
-    throw new Refusal("too_many_lines", "needs_you", `needs_you carries at most ${MAX_NEEDS_YOU} lines; ${value.length} were sent`);
+/** The pre-1.20 name of `required_actions`, still accepted on input for the 1.20 series (ARC-060 decision 14). */
+export const LEGACY_REQUIRED_ACTIONS_KEY = "needs_you";
+
+function requiredActions(value: unknown, key = "required_actions"): RequiredAction[] {
+  if (!Array.isArray(value)) throw new Refusal("invalid_field", key, `${key} must be a list`);
+  if (value.length > MAX_REQUIRED_ACTIONS) {
+    throw new Refusal("too_many_lines", key, `${key} carries at most ${MAX_REQUIRED_ACTIONS} lines; ${value.length} were sent`);
   }
   return value.map((item: unknown, i) => {
-    const field = `needs_you.${i}`;
+    const field = `${key}.${i}`;
     const n = closed(item, field, ["action", "reason"]);
     return { action: nonEmptyLine(n["action"], `${field}.action`), reason: line(n["reason"], `${field}.reason`, true) };
   });
@@ -173,7 +179,7 @@ function refuse<T>(fn: () => T): Validated<T> {
 /** The body of `POST /v0/sessions/report`, normalized. */
 export function validateReport(value: unknown): Validated<ReportBody> {
   return refuse(() => {
-    const b = closed(value, undefined, ["status", "harness", "agent", "repository", "checkout"], ["spell", "task", "message", "needs_you"]);
+    const b = closed(value, undefined, ["status", "harness", "agent", "repository", "checkout"], ["spell", "task", "message", "required_actions", LEGACY_REQUIRED_ACTIONS_KEY]);
     if (b["status"] === "done") {
       throw new Refusal("invalid_field", "status", "status done is set by ending a session: use POST /v0/sessions/end (spell presence end)");
     }
@@ -187,7 +193,11 @@ export function validateReport(value: unknown): Validated<ReportBody> {
     for (const key of ["spell", "task", "message"] as const) {
       if (key in b) out[key] = line(b[key], key, true);
     }
-    if ("needs_you" in b) out.needs_you = needsYou(b["needs_you"]);
+    if ("required_actions" in b && LEGACY_REQUIRED_ACTIONS_KEY in b) {
+      throw new Refusal("invalid_field", LEGACY_REQUIRED_ACTIONS_KEY, "send required_actions only: needs_you is its name before 1.20");
+    }
+    if ("required_actions" in b) out.required_actions = requiredActions(b["required_actions"]);
+    else if (LEGACY_REQUIRED_ACTIONS_KEY in b) out.required_actions = requiredActions(b[LEGACY_REQUIRED_ACTIONS_KEY], LEGACY_REQUIRED_ACTIONS_KEY);
     return out;
   });
 }
