@@ -210,6 +210,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * same contract. Throws ManifestInvalidFieldError.
  */
 export function validateManifestFields(manifest: Partial<ArcaneManifest>, filePath: string): void {
+  if (manifest.attribution_convention !== undefined) {
+    const value: unknown = manifest.attribution_convention;
+    const valid = isRecord(value) && value.author === "operator" && isRecord(value.trailers)
+      && Object.keys(value).every((key) => key === "author" || key === "trailers")
+      && Object.keys(value.trailers).length > 0
+      && Object.entries(value.trailers).every(([key, entry]) =>
+        /^[A-Za-z0-9-]+$/.test(key) && typeof entry === "string"
+        && entry.trim().length > 0 && !/[\r\n]/.test(entry));
+    if (!valid) throw new ManifestInvalidFieldError(filePath, "attribution_convention", value);
+  }
   if (
     manifest.tracking_mode !== undefined &&
     !VALID_TRACKING_MODES.includes(manifest.tracking_mode)

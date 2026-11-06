@@ -650,7 +650,20 @@ See also: [Agent Workflow — Sync with main before opening a PR](#agent-workflo
 
 ## Agent Attribution Model
 
-Every commit must clearly identify **who produced the content** and **who approved/pushed it**.
+Every commit must clearly identify **who produced the content** and **who approved/pushed it**, using the repository-declared convention when configured or the default below.
+
+### Repository-declared convention (#450)
+
+A repository may explicitly choose operator authorship and its own attribution trailers in its root `.arcane.json` (or the self-hosted source manifest when applicable):
+
+```json
+"attribution_convention": {
+  "author": "operator",
+  "trailers": { "Co-Authored-By": "Codex <codex@example.org>" }
+}
+```
+
+When present and valid, use the configured Git operator identity as author, keep inseparable mixed-provenance changes together, and add only the explicitly configured trailers. The operator is responsible for selecting truthful trailer values and a convention that identifies contributors adequately. The configuration does not grant commit, push, review or merge authority. Reject malformed configuration or unresolved identities rather than guessing. A missing convention preserves the default author-partition and trailer rules below; do not infer a convention from Git history. This opt-in modifies the default ADR-028/ADR-029 attribution format for that repository, not the separate authority gates.
 
 ### Author vs. Committer
 
@@ -685,7 +698,7 @@ New agents are registered during onboarding.
 
 ### Required Commit Trailers (Agent Commits)
 
-Agent-authored commits MUST include trailers in the commit message footer. Human commits MAY include them. **Enforcement: explicitly advisory prose (ARC-023) — `spell-commit-work`'s Step 7 documents the required trailers, but no hook or CI check verifies they are actually present on a given commit, matching `universal-agent-rules.md` rule 12's identical finding for the same underlying rule.**
+By default, agent-authored commits MUST include trailers in the commit message footer; an explicit repository-declared convention above uses its configured trailers instead. Human commits MAY include them. **Enforcement: explicitly advisory prose (ARC-023) — `spell-commit-work`'s Step 7 documents the required trailers, but no hook or CI check verifies they are actually present on a given commit, matching `universal-agent-rules.md` rule 12's identical finding for the same underlying rule.**
 
 **`Agent` is the runtime/tool only — never a persona name.** The prior single-field model let `kellar` (a persona) and `copilot`/`claude` (runtimes) sit in the same field's example list, which is exactly the conflation this split removes. `Persona` and `Role` are conditional on a roster (`.arcane/agents.yaml`) existing and one having been assigned — omit both, do not guess, when no roster exists or none was assigned this session (this repo's own root has no roster today; the "Solo-Operator Delegation Records (No Roster)" pattern in [[agent-policies#solo-operator-delegation-records-no-roster|agent-policies.md]] is the same "mechanism doesn't apply, degrade gracefully" shape applied to delegation instead of attribution).
 

@@ -93,6 +93,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-059](#arc-059--agent-identity-opaque-typed-references-roster-v3-by-write-path-only-and-a-neutral-identity-export) | Agent Identity: Opaque Typed References, Roster v3 by Write Path Only, and a Neutral Identity Export | 2026-11-04 | Accepted |
 | [ARC-060](#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention) | The Presence Channel: One Package Behind `spell presence`, a Loopback Contract, Checkout-Keyed Sessions, and a Prompt-Driven Reporting Convention | 2026-11-04 | Accepted |
 | [ARC-061](#arc-061--scoped-temporary-run-grants-unattended-preflight-and-authority-accounting) | Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting | 2026-11-05 | Accepted |
+| [ARC-062](#arc-062--repository-declared-commit-attribution) | Repository-Declared Commit Attribution | 2026-11-06 | Accepted |
 
 ---
 
@@ -3796,3 +3797,19 @@ The two lists differ in kind. A newly available component is a preference: nothi
 **Enforcement:** executable record validation and doctor visibility; structured spell gates for provenance, per-action checks and closure accounting (ARC-023). The JSON file is editable data, not a cryptographic authentication mechanism. Prompt tests verify distribution; runtime tests verify refusal boundaries. This amends interactive authority requirements only for explicitly granted actions, and preserves ARC-035/049 constraints.
 
 **Related:** [[features/unattended-runs/PRD]], [[features/unattended-runs/architecture]], [[.arcane/governance/agent-policies]].
+
+
+---
+
+## ARC-062 — Repository-Declared Commit Attribution
+
+**Date:** 2026-11-06
+**Status:** Accepted (2026-11-06). Issue #450 requests an explicit repository convention and the operator authorized resolving technical details within the issue scope.
+
+**Context:** The default agent author and trailer convention conflicts with repositories that intentionally use the operator as author and credit assistance with `Co-Authored-By`. Inferring a policy from Git history would be ambiguous.
+
+**Decision:** An optional `attribution_convention` object declares `author: "operator"` and a nonempty map of trailer names to single-line values. When present and valid, commit workflows use the operator's configured Git identity and only the declared trailers, without splitting changes solely by provenance. Invalid declarations fail closed. When absent, the existing agent-author, provenance partition and trailer rules remain unchanged. This changes attribution formatting only: authority, push policy, review, truthfulness and platform gates remain binding. The runtime manifest validator rejects malformed entries; spell instructions describe the agent's behavior.
+
+**Alternatives:** Inferring from past commits is unreliable; changing the default for every repository would break existing analytics and provenance conventions. A free-form shell command would create an injection risk.
+
+**Related:** [[features/issues-448-454/PRD]], [[.arcane/governance/git-conventions]].
