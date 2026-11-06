@@ -142,7 +142,9 @@ that array in `.arcane/delegations.json`. It works with or without a roster.
   one of those delimiters matches directly. Exclusions override permissions.
 - **Explicit actions:** only `commit`, `push`, `create-pr`, `assign-pr`,
   `approve-pr`, `complete-pr`, `delete-remote-branch`, `run-dev-pipeline` are
-  recognized. Unknown actions fail validation. Completion needs `complete-pr`
+  recognized in `permittedActions`. Unknown permitted actions fail validation;
+  exclusions may also name never-permitted operations such as `force-push`,
+  `production-deploy` and `settings-change`. Completion needs `complete-pr`
   and a nonempty list of required check names. Check names are evidence labels,
   never command text to execute; resolve actual checks from the approved plan.
   A commit-only grant cannot complete a PR. No action grants force-push, settings

@@ -16,7 +16,7 @@ export interface RunGrant {
   expiresAt: string;
   scope: { repository: string; task: string; branchPrefix: string };
   permittedActions: RunAction[];
-  excludedActions: RunAction[];
+  excludedActions: string[];
   requiredChecks: string[];
   status: "active" | "revoked";
   revocation: string;
@@ -44,7 +44,7 @@ export function isRunGrant(v: unknown): v is RunGrant {
     && (v.status === "active" || v.status === "revoked")
     && [v.scope.repository, v.scope.task, v.scope.branchPrefix].every(text)
     && actions(v.permittedActions) && v.permittedActions.length > 0
-    && actions(v.excludedActions) && strings(v.requiredChecks)
+    && strings(v.excludedActions) && strings(v.requiredChecks)
     && (!v.permittedActions.includes("complete-pr") || v.requiredChecks.length > 0);
 }
 

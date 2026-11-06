@@ -1,6 +1,6 @@
 2026-11-05: Operator approved implementation through merge, the proposed grant design, and authority until completion capped at 24 hours.
 Planning: PRD requirements UR-01..06 and architecture agreed; one branch/PR because the authority entry points overlap.
 Initial prompt regression: failed on missing interactive run-grant authority, then passed after the shared fragment was compiled. Initial runtime test run had a source syntax error, corrected before 31 runtime cases passed.
-Validation: npm run test:coverage passed 3106 tests, 6 existing skips; 93.74% lines overall, new record validator and command handler 100% lines/branches/functions.
+Validation: npm run test:coverage passed 3107 tests, 6 existing skips; 93.74% lines overall, new record validator and command handler 100% lines/branches/functions.
 Corrections: direct vitest invocation lacked npm_execpath; reran through npm. New ADR initially lacked its TOC/date metadata; corrected based on state-export parser failures. Catalog regenerated, legacy worker invariants retained with the scoped orchestrator exception.
 Review: R1 fallback fingerprint wording clarified; R2 decision metadata fixed; R3 worker tests now assert explicit completion grant while preserving worker restrictions.
