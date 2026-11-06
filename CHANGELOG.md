@@ -9,6 +9,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-11-06
+
+### Added
+
+- `spell-unattended-run` prepares bounded issue or application delivery, settles decisions and scoped authority before departure, delegates milestones to the existing delivery loop, and verifies recovery, releases and cleanup. Invocation grants no execution authority or background runtime.
+
 ## [1.21.2] - 2026-11-06
 
 ### Added
