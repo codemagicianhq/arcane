@@ -9,6 +9,14 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-11-05
+
+### Added
+
+- **Scoped temporary run grants (ARC-061, #438).** Record explicit actions, repository/task/branch scope, expiry, exclusions and required completion checks beside legacy delegations. `spell grant check` validates the record without claiming to authenticate operator consent; `spell doctor` lists active grants and expiry. Commit, PR, full-cycle and close-session spells honor grants while preserving explicit execution denials, push policy, independent reviews and required checks.
+- **An unattended-run preflight (#439).** Full-cycle, implement and parallel-workers share one preflight: batch blocking questions before the operator leaves, inspect GitHub/ADO review, validation and merge restrictions, and name actions that will wait.
+- **Closure authority accounting (#440).** Close-session records every session commit range and completed PR with its authority and contemporaneous evidence, including its own final actions. Missing authority is visible under Action required and in the handoff; a later grant never legitimizes an earlier action.
+
 ## [1.20.2] - 2026-11-06
 
 ### Fixed
