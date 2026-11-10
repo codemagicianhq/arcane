@@ -1,3 +1,5 @@
+import { compareVersions } from "./version-compare.js";
+
 /**
  * Generates the canonical version-drift gitGraph diagram (ARC-036, R2) from
  * the three already-computed version readings. Pure — no I/O, no network
@@ -9,8 +11,8 @@
 /**
  * Returns the gitGraph body (no ```mermaid fence — the caller chooses
  * fencing per R5) for the three-reading version-drift diagram, or `null`
- * when all three readings match (the applicability guard — nothing to
- * visualize for a single, matching reading).
+ * when neither axis shows an installed version behind its source (the
+ * applicability guard — nothing to visualize when both axes are current).
  *
  * One commit per *distinct* value among the three readings, in
  * repo-files -> installed-CLI -> npm-latest order; a consecutive repeated
@@ -22,10 +24,11 @@ export function generateVersionDriftDiagram(
   installedCliVersion: string,
   npmLatestVersion: string,
 ): string | null {
-  if (
-    repoFilesVersion === installedCliVersion &&
-    installedCliVersion === npmLatestVersion
-  ) {
+  const filesBehindCli =
+    compareVersions(repoFilesVersion, installedCliVersion) < 0;
+  const cliBehindLatest =
+    compareVersions(installedCliVersion, npmLatestVersion) < 0;
+  if (!filesBehindCli && !cliBehindLatest) {
     return null;
   }
 
@@ -34,8 +37,9 @@ export function generateVersionDriftDiagram(
 
   if (installedCliVersion !== repoFilesVersion) {
     lines.push(
-      "   branch repo-files",
-      "   checkout main",
+      ...(filesBehindCli
+        ? ["   branch repo-files", "   checkout main"]
+        : []),
       `   commit id: "${installedCliVersion}"`,
     );
     lastDistinctVersion = installedCliVersion;
@@ -43,8 +47,9 @@ export function generateVersionDriftDiagram(
 
   if (npmLatestVersion !== lastDistinctVersion) {
     lines.push(
-      "   branch installed-cli",
-      "   checkout main",
+      ...(cliBehindLatest
+        ? ["   branch installed-cli", "   checkout main"]
+        : []),
       `   commit id: "${npmLatestVersion}" tag: "latest"`,
     );
   } else {

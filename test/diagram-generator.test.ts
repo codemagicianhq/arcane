@@ -6,6 +6,10 @@ describe("generateVersionDriftDiagram", () => {
     expect(generateVersionDriftDiagram("0.22.1", "0.22.1", "0.22.1")).toBeNull();
   });
 
+  it("returns null when npm is older than the installed CLI and files match", () => {
+    expect(generateVersionDriftDiagram("1.17.3", "1.17.3", "1.17.2")).toBeNull();
+  });
+
   it("draws only the repo-files branch when only axis A drifts", () => {
     const diagram = generateVersionDriftDiagram("0.14.0", "0.22.1", "0.22.1");
     expect(diagram).toBe(
@@ -30,6 +34,12 @@ describe("generateVersionDriftDiagram", () => {
         '   commit id: "0.22.1" tag: "latest"',
       ].join("\n"),
     );
+  });
+
+  it("does not draw installed-cli drift when npm is older than the CLI", () => {
+    const diagram = generateVersionDriftDiagram("1.17.0", "1.17.3", "1.17.2");
+    expect(diagram).toContain("branch repo-files");
+    expect(diagram).not.toContain("branch installed-cli");
   });
 
   it("draws both branches when both axes drift", () => {

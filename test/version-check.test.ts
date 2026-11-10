@@ -230,6 +230,34 @@ describe("version-check", () => {
       expect(result.updateAvailable).toBe(false);
     });
 
+    it("does not offer an older published version as an update", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue({
+          ok: true,
+          json: async () => ({ "dist-tags": { latest: "1.17.2" } }),
+        }),
+      );
+
+      const result = await checkForUpdate("1.17.3", FAKE_FEED_URL, cachePath);
+      expect(result.latest).toBe("1.17.2");
+      expect(result.updateAvailable).toBe(false);
+    });
+
+    it("re-fetches when a fresh cache is older than the installed version", async () => {
+      const fetchSpy = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ "dist-tags": { latest: "1.17.2" } }),
+      });
+      vi.stubGlobal("fetch", fetchSpy);
+      await writeCache(cachePath, "1.17.2");
+
+      const result = await checkForUpdate("1.17.3", FAKE_FEED_URL, cachePath);
+      expect(fetchSpy).toHaveBeenCalledOnce();
+      expect(result.latest).toBe("1.17.2");
+      expect(result.updateAvailable).toBe(false);
+    });
+
     it("returns latest null, with no error field, on network failure without throwing", async () => {
       vi.stubGlobal(
         "fetch",
