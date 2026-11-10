@@ -9,6 +9,17 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.22.1] - 2026-11-10
+
+### Fixed
+
+- `spell status` reports an update only when the registry version is newer than the installed CLI, refreshes stale cached versions, and draws version drift in the correct direction.
+
+### Changed
+
+- The version bump gate now requires a release version change for source updates that are bundled into the published CLI.
+- The npm publish workflow now exercises the packed CLI before publishing and waits for the published tarball to become downloadable.
+
 ## [1.22.0] - 2026-11-06
 
 ### Added

@@ -4,11 +4,10 @@
  *
  * CI gate: fails if distributable content changed without a version bump.
  *
- * Rule (from project.md's Constraints section): "Version bump required for any
- * change to src/assets/ or any change to registry.ts / profiles.ts that affects
- * what gets distributed." (Re-pointed 2026-08-31 -- root CLAUDE.md now carries
- * only the 13-line working protocol; the rule's live prose home moved to
- * project.md:56-58.)
+ * Rule (from project.md's Constraints section): anything under src/ is bundled
+ * or copied into the published dist/ package, so source changes require a
+ * version bump. project.md also calls out src/assets/ explicitly because it is
+ * the canonical self-hosted scaffold tree.
  *
  * How it works (default / CI mode):
  *   1. Diffs HEAD against the merge-base with origin/main (i.e. the PR diff).
@@ -38,11 +37,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 
 // ─── Paths that count as "distributable" ─────────────────────────────────────
-// Changes to any of these require a version bump.
+// The build bundles src/ into dist/ and copies src/assets/ into dist/assets/.
+// Changes anywhere under src/ therefore affect the published package and require
+// a version bump.
 const DISTRIBUTABLE_PATTERNS: RegExp[] = [
-  /^src\/assets\//,
-  /^src\/modules\/registry\.ts$/,
-  /^src\/config\/profiles\.ts$/,
+  /^src\//,
 ];
 
 export type CheckMode = "default" | "staged" | "working-tree";

@@ -64,6 +64,20 @@ describe("distributable version bump gate", () => {
         expect(result.stderr).toContain("Version bump required");
     }, HEAVY_TEST_TIMEOUT);
 
+    it.skipIf(!TSX)("fails a PR that changes CLI runtime source without changing package version", async () => {
+        const dir = await createPullRequestFixture();
+        await fs.mkdir(join(dir, "src", "modules"), { recursive: true });
+        await fs.writeFile(join(dir, "src", "modules", "version-check.ts"), "export {};\n", "utf8");
+        runGit(dir, ["add", "-A"]);
+        runGit(dir, ["commit", "-m", "fix: change CLI runtime source"]);
+
+        const result = runGate(dir);
+
+        expect(result.status).toBe(1);
+        expect(result.stdout).toContain("src/modules/version-check.ts");
+        expect(result.stderr).toContain("Version bump required");
+    }, HEAVY_TEST_TIMEOUT);
+
     it.skipIf(!TSX)("passes a PR with only non-distributable changes and no version bump", async () => {
         const dir = await createPullRequestFixture();
         await fs.writeFile(join(dir, "README.md"), "# Updated fixture\n", "utf8");

@@ -23,6 +23,34 @@ describe("npm publish workflow", () => {
     expect(workflow).toContain("workflow_dispatch:");
     expect(workflow).toContain("npm publish --provenance --access public");
   });
+
+  it("installs and exercises the packed CLI before publishing", async () => {
+    const workflow = await fs.readFile(
+      join(process.cwd(), ".github", "workflows", "publish.yml"),
+      "utf8",
+    );
+
+    expect(workflow).toContain("npm pack --json --pack-destination");
+    expect(workflow).toContain('npm install --prefix "$INSTALL_DIR"');
+    expect(workflow).toContain('"$CLI" --version');
+    expect(workflow).toContain('"$CLI" status');
+    expect(workflow.indexOf("Verify packed package is installable")).toBeLessThan(
+      workflow.indexOf("Publish to npm (OIDC trusted publishing — no token)"),
+    );
+  });
+
+  it("waits a bounded interval for the published npm tarball", async () => {
+    const workflow = await fs.readFile(
+      join(process.cwd(), ".github", "workflows", "publish.yml"),
+      "utf8",
+    );
+
+    expect(workflow).toContain("Wait for published tarball to become downloadable");
+    expect(workflow).toContain('npm pack "arcane-cli@$VERSION"');
+    expect(workflow).toContain("seq 1 36");
+    expect(workflow).toContain("tar -tzf");
+    expect(workflow).toContain("within six minutes");
+  });
 });
 
 describe("release drift workflow", () => {
