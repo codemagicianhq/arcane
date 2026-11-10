@@ -167,6 +167,7 @@ describe("spell status — handler", () => {
     expect(footerLine).toBeDefined();
     expect(footerLine).toContain(`Installed: ${PACKAGE_VERSION}`);
     expect(footerLine).toContain("Latest: 0.2.0");
+    expect(footerLine).not.toContain("spell update available");
   });
 
   it("shows 'spell update available' when updateAvailable is true", async () => {

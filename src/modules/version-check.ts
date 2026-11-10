@@ -2,6 +2,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { packageJson } from "../package-info.js";
+import { compareVersions } from "./version-compare.js";
 import type { VersionCheckResult } from "../types.js";
 
 /**
@@ -94,7 +95,10 @@ export async function checkForUpdate(
     const cached = await readCache(cachePath);
     if (cached) {
       const age = Date.now() - new Date(cached.checkedAt).getTime();
-      if (age < CACHE_TTL_MS) {
+      if (
+        age < CACHE_TTL_MS &&
+        compareVersions(cached.latest, currentVersion) >= 0
+      ) {
         latest = cached.latest;
       }
     }
@@ -113,7 +117,8 @@ export async function checkForUpdate(
     return {
       current: currentVersion,
       latest,
-      updateAvailable: latest !== null && latest !== currentVersion,
+      updateAvailable:
+        latest !== null && compareVersions(currentVersion, latest) < 0,
     };
   } catch (err) {
     return {
