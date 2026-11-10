@@ -52,5 +52,57 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Verify packed package is installable
+        run: |
+          set -euo pipefail
+          VERIFY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$VERIFY_DIR"' EXIT
+          npm pack --json --pack-destination "$VERIFY_DIR" > "$VERIFY_DIR/pack.json"
+          TARBALL_NAME="$(node -e 'process.stdout.write(JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))[0].filename)' "$VERIFY_DIR/pack.json")"
+          TARBALL="$VERIFY_DIR/$TARBALL_NAME"
+          INSTALL_DIR="$VERIFY_DIR/installed"
+          CONSUMER_DIR="$VERIFY_DIR/consumer"
+          HOME_DIR="$VERIFY_DIR/home"
+          VERSION="$(node -p "require('./package.json').version")"
+
+          npm install --prefix "$INSTALL_DIR" --no-audit --no-fund "$TARBALL"
+          CLI="$INSTALL_DIR/node_modules/.bin/spell"
+          test "$("$CLI" --version)" = "$VERSION"
+
+          mkdir -p "$CONSUMER_DIR/governance" "$HOME_DIR/.arcane"
+          git -C "$CONSUMER_DIR" init -q
+          git -C "$CONSUMER_DIR" config user.name "Arcane Publish Check"
+          git -C "$CONSUMER_DIR" config user.email "publish-check@example.invalid"
+          echo "# Fixture" > "$CONSUMER_DIR/governance/testing-standards.md"
+          cat > "$CONSUMER_DIR/.arcane.json" <<EOF
+          {"version":"$VERSION","profile":"lite","installedAt":"2026-01-01T00:00:00.000Z","components":[{"name":"testing-standards","files":["governance/testing-standards.md"],"installedVersion":"$VERSION"}]}
+          EOF
+          node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({latest: process.argv[2], checkedAt: new Date().toISOString()}))' "$HOME_DIR/.arcane/version-cache.json" "$VERSION"
+          (cd "$CONSUMER_DIR" && HOME="$HOME_DIR" "$CLI" status) > "$VERIFY_DIR/status.txt"
+          grep -F "Installed: $VERSION  Latest: $VERSION" "$VERIFY_DIR/status.txt"
+
       - name: Publish to npm (OIDC trusted publishing — no token)
         run: npm publish --provenance --access public
+
+      - name: Wait for published tarball to become downloadable
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          VERIFY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$VERIFY_DIR"' EXIT
+
+          for ATTEMPT in $(seq 1 36); do
+            if npm pack "arcane-cli@$VERSION" --pack-destination "$VERIFY_DIR" --silent > "$VERIFY_DIR/pack.out" 2> "$VERIFY_DIR/pack.err"; then
+              TARBALL_NAME="$(tail -n 1 "$VERIFY_DIR/pack.out")"
+              tar -tzf "$VERIFY_DIR/$TARBALL_NAME" > /dev/null
+              echo "Downloaded and inspected arcane-cli@$VERSION on attempt $ATTEMPT."
+              exit 0
+            fi
+            rm -f "$VERIFY_DIR/arcane-cli-$VERSION.tgz"
+            echo "arcane-cli@$VERSION tarball is not downloadable yet (attempt $ATTEMPT/36)."
+            if [ "$ATTEMPT" -lt 36 ]; then sleep 10; fi
+          done
+
+          cat "$VERIFY_DIR/pack.err"
+          echo "::error::arcane-cli@$VERSION was published but its tarball was not downloadable within six minutes."
+          exit 1
