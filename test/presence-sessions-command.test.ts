@@ -190,9 +190,9 @@ describe.skipIf(!BIN)("spell presence sessions against the built CLI (PC-17)", (
     expect(table.stdout).toContain("PS-17");
   }, VERY_HEAVY_TEST_TIMEOUT);
 
-  it("--required-action reports Now lines, and the hidden pre-1.20 --needs-you still works (ARC-060 decision 14)", async () => {
+  it("--required-action reports Now lines", async () => {
     service = await spawnServe(BIN!, home);
-    const report = await runSpell(BIN!, ["presence", "report", "--status", "waiting", "--required-action", "Merge the pull request — merges are yours", "--needs-you", "Accept the amendment — decisions are yours"], { cwd: repo, home });
+    const report = await runSpell(BIN!, ["presence", "report", "--status", "waiting", "--required-action", "Merge the pull request — merges are yours", "--required-action", "Accept the amendment — decisions are yours"], { cwd: repo, home });
     expect(report.code).toBe(0);
     const run = await runSpell(BIN!, ["presence", "sessions", "--json"], { cwd: repo, home });
     const doc = JSON.parse(run.stdout) as SnapshotDocument;
@@ -203,5 +203,15 @@ describe.skipIf(!BIN)("spell presence sessions against the built CLI (PC-17)", (
     const help = await runSpell(BIN!, ["presence", "report", "--help"], { cwd: repo, home });
     expect(help.stdout).toContain("--required-action <line>");
     expect(help.stdout).not.toContain("--needs-you");
+  }, VERY_HEAVY_TEST_TIMEOUT);
+
+  it("the retired pre-1.20 --needs-you is an unknown option: no report, exit 0 (ARC-060 decision 14)", async () => {
+    service = await spawnServe(BIN!, home);
+    const report = await runSpell(BIN!, ["presence", "report", "--status", "waiting", "--needs-you", "Accept the amendment — decisions are yours"], { cwd: repo, home });
+    expect(report.code).toBe(0);
+    expect(report.stderr).toContain("unknown option '--needs-you'");
+    const run = await runSpell(BIN!, ["presence", "sessions", "--json"], { cwd: repo, home });
+    const doc = JSON.parse(run.stdout) as SnapshotDocument;
+    expect(doc.sessions).toEqual([]);
   }, VERY_HEAVY_TEST_TIMEOUT);
 });

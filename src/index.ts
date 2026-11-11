@@ -1,4 +1,4 @@
-import { Command, Option } from "commander";
+import { Command } from "commander";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 // The package's own package.json is read in one place, for the version here
@@ -521,14 +521,12 @@ presenceCommand
   .option("--spell <id>", "The spell running, e.g. spell-implement")
   .option("--message <line>", "A free one-line note; an empty value clears it")
   .option("--required-action <line>", "One open line of the Now tier of an Action required block, '<action> — <reason>'; repeat per line", collectLine, [])
-  // The flag's name before 1.20, kept for the 1.20 series (ARC-060 decision 14).
-  .addOption(new Option("--needs-you <line>").argParser(collectLine).default([]).hideHelp())
   .option("--agent <slug>", "The roster agent this session reports as (a slug or an alias); default: the orchestrator")
   .option("--harness <id>", "claude-code | copilot | codex | openclaw | cron | other; default: detected, else other")
   .exitOverride(exitZero)
-  .action(async (opts: { status: string; task?: string; spell?: string; message?: string; requiredAction: string[]; needsYou: string[]; agent?: string; harness?: string }) => {
-    const { requiredAction, needsYou, ...rest } = opts;
-    const run = await runPresenceReport(process.cwd(), { ...rest, requiredActions: [...requiredAction, ...needsYou] });
+  .action(async (opts: { status: string; task?: string; spell?: string; message?: string; requiredAction: string[]; agent?: string; harness?: string }) => {
+    const { requiredAction, ...rest } = opts;
+    const run = await runPresenceReport(process.cwd(), { ...rest, requiredActions: requiredAction });
     process.exitCode = 0;
     if (run.timedOut) process.exit(0);
   });

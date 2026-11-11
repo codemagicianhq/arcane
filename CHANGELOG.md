@@ -9,6 +9,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-11-10
+
+### Removed
+
+- **The presence channel's pre-1.20 names (ARC-060 decision 14).** The 1.20 series accepted `needs_you` in a report body and a hidden `spell presence report --needs-you` flag, so that a reporter one release older kept working. Both are gone, and so is the deprecated `needs_you` property in `presence.schema.json`. The service now refuses a body with `needs_you` with `400` and `unknown_field`, as it refuses any field outside the contract. `--needs-you` is an unknown option: the reporter prints commander's error to stderr, sends nothing and exits 0, as it does on any refusal. Use `required_actions` and `--required-action`.
+
 ## [1.22.1] - 2026-11-10
 
 ### Fixed

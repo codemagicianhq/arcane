@@ -397,26 +397,7 @@
             "$ref": "#/$defs/requiredAction"
           },
           "description": "Replaces the stored list on every report; absent means []. More than 20 entries is refused with 400, never cut."
-        },
-        "needs_you": {
-          "type": "array",
-          "maxItems": 20,
-          "items": {
-            "$ref": "#/$defs/requiredAction"
-          },
-          "deprecated": true,
-          "description": "The name of required_actions before 1.20 (ARC-060 decision 14), accepted as required_actions for the 1.20 series. Never sent together with required_actions: a body with both is refused with 400 naming needs_you."
         }
-      },
-      "not": {
-        "properties": {
-          "required_actions": true,
-          "needs_you": true
-        },
-        "required": [
-          "required_actions",
-          "needs_you"
-        ]
       }
     },
     "end": {
