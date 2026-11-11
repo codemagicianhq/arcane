@@ -13,7 +13,7 @@
 import type { ExternalProvider, HubRole, InstallScope, PushPolicy, TrackingMode, ContentSensitivity } from "../../types.js";
 
 export const STATE_SCHEMA_VERSION = "1.0.0";
-export const STATE_SCHEMA_ID = "https://arcaneai.net/schemas/state/v1";
+export const STATE_SCHEMA_ID = "urn:arcane:state:v1";
 /** The schema's path under the assets directory (`src/assets/` in source, `dist/assets/` when packaged). */
 export const STATE_SCHEMA_ASSET_PATH = "schemas/state.schema.json";
 

@@ -128,7 +128,7 @@ Workflow:
    - Enforcement: explicitly advisory prose (ARC-023) — no check reads a spell's actual output for this block; it holds by these instructions alone.
    <!-- fragment:action-required:end -->
 
-7. **Request human approval** — present the ship report and wait for explicit approval.
+7. **Run the security review and request human approval** — run [`spell-security-review`](spell-security-review.md) yourself for the current PR head, or verify the recorded result from this session for that same head. Put the result and any verification gaps in the ship report and the PR before requesting approval. Resolve blocking findings and recheck affected changes first. Present the ship report and wait for explicit approval.
 
 8. **Execute merge** (after approval):
    - Merge using the project's merge strategy as defined in [governance/git-conventions.md](../../.arcane/governance/git-conventions.md). **Do NOT squash** — squash merges are prohibited because they collapse per-commit attribution. Prefer rebase and fast-forward.

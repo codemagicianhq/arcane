@@ -121,6 +121,13 @@ Plus session and operational spells — `/spell-open-session`, `/spell-close-ses
 
 ## What's in the box
 
+The [release catalog](docs/spell-catalog.json) lists each top-level package asset
+directory in `assetDirectories`. A `profile` entry supplies files to the listed
+`spell init` profiles, including assets installed under a different name.
+`optional-agent-setup` applies when the operator accepts agent setup during an
+interactive install. `package-only` assets ship with the CLI and have no
+`spell init` install path.
+
 It isn't a prompt snippet — it's a full framework. Everything installs into your repo as plain, reviewable markdown. Each spell is authored once, in `.arcane/spells/`, and reaches Copilot, Claude Code and Codex through thin generated shims — one source of truth, no per-client copies to drift apart.
 
 | Layer | What you get |
@@ -281,7 +288,7 @@ The document is derived, never authoritative, and deterministic: two runs differ
 }
 ```
 
-The shape is the JSON Schema at [`src/assets/schemas/state.schema.json`](src/assets/schemas/state.schema.json) (`$id` `https://arcaneai.net/schemas/state/v1`), shipped in the package as `dist/assets/schemas/state.schema.json`. Schema `1.0.0` is additive-only: a field is never removed or retyped; a breaking change is a new major version and a new decision record ([ARC-044](DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel)).
+The shape is the JSON Schema at [`src/assets/schemas/state.schema.json`](src/assets/schemas/state.schema.json) (`$id` `urn:arcane:state:v1`), shipped in the package as `dist/assets/schemas/state.schema.json`. Schema `1.0.0` is additive-only: a field is never removed or retyped; a breaking change is a new major version and a new decision record ([ARC-044](DECISIONS.md#arc-044--client-architecture-files-first-state-contract-and-a-local-presence-channel)).
 
 ### Presence
 

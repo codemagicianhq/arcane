@@ -21,4 +21,7 @@
 
 ## Execution
 
-Preflight complete. Awaiting implementation and validation.
+- All eight fixes implemented and validated locally. See the journal for per-issue acceptance and review evidence.
+- The coverage gate passed: 3,145 tests passed, six skipped, 93.73% lines and 87.79% branches. Build, UTC changelog check, 389-item parity check, catalog check, distributed ADR reference check and version bump gate passed.
+- GitHub merge, issue closure and release are pending at this checkpoint. Recheck the source branch PR with `gh pr list --head sessions/2026-11-10-issues-463-470 --state all --json number,state,url,headRefOid,mergeCommit`. Verify the Release and npm version separately, then smoke-test the published package before closing the run.
+- The prior close-session checkout has its own staged handoff and journal. This run's continuity is recorded here to avoid a concurrent edit of that handoff.

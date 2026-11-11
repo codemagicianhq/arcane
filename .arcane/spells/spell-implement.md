@@ -172,6 +172,7 @@ Related: [[.arcane/governance/agent-policies]].
 10. **Completion** — when all stories have `"passes": true`:
     - Summarize what was built.
     - Report total test count and coverage.
+    - Run [`spell-security-review`](spell-security-review.md) on the proposed PR head yourself. Include the result, findings, and any verification gaps in the handoff before asking the operator to approve. Resolve blocking findings and recheck affected changes before requesting approval.
     - Recommend running `spell-review` for adversarial review.
 
 Rules:

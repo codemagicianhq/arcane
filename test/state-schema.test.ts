@@ -14,7 +14,7 @@ describe("state schema (ST-02, ST-10)", () => {
   it("carries the agreed $id, a 1.0.0 schema version and a closed envelope", async () => {
     const schema = await loadSchema();
     expect(schema.$id).toBe(STATE_SCHEMA_ID);
-    expect(STATE_SCHEMA_ID).toBe("https://arcaneai.net/schemas/state/v1");
+    expect(STATE_SCHEMA_ID).toBe("urn:arcane:state:v1");
     expect(STATE_SCHEMA_VERSION).toBe("1.0.0");
     expect(schema.additionalProperties).toBe(false);
   });

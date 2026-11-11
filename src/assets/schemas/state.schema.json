@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://arcaneai.net/schemas/state/v1",
+  "$id": "urn:arcane:state:v1",
   "title": "Arcane state export",
   "description": "One JSON document per repository, printed by `spell state --json` (ARC-044 decision 1). Derived from the repository's Arcane files, never authoritative, and deterministic: two runs on an unchanged repository differ only in `generated_at` (and `versions.latest` under `--online`). After 1.0.0 the schema is additive-only: a field is never removed or retyped; a breaking change is a new major version and a new decision record.",
   "type": "object",

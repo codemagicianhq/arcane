@@ -245,7 +245,7 @@ program
 
 program
   .command("state")
-  .description("Export this repository's Arcane state as one JSON document (schema https://arcaneai.net/schemas/state/v1)")
+  .description("Export this repository's Arcane state as one JSON document (package schema: dist/assets/schemas/state.schema.json)")
   .option("--json", "Print the document to stdout (required; `spell status` is the human view)")
   .option(
     "--online",
