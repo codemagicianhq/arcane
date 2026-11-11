@@ -389,3 +389,20 @@
 
 ### Raw Notes
 > Source: `journal/2026-11-05-should-haves-and-action-required.md`, lessons "A vendored file looks like a source file until its history is read" and "A rename that crosses two fragments cannot be split into per-story commits that each pass".
+
+## Feedback — spell-open-session (2026-11-10)
+
+**Session:** Drift cleanup and the 1.23.0 release ([PR #472](https://github.com/codemagicianhq/arcane/pull/472)) (routed by spell-close-session from Lessons Learned)
+**Rating:** N/A   **Would use again:** N/A
+**Submitted by:** developer
+
+### Friction Points
+- The session opening carried an operator action from a `TODO.md` item into the Action required block: get the website catalog to the current release because its sync pipeline fails. That item was last checked on 2026-11-05, and the pipeline had worked since that day. The operator saw it three times and had to ask what it meant. The spell re-verifies environment claims in a handoff's `Blockers` and `Notes`, but nothing re-checks a claim about an external system that reaches the block from `TODO.md`.
+- Three sessions in a row merged pull requests without running `spell-close-session`, so no journal or handoff recorded 1.22.0 or 1.22.1. Only the next session's drift check noticed, by reading the context file against `CHANGELOG.md`. The open-session pass did not compare the pull requests merged since the handoff's generation date with the journal.
+
+### Improvement Items
+- [ ] In `spell-open-session` and the `action-required` fragment, before listing an operator action carried from `TODO.md` or another book that describes an external system's state, re-check that state when the session can, or print the date the item was last checked beside the line; never list it as current on the item's word alone. <!-- upstream: queued -->
+- [ ] In `spell-open-session`'s drift pre-step (or `spell-check-drift`), list the session pull requests merged since the handoff's `Generated:` date and flag each one that has no journal entry or handoff of its own, so a skipped close surfaces at the next opening rather than after several. <!-- upstream: queued -->
+
+### Raw Notes
+> Source: `journal/2026-11-10-drift-cleanup.md`, lessons "An external-state claim in TODO.md was repeated as current" and "Skipped closes were found only by reading the context file against the changelog".
