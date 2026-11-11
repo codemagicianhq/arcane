@@ -342,6 +342,44 @@
       ],
       "status": "active",
       "revocation": "Ends when spell-unattended-run 1.22.0 delivery and this run cleanup finish, or at expiresAt, whichever comes first. Never reuse or renew. Set status to revoked or remove the record to revoke earlier."
+    },
+    {
+      "id": "issues-463-470-2026-11-10",
+      "grantedBy": "payini",
+      "operatorWords": "Authorize the full run and grant commit",
+      "grantedAt": "2026-11-11T06:24:06.245Z",
+      "expiresAt": "2026-11-11T18:00:00.000Z",
+      "scope": {
+        "repository": "github.com/codemagicianhq/arcane",
+        "task": "issues-463-470",
+        "branchPrefix": "sessions/2026-11-10-issues-463-470"
+      },
+      "permittedActions": [
+        "commit",
+        "push",
+        "create-pr",
+        "complete-pr",
+        "delete-remote-branch"
+      ],
+      "excludedActions": [
+        "approve-pr",
+        "assign-pr",
+        "run-dev-pipeline",
+        "force-push",
+        "production-deploy",
+        "settings-change",
+        "manual-publish"
+      ],
+      "requiredChecks": [
+        "Lint, typecheck, test, build",
+        "PR branch is rebased on target",
+        "Review round clear",
+        "Fixture tests (macos-latest)",
+        "review",
+        "security-review"
+      ],
+      "status": "active",
+      "revocation": "Ends when merge, automatic release verification and run branch cleanup finish, or at expiry, whichever comes first. Set status to revoked or remove the entry to revoke earlier."
     }
   ]
 }
