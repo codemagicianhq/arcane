@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cp, readFile, writeFile } from "node:fs/promises";
+import { cp, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import {
@@ -33,6 +33,18 @@ import type { CapabilityLine } from "../src/config/capabilities.js";
 
 const ROOT_DIR = process.cwd();
 const ASSETS_DIR = join(ROOT_DIR, "src", "assets");
+
+it("lists every shipped asset directory with its spell init disposition", async () => {
+  const catalog = await generateSpellCatalog(ASSETS_DIR);
+  const shipped = (await readdir(ASSETS_DIR, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  expect(catalog.assetDirectories.map(({ directory }) => directory)).toEqual(shipped);
+  expect(catalog.assetDirectories).toEqual(expect.arrayContaining([
+    { directory: "schemas", init: "package-only", profiles: [] },
+    { directory: "agents", init: "optional-agent-setup", profiles: ["full", "lite"] },
+    expect.objectContaining({ directory: "docs-baseline", init: "profile" }),
+  ]));
+});
 
 function normalizeLineEndings(content: string): string {
   return content.replace(/\r\n?/g, "\n");

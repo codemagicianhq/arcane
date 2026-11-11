@@ -10,14 +10,15 @@
  * release had a changelog entry, so a bump merged without one shipped
  * silently. This gate runs in ci.yml, so the pull request that bumps the
  * version fails before it merges; release-drift.yml runs the same
- * entry-heading match (as a grep, with no install) right before it creates
- * the Release, so a bump that reached main some other way is refused there.
+ * check right before it creates the Release, with the current UTC date as
+ * the expected publication date.
  *
  * Rules (Keep a Changelog, as this file applies it):
  *   1. Every `## [...]` heading is `## [x.y.z] - YYYY-MM-DD`, or
  *      `## [Unreleased]` for changes merged before the next bump.
  *   2. package.json's version has such a heading.
- *   3. Every `### ` heading under a release is one of the standard set:
+ *   3. Release dates are in descending UTC order, allowing same-day releases.
+ *   4. Every `### ` heading under a release is one of the standard set:
  *      Added, Changed, Fixed, Removed, Notes.
  *
  * Exits 0 (pass) or 1 (fail).
@@ -30,7 +31,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 
-/** The one heading shape a released version may have. Shared with release-drift.yml, which greps for the same thing. */
+/** The one heading shape a released version may have. */
 export const RELEASE_HEADING = /^## \[(\d+\.\d+\.\d+)\] - (\d{4}-\d{2}-\d{2})$/;
 export const UNRELEASED_HEADING = "## [Unreleased]";
 export const SECTION_HEADINGS = ["Added", "Changed", "Fixed", "Removed", "Notes"] as const;
@@ -44,10 +45,11 @@ export function releaseHeadingFor(version: string, date: string): string {
  * Returns every problem found, in file order; an empty list means the
  * changelog passes for `version`.
  */
-export function checkChangelog(changelog: string, version: string): string[] {
+export function checkChangelog(changelog: string, version: string, publishDate?: string): string[] {
   const problems: string[] = [];
   const lines = changelog.replace(/\r\n?/g, "\n").split("\n");
   let found = false;
+  let previousDate: string | undefined;
   let inFence = false;
   for (const [index, line] of lines.entries()) {
     const where = `CHANGELOG.md:${index + 1}`;
@@ -62,7 +64,17 @@ export function checkChangelog(changelog: string, version: string): string[] {
         );
         continue;
       }
-      if (match[1] === version) found = true;
+      const date = match[2];
+      if (previousDate && date > previousDate) {
+        problems.push(`${where}: release date ${date} is later than the preceding release date ${previousDate}.`);
+      }
+      previousDate = date;
+      if (match[1] === version) {
+        found = true;
+        if (publishDate && date !== publishDate) {
+          problems.push(`${where}: version ${version} must use its UTC publish date ${publishDate}, found ${date}.`);
+        }
+      }
     } else if (line.startsWith("### ")) {
       const title = line.slice(4).trim();
       if (!(SECTION_HEADINGS as readonly string[]).includes(title)) {
@@ -83,7 +95,8 @@ export function checkChangelog(changelog: string, version: string): string[] {
 function main(): void {
   const version = (JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")) as { version: string }).version;
   const changelog = readFileSync(join(ROOT, "CHANGELOG.md"), "utf8");
-  const problems = checkChangelog(changelog, version);
+  const publishDate = process.argv.includes("--publishing") ? new Date().toISOString().slice(0, 10) : undefined;
+  const problems = checkChangelog(changelog, version, publishDate);
   if (problems.length > 0) {
     console.error(`Changelog check FAILED for version ${version}:`);
     for (const problem of problems) console.error(`  ${problem}`);

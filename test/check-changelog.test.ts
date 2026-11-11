@@ -12,7 +12,7 @@ import {
  * The changelog gate: a version bump without a CHANGELOG.md entry used to
  * reach npm silently, because release-drift.yml cut the Release on the
  * merge and nothing read the changelog. ci.yml now runs this check, and
- * release-drift.yml greps for the same heading before creating a Release.
+ * release-drift.yml runs it again before creating a Release.
  */
 
 const ROOT_DIR = process.cwd();
@@ -97,16 +97,23 @@ describe("checkChangelog", () => {
     expect(checkChangelog(changelog, version)).toEqual([]);
   });
 
-  it("release-drift.yml greps for the same heading shape this check requires", async () => {
+  it("rejects release dates that increase down the file", () => {
+    const later = good.replace("## [1.2.2] - 2026-10-01", "## [1.2.2] - 2026-10-30");
+    expect(checkChangelog(later, "1.2.3")).toEqual([
+      "CHANGELOG.md:24: release date 2026-10-30 is later than the preceding release date 2026-10-29.",
+    ]);
+    expect(checkChangelog(good.replace("2026-10-01", "2026-10-29"), "1.2.3")).toEqual([]);
+  });
+
+  it("requires the target version to use the actual UTC date at publication", () => {
+    expect(checkChangelog(good, "1.2.3", "2026-10-29")).toEqual([]);
+    expect(checkChangelog(good, "1.2.3", "2026-10-30")).toEqual([
+      "CHANGELOG.md:9: version 1.2.3 must use its UTC publish date 2026-10-30, found 2026-10-29.",
+    ]);
+  });
+
+  it("release-drift.yml runs the shared gate before publishing", async () => {
     const workflow = await readFile(join(ROOT_DIR, ".github", "workflows", "release-drift.yml"), "utf8");
-    // The workflow's pattern, with the version substituted, must match what
-    // releaseHeadingFor produces and reject a heading without a date.
-    const match = /grep -qE "(\^## \\\[.*?)" CHANGELOG\.md/.exec(workflow);
-    expect(match, "release-drift.yml carries the changelog grep").not.toBeNull();
-    // Bash expands `${PKG_VERSION//./\\.}` to the version with each dot escaped.
-    const pattern = new RegExp(match![1].replace("${PKG_VERSION//./\\\\.}", "1\\.13\\.0"));
-    expect(pattern.test(releaseHeadingFor("1.13.0", "2026-10-29"))).toBe(true);
-    expect(pattern.test("## [1.13.0]")).toBe(false);
-    expect(pattern.test("## [1.13.01] - 2026-10-29")).toBe(false);
+    expect(workflow).toMatch(/node scripts\/check-changelog\.ts --publishing\s+echo "Creating Release[^\n]+\s+gh release create/);
   });
 });

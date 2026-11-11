@@ -148,6 +148,22 @@ For docs-only repos (Arcane itself, when hosted on Azure DevOps):
 - CI lint check runs on push to any branch
 - Branch discipline still applies (branch → work → ff-only merge)
 
+### Job conditions and untrusted output
+
+- When a job is meant to run after a specific job succeeds, declare that job in
+  `dependsOn` and check its result explicitly, for example
+  `condition: and(not(canceled()), in(dependencies.build.result, 'Succeeded', 'SucceededWithIssues'))`.
+  The default `succeeded()` also evaluates transitive dependencies. Include every
+  dependency whose outcome should govern the job and handle cancellation explicitly.
+  See [Azure Pipelines conditions](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions).
+- Keep raw output from untrusted tools, containers, and code off agent stdout.
+  Capture both stdout and stderr to a file and log only a trusted reference to the
+  file, or sanitize the complete stream before logging. Strip or neutralize
+  `##vso[` and `##[` wherever they occur, including after a carriage return
+  (`\r`). A line-start check is insufficient. Preserve the child process exit
+  code when redirecting or filtering output. See
+  [Azure Pipelines logging commands](https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands).
+
 ### Pipeline Templates
 
 #### .NET Backend Pipeline

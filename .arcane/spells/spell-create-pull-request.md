@@ -33,10 +33,10 @@ Related spells:
 
 ## Arguments
 
-- `--draft` — create the PR as a draft (work-in-progress / early feedback).
+- `--draft` — keep the PR in draft for work in progress or early feedback. Pending requested fixes or reviews also require draft status.
 - `--reviewers <name,...>` — comma-separated reviewers. Optional.
 - `--target <branch>` — target branch (default `main`).
-- `--docs-only` — lightweight mode for documentation-only changes: prefixes `[docs]` in the title and skips test-evidence/review sections. It does not bypass merge authorization.
+- `--docs-only` — lightweight mode for documentation-only changes: prefixes `[docs]` in the title and omits the usual test-evidence and adversarial review sections. Record the security review result even in this mode. It does not bypass merge authorization.
 
 <!-- fragment:run-grant-authority:start -->
 **Run-grant authority (ARC-061).** Before an action covered by an unattended run,
@@ -99,6 +99,10 @@ Before enabling auto-complete/auto-merge or completing an existing PR, resolve `
 - Re-check authority, PR ID, and head SHA immediately before completion; any change invalidates approval.
 
 ## Step 0 — Guard checks
+
+When an existing ready PR has outstanding requested fixes or reviews, apply the
+draft gate in Step 5 as soon as you detect the outstanding work, before working
+on it or pushing a new head.
 
 > **🛑 AGENT-MANDATORY PRE-PR CHECKLIST — READ FIRST.** Before *any* PR-creation call (this spell, raw `az repos pr create`, raw `gh pr create`, the `create_pull_request` MCP tool, REST, web hook, or anything else):
 >
@@ -257,6 +261,26 @@ Lines written before ARC-043 still carry theirs; the parser reads past it and th
 so they need no edit.
 
 ## Step 5 — Create the PR
+
+**Keep the PR in draft while requested work is outstanding.** Before creating or
+updating a PR, check the current head for requested fixes and reviews that are
+pending, in progress, failed with unresolved findings, or missing evidence. When
+any are outstanding, use the provider's draft state, including for
+`--docs-only`. If the PR is already open and ready, move it to draft before
+continuing when you are authorized to update it. Otherwise report the required
+operator action and wait for the provider to confirm it is blocked. Verify the draft status on the provider before handing over the
+link. If the provider cannot put the PR in draft or enforce an equivalent
+blocking review, stop and report the blocker before opening a ready PR or
+requesting approval.
+
+**Run the security review yourself.** Run
+[`spell-security-review`](spell-security-review.md) for the current head, or verify
+this session's recorded result against that same head. Record the outcome,
+findings, and any verification gaps in the PR. Move a PR held in draft by this
+gate to ready only after all requested fixes and reviews are complete, all
+blocking findings are resolved, and the evidence covers the current head.
+Honor an explicit `--draft` request until the operator asks to mark it ready.
+Only after the PR is ready may you request approval or use any completion path.
 
 **Refuse to create the PR if the body file is missing, empty, or written for another branch.** Before either create command, check that `<git-dir>/arcane-pr-body.md` exists, has content, and its first line names the current branch. If it does not — most often because a halted rebase interrupted the flow and it was resumed here — stop and run Step 4 first, then return to this step. Never fall back to an empty or placeholder description.
 

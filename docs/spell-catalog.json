@@ -2039,5 +2039,103 @@
         "theme": "limits"
       }
     ]
-  }
+  },
+  "assetDirectories": [
+    {
+      "directory": ".agents",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs"
+      ]
+    },
+    {
+      "directory": ".arcane",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs",
+        "governance-only"
+      ]
+    },
+    {
+      "directory": ".claude",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs"
+      ]
+    },
+    {
+      "directory": ".github",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs",
+        "governance-only"
+      ]
+    },
+    {
+      "directory": "agents",
+      "init": "optional-agent-setup",
+      "profiles": [
+        "full",
+        "lite"
+      ]
+    },
+    {
+      "directory": "ai-context",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs"
+      ]
+    },
+    {
+      "directory": "docs-baseline",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs",
+        "governance-only"
+      ]
+    },
+    {
+      "directory": "journal",
+      "init": "profile",
+      "profiles": [
+        "full",
+        "lite",
+        "methodology",
+        "docs"
+      ]
+    },
+    {
+      "directory": "report",
+      "init": "package-only",
+      "profiles": []
+    },
+    {
+      "directory": "schemas",
+      "init": "package-only",
+      "profiles": []
+    },
+    {
+      "directory": "sign-in",
+      "init": "package-only",
+      "profiles": []
+    }
+  ]
 }

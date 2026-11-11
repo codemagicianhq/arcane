@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
@@ -103,6 +103,13 @@ export interface CapabilityCatalog {
   lines: CapabilityLine[];
 }
 
+/** One top-level folder in the shipped assets tree and how spell init uses it. */
+export interface AssetDirectoryCatalogEntry {
+  directory: string;
+  init: "profile" | "optional-agent-setup" | "package-only";
+  profiles: string[];
+}
+
 export interface SpellCatalog {
   totalSpells: number;
   totalAgents: number;
@@ -114,6 +121,7 @@ export interface SpellCatalog {
   profiles: ProfileCatalogEntry[];
   agents: AgentCatalogEntry[];
   capabilities: CapabilityCatalog;
+  assetDirectories: AssetDirectoryCatalogEntry[];
 }
 
 export interface SpellCatalogResult {
@@ -326,6 +334,33 @@ async function catalogAgents(assetsDir: string): Promise<AgentCatalogEntry[]> {
   });
 }
 
+async function catalogAssetDirectories(assetsDir: string): Promise<AssetDirectoryCatalogEntry[]> {
+  const profilesByDirectory = new Map<string, Set<string>>();
+  for (const profile of listProfiles()) {
+    for (const name of profile.components) {
+      const component = getComponent(name);
+      for (const file of component.files) {
+        const source = component.sourceOverrides?.[file] ?? file;
+        const slash = source.indexOf("/");
+        if (slash < 0) continue;
+        const directory = source.slice(0, slash);
+        const profiles = profilesByDirectory.get(directory) ?? new Set<string>();
+        profiles.add(profile.id);
+        profilesByDirectory.set(directory, profiles);
+      }
+    }
+  }
+
+  const entries = await readdir(assetsDir, { withFileTypes: true });
+  return entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort().map((directory) => {
+    const profiles = [...(profilesByDirectory.get(directory) ?? [])];
+    if (profiles.length > 0) return { directory, init: "profile", profiles };
+    // Full and Lite offer agent setup separately from their registered components.
+    if (directory === "agents") return { directory, init: "optional-agent-setup", profiles: ["full", "lite"] };
+    return { directory, init: "package-only", profiles: [] };
+  });
+}
+
 /**
  * T15/BC-23. Derives the spell catalog from registry.ts's spells-* components
  * -- the same grouping `spell init`/`spell add` install by -- so a spell can
@@ -397,6 +432,7 @@ export async function generateSpellCatalog(assetsDir: string): Promise<SpellCata
     profiles: catalogProfiles(),
     agents,
     capabilities: catalogCapabilities(),
+    assetDirectories: await catalogAssetDirectories(assetsDir),
   };
 }
 
