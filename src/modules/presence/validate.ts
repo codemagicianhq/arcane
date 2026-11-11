@@ -8,9 +8,9 @@
  *   a surrogate pair.
  * - `required_actions` over 20 entries is refused, never cut: a silently dropped
  *   required-action line is the one loss an operator cannot see.
- * - `needs_you`, the field's name before 1.20 (ARC-060 decision 14), is
- *   accepted as `required_actions` for the 1.20 series, so an older reporter
- *   keeps working; a body that sends both names is refused, naming `needs_you`.
+ * - `needs_you`, the field's name before 1.20, was accepted as
+ *   `required_actions` for the 1.20 series only (ARC-060 decision 14); since
+ *   1.23.0 it is an unknown field like any other.
  * - `done` is not a report status: a session ends through `end` (D6).
  */
 
@@ -148,16 +148,13 @@ function checkout(value: unknown): CheckoutInfo {
   return { path: nonEmpty(c["path"], "checkout.path"), branch: line(c["branch"], "checkout.branch", true), linked_worktree: c["linked_worktree"] };
 }
 
-/** The pre-1.20 name of `required_actions`, still accepted on input for the 1.20 series (ARC-060 decision 14). */
-export const LEGACY_REQUIRED_ACTIONS_KEY = "needs_you";
-
-function requiredActions(value: unknown, key = "required_actions"): RequiredAction[] {
-  if (!Array.isArray(value)) throw new Refusal("invalid_field", key, `${key} must be a list`);
+function requiredActions(value: unknown): RequiredAction[] {
+  if (!Array.isArray(value)) throw new Refusal("invalid_field", "required_actions", "required_actions must be a list");
   if (value.length > MAX_REQUIRED_ACTIONS) {
-    throw new Refusal("too_many_lines", key, `${key} carries at most ${MAX_REQUIRED_ACTIONS} lines; ${value.length} were sent`);
+    throw new Refusal("too_many_lines", "required_actions", `required_actions carries at most ${MAX_REQUIRED_ACTIONS} lines; ${value.length} were sent`);
   }
   return value.map((item: unknown, i) => {
-    const field = `${key}.${i}`;
+    const field = `required_actions.${i}`;
     const n = closed(item, field, ["action", "reason"]);
     return { action: nonEmptyLine(n["action"], `${field}.action`), reason: line(n["reason"], `${field}.reason`, true) };
   });
@@ -179,7 +176,7 @@ function refuse<T>(fn: () => T): Validated<T> {
 /** The body of `POST /v0/sessions/report`, normalized. */
 export function validateReport(value: unknown): Validated<ReportBody> {
   return refuse(() => {
-    const b = closed(value, undefined, ["status", "harness", "agent", "repository", "checkout"], ["spell", "task", "message", "required_actions", LEGACY_REQUIRED_ACTIONS_KEY]);
+    const b = closed(value, undefined, ["status", "harness", "agent", "repository", "checkout"], ["spell", "task", "message", "required_actions"]);
     if (b["status"] === "done") {
       throw new Refusal("invalid_field", "status", "status done is set by ending a session: use POST /v0/sessions/end (spell presence end)");
     }
@@ -193,11 +190,7 @@ export function validateReport(value: unknown): Validated<ReportBody> {
     for (const key of ["spell", "task", "message"] as const) {
       if (key in b) out[key] = line(b[key], key, true);
     }
-    if ("required_actions" in b && LEGACY_REQUIRED_ACTIONS_KEY in b) {
-      throw new Refusal("invalid_field", LEGACY_REQUIRED_ACTIONS_KEY, "send required_actions only: needs_you is its name before 1.20");
-    }
     if ("required_actions" in b) out.required_actions = requiredActions(b["required_actions"]);
-    else if (LEGACY_REQUIRED_ACTIONS_KEY in b) out.required_actions = requiredActions(b[LEGACY_REQUIRED_ACTIONS_KEY], LEGACY_REQUIRED_ACTIONS_KEY);
     return out;
   });
 }

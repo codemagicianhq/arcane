@@ -190,35 +190,30 @@ describe("validate.ts does no I/O (architecture D1; threat-model control 11)", (
   });
 });
 
-// ARC-060 decision 14 (features/action-required/PRD.md AR-05): `needs_you`
-// is the field's name before 1.20, still accepted on input for the 1.20 series.
-describe("validateReport: the pre-1.20 name needs_you (ARC-060 decision 14)", () => {
-  it("accepts needs_you as required_actions, so an older reporter keeps working", async () => {
+// ARC-060 decision 14 (features/action-required/PRD.md AR-05): `needs_you`,
+// the field's name before 1.20, was accepted for the 1.20 series only. Since
+// 1.23.0 it is an unknown field like any other.
+describe("validateReport: the retired pre-1.20 name needs_you (ARC-060 decision 14)", () => {
+  it("refuses needs_you alone as an unknown field", async () => {
     const body = await full();
     const { required_actions: lines, ...rest } = body;
-    const result = validateReport({ ...rest, needs_you: lines });
-    expect(result.ok).toBe(true);
-    expect(result.ok && result.value.required_actions).toEqual(lines);
-    expect(result.ok && "needs_you" in result.value).toBe(false);
+    expect(refusal(validateReport({ ...rest, needs_you: lines }))).toEqual({ code: "unknown_field", field: "needs_you" });
   });
 
-  it("names needs_you in its own refusals", async () => {
-    const rest = await full();
-    delete rest["required_actions"];
-    const line = { action: "Approve the plan", reason: null };
-    expect(refusal(validateReport({ ...rest, needs_you: Array.from({ length: 21 }, () => line) }))).toEqual({ code: "too_many_lines", field: "needs_you" });
-  });
-
-  it("refuses a body that sends both names, naming needs_you", async () => {
+  it("refuses needs_you beside required_actions as an unknown field", async () => {
     const body = await full();
-    expect(refusal(validateReport({ ...body, needs_you: body["required_actions"] }))).toEqual({ code: "invalid_field", field: "needs_you" });
+    expect(refusal(validateReport({ ...body, needs_you: body["required_actions"] }))).toEqual({ code: "unknown_field", field: "needs_you" });
   });
 
-  it("the schema documents needs_you as deprecated and refuses both names together", async () => {
+  it("the schema no longer declares needs_you and refuses a body that sends it", async () => {
+    const schema = JSON.parse(await readFile(join(REPO_ROOT, "src/assets/schemas/presence.schema.json"), "utf8")) as {
+      $defs: { report: { properties: Record<string, unknown> } };
+    };
+    expect(Object.keys(schema.$defs.report.properties)).not.toContain("needs_you");
     const validate = await compilePresenceSchema();
     const body = await full();
     const { required_actions: lines, ...rest } = body;
-    expect(validate("report", { ...rest, needs_you: lines })).toEqual([]);
-    expect(validate("report", { ...body, needs_you: lines })).not.toEqual([]);
+    expect(validate("report", { ...rest, needs_you: lines })).not.toEqual([]);
+    expect(validate("report", body)).toEqual([]);
   });
 });
