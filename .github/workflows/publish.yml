@@ -85,24 +85,47 @@ jobs:
         run: npm publish --provenance --access public
 
       - name: Wait for published tarball to become downloadable
+        timeout-minutes: 17
         run: |
           set -euo pipefail
           VERSION="$(node -p "require('./package.json').version")"
           VERIFY_DIR="$(mktemp -d)"
           trap 'rm -rf "$VERIFY_DIR"' EXIT
 
-          for ATTEMPT in $(seq 1 36); do
-            if npm pack "arcane-cli@$VERSION" --pack-destination "$VERIFY_DIR" --silent > "$VERIFY_DIR/pack.out" 2> "$VERIFY_DIR/pack.err"; then
+          # v1.23.1 needed about eight minutes before the normal npm download worked.
+          WAIT_SECONDS=900
+          SECONDS=0
+          while true; do
+            REMAINING=$((WAIT_SECONDS - SECONDS))
+            if (( REMAINING <= 0 )); then break; fi
+            ATTEMPT_TIMEOUT=$((REMAINING < 15 ? REMAINING : 15))
+            if timeout --kill-after=2s "${ATTEMPT_TIMEOUT}s" npm pack "arcane-cli@$VERSION" \
+              --prefer-online --fetch-retries=0 --pack-destination "$VERIFY_DIR" --silent \
+              > "$VERIFY_DIR/pack.out" 2> "$VERIFY_DIR/pack.err"; then
               TARBALL_NAME="$(tail -n 1 "$VERIFY_DIR/pack.out")"
               tar -tzf "$VERIFY_DIR/$TARBALL_NAME" > /dev/null
-              echo "Downloaded and inspected arcane-cli@$VERSION on attempt $ATTEMPT."
+              echo "Downloaded and inspected arcane-cli@$VERSION after ${SECONDS}s."
               exit 0
             fi
             rm -f "$VERIFY_DIR/arcane-cli-$VERSION.tgz"
-            echo "arcane-cli@$VERSION tarball is not downloadable yet (attempt $ATTEMPT/36)."
-            if [ "$ATTEMPT" -lt 36 ]; then sleep 10; fi
+            echo "arcane-cli@$VERSION tarball is not downloadable through npm yet (${SECONDS}s elapsed)."
+            REMAINING=$((WAIT_SECONDS - SECONDS))
+            if (( REMAINING > 0 )); then
+              sleep "$((REMAINING < 10 ? REMAINING : 10))"
+            fi
           done
 
-          cat "$VERIFY_DIR/pack.err"
-          echo "::error::arcane-cli@$VERSION was published but its tarball was not downloadable within six minutes."
+          ELAPSED=$SECONDS
+          sed 's/^/npm: /' "$VERIFY_DIR/pack.err"
+          # A distinct URL can diagnose a cached 404. Only a standard npm download passes.
+          PROBE="${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$(date +%s)"
+          if curl --fail --silent --show-error --max-time 15 --header 'Cache-Control: no-cache' \
+            --output "$VERIFY_DIR/direct.tgz" \
+            "https://registry.npmjs.org/arcane-cli/-/arcane-cli-$VERSION.tgz?arcane-verify=$PROBE" \
+            && tar -tzf "$VERIFY_DIR/direct.tgz" > /dev/null; then
+            echo "Direct registry probe downloaded a readable archive; standard npm download still failed."
+          else
+            echo "Direct registry probe did not return a readable archive."
+          fi
+          echo "::error::npm accepted arcane-cli@$VERSION, but the standard npm download did not verify after ${ELAPSED}s. Check registry availability before retrying the publish."
           exit 1
