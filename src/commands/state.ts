@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { AgentConfigValidationError } from "../modules/agent-loader.js";
 import { ManifestNotFoundError } from "../modules/manifest.js";
 import { collectState, type CollectStateOptions } from "../modules/state/collect.js";
@@ -20,6 +22,20 @@ export interface StateCliDeps {
 }
 
 const USAGE_POINTER = "spell state prints one JSON document to stdout: run `spell state --json` (spell status is the human view).";
+const SELF_HOSTED_MANIFEST_MESSAGE =
+  "Self-hosted Arcane repository: spell state cannot determine versions.files or components without a root .arcane.json.";
+
+async function hasSelfHostedSourceMarker(targetDir: string): Promise<boolean> {
+  try {
+    const raw = await readFile(path.join(targetDir, "src", "assets", ".arcane.json"), "utf8");
+    const marker: unknown = JSON.parse(raw);
+    return marker !== null && typeof marker === "object" && !Array.isArray(marker) &&
+      "selfHosted" in marker && marker.selfHosted === true &&
+      "tracking_mode" in marker && marker.tracking_mode === "internal";
+  } catch {
+    return false;
+  }
+}
 
 function writeStdout(text: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -30,7 +46,8 @@ function writeStdout(text: string): Promise<void> {
 /**
  * `spell state --json` (ARC-044 decision 1): one JSON document on stdout,
  * nothing else, exit 0. Diagnostics go to stderr only. Exit 1 with `spell
- * status`'s wording when there is no manifest, exit 1 on a malformed roster
+ * status`'s wording when there is no manifest (or a self-hosted-specific
+ * message for the framework source), exit 1 on a malformed roster
  * or an unwritable stdout, exit 2 without `--json` (architecture D12).
  */
 export async function runState(
@@ -55,7 +72,7 @@ export async function runState(
     text = serializeState(doc);
   } catch (error) {
     if (error instanceof ManifestNotFoundError) {
-      console.error('Not initialized. Run "spell init" first.');
+      console.error((await hasSelfHostedSourceMarker(targetDir)) ? SELF_HOSTED_MANIFEST_MESSAGE : 'Not initialized. Run "spell init" first.');
     } else if (error instanceof AgentConfigValidationError) {
       // The loader's own message, as spell agents list prints it (PRD ST-12).
       console.error(error.message);
