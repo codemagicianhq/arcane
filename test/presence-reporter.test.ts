@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
+import { mkdir, writeFile } from "node:fs/promises";
 import { createServer, type Server, type Socket } from "node:net";
 import { join } from "node:path";
 import { runPresenceEnd, runPresenceReport } from "../src/commands/presence.js";
@@ -78,6 +79,30 @@ describe("the silence rule without a channel (PC-01, PC-05, PC-11)", () => {
 });
 
 describe("reporting to a running service (PC-04, PC-05)", () => {
+  it("reports a self-hosted source checkout but never hides a corrupt root manifest", async () => {
+    recordService(home, svc.port);
+    const source = await repoWithOneCommit("presence-reporter-self-hosted");
+    try {
+      await mkdir(join(source, "src", "assets"), { recursive: true });
+      const markerPath = join(source, "src", "assets", ".arcane.json");
+      await writeFile(markerPath, JSON.stringify({ selfHosted: true }));
+      expect(await sendReport(source, { status: "working" }, deps())).toEqual({ kind: "silent" });
+
+      await writeFile(markerPath, JSON.stringify({ selfHosted: true, tracking_mode: "internal" }));
+      const sent = await sendReport(source, { status: "working", task: "source work" }, deps());
+      expect(sent.kind).toBe("sent");
+      const record = (sent as { record: SessionRecord }).record;
+      expect(record.repository.root).toBe(source);
+      expect(record.checkout.branch).toBe("main");
+      expect(record.task).toBe("source work");
+
+      await writeFile(join(source, ".arcane.json"), "{");
+      expect(await sendReport(source, { status: "working" }, deps())).toEqual({ kind: "silent" });
+    } finally {
+      await removeFixtureDir(source);
+    }
+  });
+
   it("creates a record that validates, updates it, then ends it", async () => {
     recordService(home, svc.port);
     const validate = await compilePresenceSchema();

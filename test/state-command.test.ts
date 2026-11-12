@@ -143,6 +143,34 @@ describe("spell state — handler (ST-01)", () => {
     expect(written).toEqual([]);
   });
 
+  it("names a self-hosted source repository instead of suggesting spell init", async () => {
+    const dir = await createFixtureDir("state-cmd-selfhosted-marker");
+    fixtures.push(dir);
+    await mkdir(join(dir, "src", "assets"), { recursive: true });
+    await writeFile(join(dir, "src", "assets", ".arcane.json"), JSON.stringify({ selfHosted: true, tracking_mode: "internal" }));
+
+    await runState(dir, PACKAGE_VERSION, { json: true }, { write });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Self-hosted Arcane repository: spell state cannot determine versions.files or components without a root .arcane.json.",
+    );
+    expect(written).toEqual([]);
+  });
+
+  it("does not treat an incomplete self-hosted marker as the source repository", async () => {
+    const dir = await createFixtureDir("state-cmd-incomplete-selfhosted-marker");
+    fixtures.push(dir);
+    await mkdir(join(dir, "src", "assets"), { recursive: true });
+    await writeFile(join(dir, "src", "assets", ".arcane.json"), JSON.stringify({ selfHosted: true }));
+
+    await runState(dir, PACKAGE_VERSION, { json: true }, { write });
+
+    expect(process.exitCode).toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith('Not initialized. Run "spell init" first.');
+    expect(written).toEqual([]);
+  });
+
   it("writes exactly one serialized document and nothing else, exit code unset (0)", async () => {
     const dir = await consumerFixture("state-cmd-ok");
     await runState(dir, PACKAGE_VERSION, { json: true }, { write });

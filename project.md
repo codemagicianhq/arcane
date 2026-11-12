@@ -45,11 +45,11 @@ drift check treats hub artifacts appearing here as a Critical finding.
 
 ## Current Goals
 
-- **No program is active (checked 2026-11-10).** Work comes from [TODO.md](TODO.md)'s Open Items. The
-  most recent shipped work is the presence channel, roadmap item 2.1 (1.18.0–1.20.0,
+- **No program is active (checked 2026-11-11).** Work comes from [TODO.md](TODO.md)'s Open Items.
+  Recent releases include the presence channel (1.18.0–1.20.0,
   [ARC-060](DECISIONS.md#arc-060--the-presence-channel-one-package-behind-spell-presence-a-loopback-contract-checkout-keyed-sessions-and-a-prompt-driven-reporting-convention)),
-  and `spell-unattended-run` (1.22.0). The release-by-release state is in
-  [ai-context/system-prompt-context.md](ai-context/system-prompt-context.md)'s Current Priorities, not here.
+  `spell-unattended-run` (1.22.0), and the 1.23.0–1.23.1 fixes. The release-by-release state is in
+  [ai-context/system-prompt-context.md](ai-context/system-prompt-context.md)'s Current Priorities.
 - External intake batch-001 is closed except [EF-18](docs/intake/batch-001/EF-18.md), blocked on a
   genuine independent batch-002 submission — operator input, not effort. EF-35 (secret detection)
   shipped as [ARC-037](DECISIONS.md#arc-037--secret-and-org-leak-detection-pre-commit-scan-plus-repository-wide-ci-backstop)
