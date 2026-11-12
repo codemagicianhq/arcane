@@ -14,7 +14,7 @@
 
 import { basename, dirname } from "node:path";
 import { runGit as defaultRunGit, type GitResult } from "../git.js";
-import { readManifest as defaultReadManifest } from "../manifest.js";
+import { ManifestNotFoundError, readManifest as defaultReadManifest, readSelfHostedSourceMarker } from "../manifest.js";
 import { resolveRealPath } from "../real-path.js";
 import { remoteProvider, stripUserinfo } from "../state/git.js";
 import { resolveSessionAgent } from "./agent.js";
@@ -78,12 +78,20 @@ async function locate(cwd: string, deps: ReporterDeps): Promise<Located | null> 
   if (found === null) return null;
   const git = deps.runGit ?? defaultRunGit;
   const readManifest = deps.readManifest ?? defaultReadManifest;
-  const [manifest, symbolic, remote] = await Promise.all([
-    quiet(() => readManifest(found.checkout)),
+  const [manifestAccepted, symbolic, remote] = await Promise.all([
+    (async () => {
+      try {
+        await readManifest(found.checkout);
+        return true;
+      } catch (error) {
+        // Only an absent root manifest may use the source-tree marker.
+        return error instanceof ManifestNotFoundError && (await readSelfHostedSourceMarker(found.checkout)) !== null;
+      }
+    })(),
     quiet(() => git(found.checkout, ["symbolic-ref", "--short", "-q", "HEAD"])),
     quiet(() => git(found.checkout, ["remote", "get-url", "origin"])),
   ]);
-  if (manifest === null) return null;
+  if (!manifestAccepted) return null;
   let branch = symbolic?.stdout.trim() || null;
   if (branch === null) branch = (await quiet(() => git(found.checkout, ["rev-parse", "--short", "HEAD"])))?.stdout.trim() || null;
   const root = basename(found.commonDir) === ".git" ? dirname(found.commonDir) : found.checkout;

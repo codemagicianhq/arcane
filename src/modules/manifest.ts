@@ -309,6 +309,19 @@ export async function readManifest(targetDir: string): Promise<ArcaneManifest> {
   return manifest;
 }
 
+/** A source-tree marker is valid only when the root install manifest is absent. */
+export async function readSelfHostedSourceMarker(targetDir: string): Promise<Record<string, unknown> | null> {
+  try {
+    const raw = await readFile(path.join(targetDir, "src", "assets", ".arcane.json"), "utf8");
+    const parsed: unknown = JSON.parse(raw);
+    return isRecord(parsed) && parsed["selfHosted"] === true && parsed["tracking_mode"] === "internal"
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Resolves the effective `secretsScanExcludePrefixes` list for a target
  * directory (ARC-037). Self-hosted-aware: falls back to reading

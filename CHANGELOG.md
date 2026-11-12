@@ -18,6 +18,7 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 ### Fixed
 
 - Explain that Arcane's self-hosted source tree cannot export state without a root manifest, instead of suggesting `spell init`.
+- Allow the self-hosted source checkout to report to a configured local presence service; a corrupt root manifest still blocks reporting.
 
 ## [1.23.1] - 2026-11-11
 
