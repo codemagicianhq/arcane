@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-11-17
+last_updated: 2026-11-18
 ---
 
 # TODO
@@ -634,7 +634,7 @@ The older malformed `behavioral_rules` / `[object Object]` defect is already clo
 
 - [ ] **Give every non-blocking `spell doctor` check one recommendation shape: what to change, the exact edit or command, and what it saves or protects.** Raised 2026-10-02 while fixing [#328](https://github.com/codemagicianhq/arcane/issues/328): the MCP timeout warning named no unit, no minimum and no example edit until that fix. Audit the 15 checks in `src/commands/doctor.ts` against the shape, then consider a `Recommendations` grouping in doctor's output and future hardening/security checks in the same shape (for example a `.mcp.json` server pulled with `npx -y` and no pinned version; no secrets hook installed). Advise, never edit (R-295b); exit code unchanged. Related: `TODO.md ("LOW: \`spell doctor\`'s unowned-package check (R-295b) misses two shapes")`.
 
-- [ ] **Plan a live cross-client audit of Arcane in Codex, Claude Code, and VS Code Copilot.** Type: `todo`; domain: `agents`; scope: `repo`. Start from the [Codex Support plan](docs/plans/codex-support/PLAN.md#what-this-program-did-not-close-cs-07-2026-09-11) and ARC-045. **Done when:** the audit plan defines a clean consumer fixture, baseline client versions, and checks for repo/user-tier discovery, prompt and skill routing, instruction precedence, scripts and sandbox behavior, plugin and tool availability, approval controls, and unattended-run continuity. Include the Codex desktop observation that the `tsx` launcher failed to bind an IPC socket while `node --import tsx` ran the same drift check. Define how to record expected and observed behavior, reproduce confirmed gaps, and prioritize fixes, enhancements, and documentation recommendations.
+- [ ] **Plan a live cross-client audit of Arcane in Codex, Claude Code, and VS Code Copilot.** Type: `todo`; domain: `agents`; scope: `repo`. Start from the [Codex Support plan](docs/plans/codex-support/PLAN.md#what-this-program-did-not-close-cs-07-2026-09-11) and ARC-045. **Done when:** the audit plan defines a clean consumer fixture, baseline client versions, and checks for repo/user-tier discovery, prompt and skill routing, instruction precedence, scripts and sandbox behavior, plugin and tool availability, approval controls, and unattended-run continuity. Include the Codex desktop observation that the `tsx` launcher failed to bind an IPC socket while `node --import tsx` ran the same drift check. Define how to record expected and observed behavior, reproduce confirmed gaps, and prioritize fixes, enhancements, and documentation recommendations. See the [November 18 session journal](journal/2026-11-18-issues-478-485.md#use-nodes-import-hook-when-the-codex-sandbox-denies-tsx-ipc).
 
 ### Show Report
 

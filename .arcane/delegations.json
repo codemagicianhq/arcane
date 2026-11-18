@@ -414,7 +414,7 @@
         "Review round clear",
         "Fixture tests (macos-latest)"
       ],
-      "status": "active",
+      "status": "ended",
       "revocation": "The operator may set status to revoked or remove the record. Authority ends on completion, revocation or expiry, whichever comes first."
     }
   ]
