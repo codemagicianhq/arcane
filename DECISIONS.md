@@ -95,6 +95,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-061](#arc-061--scoped-temporary-run-grants-unattended-preflight-and-authority-accounting) | Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting | 2026-11-05 | Accepted |
 | [ARC-062](#arc-062--repository-declared-commit-attribution) | Repository-Declared Commit Attribution | 2026-11-06 | Accepted |
 | [ARC-063](#arc-063--unattended-run-entry-point) | Unattended Run Entry Point | 2026-11-06 | Accepted |
+| [ARC-064](#arc-064--interactive-pull-request-sign-off-and-terminal-run-grants) | Interactive Pull Request Sign-Off and Terminal Run Grants | 2026-11-18 | Accepted |
 
 ---
 
@@ -3830,3 +3831,21 @@ The two lists differ in kind. A newly available component is a preference: nothi
 **Alternatives:** Lore and cruise-control names obscure the technical purpose. Duplicating full-cycle would create divergent implementation gates. A persistent runner is a separate runtime capability, not something a prompt can promise.
 
 **Related:** [[features/unattended-run-spell/PRD]], [[features/unattended-run-spell/authoring-review]].
+
+
+---
+
+## ARC-064 — Interactive Pull Request Sign-Off and Terminal Run Grants
+
+**Date:** 2026-11-18
+**Status:** Accepted. The reviewed rules shipped in 1.24.0 through [PR #486](https://github.com/codemagicianhq/arcane/pull/486).
+
+**Context:** [#479](https://github.com/codemagicianhq/arcane/issues/479) and [#483](https://github.com/codemagicianhq/arcane/issues/483) exposed ambiguity when sessions forwarded an approval or treated commit sign-off as permission for PR actions. [#482](https://github.com/codemagicianhq/arcane/issues/482) exposed the gap between a delivered run and a record that still showed it as active.
+
+**Decision:** Bind interactive approvals to the acting session. An interactive commit approval can explicitly include an unguarded push, PR creation and reviewer assignment when the prompt names those actions and their targets. A guarded push, vote or completion has its own approval gate. A completed run uses `ended`, while operator withdrawal uses `revoked`. Both deny every grant action. Plan the terminal record as part of delivery. If that transition disables an action still needed to deliver the record, the operator finalizes it through the ordinary gates.
+
+**Rationale:** An operator can authorize a predictable chain of actions when they can see precisely what it will do. Separate votes and completion protect independent review and platform rules. A terminal record preserves the distinction between a successful run and a withdrawal without creating a transition that can be used to regain authority.
+
+**Alternatives:** Treating commit sign-off as blanket approval leaves targets and reviewers implicit. Treating an ended grant as temporarily active would weaken the validator. A separate operator checkpoint preserves the deny rule.
+
+**Related:** [[features/arcane-issues-478-485/architecture]], [[.arcane/governance/agent-policies]], [[journal/2026-11-18-issues-478-485]].
