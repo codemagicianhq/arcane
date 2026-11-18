@@ -18,7 +18,7 @@ export interface RunGrant {
   permittedActions: RunAction[];
   excludedActions: string[];
   requiredChecks: string[];
-  status: "active" | "revoked";
+  status: "active" | "revoked" | "ended";
   revocation: string;
 }
 
@@ -41,7 +41,7 @@ export function isRunGrant(v: unknown): v is RunGrant {
   return [v.id, v.grantedBy, v.operatorWords, v.revocation].every(text)
     && timestamp(v.grantedAt) && timestamp(v.expiresAt)
     && Date.parse(v.expiresAt) > Date.parse(v.grantedAt)
-    && (v.status === "active" || v.status === "revoked")
+    && (v.status === "active" || v.status === "revoked" || v.status === "ended")
     && [v.scope.repository, v.scope.task, v.scope.branchPrefix].every(text)
     && actions(v.permittedActions) && v.permittedActions.length > 0
     && strings(v.excludedActions) && strings(v.requiredChecks)
@@ -92,7 +92,7 @@ export function evaluateRunGrant(grants: readonly RunGrant[], request: RunGrantR
   const grant = candidates[0];
   if (!isRunGrant(grant)) return deny("invalid grant");
   if (!Number.isFinite(request.now.getTime())) return deny("invalid clock");
-  if (grant.status !== "active") return deny("revoked grant");
+  if (grant.status !== "active") return deny(`${grant.status} grant`);
   if (request.now.getTime() < Date.parse(grant.grantedAt)) return deny("grant not yet active");
   if (request.now.getTime() >= Date.parse(grant.expiresAt)) return deny("expired grant");
   if (grant.scope.repository !== request.repository || grant.scope.task !== request.task) {

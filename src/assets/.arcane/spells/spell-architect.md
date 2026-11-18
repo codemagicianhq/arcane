@@ -81,6 +81,7 @@ Workflow:
    - `branchName` (string, in the autonomous roster-agent form of the branch-naming rule — `git-conventions.md` → Branch Naming)
    - `assignedAgent` (string, agent slug)
    - `trackingMode` (`internal` or `external`)
+   - `stories` (array of story objects)
    - `externalProvider` (required when `trackingMode=external`)
    - `adoWorkItemId` (required only when `trackingMode=external` and `externalProvider=ado`)
 

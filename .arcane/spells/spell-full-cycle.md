@@ -49,7 +49,7 @@ below retain their existing approval and roster requirements.
    `spell grant check --id <id> --repository <repository> --task <task> --branch <branch> --action <action>`.
    Use observed repository identity and current source branch, never values copied
    from the grant to make a mismatch pass. Resolve the task from the approved plan.
-   A missing, invalid, expired, revoked, excluded or out-of-scope grant fails closed
+   A missing, invalid, expired, revoked, ended, excluded or out-of-scope grant fails closed
    to the existing approval path, with a visible authorization downgrade. A record
    match checks scope/time/actions only; it never verifies consent or platform policy.
 3. Commit permission is `commit`. Push, PR creation, assignment, approval,
@@ -205,7 +205,7 @@ Execute the `spell-architect` workflow:
 2. Make architecture decisions (framework, patterns, component structure).
 3. Produce `architecture.md` with decisions, component diagram, and testing strategy.
 4. Produce `stories.json` with the full schema:
-   - Top-level: `feature`, `branchName`, `assignedAgent`, `trackingMode`, optional `externalProvider`, optional `adoWorkItemId`
+   - Top-level: `feature`, `branchName`, `assignedAgent`, `trackingMode`, `stories` (array of story objects), optional `externalProvider`, optional `adoWorkItemId`
    - Per story: `id`, `title`, `description`, `acceptanceCriteria`, `priority`, `passes: false`, `assignedTo`, `testEvidence: null`
 5. **Gate:** Self-validate `stories.json` schema completeness. If any required field is missing, regenerate before proceeding. Every PRD requirement must map to at least one story. No story may depend on an unresolved Open Question.
 

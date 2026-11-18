@@ -248,7 +248,7 @@ The Arcane story schema for autonomous implementation:
   "trackingMode": "external",
   "externalProvider": "ado",
   "adoWorkItemId": 541,
-  "userStories": [
+  "stories": [
     {
       "id": "STORY-001",
       "title": "Short description",
@@ -267,7 +267,7 @@ The Arcane story schema for autonomous implementation:
 
 `spell-architect` must output stories.json using **exactly** this schema — all required fields must be present. Missing fields break `spell-implement`'s autonomous loop. Merlin must validate before outputting:
 
-- `feature`, `branchName`, `assignedAgent`, `trackingMode` — top-level required
+- `feature`, `branchName`, `assignedAgent`, `trackingMode`, `stories` — top-level required
 - `externalProvider` — required when `trackingMode=external`; optional otherwise
 - `adoWorkItemId` — required only when `trackingMode=external` and `externalProvider=ado`
 - Per story: `id`, `title`, `description`, `acceptanceCriteria`, `priority`, `passes: false`, `assignedTo`, `testEvidence: null`

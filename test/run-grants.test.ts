@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { evaluateRunGrant, isRunGrant, parseRunGrants, readRunGrants, type RunGrant, type RunGrantRequest } from "../src/modules/run-grants.js";
+import { RUN_ACTIONS, evaluateRunGrant, isRunGrant, parseRunGrants, readRunGrants, type RunGrant, type RunGrantRequest } from "../src/modules/run-grants.js";
 import { checkRunGrants, runDoctor } from "../src/commands/doctor.js";
 import { checkRunGrant, runGrantCheck } from "../src/commands/grant.js";
 import { createFixtureDir, removeFixtureDir } from "./helpers/git-fixture.js";
@@ -52,6 +52,10 @@ describe("run grant authority records", () => {
   });
   it("handles revoked, invalid and duplicate grants and explicit exclusions", () => {
     expect(evaluateRunGrant([{ ...grant, status: "revoked" }], request).reason).toBe("revoked grant");
+    const ended: RunGrant = { ...grant, status: "ended", permittedActions: [...RUN_ACTIONS], requiredChecks: ["test"] };
+    for (const action of RUN_ACTIONS) {
+      expect(evaluateRunGrant([ended], { ...request, action })).toEqual({ matches: false, reason: "ended grant" });
+    }
     expect(evaluateRunGrant([{ ...grant, expiresAt: "bad" }], request).reason).toBe("invalid grant");
     expect(evaluateRunGrant([grant, grant], request).matches).toBe(false);
     expect(evaluateRunGrant([{ ...grant, excludedActions: ["commit"] }], request).reason).toBe("excluded action");
@@ -94,11 +98,13 @@ describe("run grant authority records", () => {
     await mkdir(join(dir, ".arcane/delegations.json"), { recursive: true });
     await expect(readRunGrants(dir)).rejects.toThrow();
   });
-  it("doctor lists expiry and distinguishes active from expired/future/revoked", async () => {
-    const dir = await fixture({ runGrants: [grant, { ...grant, id: "revoked", status: "revoked" }] });
+  it("doctor lists expiry and distinguishes active from expired, future and terminal grants", async () => {
+    const ended = { ...grant, id: "ended", status: "ended" } as const;
+    const dir = await fixture({ runGrants: [grant, { ...grant, id: "revoked", status: "revoked" }, ended] });
+    expect(await readRunGrants(dir)).toContainEqual(ended);
     const active = await checkRunGrants(dir, request.now);
     expect(active.message).toContain(`1 active run grant(s): test-run (expires ${grant.expiresAt}`);
-    expect(active.message).toContain("1 expired, future or revoked");
+    expect(active.message).toContain("2 expired, future, revoked or ended");
     expect((await checkRunGrants(dir, new Date(grant.expiresAt))).message).toContain("0 active");
     expect((await checkRunGrants(dir, new Date("2026-01-01"))).message).toContain("0 active");
     expect((await checkRunGrants(await fixture())).message).toBe("no run grants recorded");

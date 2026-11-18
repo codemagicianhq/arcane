@@ -149,9 +149,11 @@ Write it where the orchestrator's own progress is tracked (and keep a copy in th
 Parallel sessions are the operator's call. Put one question to them, listing the slice plan and the merge order, and wait for a yes. Two things the plan settles at the same time:
 
 - **Who commits.** Commit authority is not passed along in a brief: in an interactive session every commit needs the operator's exact approval of that diff (`spell-commit-work` step 4.5 and step 8), and no one else's response stands in for it. So by default a worker **leaves its changes uncommitted** on its prep branch (the branch exists, at the base) and the note says `UNCOMMITTED`; the orchestrator commits the slice at integration through `spell-commit-work`. A worker may commit on its prep branch only where that spell's authority table lets it — an autonomous context with validated authority, or a delegation the repository records (`agent-policies.md`, "Solo-Operator Delegation Records") — and then the brief names the delegation and requires the attribution trailers.
-- **Pushing.** A worker never pushes. The one exception is a worker on a separate clone (for example a cloud session) that cannot share the local repository: the brief then names the single prep branch it may push and the remote, and only if `push_policy` allows it. Under `guarded`, ask the operator for that push now and say so in the brief; under `blocked`, there is no such worker.
+- **Pushing.** A worker never pushes. The one exception is a worker on a separate clone (for example a cloud session) that cannot share the local repository: the brief then names the single prep branch it may push and the remote, and only if `push_policy` allows it. Under `guarded`, direct the operator to approve that push in the worker session before it acts; under `blocked`, there is no such worker.
 
 ### Step 3 — Start the workers
+
+For interactive pushes, PR creation and assignment, votes, and completion, the operator must approve in the session that acts. A relayed go-ahead carries context only. Send the operator to the receiving session for approval. A scoped run grant follows its separate authority checks.
 
 For each slice, create its worktree yourself from the stack tip named in the plan (`git worktree add <path> -b <prep branch> <tip commit>`), naming the branch in the session form of the branch-naming rule with the slice id in the suffix position, never a generated name; then start a session of its own in that path. Give it the **worker brief** (template below) as its first message. The brief is the only context the worker has, so it carries everything: footprint, off-limits list, authority, checks, note path, and the override below. Do not write "see the conversation".
 
@@ -176,7 +178,7 @@ A worker's report is a claim, not evidence. Before treating a slice as ready:
 
 The integration checklist, one slice at a time, in merge order:
 
-1. **Position.** Every slice before this one in the merge order has merged (or is the stack tip you are building on). Confirm the stack tip. Define "stack" once in the plan: a chain of branches whose pull requests each target the previous one, or the trunk with each slice rebased after the last merge.
+1. **Position.** Every slice before this one in the merge order has merged (or is the stack tip you are building on). Confirm the stack tip. Define "stack" once in the plan. If completion is rebase-only, each PR targets trunk and the next slice rebases after the previous one lands. Where provider policy allows other completion methods, the plan may use a chain of PRs with explicitly approved targets.
 2. **Take over the branch.** The worker has reported, so the prep branch is yours. Work in the worker's worktree (`git -C <path>`); do not remove it yet, since it may hold the `UNCOMMITTED` changes.
 3. **Commit the worker's slice** if it is uncommitted, through `spell-commit-work` steps 1–8 only (staging, trailers, the operator's approval of the exact diff), recording the worker session in the message body. Stop before its push and pull-request steps: those belong to `spell-create-pull-request`, after the reviews.
 4. **Rebase** the prep branch onto the current stack tip. A conflict in a file outside the slice's footprint is a plan violation; record it. Then **re-verify scope**: re-run the footprint comparison on the rebased branch.

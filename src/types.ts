@@ -404,6 +404,12 @@ export interface AgentDefinition {
   clients: AgentClientConfig;
 }
 
+export interface AgentAccent {
+  /** Opaque six-digit hex color, including the leading #. */
+  primary: string;
+  secondary: string;
+}
+
 export interface AgentRosterEntry {
   /** Role ID from the canonical definition (e.g. "fullstack-dev") */
   definition: string;
@@ -413,6 +419,7 @@ export interface AgentRosterEntry {
   id: string;
   /** Naming-strategy-bound epithet (e.g. "the Archmage") — present only for arcanos naming. */
   epithet?: string;
+  accent?: AgentAccent;
 }
 
 export interface OpenClawAgentConfig {

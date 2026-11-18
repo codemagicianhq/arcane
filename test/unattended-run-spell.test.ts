@@ -35,6 +35,21 @@ describe("unattended run invocation and safety contract", () => {
     for (const phrase of ["Examples and saved grant files are not consent", "Never reuse a completed run's grant", "three failures of the same operation", "cancel before expiry", "Reconcile existing commits, PRs, merges, releases and branches", "Delete only this run's branches", "disclose residual record status/expiry"]) expect(spell).toContain(phrase);
   });
 
+  it("records the grant end before delivery and preserves the operator checkpoint", () => {
+    expect(spell).toContain("Before the final delivery commit, set its `status` to `ended`");
+    expect(spell).toContain("the operator finalizes those actions under the ordinary gates");
+    expect(spell).toContain("`Approval: grant` and `Grant: <validated-grant-id>`");
+  });
+
+  it("applies the same interactive sign-off rules in both PR entry points", () => {
+    const fragment = read(".arcane/spells/_fragments/interactive-pr-approval.md").trim();
+    for (const name of ["spell-commit-work", "spell-create-pull-request"]) {
+      expect(read(`.arcane/spells/${name}.md`)).toContain(fragment);
+    }
+    expect(fragment).toContain("guarded push");
+    expect(fragment).toContain("A PR vote requires separate authenticated operator approval");
+  });
+
   it("routes implementation and closure through the existing workflows", () => {
     expect(spell).toContain("For each milestone invoke `spell-full-cycle`");
     expect(spell).toContain("Invoke `spell-close-session`");

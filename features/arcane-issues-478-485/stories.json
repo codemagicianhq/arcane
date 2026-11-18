@@ -1,0 +1,104 @@
+{
+  "feature": "Arcane issue batch 478–485",
+  "branchName": "sessions/2026-11-17-unattended-issues-478-485",
+  "assignedAgent": "codex",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "GH-478",
+      "title": "Document rebase-only branch recovery",
+      "description": "Block stacking in rebase-only mode and describe verified recovery.",
+      "acceptanceCriteria": [
+        "Block stacking in rebase-only mode and describe verified recovery"
+      ],
+      "priority": 1,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Scratch Git recovery replayed the sole missing commit and reproduced the intended tree. Both PR spell and Git convention document the rule."
+    },
+    {
+      "id": "GH-479",
+      "title": "Bind interactive approvals to the acting session",
+      "description": "Require operator approval in the acting session.",
+      "acceptanceCriteria": [
+        "Require operator approval in the acting session"
+      ],
+      "priority": 2,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Policy and workers spell review confirmed approval in the acting session and the scoped run-grant exception."
+    },
+    {
+      "id": "GH-483",
+      "title": "Define interactive commit sign-off",
+      "description": "Apply consistent per-action rules in both spells and provider paths.",
+      "acceptanceCriteria": [
+        "Apply consistent per-action rules in both spells and provider paths"
+      ],
+      "priority": 3,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Shared fragment parity and unattended-run-spell tests verify the per-action approval text. Reviewed both provider fallbacks."
+    },
+    {
+      "id": "GH-480",
+      "title": "Gate Azure DevOps votes and completion",
+      "description": "Require full completion option read-back and matching scope.",
+      "acceptanceCriteria": [
+        "Require full completion option read-back and matching scope"
+      ],
+      "priority": 4,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Prompt workflow tests verify options and order. Compared commands with Azure DevOps API documentation. Live completion not exercised."
+    },
+    {
+      "id": "GH-481",
+      "title": "Record grant attribution",
+      "description": "Specify Approval and Grant trailers.",
+      "acceptanceCriteria": [
+        "Specify Approval and Grant trailers"
+      ],
+      "priority": 5,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Unattended-run spell contract and Git convention agree on Approval and Grant trailers."
+    },
+    {
+      "id": "GH-482",
+      "title": "Record terminal run grants",
+      "description": "Deny all covered actions for ended grants and plan delivery of the terminal record.",
+      "acceptanceCriteria": [
+        "Deny all covered actions for ended grants and plan delivery of the terminal record"
+      ],
+      "priority": 6,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Run-grants tests deny all eight actions for ended grants. Installed CLI rejected an ended grant. Unattended prompt requires the operator checkpoint if needed."
+    },
+    {
+      "id": "GH-484",
+      "title": "Flag unmanaged approval instructions",
+      "description": "Report line-level advisory findings for consumer instructions.",
+      "acceptanceCriteria": [
+        "Report line-level advisory findings for consumer instructions"
+      ],
+      "priority": 7,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Doctor fixtures and installed smoke verify unmanaged warnings, gate names, line numbers, and managed-block exclusion."
+    },
+    {
+      "id": "GH-485",
+      "title": "Expose optional roster accent pairs",
+      "description": "Validate the pair and preserve it in exported state.",
+      "acceptanceCriteria": [
+        "Validate the pair and preserve it in exported state"
+      ],
+      "priority": 8,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "State fixtures, schema and serializer tests verify exact optional colors and rejection of malformed or incomplete input. Installed CLI round-tripped the pair."
+    }
+  ]
+}

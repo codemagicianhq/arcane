@@ -127,6 +127,7 @@ export const STATE_SHAPE: ObjectShape = object({
         epithet: undefined,
         origin: undefined,
         definition_revision: undefined,
+        accent: object({ primary: undefined, secondary: undefined }),
       }),
     ),
   }),

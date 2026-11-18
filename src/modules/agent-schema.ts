@@ -247,6 +247,18 @@ export function validateAgentRoster(value: unknown, source: string): AgentRoster
       requireString(item.definition, `roster[${index}].definition`, issues);
       if (item.name !== null) requirePathSegment(item.name, `roster[${index}].name`, issues);
       requirePathSegment(item.id, `roster[${index}].id`, issues);
+      if (item.accent !== undefined) {
+        const field = `roster[${index}].accent`;
+        const accent = requireRecord(item.accent, field, issues);
+        if (accent) {
+          for (const key of ["primary", "secondary"] as const) {
+            const color = accent[key];
+            if (typeof color !== "string" || !/^#[0-9a-f]{6}$/i.test(color)) {
+              issues.push(`${field}.${key} must be a six-digit hex color such as "#336699"`);
+            }
+          }
+        }
+      }
       if (item.epithet !== undefined) {
         requireString(item.epithet, `roster[${index}].epithet`, issues);
         // Rendered beside the name in the same appended roster section.

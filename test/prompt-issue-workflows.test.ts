@@ -13,12 +13,18 @@ describe("issue workflow contracts", () => {
     expect(text).toContain("If policy or workflow access fails or applicability is unknown");
     expect(text).not.toContain('else "See CI pipeline results."');
   });
-  it("distinguishes Azure merge completion and policy-permitted REST rebase (#454)", () => {
-    const text = read("spell-commit-work");
-    expect(text).toContain("**no-fast-forward merge commit**, not a rebase");
-    expect(text).toContain('"mergeStrategy": "rebase"');
-    expect(text).toContain("confirm the target policy permits **rebase**");
-    expect(text).toContain("confirm the expected merge shape and that the intended commits landed");
+  it("verifies the approved Azure completion strategy and all options before completing (#454, #480)", () => {
+    expect(read("spell-commit-work")).toContain("For completion, follow steps 7–8");
+    const conventions = readFileSync(join(process.cwd(), "src/assets/.arcane/governance/git-conventions.md"), "utf8");
+    const completion = conventions.slice(
+      conventions.indexOf("7. **Gate and configure completion.**"),
+      conventions.indexOf("# 9. Pull merge commit and clean up"),
+    );
+    expect(completion).toContain("`noFastForward` or `rebase`");
+    expect(completion).toContain("Check the strategy against the effective branch policy");
+    expect(completion).toContain("Check `completionOptions.mergeStrategy`, `deleteSourceBranch`, and `transitionWorkItems` against the approved values");
+    expect(completion.indexOf("Stop on any mismatch")).toBeLessThan(completion.indexOf('PATCH with `status: "completed"`'));
+    expect(completion).toContain("verify what landed before cleanup");
   });
   it("uses a declared attribution convention while preserving the default (#450)", () => {
     const text = read("spell-commit-work");

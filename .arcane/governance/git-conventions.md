@@ -288,7 +288,7 @@ Create the session branch as the **first action** of any session, before any fil
    This ensures the PR diff is clean, the CI runs against current main, and reviewers see no
    stale divergence. Resolve conflicts locally — never push a branch with known merge conflicts.
 4. **Push the branch to origin** (after rebase).
-5. **Merge or queue for review** based on power level:
+5. **Merge or queue for review** based on power level. Before an interactive session completes a PR, apply [the separate completion gate](../spells/spell-create-pull-request.md#authorization-gate) to the exact PR and head, or revalidate a matching `complete-pr` grant. If the gate cannot pass, queue the PR for operator completion.
    - **Magus+ agents, in a code repository:** self-merge by completing the PR on the platform, by
      rebase and fast-forward or merge without fast-forward, never squash (ARC-009 §7). A code
      repository requires a PR and rejects direct pushes to `main` (Merge Strategy by Repo Risk,
@@ -470,11 +470,13 @@ az repos pr reviewer list --id <PR_ID> --org https://dev.azure.com/<org>
 # If reviewer is missing, add:
 az repos pr reviewer add --id <PR_ID> --org https://dev.azure.com/<org> --reviewer "<email>"
 
-# 4. Approve via CLI first (self-approve only when policy allows)
+# 4. Vote only after verifying a matching approve-pr run grant or separate acting-session
+#    operator approval for this PR, head SHA, voter identity and vote. Check provider rules.
 az repos pr set-vote --id <PR_ID> --org https://dev.azure.com/<org> --vote approve
-# If policy blocks self-approval, record and require second human approval.
+# If the platform requires an independent reviewer, leave the vote to that reviewer.
 
-# 5. REST fallback only if CLI vote command fails
+# 5. REST fallback for a CLI transport/tool error only. Recheck the vote gate and
+#    current review state first. A provider denial is final for this action.
 $bearer  = az account get-access-token --resource "499b84ac-1321-427f-aa17-267ca6975798" --query accessToken -o tsv
 $headers = @{ Authorization = "Bearer $bearer"; "Content-Type" = "application/json" }
 Invoke-RestMethod -Method PUT `
@@ -484,11 +486,14 @@ Invoke-RestMethod -Method PUT `
 # 6. Verify vote registered (expect vote: 10 unless policy blocks self-approval)
 az repos pr reviewer list --id <PR_ID> --org https://dev.azure.com/<org>
 
-# 7. Complete (merge) the PR with source-branch deletion and squash disabled
-# Allowed merge strategies: Merge (no fast forward) or Rebase+fast-forward
-az repos pr update --id <PR_ID> --org https://dev.azure.com/<org> --status completed --delete-source-branch true --squash false
+```
 
-# 8. Pull merge commit and clean up — PRIMARY CHECKOUT ONLY (ARC-028 R8).
+7. **Gate and configure completion.** Revalidate a matching `complete-pr` run grant or apply the separate completion authorization gate in [spell-create-pull-request](../spells/spell-create-pull-request.md#authorization-gate). Record the exact PR ID, head SHA, merge strategy (`noFastForward` or `rebase`), source-branch deletion, and work-item transition. Set `transitionWorkItems` to `false` unless the operator approved it. Check the strategy against the effective branch policy. Use the [ADO PR update API](https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/update?view=azure-devops-rest-7.1) to set `completionOptions` without arming or completing the PR. Set `bypassPolicy: false`.
+
+8. **Read back and complete.** GET the PR through the [ADO PR read API](https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-requests/get-pull-request?view=azure-devops-rest-7.1). Check `completionOptions.mergeStrategy`, `deleteSourceBranch`, and `transitionWorkItems` against the approved values. Verify that policy bypass is disabled, then check the current head, review decision, required checks, and authority immediately before completing. Stop on any mismatch or unreadable option. PATCH with `status: "completed"`, the observed `lastMergeSourceCommit.commitId`, and the same verified `completionOptions`. Read back the completion result and verify what landed before cleanup.
+
+```powershell
+# 9. Pull merge commit and clean up — PRIMARY CHECKOUT ONLY (ARC-028 R8).
 #    From a linked worktree, `git checkout main` fails first and the rest of
 #    this block never runs; see Post-Merge Cleanup for the worktree procedure.
 git checkout main
@@ -618,6 +623,16 @@ The `spell-create-pull-request` spell encodes this check in Step 0, but the guar
 
 See also: [Agent Workflow — Sync with main before opening a PR](#agent-workflow) below.
 
+### Rebase-only pull requests
+
+Where repository policy permits only rebase completion, branch from current trunk and target trunk. If a change depends on an open PR, wait for it to land and rebase the dependent changes onto trunk before opening a PR. Rebase completion rewrites the lower PR's commits, so a dependent PR can still carry the old copies.
+
+To recover an existing stack:
+
+1. Fetch trunk and each affected branch. Run `git cherry origin/<trunk> <top-branch>` and inspect the patch-equivalent (`-`) and missing (`+`) commits. Check merge commits, dependencies, and any differences that patch matching cannot resolve.
+2. Create a new branch from `origin/<trunk>` and replay the verified missing commits in their original dependency order. Check the final diff against trunk and run the applicable checks. Stop for unresolved conflicts or missing changes.
+3. Open one replacement PR targeting trunk with its own authorization. After verifying it covers the full intended diff, request authority to abandon the superseded PRs and leave a note pointing to the replacement.
+
 ### PR Requirements
 
 | Requirement        | Details                                                                                                                                                                                                                                      |
@@ -711,7 +726,8 @@ By default, agent-authored commits MUST include trailers in the commit message f
 | `Model-Source` | Yes         | `self-reported`, `withheld-by-runtime` | `self-reported` marks that `Model` (and `Agent`) is self-reported, not independently verified. `withheld-by-runtime` marks that the runtime forbids disclosing the model, so `Model` is `withheld` on purpose (`Agent` and `Provider` remain self-reported in that case). The `Model-Source` field exists because a fabricated `Model`/author trailer once survived eight PRs and human review undetected; the field makes that limitation visible instead of silently trusted. |
 | `Provider`     | Yes         | `anthropic`, `openai`                 | |
 | `Task-Type`    | Optional    | `docs`, `code`, `review`, `marketing`  | |
-| `Approval`     | Optional    | `interactive`, `batch`, `post-review`  | |
+| `Approval`     | Optional    | `interactive`, `batch`, `post-review`, `grant` | Use `grant` when the commit action was authorized by a run grant. |
+| `Grant`        | Conditional | `issues-478-485` | The exact validated run-grant ID for `Approval: grant`. |
 | `Channel`      | Optional    | `chat`, `cli`, `editor`                | |
 | `Risk-Class`   | Optional    | `low`, `medium`, `high`                | |
 | `Request-ID`   | Optional    | `req-001`                              | |
