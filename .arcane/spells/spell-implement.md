@@ -122,7 +122,7 @@ Related: [[.arcane/governance/agent-policies]].
    ```
    Load `$FEATURE_FOLDER/stories.json` and `$FEATURE_FOLDER/architecture.md`. If the branch name doesn't follow the `feat/{slug}` or `feat/{id}-{slug}` pattern, look for the most recently modified `features/*/stories.json` or ask the operator for the path.
 
-   Find the next story where `"passes": false`, ordered by priority.
+   In the top-level `stories` array, find the next story where `"passes": false`, ordered by priority.
 
 2. **Read context** — load only what this story needs:
    - The story's description and acceptance criteria from stories.json

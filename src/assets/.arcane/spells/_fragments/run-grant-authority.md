@@ -15,7 +15,7 @@ below retain their existing approval and roster requirements.
    `spell grant check --id <id> --repository <repository> --task <task> --branch <branch> --action <action>`.
    Use observed repository identity and current source branch, never values copied
    from the grant to make a mismatch pass. Resolve the task from the approved plan.
-   A missing, invalid, expired, revoked, excluded or out-of-scope grant fails closed
+   A missing, invalid, expired, revoked, ended, excluded or out-of-scope grant fails closed
    to the existing approval path, with a visible authorization downgrade. A record
    match checks scope/time/actions only; it never verifies consent or platform policy.
 3. Commit permission is `commit`. Push, PR creation, assignment, approval,

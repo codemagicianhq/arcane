@@ -1,11 +1,11 @@
-import { access, readdir, readFile, mkdir, copyFile as fsCopyFile } from "node:fs/promises";
+import { access, readdir, readFile, mkdir, stat, copyFile as fsCopyFile } from "node:fs/promises";
 import { join, dirname, resolve } from "node:path";
 import { INCIDENT_QUEUE } from "../config/incidents.js";
 import type { Delegation, DelegationsFile } from "../types.js";
 import { evaluateIncidentGate } from "../modules/incident-gate.js";
 import { listSymlinkTrackedPaths, runGit } from "../modules/git.js";
 import { isClientShimPath } from "../modules/spell-compiler.js";
-import { findLinkedEscape, findLinkedFileEscape, looksLikeBarePath } from "../modules/copier.js";
+import { findLinkedEscape, findLinkedFileEscape, looksLikeBarePath, validateRealTargetFile } from "../modules/copier.js";
 import {
   readManifest,
   resolveSecretsScanExcludePrefixes,
@@ -50,6 +50,7 @@ import {
 } from "../modules/presence/store.js";
 import { statSync } from "node:fs";
 import { readRunGrants } from "../modules/run-grants.js";
+import { MARKER_START, MARKER_END } from "../modules/merger.js";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -889,6 +890,57 @@ export async function checkDelegations(targetDir: string): Promise<CheckResult> 
   };
 }
 
+const APPROVAL_INSTRUCTION_FILES = [
+  "AGENTS.md",
+  "AGENTS.override.md",
+  "CLAUDE.md",
+  ".claude/CLAUDE.md",
+  ".github/copilot-instructions.md",
+];
+
+const PR_VOTE = /\b(?:approve\b[^.\r\n]{0,100}\b(?:pull requests?|prs?)\b|vote\s+approved?\b|gh\s+pr\s+review\b.*--approve\b|az\s+repos\s+pr\s+set-vote\b.*--vote[ =]+approve\b)/i;
+const PR_COMPLETION = /\b(?:(?:complete|merge)\b[^.\r\n]{0,100}\b(?:pull requests?|prs?)\b|gh\s+pr\s+merge\b|az\s+repos\s+pr\s+update\b.*--status[ =]+completed\b)/i;
+
+/** Advisory matches only. Instruction files can describe a command without authorizing it. */
+export async function checkInstructionApprovals(targetDir: string): Promise<CheckResult> {
+  const name = "Pull request approval instructions";
+  const findings: string[] = [];
+
+  for (const file of APPROVAL_INSTRUCTION_FILES) {
+    let lines: string[];
+    try {
+      validateRealTargetFile(targetDir, file);
+      const path = join(targetDir, file);
+      if (!(await stat(path)).isFile()) continue;
+      lines = (await readFile(path, "utf8")).split(/\r\n?|\n/);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        findings.push(`${file}: could not scan this instruction file`);
+      }
+      continue;
+    }
+
+    const markerLines = lines.map((line) => line.trim());
+    const start = markerLines.indexOf(MARKER_START);
+    const end = markerLines.indexOf(MARKER_END, start + 1);
+    for (const [index, line] of lines.entries()) {
+      if (start !== -1 && end !== -1 && start <= index && index <= end) continue;
+      const gates = [];
+      if (PR_VOTE.test(line)) gates.push("separate PR vote approval");
+      if (PR_COMPLETION.test(line)) gates.push("separate PR completion approval");
+      if (gates.length > 0) findings.push(`${file}:${index + 1}: check ${gates.join(" and ")}`);
+    }
+  }
+
+  return {
+    name,
+    passed: findings.length === 0,
+    blocking: false,
+    message: findings.length === 0 ? "no possible approval conflicts found"
+      : `${findings.join("\n         ")}\n         See spell-create-pull-request (Authorization Gate) and spell-commit-work (Step 4.5).`,
+  };
+}
+
 /** Record visibility only; a grant file is never proof of operator consent. */
 export async function checkRunGrants(targetDir: string, now = new Date()): Promise<CheckResult> {
   const name = "Run grants (ARC-061)";
@@ -900,7 +952,7 @@ export async function checkRunGrants(targetDir: string, now = new Date()): Promi
     return {
       name, passed: true, blocking: false, showDetails: grants.length > 0,
       message: grants.length === 0 ? "no run grants recorded"
-        : `${active.length} active run grant(s): ${active.map((g) => `${g.id} (expires ${g.expiresAt}; task: ${g.scope.task}; branch: ${g.scope.branchPrefix})`).join("; ")}; ${inactive} expired, future or revoked`,
+        : `${active.length} active run grant(s): ${active.map((g) => `${g.id} (expires ${g.expiresAt}; task: ${g.scope.task}; branch: ${g.scope.branchPrefix})`).join("; ")}; ${inactive} expired, future, revoked or ended`,
     };
   } catch {
     return { name, passed: false, blocking: false, message: "run grant file unreadable or invalid; no run authority can be inferred" };
@@ -1163,6 +1215,7 @@ export async function runDoctor(targetDir: string, options: DoctorOptions = {}, 
     checkPlatformBranchPolicy(targetDir),
     checkDelegations(targetDir),
     checkRunGrants(targetDir),
+    checkInstructionApprovals(targetDir),
     checkMcpConfig(targetDir),
     checkUserTier(resolveHomeDir(), options.packageVersion),
     checkSpellScope(targetDir),

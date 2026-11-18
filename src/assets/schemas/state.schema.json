@@ -337,7 +337,16 @@
               "id": { "type": "string" },
               "epithet": { "type": ["string", "null"] },
               "origin": { "type": "string", "enum": ["repo", "user"] },
-              "definition_revision": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$", "description": "Hash of the role definition file; null with a warning when the file is missing." }
+              "definition_revision": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$", "description": "Hash of the role definition file; null with a warning when the file is missing." },
+              "accent": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["primary", "secondary"],
+                "properties": {
+                  "primary": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" },
+                  "secondary": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+                }
+              }
             }
           },
           "description": "Entries in roster order."

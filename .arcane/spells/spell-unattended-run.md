@@ -88,6 +88,8 @@ Related: [[.arcane/governance/agent-policies]].
 
 Before departure, present the plan and capability table: local work, commit, push, PR creation/assignment, approval, completion, deployment/publication and cleanup — authorized now, waits for a named person, or unavailable with evidence. Inspect actual authentication without revealing credentials; verify command flags and provider policies. With no remote, offer local delivery and mark remote stages unavailable.
 
+Plan who will commit, push and deliver the ended record if the active grant cannot authorize those steps once it is terminal.
+
 Present a fresh scoped grant for only the actions the operator chooses: repository identity, exact task/milestones, deterministic branch prefix, actions, exclusions, checks, grant/expiry times and revocation. Obtain an actual operator instruction authorizing recording and committing the grant itself before that bootstrap commit. Examples and saved grant files are not consent. Never reuse a completed run's grant, widen it to later issues or renew it yourself. Expiry must be explicit and no later than 24 hours unless the operator explicitly chooses another bound; completion ends authority earlier. Preserve operator words and later narrowing instructions.
 
 Default exclusions: force-push, production deployment/flag flips, platform settings changes, approval under the operator's identity, destructive data operations, paid provisioning and external communications. Exceptions require explicit action-specific authorization and the applicable workflow; a grant cannot confer actions its validator does not support. Keep secrets out of committed plans, prompts, logs and grants; request secret-store references, not secret values in chat.
@@ -128,7 +130,7 @@ below retain their existing approval and roster requirements.
    `spell grant check --id <id> --repository <repository> --task <task> --branch <branch> --action <action>`.
    Use observed repository identity and current source branch, never values copied
    from the grant to make a mismatch pass. Resolve the task from the approved plan.
-   A missing, invalid, expired, revoked, excluded or out-of-scope grant fails closed
+   A missing, invalid, expired, revoked, ended, excluded or out-of-scope grant fails closed
    to the existing approval path, with a visible authorization downgrade. A record
    match checks scope/time/actions only; it never verifies consent or platform policy.
 3. Commit permission is `commit`. Push, PR creation, assignment, approval,
@@ -161,6 +163,7 @@ Related: [[.arcane/governance/agent-policies]].
 
 For each milestone invoke `spell-full-cycle` with its PRD/stories and this run's preflight/authority references. Reuse preflight only while scope, checkout and policy remain unchanged. Follow the existing commit, PR, test, review and ship spells; do not create a competing merge/consent protocol here.
 
+- For each commit authorized by a run grant, use `Approval: grant` and `Grant: <validated-grant-id>` alongside the repository's attribution trailers. Record separately authorized bootstrap and operator commits according to the authority they actually used.
 - Resolve routine choices within the plan. Inspect the diff before each commit/push, honor repository attribution and preserve hooks/push policy. New risk, cost, migration or product scope outside the plan requires a decision before dependent work.
 - Validate primary journeys and negative cases with appropriate unit/integration/end-to-end, security and accessibility checks. UI work requires `spell-test`'s real-browser verification. Missing devices, representative data or live integrations are missing evidence, never passes. Do not lower checks or substitute mocks for required real verification.
 - Use delegated retry budgets bounded by the operator's stricter limits. Retry transient infrastructure failures only with evidence. After three failures of the same operation or the delegated workflow's earlier limit, checkpoint and stop that dependent path; never loop indefinitely or start dependent milestones with a failed gate.
@@ -173,13 +176,17 @@ Checkpoint after each milestone and before context loss: observed commits, exact
 
 On resume, read the record and live Git/provider state before acting. Reconcile existing commits, PRs, merges, releases and branches rather than duplicating them. Recheck expiry, revocation, early completion and operator consent; an `active` JSON status alone cannot revive a completed run. New runs require new authority. An unfinished run may continue under its grant only if consent covers continuation, scope is identical and the grant remains valid. When access or authority is missing, continue only independent authorized work and identify blocked actions. Never roll back a merge or deployment without its own authority.
 
-## 6 — Verify delivery and close
+## 6 — End the grant before delivery, then verify and close
+
+If the run uses a grant, plan its terminal record in preflight. Before the final delivery commit, set its `status` to `ended` so the delivery itself carries the record. Reconcile pending work first and disarm any auto-completion. Once the record is ended, `spell grant check` must deny it for every action. Ended is successful closeout. Operator withdrawal remains `revoked`.
+
+If an ended checkout record removes the authority needed to commit, push, or complete the final PR, the operator finalizes those actions under the ordinary gates. Include that checkpoint in preflight. Preserve the ended change for delivery and keep required checks bound to the actual final head. Never use a cached active record, restore active status to finish, or use the ended grant to authorize a later action. Deliver the terminal change with the run instead of creating a separate post-delivery commit.
 
 1. Verify required acceptance criteria, PR merges, linked issue states and the requested changes on trunk. Closed issues and green tests alone do not prove delivery.
 2. If a release is expected, observe release/publish jobs, download the artifact, install/run it in isolation and exercise a relevant smoke test. For applications, verify the requested environment and primary journeys; distinguish local, staging, production, store and device evidence. Do not replace the operator's global installation for a smoke test.
 3. Delete only this run's branches after content verification; preserve other runs and unmerged work. Account for rewritten SHAs after rebase merges. Do not modify another worktree to clean this one.
 4. Invoke `spell-close-session` with authority accounting, corrections, pending verification and durable handoff. Reconcile its own commits/PRs with observed final results; never claim future actions already succeeded in the committed journal.
-5. End authority on completion even if time remains. Persist revocation when supported by the authorized closure path. If that would itself require unavailable authority, disclose residual record status/expiry and never reuse it; do not bypass grant checks to make revocation self-authorizing.
+5. Verify the delivered record on trunk is `ended` and the CLI denies it. Until the terminal change lands, record the staged or pending delivery and the operator action it requires. If a run stops without delivering the terminal record, disclose residual record status/expiry and end use of that grant.
 
 ## Final report and acceptance
 

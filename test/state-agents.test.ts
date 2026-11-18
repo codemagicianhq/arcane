@@ -81,6 +81,34 @@ describe("collectAgents (ST-12, D10)", () => {
     expect(doc.agents?.entries).toHaveLength(2);
   }, HEAVY_TEST_TIMEOUT);
 
+  it("exports a validated roster accent pair and leaves older entries unchanged", async () => {
+    const dir = await fixture("state-agents-accent");
+    await writeManifest(dir, MANIFEST);
+    const accent = { primary: "#123AbC", secondary: "#aAbB00" };
+    await writeRoster(join(dir, ".arcane"), {
+      ...ROSTER,
+      roster: [{ ...ROSTER.roster[0], accent }, ROSTER.roster[1]],
+    }, ["architecture-lead", "qa-lead"]);
+
+    const doc = await collectState(dir, "1.0.0", { online: false, includeLocalPaths: false });
+    expect(doc.agents?.entries[0].accent).toEqual(accent);
+    expect(doc.agents?.entries[1]).not.toHaveProperty("accent");
+    const validate = await compileStateSchema();
+    expect(validate(doc)).toEqual([]);
+  }, HEAVY_TEST_TIMEOUT);
+
+  it.each([
+    [{ primary: "blue", secondary: "#ffffff" }, "primary"],
+    [{ primary: "#123456" }, "secondary"],
+    [{ primary: "#123456", secondary: "#123" }, "secondary"],
+  ])("rejects a malformed or incomplete accent pair %j", async (accent, field) => {
+    const dir = await fixture("state-agents-invalid-accent");
+    const roster = { ...ROSTER, roster: [{ ...ROSTER.roster[0], accent }] };
+    await mkdir(join(dir, ".arcane"));
+    await writeFile(join(dir, ".arcane", "agents.yaml"), stringify(roster));
+    await expect(collectAgents(dir)).rejects.toThrow(`roster[0].accent.${field} must be a six-digit hex color`);
+  });
+
   it("falls back to an opted-in user tier with origin user, and is null when no roster applies", async () => {
     const home = await fixture("state-agents-home");
     const dir = await fixture("state-agents-optin");

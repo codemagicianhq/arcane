@@ -23,7 +23,7 @@ describe("commit and merge autonomy gates", () => {
     for (const spell of [commitWork, createPullRequest, fullCycle, closeSession]) {
       expect(spell).toContain("Interactive, active grant covering the action");
       expect(spell).toContain("Completion requires `complete-pr`");
-      expect(spell).toContain("expired, revoked, excluded or out-of-scope grant fails closed");
+      expect(spell).toContain("expired, revoked, ended, excluded or out-of-scope grant fails closed");
       expect(spell).toContain("Acting under grant <id>: <action> PR <id> @ <head SHA>");
       expect(spell).toContain("`exec_allowed: false` always denies execution");
     }

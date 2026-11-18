@@ -10,7 +10,7 @@
  * record.
  */
 
-import type { ExternalProvider, HubRole, InstallScope, PushPolicy, TrackingMode, ContentSensitivity } from "../../types.js";
+import type { AgentAccent, ExternalProvider, HubRole, InstallScope, PushPolicy, TrackingMode, ContentSensitivity } from "../../types.js";
 
 export const STATE_SCHEMA_VERSION = "1.0.0";
 export const STATE_SCHEMA_ID = "urn:arcane:state:v1";
@@ -175,6 +175,7 @@ export interface AgentEntry {
   origin: "repo" | "user";
   /** `sha256:` + hex digest of the role definition file; null with a warning when missing. */
   definition_revision: string | null;
+  accent?: AgentAccent;
 }
 
 export interface AgentsSection {

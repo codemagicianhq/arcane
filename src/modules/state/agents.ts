@@ -67,6 +67,7 @@ export async function collectAgents(targetDir: string, options: CollectAgentsOpt
       epithet: entry.epithet ?? null,
       origin,
       definition_revision,
+      ...(entry.accent && { accent: { primary: entry.accent.primary, secondary: entry.accent.secondary } }),
     });
   }
 

@@ -61,6 +61,10 @@ Assign a default power level per agent × per repo. **Enforcement: explicitly ad
 
 ---
 
+## Interactive approval belongs to the acting session
+
+The operator gives interactive approval in the session that will execute the action. This applies to commits, pushes, pull request creation and reviewer assignment, votes, and completion. A handoff can carry a plan, approval evidence for work already executed, and the action awaiting a decision. The receiving session must obtain its own approval before acting. A scoped run grant follows its separate provenance, action, checkout, and expiry checks.
+
 ## Solo-Operator Delegation Records (No Roster)
 
 The Per-Repo Power Level Matrix above assumes an installed agent roster (`.arcane/agents.yaml`) — each
@@ -166,13 +170,14 @@ that array in `.arcane/delegations.json`. It works with or without a roster.
   the exact PR head and required checks before completion; a head change invalidates
   prior check evidence. GitHub PR authors cannot approve their own PR. Azure DevOps
   creator voting depends on policy. Neither is bypassed by `approve-pr` permission.
-- **Visibility and revocation:** `spell doctor` lists active grants with expiry;
-  expired, future and revoked records are inactive. Revoke by changing status or
-  removing the record. Existing standing-delegation output is preserved. No generic
+- **Visibility and terminal states:** `spell doctor` lists active grants with expiry.
+  Expired, future, revoked and ended records are inactive. Record successful closeout
+  as `ended` in the final delivery change. Use `revoked` for operator withdrawal, or
+  remove the withdrawn record. Both terminal statuses deny every action. Existing standing-delegation output is preserved. No generic
   grant is installed, and a grant is not silently seeded from a roster or chat.
 - **Per-action evidence:** print `Acting under grant <id>: <action> PR <id> @ <head SHA>`
   (branch/head for a commit or push), record the resulting commit, and retain it
-  for close-session's Authority used table. A missing/invalid/expired/revoked or
+  for close-session's Authority used table. A missing/invalid/expired/revoked/ended or
   out-of-scope grant uses the existing visible authorization downgrade. Auto-merge
   cannot remain armed past expiry; monitor/cancel it, or wait for checks and then
   revalidate before direct completion. Grant-file edits remain scoped and do not

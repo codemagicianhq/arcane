@@ -61,7 +61,7 @@ below retain their existing approval and roster requirements.
    `spell grant check --id <id> --repository <repository> --task <task> --branch <branch> --action <action>`.
    Use observed repository identity and current source branch, never values copied
    from the grant to make a mismatch pass. Resolve the task from the approved plan.
-   A missing, invalid, expired, revoked, excluded or out-of-scope grant fails closed
+   A missing, invalid, expired, revoked, ended, excluded or out-of-scope grant fails closed
    to the existing approval path, with a visible authorization downgrade. A record
    match checks scope/time/actions only; it never verifies consent or platform policy.
 3. Commit permission is `commit`. Push, PR creation, assignment, approval,
@@ -162,6 +162,20 @@ Workflow:
 | Autonomous, Magus+            | May commit when `exec_allowed`                 | May self-merge within approved scope                     |
 | Missing or invalid authority  | Human execution required                       | Human execution required                                 |
 
+<!-- fragment:interactive-pr-approval:start -->
+**Interactive actions without a matching run grant.** The commit sign-off covers the commit and each
+of the following actions explicitly named in the approval prompt: an unguarded push, PR creation,
+and reviewer assignment. Approve the exact staged diff, message, and named actions together. If an
+action was omitted or its remote, target, or reviewer changes, obtain approval for that action in
+the acting session before executing it. Apply the push-policy check independently. A guarded push
+always requires its own confirmation.
+
+A PR vote requires separate authenticated operator approval in the acting session, bound to the
+PR ID, observed head SHA, voter identity, and vote. Recheck them before voting. The vote must also
+be allowed by platform policy. When an independent reviewer is required, leave the vote to that
+reviewer. PR completion has its own authority gate. A vote or commit sign-off does not authorize it.
+<!-- fragment:interactive-pr-approval:end -->
+
 5. **Determine commit type** using Conventional Commits standard:
    - `feat` — new feature or capability
    - `fix` — bug fix
@@ -214,11 +228,12 @@ Workflow:
    - Trailers go after a blank line following the body (standard Git footer position)
    - Without a repository-declared convention, required trailers for agent commits: `Agent`, `Model`, `Model-Source`, `Provider`. `Persona`/`Role` are conditional -- see `.arcane/governance/git-conventions.md`'s Agent Attribution Model for the full rule and the grading-probe example of what happens when `Role` is guessed instead of sourced.
    - Without a repository-declared convention, required trailer for Arcane-vendored commits: `Vendor: arcane-cli`; include `Vendor-Version` only when derived from the installed CLI at commit time
+   - If a run grant authorizes the commit, add `Approval: grant` and `Grant: <validated-grant-id>` to the resolved attribution trailers.
    - Human-authored commits: trailers are optional
 
 8. **Gate and execute the commit:**
    - Run `git add -A` (or selective `git add` if user specifies files), show `git diff --stat --cached`, and compute an approval fingerprint from the exact staged diff plus proposed commit message.
-   - In an interactive context without a matching run grant, present the staged diff summary, full proposed message, and fingerprint through a structured approval control. Wait for an authenticated operator response tied to that fingerprint.
+   - In an interactive context without a matching run grant, present the staged diff summary, full proposed message, fingerprint, and exact action list through a structured approval control. Include the remote, PR target and any reviewer names when asking for those actions. Bind the response to the displayed action list as well as the fingerprint and reauthorize any changed target or action. Wait for an authenticated operator response tied to that fingerprint.
    - Without a matching run grant, timeout, cancellation, host-generated fallback, delegated response, or ordinary conversational assent is not approval. Halt without committing.
    - Without a matching run grant: Recompute the fingerprint immediately before `git commit`. If the staged diff or message changed, invalidate approval and ask again.
    - With a matching run grant, recheck the current diff against its approved task scope and revalidate `commit` immediately before execution; retain the action line and resulting SHA.
@@ -279,8 +294,8 @@ Workflow:
    - **Refuse to create the PR if the body file is missing, empty, or written for another branch.** Check `<git-dir>/arcane-pr-body.md` (step 9a2) exists, has content, and its first line names the current branch; if not, stop, rewrite it per 9a2, and only then continue. Never fall back to an empty or placeholder `--body`.
    - Create PR with `gh pr create --title "<Conventional Commits title>" --body-file <git-dir>/arcane-pr-body.md`.
    - Use `--body-file` (not inline `--body`) to preserve multi-line markdown reliably.
-   - Assign reviewer by default (operator/reviewer identity) if available.
-   - Self-approve only when platform/policy allows. If blocked by policy, report and continue with human approval required.
+   - Assign the named reviewer only with assignment authority.
+   - Submit a vote only after the vote gate in Step 4.5 passes and the platform permits that identity to vote on this PR. If the CLI identity is the PR author, obtain independent review when required.
    - Complete only after the separate merge authorization gate passes, using **merge commit (no-fast-forward)** or **rebase+fast-forward**. Do not use squash.
 
    e. **Azure DevOps flow (when remote is ADO):**
@@ -291,11 +306,9 @@ Workflow:
    - For multi-line markdown descriptions:
      - Bash: `--description "$(cat <git-dir>/arcane-pr-body.md)"`
      - PowerShell: `--description (Get-Content -Raw <git-dir>\arcane-pr-body.md)`
-   - Assign reviewer by default to the operator/reviewer identity (for example from `git config user.email`), idempotently (skip if already assigned).
-   - Approve via CLI first: `az repos pr set-vote --id <PR_ID> --vote approve`.
-   - If self-approval is blocked by policy, report that a second human approval is required and continue without forcing approval.
-   - Only after the separate merge authorization gate passes and target policy permits it, `az repos pr update --id <PR_ID> --status completed --delete-source-branch true --squash false` completes with a **no-fast-forward merge commit**, not a rebase.
-   - When linear history is preferred, first confirm the target policy permits **rebase** and all review and exact-head checks pass. Complete through the Azure DevOps pull-request update REST API (PATCH `https://dev.azure.com/<org>/<project>/_apis/git/repositories/<repository-id>/pullRequests/<PR_ID>?api-version=7.1`), using a JSON body with `status: "completed"`, the observed current `lastMergeSourceCommit.commitId`, and `completionOptions: { "mergeStrategy": "rebase", "deleteSourceBranch": true }`. Use an authenticated client, preserve other required completion options, and recheck source head and authorization immediately before the request. Do not send the update if the strategy or current head cannot be verified.
+   - Assign the named reviewer only with assignment authority. Skip an existing assignment.
+   - Submit a vote only after the vote gate in Step 4.5 passes and the platform permits that identity to vote on this PR. Use `az repos pr set-vote --id <PR_ID> --vote approve`, then verify the vote. Obtain independent review if required.
+   - For completion, follow steps 7–8 in [ADO PR Lifecycle — Complete Command Reference](../../.arcane/governance/git-conventions.md#ado-pr-lifecycle--complete-command-reference). Apply the separate completion gate and verify the strategy, deletion of the source branch, and work-item transition against what the operator authorized.
    - After completion, fetch and inspect the target history and PR completion result to confirm the expected merge shape and that the intended commits landed. Never squash or bypass policies.
    - REST is also available when CLI commands fail or are unavailable. Ensure the request URI is fully qualified and includes exactly one `?api-version=7.1`.
 

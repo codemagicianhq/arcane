@@ -13,6 +13,22 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-11-18
+
+### Added
+
+- Set optional primary and secondary accent colors in each roster entry and read them from `spell state --json`.
+- Flag unmanaged PR approval or completion instructions in `spell doctor`.
+- Record terminal grants as ended and identify grant-authorized commits with `Approval` and `Grant` trailers.
+
+### Fixed
+
+- Bind interactive PR actions to the acting session and require approval of the named actions and their exact targets.
+- Gate Azure DevOps PR votes and completion, and verify strategy, source-branch deletion, and work-item transition before completing.
+- Document how to avoid and recover stacked PRs in rebase-only repositories.
+
+- Use the top-level `stories` array consistently in the development methodology and in the spells that generate and read `stories.json`.
+
 ## [1.23.2] - 2026-11-12
 
 ### Fixed

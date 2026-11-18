@@ -56,7 +56,7 @@ below retain their existing approval and roster requirements.
    `spell grant check --id <id> --repository <repository> --task <task> --branch <branch> --action <action>`.
    Use observed repository identity and current source branch, never values copied
    from the grant to make a mismatch pass. Resolve the task from the approved plan.
-   A missing, invalid, expired, revoked, excluded or out-of-scope grant fails closed
+   A missing, invalid, expired, revoked, ended, excluded or out-of-scope grant fails closed
    to the existing approval path, with a visible authorization downgrade. A record
    match checks scope/time/actions only; it never verifies consent or platform policy.
 3. Commit permission is `commit`. Push, PR creation, assignment, approval,
@@ -90,6 +90,20 @@ Related: [[.arcane/governance/agent-policies]].
 ## Authorization Gate
 
 **Interactive, active grant covering the action:** use the run-grant path above. The fallback gates below apply only when no matching grant covers that action.
+
+<!-- fragment:interactive-pr-approval:start -->
+**Interactive actions without a matching run grant.** The commit sign-off covers the commit and each
+of the following actions explicitly named in the approval prompt: an unguarded push, PR creation,
+and reviewer assignment. Approve the exact staged diff, message, and named actions together. If an
+action was omitted or its remote, target, or reviewer changes, obtain approval for that action in
+the acting session before executing it. Apply the push-policy check independently. A guarded push
+always requires its own confirmation.
+
+A PR vote requires separate authenticated operator approval in the acting session, bound to the
+PR ID, observed head SHA, voter identity, and vote. Recheck them before voting. The vote must also
+be allowed by platform policy. When an independent reviewer is required, leave the vote to that
+reviewer. PR completion has its own authority gate. A vote or commit sign-off does not authorize it.
+<!-- fragment:interactive-pr-approval:end -->
 
 Before enabling auto-complete/auto-merge or completing an existing PR, resolve `interaction_context`, effective power level, and `exec_allowed` through the EF-27 loader-validated roster/definition. Missing or invalid authority visibly downgrades to PR creation only. Print the invalid/missing input and state that human completion is required.
 
@@ -136,7 +150,9 @@ on it or pushing a new head.
      5. Report `Renamed <old> → <new>` in the run's output. If the worktree, the pull-request state or the remote cannot be determined, stop without renaming and ask the operator.
      <!-- fragment:branch-rename-gate:end -->
 2. **Verify the target exists:** `git rev-parse --verify origin/<target>`. If it fails, `git fetch origin <target>`; if still missing, **STOP** and ask the user for the correct `--target`.
-3. **Ensure the branch is on origin (upstream):** run the push-policy check below before any push in this Step 0 — this item's `git push -u` and item 6's `--force-with-lease` push. If it stops a push, stop the spell: a PR cannot be opened for a branch the remote does not have.
+3. **Check the target's merge policy before pushing.** Where PRs can complete only by rebase, open each PR from the current trunk and target trunk. If changes depend on an open PR, wait for that PR to land and rebase onto trunk before opening the next one. For an existing stranded stack, use [Git Conventions — rebase-only PRs](../../.arcane/governance/git-conventions.md#rebase-only-pull-requests).
+
+3a. **Ensure the branch is on origin (upstream):** run the push-policy check below before any push in this Step 0 — this item's `git push -u` and item 6's `--force-with-lease` push. If it stops a push, stop the spell: a PR cannot be opened for a branch the remote does not have.
 
    <!-- fragment:push-policy-check:start -->
    **Push-policy check (ARC-049) — before any push.** Read `push_policy` from the repository's `.arcane.json` at the repository root (a self-hosted source repository with no root manifest keeps it in `src/assets/.arcane.json` when that file declares `selfHosted: true`). An absent file or an absent field means `open`. The check covers every push this spell makes: a branch push, a `--force-with-lease` push, and a remote branch deletion (`git push <remote> --delete <branch>`).
@@ -295,7 +311,7 @@ Only after the PR is ready may you request approval or use any completion path.
   ```
   With `--docs-only`, add `--auto-complete` only after the authorization gate above passes. Respect the repo merge strategy — never enable squash (see git-conventions).
 
-**Reviewers:** pass `--reviewers`/`--reviewer` values through as given. If a reviewer cannot be resolved by the provider, do **not** abort the create — let the PR be created and surface the unresolved name(s) in the Step 6 report so the user can add them manually.
+**Reviewers:** include `--reviewers`/`--reviewer` values only when assignment is authorized. A combined create-and-assign request requires authority for both actions. If a reviewer cannot be resolved by the provider, do **not** abort the create — let the PR be created and surface the unresolved name(s) in the Step 6 report so the user can add them manually.
 
 **Post-create verification (both providers):** read the PR back (`gh pr view <PR#> --json url,title,body` / `az repos pr show --id <PR#>`). If the title or description is empty or does not match the temp file, patch it (`gh pr edit` / `az repos pr update`) from the temp file, then re-verify once. This guards against silent body truncation/drop on either CLI.
 
