@@ -380,6 +380,42 @@
       ],
       "status": "active",
       "revocation": "Ends when merge, automatic release verification and run branch cleanup finish, or at expiry, whichever comes first. Set status to revoked or remove the entry to revoke earlier."
+    },
+    {
+      "id": "arcane-issues-478-485-2026-11-17",
+      "grantedBy": "payini (operator)",
+      "operatorWords": "Right on, go ahead with merge and release verification. I authorize you to record and commit the scoped grant for #478–#485, push and open the PR, then merge once the required checks pass and verify the npm release.",
+      "grantedAt": "2026-11-18T08:54:44.000Z",
+      "expiresAt": "2026-11-19T07:45:00.000Z",
+      "scope": {
+        "repository": "github.com/codemagicianhq/arcane",
+        "task": "arcane-issues-478-485-2026-11-17",
+        "branchPrefix": "sessions/2026-11-17-unattended-issues-478-485"
+      },
+      "permittedActions": [
+        "commit",
+        "push",
+        "create-pr",
+        "complete-pr"
+      ],
+      "excludedActions": [
+        "assign-pr",
+        "approve-pr",
+        "delete-remote-branch",
+        "run-dev-pipeline",
+        "force-push",
+        "production-deploy",
+        "settings-change",
+        "manual-publication"
+      ],
+      "requiredChecks": [
+        "Lint, typecheck, test, build",
+        "PR branch is rebased on target",
+        "Review round clear",
+        "Fixture tests (macos-latest)"
+      ],
+      "status": "active",
+      "revocation": "The operator may set status to revoked or remove the record. Authority ends on completion, revocation or expiry, whichever comes first."
     }
   ]
 }
