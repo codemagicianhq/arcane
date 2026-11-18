@@ -95,6 +95,7 @@ Execution and acceptance criteria are tracked in [TODO.md — Agent Delegation a
 | [ARC-061](#arc-061--scoped-temporary-run-grants-unattended-preflight-and-authority-accounting) | Scoped Temporary Run Grants, Unattended Preflight, and Authority Accounting | 2026-11-05 | Accepted |
 | [ARC-062](#arc-062--repository-declared-commit-attribution) | Repository-Declared Commit Attribution | 2026-11-06 | Accepted |
 | [ARC-063](#arc-063--unattended-run-entry-point) | Unattended Run Entry Point | 2026-11-06 | Accepted |
+| [ARC-064](#arc-064--interactive-pull-request-sign-off-and-terminal-run-grants) | Interactive Pull Request Sign-Off and Terminal Run Grants | 2026-11-18 | Accepted |
 
 ---
 
