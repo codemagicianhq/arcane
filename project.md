@@ -38,7 +38,7 @@ into a consuming repository.
 dogfooded copy of those assets installed at the root (`.arcane/`, `.github/`, `.claude/`, `.agents/`), the decision
 record, and the intake queue under `docs/intake/`.
 
-**Outside it:** DMC and the operations repositories. ARC-028's DMC rendering contract is the standing
+**Outside it:** the cockpit and the operations repositories. ARC-028's cockpit rendering contract is the standing
 example — it was explicitly reclassified as out of scope for this repository rather than left open
 here. Business and venture content belongs in a hub repository; this one is not a hub, and the
 drift check treats hub artifacts appearing here as a Critical finding.

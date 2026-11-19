@@ -2,7 +2,7 @@
  * Parses a decisions log (DECISIONS.md) into its entries (PRD ST-05,
  * architecture D5). Moved here from Show Report's `decisions-parser.ts` and
  * generalized: the heading prefix is any `AA-NNN` id -- `ARC-` in this
- * repository, `ADR-` in an operations hub, `DMC-` in a cockpit -- so one
+ * repository, `ADR-` in an operations hub, another prefix in a cockpit -- so one
  * parser serves every consumer. Show Report keeps its `parseAdrs` and
  * `countAcceptedAdrsInWindow` from this module.
  *

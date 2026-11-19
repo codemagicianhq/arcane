@@ -56,9 +56,9 @@ describe("parseDecisions (ST-05, D5)", () => {
     expect(warnings).toEqual(["indexes.decisions: ADR-003 has no **Date:** or **Status:** line and was skipped"]);
   });
 
-  it("parses DMC- entries too", () => {
-    const { entries } = parseDecisions("## DMC-101 — Cockpit gateway\n\n**Date:** 2026-11-01\n**Status:** Accepted\n");
-    expect(entries.map((e) => e.id)).toEqual(["DMC-101"]);
+  it("parses another uppercase prefix (CPT-) too", () => {
+    const { entries } = parseDecisions("## CPT-101 — Cockpit gateway\n\n**Date:** 2026-11-01\n**Status:** Accepted\n");
+    expect(entries.map((e) => e.id)).toEqual(["CPT-101"]);
   });
 
   it("ignores headings that are not decision ids", () => {

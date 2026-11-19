@@ -96,7 +96,7 @@ Twelve legendary agents — the Arcanos. Every namesake is public domain: golden
 
 ### Agent Definition Schema — Fields for Template/Renderer Authors
 
-The table above is the human-readable roster; agent definitions (`agents/*.yaml`) and the generated roster (`.arcane/agents.yaml`) carry the same data as structured fields. This is where they live, for anyone building a third-party renderer (DMC is renderer #1):
+The table above is the human-readable roster; agent definitions (`agents/*.yaml`) and the generated roster (`.arcane/agents.yaml`) carry the same data as structured fields. This is where they live, for anyone building a third-party renderer (the cockpit is renderer #1):
 
 | Field | Lives on | Populated by | Consumed by |
 | --- | --- | --- | --- |

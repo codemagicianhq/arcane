@@ -71,7 +71,7 @@ validated schema fields `openclaw.workspace_root` / `workspace_prefix` in `src/t
 The second is the one that mattered. **Arcane ships one of the four colliding meanings the
 ADR was written to disambiguate.** Taking the bare word would have used one noun for three
 things and reproduced the exact ambiguity the record set out to end — the same
-internal-collision class that had already flagged Cabinet against DMC's File Cabinet, which
+internal-collision class that had already flagged Cabinet against the cockpit's File Cabinet, which
 was sitting in the candidate table I had read aloud one turn earlier.
 
 The correction cost one question and produced a better answer (`session workspace`, no
