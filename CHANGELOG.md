@@ -13,6 +13,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.24.1] - 2026-11-19
+
+### Changed
+
+- Reword the governance roster note and the sign-in callback animation comments so they describe the renderer and the animation generically instead of naming a downstream consumer.
+
 ## [1.24.0] - 2026-11-18
 
 ### Added
