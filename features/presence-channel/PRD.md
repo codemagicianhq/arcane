@@ -37,7 +37,7 @@ own gateway.
 
 Two consumers wait on it, in this order. **The Showstone** (hub roadmap item 2.2, train T3,
 2026-12-02) lights a face within 2 s of a session start, sourced from this channel; it gates the
-reveal train. **DMC's `arcane` adapter** (item 1.2, T4, 2027-01-06) reads Layer 1 from
+reveal train. **The cockpit's `arcane` adapter** (item 1.2, T4, 2027-01-06) reads Layer 1 from
 `spell state --json` and Layer 2 from this channel and replaces `mock` as the default for real
 installs. Contract-first (hub roadmap §2.4): this contract lands in `arcane` first, then the
 consumers; item 2.1's own window is 2026-11-09 to 2026-11-20.
@@ -49,18 +49,18 @@ grammar with `session` reserved for this channel to mint; the capability descrip
 started with; aliases qualified by context, so a harness's `main` resolves without a global map;
 and the `Persona-Ref:` trailer to correlate commits with the agent that made them.
 
-What the first consumer actually reads (read in DMC on 2026-11-04, nothing changed there): its
+What the first consumer actually reads (read in the cockpit on 2026-11-04, nothing changed there): its
 gateway adapter interface is transport-agnostic (`getAgents`, `getSessions`, `getActiveSessions`,
 `onEvent`, `healthCheck`, `disconnect`); its live path uses only an agent slug, a status string, a
 task and a message; it forces any agent silent for 60 s to idle; it has no snapshot for a late
 subscriber; and its event bridge is live and tested, not paused (the hub roadmap's "today's
 WebSocket bridge, generalized" describes what this channel replaces as a source, not a paused
-component). Two corrections to the brief this PRD was planned from, both checked: DMC has three
-adapters (`mock`, `openclaw`, `cli`), and no DMC document calls the bridge paused.
+component). Two corrections to the brief this PRD was planned from, both checked: the cockpit has three
+adapters (`mock`, `openclaw`, `cli`), and no cockpit document calls the bridge paused.
 
 ## Target Users
 
-- **The Showstone and DMC's `arcane` adapter:** one authenticated loopback feed of session
+- **The Showstone and the cockpit's `arcane` adapter:** one authenticated loopback feed of session
   records and events, with a snapshot on subscribe, so a face lights within 2 s and a late
   subscriber starts from the current state.
 - **Spells, in every harness and in cron:** one command that reports task start, progress and
@@ -118,7 +118,7 @@ rests on.
   /v0/sessions/{session}` → the record or `404`; `GET /v0/events` → the feed (PC-08). Limits: a
   body over 64 KiB is `413`; every one-line string is truncated to 256 characters; `needs_you`
   carries at most 20 lines; no CORS headers (subscribers are processes, not browser origins; a
-  web client proxies through its own server, as DMC's bridge does today); no `Host` check (Tailscale
+  web client proxies through its own server, as the cockpit's bridge does today); no `Host` check (Tailscale
   Serve rewrites it).
   - *Acceptance:* a route table test covers every route with and without the token; the `413`,
     the truncation and the line cap each have a test; a request from a `curl` with an `Origin`
@@ -170,7 +170,7 @@ rests on.
   `0700` and the file `0600`; on Windows the file's access is restricted to the current account
   and the write is refused when that restriction fails (the file rule of ARC-054 decision 3).
   `--rotate` replaces it. Readers, in order: `ARCANE_PRESENCE_TOKEN` when set (the SecretRef a
-  subscriber such as DMC's server or a cron runner is given), else the file. No command accepts a
+  subscriber such as the cockpit's server or a cron runner is given), else the file. No command accepts a
   token as an argument, no log line prints one, and the service compares tokens in constant time.
   Tailnet exposure is the operator's Tailscale Serve in front of the loopback port (hub ADR-007's
   posture); the token is still required there, and nothing in this iteration binds beyond
@@ -268,7 +268,7 @@ rests on.
     the section's status column says `Planned` until the implementing release and the hub's
     review change it.
 - **PC-14 — The 2-second budget and its test.** The hub milestone is "a Claude Code session shows
-  up live in DMC within 2 s of starting a spell", measured by a recorded clip from a session start
+  up live in the cockpit within 2 s of starting a spell", measured by a recorded clip from a session start
   to a lit face (the hub's and 2.2's). This repository owns the first half and budgets it: from
   the start of the `spell presence report` process to the arrival of its event at a loopback
   subscriber, p95 at or under 500 ms over 20 runs on a developer machine and at or under 1 s on
@@ -323,7 +323,7 @@ rests on.
   decision 5 reserve them for later records.
 - Any action: `open`, `resume` and `instruct` stay vocabulary; `actions` is `[]`, and no route,
   tool or event lets a client steer a session.
-- DMC's `arcane` adapter (1.2), the Showstone (2.2) and the mobile companion. They consume this.
+- The cockpit's `arcane` adapter (1.2), the Showstone (2.2) and the mobile companion. They consume this.
 - A bind or host flag, TLS, or any listener beyond loopback: remote reach is Tailscale Serve.
 - Auto-start, `--detach` or daemonization: a user-service example is documented instead
   (open question 6).
@@ -443,12 +443,12 @@ Should Have (built after 1.18.0 as stories PS-17 to PS-21, architecture D24 to D
   session), memory-only state, the limits, Tailscale Serve as the only remote path if exposed and
   the tailnet ACL review for it; the git-hook note; and a security audit-log entry for the first
   start. The hub's row stays `Planned` until each control is checked there.
-- **Downstream, not dependencies:** DMC's `arcane` adapter (1.2) and the Showstone (2.2) consume
-  the feed. Three facts recorded for them from the DMC read of 2026-11-04: the adapter keys on an
-  agent slug, so it reads `agent.slug` and resolves `main` through `aliases`; DMC forces an agent
+- **Downstream, not dependencies:** the cockpit's `arcane` adapter (1.2) and the Showstone (2.2) consume
+  the feed. Three facts recorded for them from the cockpit read of 2026-11-04: the adapter keys on an
+  agent slug, so it reads `agent.slug` and resolves `main` through `aliases`; the cockpit forces an agent
   idle after 60 s of silence while this service marks a session stale at 90 s, so the adapter
-  re-emits the last known state on `: keepalive` or DMC lengthens its timeout for this adapter;
-  and DMC has no snapshot for late subscribers, which `server.hello` supplies. How a session
+  re-emits the last known state on `: keepalive` or the cockpit lengthens its timeout for this adapter;
+  and the cockpit has no snapshot for late subscribers, which `server.hello` supplies. How a session
   with `agent: null` is rendered (the orchestrator's seat, a console seat, or not at all) is the
   consumer's choice. The mobile companion (T5 or later) reads the same feed over Tailscale Serve.
 
@@ -486,7 +486,7 @@ Should Have (built after 1.18.0 as stories PS-17 to PS-21, architecture D24 to D
    environment override.** `~/.arcane/presence/token`, `0600` in a `0700` directory (Windows ACL
    per ARC-054's file rule), generated by `serve`, replaced by `--rotate`; `ARCANE_PRESENCE_TOKEN`
    as the SecretRef for subscribers; never an argument. Rejected: B, keychain first with a file by
-   opt-in (every reporter call and DMC's server would hit the keychain; headless Linux and cron
+   opt-in (every reporter call and the cockpit's server would hit the keychain; headless Linux and cron
    need the opt-in anyway; a loopback capability is not a remote credential); C, the environment
    variable only (every spell-running shell must carry it, so the acceptance test would depend on
    shell setup). Reason: non-interactive readers everywhere, hub ADR-007's posture kept.

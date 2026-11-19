@@ -74,7 +74,7 @@ PR, approve it, and complete it." Closed via `/spell-close-session`.
 | --- | --- | --- |
 | — (operational) | Arcanos demo records the **Full** (12-role) roster | Tape header + README "12 agents" claim; Base default was silently under-selling the roster. Operator-approved. |
 | — (operational) | Complete PR #12 via `git merge --ff-only` (not squash / not merge commit) | agent-policies §5 Magus+ self-merge + cicd-standards "no merge commits"; branch was a clean fast-forward, so exact SHAs preserved. |
-| — (backlog → ADR) | Keep `visual_description` with agent definitions as a renderer seam | Data with the definition, rendering with the renderer (DMC = renderer #1). Documented as a TODO for a future roster-schema ADR. |
+| — (backlog → ADR) | Keep `visual_description` with agent definitions as a renderer seam | Data with the definition, rendering with the renderer (the cockpit = renderer #1). Documented as a TODO for a future roster-schema ADR. |
 
 ### Lessons Learned
 

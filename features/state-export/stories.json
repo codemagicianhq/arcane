@@ -58,14 +58,14 @@
       "description": "Move src/modules/show-report/decisions-parser.ts to src/modules/state/decisions.ts. Heading pattern becomes ^## ([A-Z]{2,5})-(\\d{3,})\\b. Each entry exports id, title (text after the id and dash), status (first word of the first **Status:** line, null when absent), date (first **Date:** line, null when absent), anchor (GitHub-style heading slug). Keep parseAdrs and countAcceptedAdrsInWindow as named exports for Show Report, which now imports from the new path; Show Report's tests pass unchanged. Add collectDecisions(root) that reads DECISIONS.md and returns the sorted array or null when the file is absent; a heading that matches but has no parseable body is skipped with a warning.",
       "acceptanceCriteria": [
         "The arcane repository's own DECISIONS.md parses to the same ARC entry count its TOC table lists (ST-05)",
-        "A fixture DECISIONS.md with ADR- entries and one with DMC- entries parse with the right ids (ST-05)",
+        "A fixture DECISIONS.md with ADR- entries and one with CPT- entries parse with the right ids (ST-05)",
         "Show Report tests pass unchanged after the import path moves (D5)",
         "An absent DECISIONS.md yields null, not an error; a malformed entry yields a warning (ST-05)"
       ],
       "priority": 4,
       "passes": true,
       "assignedTo": "claude",
-      "testEvidence": "2026-11-04: test/state-decisions.test.ts 8/8 (this repository's DECISIONS.md: 58 entries = 58 TOC rows, every anchor equals its TOC link; ADR-/DMC- fixtures; absent -> null; malformed entry -> warning) and show-report-parser/model/close-anchor tests 35/35 with only the import path changed; src/modules/state/decisions.ts 96.9% lines / 77.3% branches / 100% functions; lint and typecheck:all green"
+      "testEvidence": "2026-11-04: test/state-decisions.test.ts 8/8 (this repository's DECISIONS.md: 58 entries = 58 TOC rows, every anchor equals its TOC link; ADR-/CPT- fixtures; absent -> null; malformed entry -> warning) and show-report-parser/model/close-anchor tests 35/35 with only the import path changed; src/modules/state/decisions.ts 96.9% lines / 77.3% branches / 100% functions; lint and typecheck:all green"
     },
     {
       "id": "SE-05",

@@ -246,7 +246,7 @@ body { margin: 0; }
 @keyframes gate-amber { from { filter: none; } to { filter: var(--amber); } }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* success, about 2.4 s: the DMC Gate's activation, compressed. Seams, equalizers, sockets locking clockwise
+  /* success, about 2.4 s: the gate locks open. Seams, equalizers, sockets locking clockwise
      from 12 with their glyphs, the ring, the mark, and a brief confirmation flash. */
   .callback[data-state="success"] .gate-seams { animation: gate-fade-in .45s ease-out both; }
   .callback[data-state="success"] .gate-eq { animation: gate-eq-full .8s steps(13, jump-start) .15s both; }
@@ -268,7 +268,7 @@ body { margin: 0; }
   .callback[data-state="success"] .gate-mark { animation: gate-strike .45s linear 1.85s both; }
   .callback[data-state="success"] .gate-flash { animation: gate-flash .45s ease-out 1.95s both; }
 
-  /* denied, about 1.3 s: the dial starts and releases in reverse, like the DMC Gate's deactivation; no red */
+  /* denied, about 1.3 s: the dial starts, then releases in reverse; no red */
   .callback[data-state="denied"] .gate-seams { animation: gate-fade-standby .5s ease-out both; }
   .callback[data-state="denied"] .gate-eq { animation: gate-denied-eq 1.15s linear .1s both; }
   .callback[data-state="denied"] .gate-sockets { animation: gate-denied-lock .95s linear .3s both; }

@@ -237,7 +237,7 @@ Commit diagrams name their commits.
 ### Changed
 
 - **`spell status` computes its versions through the same module** (`src/modules/state/versions.ts`) and prints byte-identical output; the version-drift diagram keeps its three-string signature.
-- **The decisions parser moved** from Show Report to `src/modules/state/decisions.ts` and now reads `ADR-` and `DMC-` logs as well as `ARC-`; Show Report imports it from there, unchanged in behaviour.
+- **The decisions parser moved** from Show Report to `src/modules/state/decisions.ts` and now reads `ADR-` and any other uppercase-prefixed logs as well as `ARC-`; Show Report imports it from there, unchanged in behaviour.
 
 ## [1.16.1] - 2026-11-03
 
@@ -1333,7 +1333,7 @@ Names ARC-028's central concept and moves the record to **Accepted**, closing th
 
 ### Notes
 
-- **The term is qualified because the bare word was already taken — internally.** A check at pick time found `workspace` load-bearing in two other Arcane senses: the agent sandbox root (`workspace-{agent}` in `agent-approved-paths.md` and `agent-policies.md`) and the shipped, validated schema fields `openclaw.workspace_root` / `workspace_prefix` (`src/types.ts`, `src/modules/agent-schema.ts`) that consumers already set. The second is sharper than it looks: Arcane ships one of the four colliding meanings the ADR set out to disambiguate. Taking the bare word would have used one noun for three things — the internal-collision class that flagged **Cabinet** against DMC's File Cabinet — so `session workspace` was adopted instead, with no rename and no schema change.
+- **The term is qualified because the bare word was already taken — internally.** A check at pick time found `workspace` load-bearing in two other Arcane senses: the agent sandbox root (`workspace-{agent}` in `agent-approved-paths.md` and `agent-policies.md`) and the shipped, validated schema fields `openclaw.workspace_root` / `workspace_prefix` (`src/types.ts`, `src/modules/agent-schema.ts`) that consumers already set. The second is sharper than it looks: Arcane ships one of the four colliding meanings the ADR set out to disambiguate. Taking the bare word would have used one noun for three things — the internal-collision class that flagged **Cabinet** against the cockpit's File Cabinet — so `session workspace` was adopted instead, with no rename and no schema change.
 - **Four-check disposition, recorded rather than skipped:** a generic industry term cannot be appropriated from a coiner, so checks 1–3 do not bind and the trademark caveat is moot. Check 4 (first association) does bind, and its answer — the overloaded set itself — is exactly why the qualifier is mandatory rather than stylistic.
 
 ## [0.21.0] - 2026-08-23
@@ -1358,7 +1358,7 @@ Completes every [ARC-028](DECISIONS.md#arc-028--concurrency-and-isolation-model-
 ### Notes
 
 - **A repository-wide check now enforces the scoping**, rather than tests that only assert about the files a pass happened to touch. It fails if any distributed prompt or governance document contains a trunk checkout without primitive scoping nearby. The first pass at this work shipped green while three spells still carried an unconditional `git checkout main` — one in a file that same change edited — because every test was a positive assertion and nothing asked "is there anywhere else?".
-- ARC-028's naming four-check ran and **Chamber failed it** — OpenChamber (9.1k★, "an agentic development environment" organised around Sessions), cirruslabs/chamber (agent isolation in VMs), and Chamber YC W26 all occupy the same audience, with segmentio/chamber owning first association. The naming rollout stays parked; vetted alternatives are recorded in the ADR. ARC-028 remains Proposed for that reason alone — every implementation follow-up this repository owns is now done, and the DMC rendering contract belongs to a different repository.
+- ARC-028's naming four-check ran and **Chamber failed it** — OpenChamber (9.1k★, "an agentic development environment" organised around Sessions), cirruslabs/chamber (agent isolation in VMs), and Chamber YC W26 all occupy the same audience, with segmentio/chamber owning first association. The naming rollout stays parked; vetted alternatives are recorded in the ADR. ARC-028 remains Proposed for that reason alone — every implementation follow-up this repository owns is now done, and the cockpit rendering contract belongs to a different repository.
 
 ## [0.20.2] - 2026-08-23
 

@@ -67,7 +67,7 @@ execution contract's own classification table extended by two rows.
 `title` (heading text after the id and dash), `status` (first `**Status:**` line, first word),
 `date` (first `**Date:**` line), and `anchor` (GitHub-style slug of the heading). Show Report
 imports from the new location; its tests are unchanged. *Rationale:* the ops hub uses `ADR-`,
-the cockpit `DMC-`, arcane `ARC-`; one parser, one place. *ADR:* none.
+the cockpit its own prefix, arcane `ARC-`; one parser, one place. *ADR:* none.
 
 **D6 — Book items carry a content-hash locator, never a line number.** `books.ts` parses
 `TODO.md`, `IDEAS.md` and `DONE.md`: a line matching `^\s*- \[( |x)\] ` is an item; `text` is
@@ -148,7 +148,7 @@ flowchart LR
   SCH["schemas/state.schema.json<br/>$id …/schemas/state/v1"] -. "validates (test)" .-> OUT
   ST["spell status"] --> V
   OS["spell-open-session<br/>(fragment)"] -. "reads" .-> OUT
-  DMC["cockpit adapter (1.2)"] -. "reads" .-> OUT
+  CPT["cockpit adapter (1.2)"] -. "reads" .-> OUT
 ```
 
 ## Data Flow

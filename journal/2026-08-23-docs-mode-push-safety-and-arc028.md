@@ -46,7 +46,7 @@ halt policy.
    session.
 
 5. **ARC-028's follow-ups and EF-35 (`0.21.0`)** — items 11(a) and 11(b) completed, 11(c)
-   reclassified out of scope (it belongs to the DMC/ops repo), 11(e) parked on the failed
+   reclassified out of scope (it belongs to the cockpit and operations repositories), 11(e) parked on the failed
    four-check. EF-35 filed for the secret-scanning gap.
 
 All published: `0.21.0` is on npm and the tarball was verified to contain the fixes, not
