@@ -7,6 +7,7 @@ import { packageJson as pkg } from "./package-info.js";
 import { runInit } from "./commands/init.js";
 import { runAdd } from "./commands/add.js";
 import { runUpdate } from "./commands/update.js";
+import { importCopilot, importHandoff } from "./commands/handoff.js";
 import { runStatus } from "./commands/status.js";
 import { runState } from "./commands/state.js";
 import { runUninstall } from "./commands/uninstall.js";
@@ -258,6 +259,22 @@ program
   .action(async (opts: { json?: boolean; online?: boolean; includeLocalPaths?: boolean }) => {
     await runState(process.cwd(), pkg.version, opts);
   });
+
+const handoff = program.command("handoff")
+  .description("Recover a session handoff from a chat export");
+
+for (const [name, description, importer] of [
+  ["import", "Preview a handoff from a Copilot, Claude Code, or Codex transcript", importHandoff],
+  ["import-copilot", "Preview a recovered Next Session Handoff from a VS Code Copilot chat export", importCopilot],
+] as const) {
+  handoff.command(name + " <export-file>")
+    .description(description)
+    .option("--write", "Replace the handoff section in this checkout’s ai-context/system-prompt-context.md")
+    .action((file: string, opts: { write?: boolean }) => {
+      try { process.stdout.write(importer(process.cwd(), file, !!opts.write)); }
+      catch (error) { program.error(error instanceof Error ? error.message : String(error)); }
+    });
+}
 
 program
   .command("uninstall")

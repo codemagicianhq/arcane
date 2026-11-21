@@ -261,6 +261,25 @@ spell report     # writes docs/plans/<slug>/show-report.{json,html}
 
 Requires **Node.js 18+**.
 
+### Move a session between Copilot, Claude Code, and Codex
+
+Choose the conversation to recover and take its file to the receiving Arcane checkout.
+
+| Source | File to use |
+| --- | --- |
+| VS Code Copilot | The JSON file saved by **Chat: Export Chat…**. |
+| Claude Code | Run `/export chat.txt` in the session, or copy the session’s `<session-id>.jsonl` from `~/.claude/projects/<project>/`. JSONL preserves the distinction between messages and tool output. |
+| Codex | Copy the session’s `rollout-…-<session-id>.jsonl` from `$CODEX_HOME/sessions/YYYY/MM/DD/` (default `~/.codex/sessions/`). |
+
+Preview the handoff locally and check its excerpts for sensitive information. Add `--write` to update the **Next Session Handoff** section in `ai-context/system-prompt-context.md`.
+
+```sh
+spell handoff import /path/to/transcript
+spell handoff import /path/to/transcript --write
+```
+
+Open a fresh chat in either of the other two clients in that checkout and invoke `spell-open-session`. The receiving client reads the active task, latest request, reported progress, and verification step. Historical approvals apply to their original session. Keep the raw transcript local. The existing `spell handoff import-copilot` command still accepts VS Code JSON.
+
 ### State export
 
 One command answers "what is the state of this repository" for a program -- a cockpit, a mobile companion, another agent -- so nothing has to parse `.arcane.json`, `DECISIONS.md` or `TODO.md` itself:
