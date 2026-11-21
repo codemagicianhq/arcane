@@ -13,6 +13,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.25.0] - 2026-11-20
+
+### Added
+
+- Preview a Next Session Handoff from a VS Code Copilot chat export with `spell handoff import-copilot`, then apply it to the receiving checkout with `--write`.
+
 ## [1.24.1] - 2026-11-19
 
 ### Changed
