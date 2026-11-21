@@ -13,6 +13,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.25.0] - 2026-11-20
+
+### Added
+
+- Move a session between VS Code Copilot, Claude Code, and Codex with `spell handoff import`. Preview the handoff locally and apply it to the receiving checkout with `--write`.
+
 ## [1.24.1] - 2026-11-19
 
 ### Changed
