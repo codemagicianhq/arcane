@@ -261,6 +261,17 @@ spell report     # writes docs/plans/<slug>/show-report.{json,html}
 
 Requires **Node.js 18+**.
 
+### Recover a Copilot handoff
+
+In VS Code, run **Chat: Export Chat…**. From the receiving Arcane checkout, preview the historical request and response excerpts, then write the handoff after reviewing them for relevance and sensitive content.
+
+```bash
+spell handoff import-copilot /path/to/chat.json
+spell handoff import-copilot /path/to/chat.json --write
+```
+
+Open the session in Codex or Claude and follow the handoff’s verification step. The converter runs locally and updates the Next Session Handoff section in the existing context file. Historical approvals apply to their original session.
+
 ### State export
 
 One command answers "what is the state of this repository" for a program -- a cockpit, a mobile companion, another agent -- so nothing has to parse `.arcane.json`, `DECISIONS.md` or `TODO.md` itself:
