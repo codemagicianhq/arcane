@@ -35,16 +35,20 @@ export function copilotHandoff(data: unknown): string {
   });
   const reply = visible.at(-1)?.trim();
   const latest = prompts[prompts.length - 1];
+  return renderHandoff("a VS Code chat export", prompts[0], latest, reply);
+}
+
+function renderHandoff(source: string, first: string, latest: string, reply?: string): string {
   const prs = [...new Set(Array.from((reply ?? latest).matchAll(/\b(?:PR|pull request)\s*#(\d+)\b/gi), m => "#" + m[1]))];
   const next = prs.length
     ? `Look up PR ${prs.join(", ")}. If a merge was reported, find its commit and verify ancestry on the target branch. Check provider-only claims separately.`
     : "Check the latest request and reported progress against the current checkout, then identify the first unfinished step.";
   return [
     heading, "",
-    "> Recovered from a VS Code chat export. Historical requests and approvals confer no current authority.",
+    `> Recovered from ${source}. Historical requests and approvals confer no current authority.`,
     "> Generated: " + new Date().toISOString().slice(0, 10),
     "",
-    "- **Active task:** Original request " + excerpt(prompts[0]),
+    "- **Active task:** Original request " + excerpt(first),
     "- **Last completed step:** " + (reply ? "Latest visible assistant report (unverified) " + excerpt(reply) : "No visible assistant report for the latest request."),
     "- **Next concrete action:** " + next,
     "- **Active files:** Confirm from the current checkout.",
@@ -54,6 +58,119 @@ export function copilotHandoff(data: unknown): string {
     "- **Action required:** None for read-only verification.",
     "- **Notes:** Latest operator request " + excerpt(latest), "",
   ].join("\n");
+}
+
+interface Turn {
+  role: "user" | "assistant";
+  text: string;
+}
+
+function textParts(content: unknown, type: string): string {
+  if (!Array.isArray(content)) return "";
+  return content.map(record)
+    .filter(part => part.type === type && typeof part.text === "string")
+    .map(part => part.text).join("\n").trim();
+}
+
+function fromTurns(source: string, turns: Turn[]): string {
+  let first = "";
+  let latest = "";
+  let reply: string | undefined;
+  for (const turn of turns) {
+    if (!turn.text.trim()) continue;
+    if (turn.role === "user") {
+      first ||= turn.text;
+      latest = turn.text;
+      reply = undefined;
+    } else if (latest) {
+      reply = turn.text;
+    }
+  }
+  if (!first) throw new Error("Transcript has no readable operator request.");
+  return renderHandoff(source, first, latest, reply);
+}
+
+function claudeTurn(row: Record<string, unknown>): Turn | undefined {
+  const role = row.type;
+  if (role !== "user" && role !== "assistant") return;
+  if (row.isMeta || row.isSidechain || row.isCompactSummary || row.isVisibleInTranscriptOnly) return;
+  const message = record(row.message);
+  if (message.role !== role) return;
+  const content = message.content;
+  if (role === "user" && Array.isArray(content) && content.some(block => record(block).type === "tool_result")) return;
+  const text = typeof content === "string" ? content.trim() : textParts(content, "text");
+  if (role === "user" && /^<(?:local-command-|command-name>|system-reminder>)/u.test(text)) return;
+  return { role, text };
+}
+
+function codexEvent(payload: Record<string, unknown>): Turn | undefined {
+  if (payload.type === "user_message" || payload.type === "agent_message") {
+    if (typeof payload.message === "string") {
+      return { role: payload.type === "user_message" ? "user" : "assistant", text: payload.message };
+    }
+  }
+  if (payload.type !== "item_completed") return;
+  const item = record(payload.item);
+  if (item.type === "UserMessage") return { role: "user", text: textParts(item.content, "text") };
+  if (item.type === "AgentMessage") return { role: "assistant", text: textParts(item.content, "Text") };
+}
+
+// Claude's text export uses terminal role glyphs, indented wrap lines, and a
+// result glyph for tool or command output. Its JSONL retains typed blocks.
+function claudeExport(raw: string): string {
+  const turns: Turn[] = [];
+  for (const block of raw.split(/^(?=[❯⏺] )/mu).slice(1)) {
+    const [line, ...rest] = block.trimEnd().split(/\r?\n/u);
+    if (line.startsWith("❯ /") || rest.some(part => /^\s*⎿/u.test(part))) continue;
+    const visible = [line.slice(2)];
+    for (const part of rest) {
+      if (part && !part.startsWith("  ")) break;
+      visible.push(part.trim());
+    }
+    turns.push({ role: line.startsWith("❯") ? "user" : "assistant", text: visible.join(" ").trim() });
+  }
+  return fromTurns("a Claude Code text export", turns);
+}
+
+function transcriptSection(raw: string): string {
+  if (/^[^\n]*Claude Code v\d+\.\d+\.\d+/u.test(raw)) return claudeExport(raw);
+  // A VS Code export is one JSON document and may be pretty-printed.
+  let document: unknown;
+  try { document = JSON.parse(raw); } catch { /* Native session logs are JSONL. */ }
+  if (Object.hasOwn(record(document), "requests")) return copilotHandoff(document);
+
+  const claude: Turn[] = [];
+  const codex: Turn[] = [];
+  let sawCodex = false;
+  let sawClaude = false;
+  let lineNumber = 0;
+  for (const line of raw.split("\n")) {
+    lineNumber++;
+    if (!line.trim()) continue;
+    let row: Record<string, unknown>;
+    try { row = record(JSON.parse(line)); }
+    catch { throw new Error(`Invalid transcript at line ${lineNumber}. Expected Copilot JSON, Claude Code text or session JSONL, or Codex rollout JSONL.`); }
+    if (row.type === "user" || row.type === "assistant") {
+      sawClaude = true;
+      const turn = claudeTurn(row);
+      if (turn) claude.push(turn);
+    } else if (row.type === "session_meta" || row.type === "response_item" || row.type === "event_msg") {
+      sawCodex = true;
+      if (row.type !== "event_msg") continue;
+      // Visible events omit injected workspace instructions and model/tool payloads.
+      const turn = codexEvent(record(row.payload));
+      if (turn) codex.push(turn);
+    }
+  }
+  if (sawClaude && sawCodex) throw new Error("Mixed transcript formats. Import one session at a time.");
+  if (sawClaude) return fromTurns("a Claude Code session transcript", claude);
+  if (sawCodex) return fromTurns("a Codex session rollout", codex);
+  throw new Error("Unrecognized transcript. Expected Copilot JSON, Claude Code text or session JSONL, or Codex rollout JSONL.");
+}
+
+export function importHandoff(root: string, file: string, write: boolean): string {
+  const raw = readFileSync(file, "utf8").replace(/^\uFEFF/, "");
+  return finishImport(root, file, write, transcriptSection(raw));
 }
 
 // Locate actual Markdown sections, including in documents with fenced examples.
@@ -87,6 +204,10 @@ export function importCopilot(root: string, file: string, write: boolean): strin
   try { data = JSON.parse(raw.replace(/^\uFEFF/, "")); }
   catch { throw new Error("Expected one JSON file from VS Code’s Export Chat command."); }
   const section = copilotHandoff(data);
+  return finishImport(root, file, write, section);
+}
+
+function finishImport(root: string, file: string, write: boolean, section: string): string {
   if (!write) return section;
 
   const target = join(realpathSync(root), "ai-context", "system-prompt-context.md");
