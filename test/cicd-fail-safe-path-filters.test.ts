@@ -28,23 +28,6 @@ function extractYamlBlockAfter(text: string, heading: string): string {
   return match[1];
 }
 
-// R4 (adversarial review, second pass): ARC-022 unconditionally names SEVEN
-// categories that must always remain triggering inputs -- containers was
-// missing from the first fix pass's count of six (DECISIONS.md's ARC-022
-// entry: "Pipeline definitions, manifests, lockfiles, scripts, migrations,
-// containers, and infrastructure"). One representative example path per
-// category, checked against every exclude list in this document -- not just
-// a handful of ad-hoc substrings.
-const ARC022_MUST_ALWAYS_TRIGGER: Record<string, string> = {
-  "pipeline definition": "azure-pipelines.yml",
-  manifest: "package.json",
-  lockfile: "package-lock.json",
-  script: "scripts/build.sh",
-  migration: "migrations/0001_init.sql",
-  container: "Dockerfile",
-  infrastructure: "infrastructure/main.tf",
-};
-
 /**
  * Deliberately minimal glob check, scoped to exactly the pattern shapes this
  * document's path filters actually use: "**\/*.ext" / "**.ext" (match by
@@ -92,65 +75,19 @@ describe("ARC-022 accepted", () => {
   });
 });
 
-describe(".NET and Node.js pipelines use exclude-based fail-safe filters, filetype-scoped not directory-scoped (R2/R3)", () => {
-  it(".NET pipeline uses paths.exclude, not paths.include, on the branch trigger", () => {
-    const doc = parse(extractYamlBlockAfter(cicdStandards, "### .NET Backend Pipeline")) as {
-      trigger?: { paths?: Record<string, unknown> };
-    };
-    expect(doc.trigger?.paths?.exclude).toBeDefined();
-    expect(doc.trigger?.paths?.include).toBeUndefined();
-  });
-
-  it("Node.js pipeline uses paths.exclude on the branch trigger", () => {
-    const doc = parse(extractYamlBlockAfter(cicdStandards, "### Node.js Pipeline")) as {
-      trigger?: { paths?: Record<string, unknown> };
-    };
-    expect(doc.trigger?.paths?.exclude).toBeDefined();
-    expect(doc.trigger?.paths?.include).toBeUndefined();
-  });
-
-  // R3: a prior version excluded whole directories (docs/**, journal/**,
-  // .arcane/governance/**), which would ALSO exclude any non-Markdown file
-  // (a script, a manifest) a consumer happened to place there -- silently
-  // violating ARC-022's unconditional list. Assert the fix: exclude is
-  // filetype-scoped (**/*.md), so nothing in the seven always-trigger
-  // categories can ever match it, regardless of what directory it's in.
-  for (const heading of ["### .NET Backend Pipeline", "### Node.js Pipeline"]) {
-    it(`${heading}: none of ARC-022's seven always-trigger categories can match the exclude list, even nested under a docs-like path`, () => {
+describe("general-purpose pipelines default to running for every path", () => {
+  it.each(["### .NET Backend Pipeline", "### Node.js Pipeline"])(
+    "%s has no path filter that could skip a build input", (heading) => {
       const doc = parse(extractYamlBlockAfter(cicdStandards, heading)) as {
-        trigger: { paths: { exclude: string[] } };
+        trigger?: { paths?: unknown };
       };
-      const excludeList = doc.trigger.paths.exclude;
+      expect(doc.trigger?.paths).toBeUndefined();
+    },
+  );
 
-      for (const [category, examplePath] of Object.entries(ARC022_MUST_ALWAYS_TRIGGER)) {
-        expect(matchesAnyPattern(excludeList, examplePath), `${category} (${examplePath}) must not be excluded`).toBe(
-          false,
-        );
-        // The same category nested under a docs-like directory must ALSO
-        // still trigger -- this is exactly the gap a directory-wide
-        // exclude (docs/**) would have silently reintroduced.
-        const nestedPath = `docs/${examplePath}`;
-        expect(
-          matchesAnyPattern(excludeList, nestedPath),
-          `${category} nested under docs/ (${nestedPath}) must not be excluded`,
-        ).toBe(false);
-      }
-    });
-  }
-
-  it("scenario: a docs-only change (a .md file, anywhere in the tree) would be excluded -- no wasted run", () => {
-    const doc = parse(extractYamlBlockAfter(cicdStandards, "### .NET Backend Pipeline")) as {
-      trigger: { paths: { exclude: string[] } };
-    };
-    expect(matchesAnyPattern(doc.trigger.paths.exclude, "README.md")).toBe(true);
-    expect(matchesAnyPattern(doc.trigger.paths.exclude, "docs/deeply/nested/guide.md")).toBe(true);
-  });
-
-  it("scenario: a change in a brand-new, never-listed code directory is NOT excluded -- fails safe", () => {
-    const doc = parse(extractYamlBlockAfter(cicdStandards, "### .NET Backend Pipeline")) as {
-      trigger: { paths: { exclude: string[] } };
-    };
-    expect(matchesAnyPattern(doc.trigger.paths.exclude, "some-brand-new-service/index.ts")).toBe(false);
+  it("explains that Markdown can be consumed by a test", () => {
+    expect(cicdStandards).toContain("A Markdown file can be a test or build input");
+    expect(cicdStandards).toContain("a blanket");
   });
 });
 

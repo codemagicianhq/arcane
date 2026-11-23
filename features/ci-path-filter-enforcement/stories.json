@@ -1,0 +1,47 @@
+{
+  "feature": "ci-path-filter-enforcement",
+  "branchName": "sessions/2026-11-22-ci-path-filter-enforcement",
+  "assignedAgent": "codex",
+  "trackingMode": "internal",
+  "stories": [
+    {
+      "id": "CPF489-1",
+      "title": "Candidate and filter generation",
+      "description": "Select reviewed tracked Arcane records and derive both filters.",
+      "acceptanceCriteria": [
+        "Exact paths; no generated or unreviewed inputs",
+        "Equivalent filters and recorded configuration"
+      ],
+      "priority": 1,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Vitest test/ci-path-filters.test.ts covers exact reviewed candidates, tracked paths, unsafe input and case collisions. Live Azure behavior not tested."
+    },
+    {
+      "id": "CPF489-2",
+      "title": "Guard and policy verification",
+      "description": "Check proposed tree and live Azure policies fail closed.",
+      "acceptanceCriteria": [
+        "Unfiltered independent guard",
+        "Case, inputs, policy identity and scope checked"
+      ],
+      "priority": 2,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Vitest test/ci-path-filters.test.ts covers mocked policy fetch/create/update, repository identity, guard policy, approval and preservation failures. No live Azure policy was changed or verified."
+    },
+    {
+      "id": "CPF489-3",
+      "title": "Workflow and evidence",
+      "description": "Document opt-in setup and verify fixture cases and limitations.",
+      "acceptanceCriteria": [
+        "Operator controls live policy changes",
+        "Tests and honest live verification status"
+      ],
+      "priority": 3,
+      "passes": true,
+      "assignedTo": "codex",
+      "testEvidence": "Full coverage run: 3177 passed, 6 skipped; focused new modules 99.5% lines and 96.48% branches. Real guard protection and live policy verification remain operator prerequisites."
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { runAdd } from "./commands/add.js";
 import { runUpdate } from "./commands/update.js";
 import { importCopilot, importHandoff } from "./commands/handoff.js";
 import { runStatus } from "./commands/status.js";
+import { listCiPathCandidates, runCiPathFilters, type CiFilterOptions } from "./commands/ci-path-filters.js";
 import { runState } from "./commands/state.js";
 import { runUninstall } from "./commands/uninstall.js";
 import { runDoctor } from "./commands/doctor.js";
@@ -564,6 +565,33 @@ presenceCommand
   .action(async () => {
     await runPresenceMcp();
   });
+
+const ciFilter = program.command("ci-path-filters").description("Prepare and verify reviewed Azure Repos build path filters");
+ciFilter.command("candidates").description("List tracked Arcane-owned paths for individual review").action(async () => {
+  try { console.log(JSON.stringify(await listCiPathCandidates(process.cwd()), null, 2)); }
+  catch { console.error("Could not list tracked paths"); process.exitCode = 1; }
+});
+for (const mode of ["prepare", "check", "apply", "create"] as const) {
+  ciFilter.command(mode)
+    .requiredOption("--reviewed <path>", "JSON array of reviewed exact tracked paths")
+    .requiredOption("--pipeline <path>", "Azure pipeline YAML")
+    .option("--org <url>", "Azure DevOps organization URL")
+    .option("--project <name>", "Azure DevOps project")
+    .option("--repository-id <id>", "Azure Repos repository GUID")
+    .option("--branch <name>", "Target branch")
+    .option("--build-policy-id <id>", "Full-build validation policy ID")
+    .option("--build-id <id>", "Full-build definition ID")
+    .option("--guard-policy-id <id>", "Independent unfiltered guard policy ID")
+    .option("--guard-build-id <id>", "Independent guard build definition ID")
+    .option("--confirm-policy-update", "Operator authorizes creating or updating the build policy")
+    .action(async (opts: CiFilterOptions) => {
+      const result = await runCiPathFilters(mode, process.cwd(), opts);
+      // Filenames and subprocess data can be untrusted Azure Pipelines log input.
+      const safeOutput = result.output.replace(/\r/g, "\\r").replace(/##(?=vso\[|\[)/gi, "# #");
+      (result.ok ? console.log : console.error)(safeOutput);
+      if (!result.ok) process.exitCode = 1;
+    });
+}
 
 // Only parse argv when executed directly — not when imported in tests.
 // Use realpathSync to resolve symlinks (e.g. npm global bin → dist/index.js).
