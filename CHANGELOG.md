@@ -13,7 +13,7 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
-## [1.25.0] - 2026-11-20
+## [1.25.0] - 2026-11-22
 
 ### Added
 
