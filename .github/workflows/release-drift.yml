@@ -3,10 +3,10 @@ name: Release drift
 # Guardrail for npm publish drift.
 #
 # A merge that bumps package.json without a matching GitHub Release and npm
-# publish leaves npm behind silently. This workflow watches package.json on
-# main and, when the local version is ahead of what's on npm, creates a GitHub
-# Release tagged v<version> and then starts publish.yml on that tag (OIDC
-# trusted publish, no token).
+# publish leaves npm behind silently. Watch both package.json and CHANGELOG.md
+# on main so a changelog correction retries the release check. When the package
+# version is ahead of npm, create a GitHub Release tagged v<version> and start
+# publish.yml on that tag (OIDC trusted publish, no token).
 #
 # No stored credential. Both steps use the job's own GITHUB_TOKEN. GitHub does
 # not let a release created with that token fire publish.yml's
@@ -27,6 +27,7 @@ on:
     branches: [main]
     paths:
       - "package.json"
+      - "CHANGELOG.md"
   workflow_dispatch:
 
 permissions:
