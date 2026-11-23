@@ -450,7 +450,7 @@
         "Review round clear",
         "Fixture tests (macos-latest)"
       ],
-      "status": "active",
+      "status": "ended",
       "revocation": "Ends on PR creation and assignment, revocation, or expiry, whichever comes first. Operator may set status to revoked or remove the record. No approval, merge, policy change or deployment is authorized."
     }
   ]
