@@ -102,6 +102,12 @@ describe("npm publish workflow", () => {
 });
 
 describe("release drift workflow", () => {
+  it("checks main when either the package version or the changelog changes", async () => {
+    const workflow = parse(await fs.readFile(".github/workflows/release-drift.yml", "utf8"));
+    expect(workflow.on.push.branches).toEqual(["main"]);
+    expect(workflow.on.push.paths).toEqual(expect.arrayContaining(["package.json", "CHANGELOG.md"]));
+  });
+
   it("creates the release and starts publish.yml with the built-in token, holding no stored credential", async () => {
     const workflow = await fs.readFile(
       join(process.cwd(), ".github", "workflows", "release-drift.yml"),
