@@ -1,0 +1,13 @@
+# Run — CI path-filter enforcement
+
+- Repository: `github.com/codemagicianhq/arcane`; branch: `sessions/2026-11-22-ci-path-filter-enforcement`; base: `ae9c6e8fe816e5b6de2cae53fd08fd4cfcb4a7ae`.
+- Scope: [issue #489](https://github.com/codemagicianhq/arcane/issues/489), through a reviewed PR. No actual consumer policy changes or issue closure are authorized by this run.
+- Implementation: reviewed exact-path candidates, matching YAML and Azure policy filters, policy identity/scope checks, operator-confirmed create/update, independent-guard policy checks and a conservative reference alarm. Unfiltered templates remain the default before setup.
+- Authority: the operator authorized grant `issue-489-ci-path-filters-2026-11-23`, expiring 2026-11-24 09:42:59 UTC. The separately authorized bootstrap record was committed as `d8c0735`; the grant-authorized release bump was committed as `9d9418c`. The grant permits commit, push, PR creation and assignment; it excludes approval, merge and live policy changes. No push or PR has yet been performed.
+- Access: sandboxed `gh auth status` reported invalid credentials, but the same check outside the sandbox succeeded using the keyring. The target ruleset requires four checks: `Lint, typecheck, test, build`, `PR branch is rebased on target`, `Review round clear`, and `Fixture tests (macos-latest)`; it permits merge and rebase, and classic branch protection returned 404. The earlier authentication conclusion was wrong.
+- Verification: policy behavior is fixture-backed, not live Azure verification. The operator must establish and protect the independent guard definition and trusted code; matching policy metadata does not prove what a build executes. Dynamic file reads cannot be ruled out by literal-reference scanning and require review.
+- Next: finish local review and exact-diff approval; restore authenticated GitHub CLI access; obtain the required scoped authority; commit and open a PR; verify its actual checks and leave issue closure to verified delivery.
+
+Related: [[.arcane/governance/cicd-standards]]
+
+Local validation: full coverage run passed 3,177 tests with six skipped; overall lines 94.06% and branches 88.49%. Focused coverage of the two new modules was 99.5% lines and 96.48% branches. Lint, typecheck, build, self-host parity, release version and changelog checks passed. `npm audit` returned seven moderate advisories and no high or critical advisories; no dependencies were added. These checks do not substitute for live Azure verification or an independent reviewer.

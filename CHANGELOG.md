@@ -13,6 +13,16 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.26.0] - 2026-11-23
+
+### Added
+
+- Prepare and verify reviewed Azure Repos build path filters with an independent guard, and update a specified policy only on explicit confirmation.
+
+### Fixed
+
+- Run general-purpose pipeline templates for Markdown changes by default; Markdown can be a test or build input.
+
 ## [1.25.0] - 2026-11-23
 
 ### Added
