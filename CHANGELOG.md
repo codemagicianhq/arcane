@@ -13,6 +13,12 @@ Releases `0.22.1` through `0.39.0` were written up together on 2026-09-09, after
 
 ## [Unreleased]
 
+## [1.26.1] - 2026-11-24
+
+### Fixed
+
+- Recognize Azure Repos exact-scope casing and omitted path filters when verifying build policies.
+
 ## [1.26.0] - 2026-11-23
 
 ### Added
