@@ -100,7 +100,8 @@ export function checkSafePolicyUpdate(value: unknown): string[] {
   const allowed = new Set(["scope", "buildDefinitionId", "queueOnSourceUpdateOnly", "manualQueueOnly", "displayName", "validDuration", "filenamePatterns"]);
   if (!Array.isArray(settings.scope) || settings.scope.length !== 1) return ["Refusing update: Azure CLI would discard additional or missing scopes"];
   if (Object.keys(settings).some((key) => !allowed.has(key))) return ["Refusing update: Azure CLI might discard unrecognized settings"];
-  if ([...allowed].some((key) => !(key in settings)) || typeof settings.queueOnSourceUpdateOnly !== "boolean" || typeof settings.displayName !== "string" || typeof settings.validDuration !== "number") return ["Refusing update: Azure CLI cannot safely preserve incomplete settings"];
+  if ([...allowed].some((key) => key !== "filenamePatterns" && !(key in settings)) || typeof settings.queueOnSourceUpdateOnly !== "boolean" || typeof settings.displayName !== "string" || typeof settings.validDuration !== "number") return ["Refusing update: Azure CLI cannot safely preserve incomplete settings"];
+  if (settings.filenamePatterns != null && (!Array.isArray(settings.filenamePatterns) || settings.filenamePatterns.some((path: unknown) => typeof path !== "string"))) return ["Refusing update: Azure CLI cannot safely preserve malformed path filters"];
   const scope = settings.scope[0];
   if (!record(scope) || Object.keys(scope).some((key) => !["repositoryId", "refName", "matchKind"].includes(key))) return ["Refusing update: Azure CLI might discard scope settings"];
   return [];
@@ -125,10 +126,11 @@ export function checkBuildPolicy(value: unknown, target: PolicyTarget, filter: s
   const scopes = settings.scope;
   if (!Array.isArray(scopes) || !scopes.some((scope: unknown) => record(scope) &&
     typeof scope.repositoryId === "string" && scope.repositoryId.toLowerCase() === target.repositoryId.toLowerCase() &&
-    scope.refName === `refs/heads/${target.branch}` && scope.matchKind === "exact")) issues.push("Policy does not cover the exact repository and branch");
+    scope.refName === `refs/heads/${target.branch}` && typeof scope.matchKind === "string" &&
+    scope.matchKind.toLowerCase() === "exact")) issues.push("Policy does not cover the exact repository and branch");
   const actual = settings.filenamePatterns;
   const actualFilter = Array.isArray(actual) && actual.every((p) => typeof p === "string") ? actual.join(";") :
-    actual === null ? "" : null;
+    actual == null ? "" : null;
   if (actualFilter !== filter) issues.push("Live policy path filter differs from the reviewed list");
   return issues;
 }
