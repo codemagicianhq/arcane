@@ -68,13 +68,27 @@ describe("pipeline and policy agreement", () => {
     expect(checkBuildPolicy({ ...policy([]), isDeleted: true }, target, "")).not.toEqual([]);
     const missingFilter = { ...policy([]).settings };
     Reflect.deleteProperty(missingFilter, "filenamePatterns");
-    expect(checkBuildPolicy({ ...policy([]), settings: missingFilter }, target, "")).not.toEqual([]);
+    expect(checkBuildPolicy({ ...policy([]), settings: missingFilter }, target, "")).toEqual([]);
+    expect(checkBuildPolicy({ ...policy([]), settings: missingFilter }, target, plan.policyFilter)).not.toEqual([]);
     expect(checkBuildPolicy(null, target, "")).not.toEqual([]);
     expect(checkBuildPolicy({ ...policy([]), settings: { ...policy([]).settings, filenamePatterns: null } }, target, "")).toEqual([]);
+  });
+  it("accepts Azure's Exact enum casing but rejects non-exact and malformed scopes", () => {
+    const base = policy(["/*", "!/journal/day.md"]);
+    const scope = base.settings.scope[0];
+    const withMatchKind = (matchKind: unknown) => ({ ...base, settings: { ...base.settings, scope: [{ ...scope, matchKind }] } });
+    expect(checkBuildPolicy(withMatchKind("Exact"), target, plan.policyFilter)).toEqual([]);
+    expect(checkBuildPolicy(withMatchKind("prefix"), target, plan.policyFilter)).toContain("Policy does not cover the exact repository and branch");
+    expect(checkBuildPolicy(withMatchKind(null), target, plan.policyFilter)).toContain("Policy does not cover the exact repository and branch");
   });
   it("refuses updates that Azure CLI would truncate and detects other settings changing", () => {
     const original = policy([]);
     expect(checkSafePolicyUpdate(original)).toEqual([]);
+    const unfiltered = { ...original.settings };
+    Reflect.deleteProperty(unfiltered, "filenamePatterns");
+    expect(checkSafePolicyUpdate({ ...original, settings: unfiltered })).toEqual([]);
+    expect(checkSafePolicyUpdate({ ...original, settings: { ...original.settings, filenamePatterns: "invalid" } })).not.toEqual([]);
+    expect(checkSafePolicyUpdate({ ...original, settings: { ...original.settings, filenamePatterns: [null] } })).not.toEqual([]);
     expect(checkSafePolicyUpdate(null)).not.toEqual([]);
     expect(checkSafePolicyUpdate({ ...original, settings: { ...original.settings, displayName: null } })).not.toEqual([]);
     expect(checkSafePolicyUpdate({ ...original, settings: { ...original.settings, scope: [...original.settings.scope, original.settings.scope[0]] } })).not.toEqual([]);
